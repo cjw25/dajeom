@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <meta name="theme-color"
+        content="#07101f">
+
+  <title>생년월일 입력 - AI 사주</title>
+
+  <link rel="stylesheet"
+        th:href="@{/css/saju-birth-date.css}"
+        href="/css/saju-birth-date.css">
+</head>
+
+<body>
+
+<div class="birth-app">
+
+  <header class="birth-header">
+
+    <button type="button"
+            class="header-control"
+            id="backButton"
+            aria-label="이전 화면">
+
+            <span class="back-icon">
+                ‹
+            </span>
+
+    </button>
+
+    <div class="progress-area">
+
+            <span class="progress-text">
+                기본정보 2 / 3
+            </span>
+
+      <div class="progress-track">
+
+        <div class="progress-value"></div>
+
+      </div>
+
+    </div>
+
+    <button type="button"
+            class="header-control"
+            id="homeButton"
+            aria-label="홈으로 이동">
+
+      ⌂
+
+    </button>
+
+  </header>
+
+  <main class="birth-main">
+
+    <section class="character-area">
+
+      <img th:src="@{/img/saju-character.png}"
+           src="/img/saju-character.png"
+           class="character-image"
+           alt="AI 사주 상담 캐릭터">
+
+      <div class="character-overlay"></div>
+
+      <div class="speech-bubble">
+
+                <span class="speech-name">
+                    관상선생
+                </span>
+
+        <p id="characterMessage">
+          생년월일을 알려주세요.<br>
+          양력과 음력도 함께 확인하겠습니다.
+        </p>
+
+      </div>
+
+    </section>
+
+    <section class="form-section">
+
+      <div class="form-heading">
+
+                <span class="step-label">
+                    STEP 02
+                </span>
+
+        <h1>생년월일을 알려주세요</h1>
+
+        <p>
+          정확한 사주 계산을 위해 달력 구분과 성별을 선택해주세요.
+        </p>
+
+      </div>
+
+      <form id="birthDateForm"
+            novalidate>
+
+        <fieldset class="selection-group">
+
+          <legend>달력 구분</legend>
+
+          <div class="segmented-control">
+
+            <button type="button"
+                    class="segment-button active"
+                    data-calendar="SOLAR">
+
+              양력
+
+            </button>
+
+            <button type="button"
+                    class="segment-button"
+                    data-calendar="LUNAR">
+
+              음력
+
+            </button>
+
+          </div>
+
+        </fieldset>
+
+        <fieldset class="selection-group">
+
+          <legend>성별</legend>
+
+          <div class="segmented-control">
+
+            <button type="button"
+                    class="segment-button"
+                    data-gender="MALE">
+
+              남성
+
+            </button>
+
+            <button type="button"
+                    class="segment-button"
+                    data-gender="FEMALE">
+
+              여성
+
+            </button>
+
+          </div>
+
+        </fieldset>
+
+        <fieldset class="date-group">
+
+          <legend>생년월일</legend>
+
+          <div class="date-select-grid">
+
+            <label class="select-box">
+
+              <span>연도</span>
+
+              <select id="yearSelect"
+                      name="year">
+
+                <option value="">
+                  연도
+                </option>
+
+              </select>
+
+            </label>
+
+            <label class="select-box">
+
+              <span>월</span>
+
+              <select id="monthSelect"
+                      name="month">
+
+                <option value="">
+                  월
+                </option>
+
+              </select>
+
+            </label>
+
+            <label class="select-box">
+
+              <span>일</span>
+
+              <select id="daySelect"
+                      name="day">
+
+                <option value="">
+                  일
+                </option>
+
+              </select>
+
+            </label>
+
+          </div>
+
+        </fieldset>
+
+        <p id="errorMessage"
+           class="error-message">
+        </p>
+
+        <div class="information-notice">
+
+                    <span class="notice-icon">
+                        ✓
+                    </span>
+
+          <p>
+            현재는 입력 단계이며, 마지막 확인 후 한 번에 서버로 전송됩니다.
+          </p>
+
+        </div>
+
+        <button type="submit"
+                class="next-button"
+                id="nextButton"
+                disabled>
+
+          다음
+
+        </button>
+
+      </form>
+
+    </section>
+
+  </main>
+
+  <div id="toast"
+       class="toast"
+       role="status"
+       aria-live="polite">
+  </div>
+
+</div>
+
+<script th:src="@{/js/saju-birth-date.js}"
+        src="/js/saju-birth-date.js"></script>
+
+</body>
+</html>
