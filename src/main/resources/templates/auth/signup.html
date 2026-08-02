@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+  <title>회원가입 | 다점</title>
+</head>
+<body>
+
+<main>
+  <h1>회원가입</h1>
+
+  <form th:action="@{/signup}"
+        th:object="${signupRequest}"
+        method="post">
+
+    <div>
+      <label for="email">이메일</label>
+      <input id="email"
+             type="email"
+             th:field="*{email}"
+             autocomplete="email">
+
+      <p th:if="${#fields.hasErrors('email')}"
+         th:errors="*{email}">
+      </p>
+    </div>
+
+    <div>
+      <label for="nickname">닉네임</label>
+      <input id="nickname"
+             type="text"
+             th:field="*{nickname}"
+             autocomplete="nickname">
+
+      <p th:if="${#fields.hasErrors('nickname')}"
+         th:errors="*{nickname}">
+      </p>
+    </div>
+
+    <div>
+      <label for="password">비밀번호</label>
+      <input id="password"
+             type="password"
+             th:field="*{password}"
+             autocomplete="new-password">
+
+      <p th:if="${#fields.hasErrors('password')}"
+         th:errors="*{password}">
+      </p>
+    </div>
+
+    <div>
+      <label for="passwordConfirm">
+        비밀번호 확인
+      </label>
+
+      <input id="passwordConfirm"
+             type="password"
+             th:field="*{passwordConfirm}"
+             autocomplete="new-password">
+
+      <p th:if="${#fields.hasErrors('passwordConfirm')}"
+         th:errors="*{passwordConfirm}">
+      </p>
+    </div>
+
+    <button type="submit">가입하기</button>
+  </form>
+
+  <a th:href="@{/login}">
+    이미 계정이 있습니다
+  </a>
+</main>
+
+</body>
+</html>
