@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta name="viewport"
@@ -13,43 +15,40 @@
     <title>다점 - AI 사주·타로</title>
 
     <link rel="stylesheet"
+          th:href="@{/css/index.css}"
           href="/css/index.css">
+
 </head>
 
 <body>
 
-<div class="app">
+<div class="app-shell">
 
     <header class="app-header">
 
         <button type="button"
                 id="backButton"
-                class="header-button invisible"
+                class="header-button is-hidden"
                 aria-label="이전 화면">
-
-            <span class="back-icon">‹</span>
-
+            ‹
         </button>
 
-        <div class="header-title">
+        <div class="header-copy">
 
             <strong id="headerTitle">
                 AI 운세
             </strong>
 
-            <span id="headerProgress"
-                  class="header-progress">
+            <span id="headerProgress">
             </span>
 
         </div>
 
         <button type="button"
                 id="homeButton"
-                class="header-button invisible"
-                aria-label="홈으로 이동">
-
+                class="header-button is-hidden"
+                aria-label="홈으로">
             ⌂
-
         </button>
 
     </header>
@@ -57,267 +56,222 @@
     <main>
 
         <!-- 홈 -->
-        <section class="screen active"
+        <section class="screen is-active"
                  data-screen="home">
 
-            <div class="home-content">
+            <div class="home-page">
 
-                <section class="today-section">
+                <div class="home-heading">
 
-                    <div class="today-heading">
+                    <div>
 
-                        <div>
-                            <h1>오늘의 운세</h1>
+                        <h1>
+                            오늘의 운세
+                        </h1>
 
-                            <p>
-                                오늘 당신의 운세를 확인해보세요
-                            </p>
-                        </div>
-
-                        <div class="moon-icon">
-                            ☾
-                        </div>
+                        <p>
+                            지금 가장 궁금한 이야기를 선택해보세요.
+                        </p>
 
                     </div>
 
-                    <div class="fortune-grid">
+                    <span class="moon-symbol">
+                        ☾
+                    </span>
 
-                        <button type="button"
-                                class="fortune-item"
-                                data-message="무료 운세">
+                </div>
 
-                            <span class="fortune-icon blue">
-                                🎁
-                            </span>
+                <div class="fortune-menu">
 
-                            <small>무료</small>
+                    <button type="button"
+                            data-message="무료 운세">
 
-                        </button>
+                        <span>✦</span>
+                        <small>무료</small>
 
-                        <button type="button"
-                                class="fortune-item"
-                                data-message="연애운">
+                    </button>
 
-                            <span class="fortune-icon red">
-                                ♥
-                            </span>
+                    <button type="button"
+                            data-message="연애운">
 
-                            <small>연애</small>
+                        <span>♥</span>
+                        <small>연애</small>
 
-                        </button>
+                    </button>
 
-                        <button type="button"
-                                class="fortune-item"
-                                data-message="재회운">
+                    <button type="button"
+                            data-message="재회운">
 
-                            <span class="fortune-icon purple">
-                                ✦
-                            </span>
+                        <span>↺</span>
+                        <small>재회</small>
 
-                            <small>재회</small>
+                    </button>
 
-                        </button>
+                    <button type="button"
+                            data-message="결혼운">
 
-                        <button type="button"
-                                class="fortune-item"
-                                data-message="결혼운">
+                        <span>♡</span>
+                        <small>결혼</small>
 
-                            <span class="fortune-icon pink">
-                                ♡
-                            </span>
+                    </button>
 
-                            <small>결혼</small>
+                    <button type="button"
+                            data-message="재물운">
 
-                        </button>
+                        <span>₩</span>
+                        <small>재물</small>
 
-                        <button type="button"
-                                class="fortune-item"
-                                data-message="재물운">
+                    </button>
 
-                            <span class="fortune-icon gold">
-                                ₩
-                            </span>
+                    <button type="button"
+                            data-message="궁합">
 
-                            <small>재물</small>
+                        <span>∞</span>
+                        <small>궁합</small>
 
-                        </button>
+                    </button>
 
-                        <button type="button"
-                                class="fortune-item"
-                                data-message="궁합">
+                    <button type="button"
+                            data-message="가정운">
 
-                            <span class="fortune-icon violet">
-                                ♡
-                            </span>
+                        <span>⌂</span>
+                        <small>가정</small>
 
-                            <small>궁합</small>
+                    </button>
 
-                        </button>
+                    <button type="button"
+                            data-message="종합운">
 
-                        <button type="button"
-                                class="fortune-item"
-                                data-message="가정운">
+                        <span>◆</span>
+                        <small>종합</small>
 
-                            <span class="fortune-icon coral">
-                                ⌂
-                            </span>
+                    </button>
 
-                            <small>가정</small>
+                    <button type="button"
+                            data-message="기타 운세">
 
-                        </button>
+                        <span>◈</span>
+                        <small>기타</small>
 
-                        <button type="button"
-                                class="fortune-item"
-                                data-message="종합운">
+                    </button>
 
-                            <span class="fortune-icon indigo">
-                                ◆
-                            </span>
+                    <button type="button"
+                            data-message="AI 채팅">
 
-                            <small>종합</small>
+                        <span>▣</span>
+                        <small>채팅</small>
 
-                        </button>
+                    </button>
 
-                        <button type="button"
-                                class="fortune-item"
-                                data-message="기타 운세">
+                </div>
 
-                            <span class="fortune-icon orange">
-                                ◈
-                            </span>
+                <!-- AI 사주 메인 배너 -->
+                <article class="main-hero-card">
 
-                            <small>기타</small>
-
-                        </button>
-
-                        <button type="button"
-                                class="fortune-item"
-                                data-message="AI 채팅">
-
-                            <span class="fortune-icon purple">
-                                ▣
-                            </span>
-
-                            <small>채팅</small>
-
-                        </button>
-
-                    </div>
-
-                </section>
-
-                <section class="main-banner">
-
-                    <img src="/img/saju-character.png"
+                    <img th:src="@{/img/saju-character.png}"
+                         src="/img/saju-character.png"
                          alt="AI 사주 캐릭터">
 
-                    <div class="banner-overlay"></div>
+                    <div class="main-hero-shade">
+                    </div>
 
-                    <div class="banner-content">
+                    <div class="main-hero-copy">
 
-                        <span class="banner-label">
+                        <span class="pill">
                             AI 사주
                         </span>
 
                         <h2>
-                            사주에 담긴<br>
-                            운의 흐름을 읽어드립니다
+                            당신의 사주를<br>
+                            한 편의 이야기로
                         </h2>
 
                         <p>
-                            생년월일과 출생시간을 기반으로<br>
-                            나만의 사주를 확인하세요.
+                            어려운 명리 용어보다 실제 삶에서
+                            어떻게 나타나는지를 웹툰처럼 풀어드립니다.
                         </p>
 
                         <button type="button"
-                                class="primary-button"
+                                class="primary-button compact"
                                 data-go="intro">
-
-                            상담하기
-
+                            상담 시작
                         </button>
 
                     </div>
 
-                </section>
+                </article>
 
+                <!-- 추천 상담 -->
                 <section class="recommend-section">
 
                     <div class="section-heading">
 
-                        <h2>오늘 추천 AI</h2>
+                        <h2>
+                            추천 상담
+                        </h2>
 
                         <button type="button"
-                                data-message="추천 AI">
-
+                                data-message="추천 상담">
                             더보기 ›
-
                         </button>
 
                     </div>
 
                     <div class="recommend-grid">
 
+                        <!-- AI 사주 -->
                         <button type="button"
                                 class="recommend-card"
                                 data-go="intro">
 
-                            <img src="/img/saju-character.png"
+                            <img th:src="@{/img/saju-character.png}"
+                                 src="/img/saju-character.png"
                                  alt="AI 사주선생">
 
-                            <div class="card-overlay"></div>
+                            <div class="recommend-shade">
+                            </div>
 
-                            <span class="card-badge">
+                            <span class="recommend-badge">
                                 사주
                             </span>
 
-                            <div class="card-text">
+                            <strong>
+                                관상선생
+                            </strong>
 
-                                <strong>AI 사주선생</strong>
-
-                                <small>
-                                    만세력 기반 사주 분석
-                                </small>
-
-                            </div>
+                            <small>
+                                만세력 기반 웹툰 사주
+                            </small>
 
                         </button>
 
+                        <!-- AI 타로 -->
                         <button type="button"
-                                class="recommend-card tarot-preview"
-                                data-message="AI 타로">
+                                class="recommend-card tarot-card"
+                                onclick="window.location.href='/tarot'">
 
-                            <div class="tarot-cards">
+                            <div class="tarot-symbols">
 
-                                <span class="tarot-card left">
-                                    ☾
-                                </span>
-
-                                <span class="tarot-card center">
-                                    ✦
-                                </span>
-
-                                <span class="tarot-card right">
-                                    ☼
-                                </span>
+                                <span>☾</span>
+                                <span>✦</span>
+                                <span>☼</span>
 
                             </div>
 
-                            <div class="card-overlay"></div>
+                            <div class="recommend-shade">
+                            </div>
 
-                            <span class="card-badge tarot-badge">
+                            <span class="recommend-badge purple">
                                 타로
                             </span>
 
-                            <div class="card-text">
+                            <strong>
+                                AI 타로
+                            </strong>
 
-                                <strong>AI 연애타로</strong>
-
-                                <small>
-                                    카드로 읽는 상대방의 마음
-                                </small>
-
-                            </div>
+                            <small>
+                                78장에서 직접 뽑는 타로
+                            </small>
 
                         </button>
 
@@ -329,68 +283,87 @@
 
         </section>
 
-        <!-- 상담 안내 -->
+        <!-- 사주 상담 안내 -->
         <section class="screen"
                  data-screen="intro">
 
-            <div class="character-stage intro-stage">
+            <div class="character-stage tall">
 
-                <img src="/img/saju-character.png"
-                     alt="AI 사주 상담 캐릭터">
+                <img th:src="@{/img/saju-character.png}"
+                     src="/img/saju-character.png"
+                     alt="관상선생">
 
-                <div class="character-overlay"></div>
+                <div class="character-shade">
+                </div>
 
-                <div class="speech-bubble">
+                <div class="speech-bubble left">
 
-                    <span>관상선생</span>
+                    <span>
+                        관상선생
+                    </span>
 
                     <p>
-                        반갑습니다.<br>
-                        절입 기준 만세력으로 사주를 살펴보겠습니다.
+                        반갑습니다. 어려운 명리 용어는 잠시 내려놓고,
+                        당신의 삶에 어떤 의미인지 이야기로 풀어드릴게요.
                     </p>
 
                 </div>
 
             </div>
 
-            <div class="panel">
+            <div class="form-panel">
 
-                <span class="step-chip">
+                <span class="pill">
                     AI 사주 상담사
                 </span>
 
-                <h1>관상선생</h1>
+                <h1>
+                    관상선생
+                </h1>
 
                 <p class="description">
-                    사주팔자와 오행의 흐름을 바탕으로
-                    타고난 기질과 운의 흐름을 살펴드립니다.
+                    생년월일과 출생시간을 기반으로 만세력을 계산한 뒤,
+                    소비자가 이해하기 쉬운 웹툰형 해석을 제공합니다.
                 </p>
 
-                <div class="guide-list">
+                <div class="step-guide">
 
                     <div>
+
                         <strong>1</strong>
-                        <span>이름 입력</span>
+
+                        <span>
+                            상담에서 사용할 이름 입력
+                        </span>
+
                     </div>
 
                     <div>
+
                         <strong>2</strong>
-                        <span>생년월일과 성별 입력</span>
+
+                        <span>
+                            생년월일·성별·출생시간 입력
+                        </span>
+
                     </div>
 
                     <div>
+
                         <strong>3</strong>
-                        <span>출생시간 또는 시간 모름 선택</span>
+
+                        <span>
+                            분석 후 웹툰형 사주 결과 확인
+                        </span>
+
                     </div>
 
                 </div>
 
                 <button type="button"
-                        class="next-button"
+                        class="primary-button"
                         data-go="name">
-
                     시작하기
-
                 </button>
 
             </div>
@@ -401,33 +374,38 @@
         <section class="screen"
                  data-screen="name">
 
-            <div class="character-stage form-character-stage">
+            <div class="character-stage form-stage">
 
-                <img src="/img/saju-character.png"
-                     alt="AI 사주 상담 캐릭터">
+                <img th:src="@{/img/saju-character.png}"
+                     src="/img/saju-character.png"
+                     alt="관상선생">
 
-                <div class="character-overlay"></div>
+                <div class="character-shade">
+                </div>
 
-                <div class="speech-bubble">
+                <div class="speech-bubble left">
 
-                    <span>관상선생</span>
+                    <span>
+                        관상선생
+                    </span>
 
                     <p>
-                        상담에서 불러드릴<br>
-                        이름이 무엇인가요?
+                        이야기 속에서 불러드릴 이름을 알려주세요.
                     </p>
 
                 </div>
 
             </div>
 
-            <div class="panel">
+            <div class="form-panel">
 
-                <span class="step-chip">
+                <span class="pill">
                     STEP 01
                 </span>
 
-                <h1>이름을 알려주세요</h1>
+                <h1>
+                    이름을 알려주세요
+                </h1>
 
                 <p class="description">
                     실명 또는 상담에서 사용할 이름을 입력해주세요.
@@ -438,14 +416,12 @@
 
                     <label class="field-label"
                            for="nameInput">
-
                         이름
-
                     </label>
 
-                    <input type="text"
-                           id="nameInput"
+                    <input id="nameInput"
                            class="text-input"
+                           type="text"
                            maxlength="20"
                            autocomplete="name"
                            placeholder="이름을 입력해주세요">
@@ -454,13 +430,11 @@
                        class="error-message">
                     </p>
 
-                    <button type="submit"
-                            id="nameNextButton"
-                            class="next-button"
+                    <button id="nameNextButton"
+                            class="primary-button"
+                            type="submit"
                             disabled>
-
                         다음
-
                     </button>
 
                 </form>
@@ -469,20 +443,24 @@
 
         </section>
 
-        <!-- 생년월일·출생시간 입력 -->
+        <!-- 출생정보 입력 -->
         <section class="screen"
                  data-screen="birth">
 
-            <div class="character-stage form-character-stage">
+            <div class="character-stage form-stage">
 
-                <img src="/img/saju-character.png"
-                     alt="AI 사주 상담 캐릭터">
+                <img th:src="@{/img/saju-character.png}"
+                     src="/img/saju-character.png"
+                     alt="관상선생">
 
-                <div class="character-overlay"></div>
+                <div class="character-shade">
+                </div>
 
-                <div class="speech-bubble">
+                <div class="speech-bubble left">
 
-                    <span>관상선생</span>
+                    <span>
+                        관상선생
+                    </span>
 
                     <p id="birthSpeech">
                         생년월일과 태어난 시간을 알려주세요.
@@ -492,16 +470,18 @@
 
             </div>
 
-            <div class="panel">
+            <div class="form-panel">
 
-                <span class="step-chip">
+                <span class="pill">
                     STEP 02
                 </span>
 
-                <h1>태어난 정보를 알려주세요</h1>
+                <h1>
+                    태어난 정보를 알려주세요
+                </h1>
 
                 <p class="description">
-                    생년월일과 출생시간은 숫자로 직접 입력합니다.
+                    만세력 계산에 사용되므로 가능한 정확하게 입력해주세요.
                 </p>
 
                 <form id="birthForm"
@@ -509,24 +489,22 @@
 
                     <fieldset>
 
-                        <legend>달력 구분</legend>
+                        <legend>
+                            달력 구분
+                        </legend>
 
                         <div class="segment-control">
 
                             <button type="button"
-                                    class="segment-button active"
+                                    class="segment-button is-active"
                                     data-calendar="SOLAR">
-
                                 양력
-
                             </button>
 
                             <button type="button"
                                     class="segment-button"
                                     data-calendar="LUNAR">
-
                                 음력
-
                             </button>
 
                         </div>
@@ -534,14 +512,16 @@
                     </fieldset>
 
                     <div id="lunarLeapArea"
-                         class="lunar-leap-area hidden">
+                         class="option-box hidden">
 
                         <label>
 
-                            <input type="checkbox"
-                                   id="lunarLeapMonth">
+                            <input id="lunarLeapMonth"
+                                   type="checkbox">
 
-                            <span>윤달로 태어났어요</span>
+                            <span>
+                                윤달로 태어났어요
+                            </span>
 
                         </label>
 
@@ -553,24 +533,22 @@
 
                     <fieldset>
 
-                        <legend>성별</legend>
+                        <legend>
+                            성별
+                        </legend>
 
                         <div class="segment-control">
 
                             <button type="button"
                                     class="segment-button"
                                     data-gender="MALE">
-
                                 남성
-
                             </button>
 
                             <button type="button"
                                     class="segment-button"
                                     data-gender="FEMALE">
-
                                 여성
-
                             </button>
 
                         </div>
@@ -579,17 +557,19 @@
 
                     <fieldset>
 
-                        <legend>생년월일</legend>
+                        <legend>
+                            생년월일
+                        </legend>
 
-                        <div class="date-input-grid">
+                        <div class="date-grid">
 
                             <label>
 
                                 <span>연도</span>
 
-                                <input type="text"
-                                       id="birthYear"
+                                <input id="birthYear"
                                        class="text-input numeric-input"
+                                       type="text"
                                        inputmode="numeric"
                                        maxlength="4"
                                        placeholder="1993">
@@ -600,9 +580,9 @@
 
                                 <span>월</span>
 
-                                <input type="text"
-                                       id="birthMonth"
+                                <input id="birthMonth"
                                        class="text-input numeric-input"
+                                       type="text"
                                        inputmode="numeric"
                                        maxlength="2"
                                        placeholder="08">
@@ -613,9 +593,9 @@
 
                                 <span>일</span>
 
-                                <input type="text"
-                                       id="birthDay"
+                                <input id="birthDay"
                                        class="text-input numeric-input"
+                                       type="text"
                                        inputmode="numeric"
                                        maxlength="2"
                                        placeholder="24">
@@ -630,29 +610,33 @@
 
                         <div class="legend-row">
 
-                            <legend>태어난 시간</legend>
+                            <legend>
+                                태어난 시간
+                            </legend>
 
-                            <label class="unknown-time-label">
+                            <label class="check-label">
 
-                                <input type="checkbox"
-                                       id="birthTimeUnknown">
+                                <input id="birthTimeUnknown"
+                                       type="checkbox">
 
-                                <span>시간 모름</span>
+                                <span>
+                                    시간 모름
+                                </span>
 
                             </label>
 
                         </div>
 
                         <div id="timeInputArea"
-                             class="time-input-grid">
+                             class="time-grid">
 
                             <label>
 
                                 <span>시</span>
 
-                                <input type="text"
-                                       id="birthHour"
+                                <input id="birthHour"
                                        class="text-input numeric-input"
+                                       type="text"
                                        inputmode="numeric"
                                        maxlength="2"
                                        placeholder="13">
@@ -665,9 +649,9 @@
 
                                 <span>분</span>
 
-                                <input type="text"
-                                       id="birthMinute"
+                                <input id="birthMinute"
                                        class="text-input numeric-input"
+                                       type="text"
                                        inputmode="numeric"
                                        maxlength="2"
                                        placeholder="30">
@@ -676,7 +660,7 @@
 
                         </div>
 
-                        <p class="time-help">
+                        <p class="field-help">
                             24시간 기준입니다. 오후 1시 30분은 13:30입니다.
                         </p>
 
@@ -686,13 +670,11 @@
                        class="error-message">
                     </p>
 
-                    <button type="submit"
-                            id="birthNextButton"
-                            class="next-button"
+                    <button id="birthNextButton"
+                            class="primary-button"
+                            type="submit"
                             disabled>
-
                         입력정보 확인
-
                     </button>
 
                 </form>
@@ -705,71 +687,91 @@
         <section class="screen"
                  data-screen="review">
 
-            <div class="review-content">
+            <div class="simple-page">
 
-                <span class="step-chip">
+                <span class="pill">
                     STEP 03
                 </span>
 
-                <h1>입력정보를 확인해주세요</h1>
+                <h1>
+                    입력정보를 확인해주세요
+                </h1>
 
                 <p class="description">
-                    입력한 정보가 정확한지 확인해주세요.
+                    정확하지 않은 정보는 결과에도 영향을 줄 수 있습니다.
                 </p>
 
                 <div class="review-card">
 
                     <div>
+
                         <span>이름</span>
-                        <strong id="reviewName"></strong>
+
+                        <strong id="reviewName">
+                        </strong>
+
                     </div>
 
                     <div>
+
                         <span>성별</span>
-                        <strong id="reviewGender"></strong>
+
+                        <strong id="reviewGender">
+                        </strong>
+
                     </div>
 
                     <div>
+
                         <span>달력</span>
-                        <strong id="reviewCalendar"></strong>
+
+                        <strong id="reviewCalendar">
+                        </strong>
+
                     </div>
 
                     <div id="reviewLunarLeapRow"
                          class="hidden">
 
                         <span>윤달 여부</span>
-                        <strong id="reviewLunarLeap"></strong>
+
+                        <strong id="reviewLunarLeap">
+                        </strong>
 
                     </div>
 
                     <div>
+
                         <span>생년월일</span>
-                        <strong id="reviewBirthDate"></strong>
+
+                        <strong id="reviewBirthDate">
+                        </strong>
+
                     </div>
 
                     <div>
+
                         <span>태어난 시간</span>
-                        <strong id="reviewBirthTime"></strong>
+
+                        <strong id="reviewBirthTime">
+                        </strong>
+
                     </div>
 
                 </div>
 
-                <div class="review-actions">
+                <div class="button-stack">
 
                     <button type="button"
                             class="secondary-button"
                             data-go="birth">
-
                         수정하기
-
                     </button>
 
                     <button type="button"
                             id="submitProfileButton"
-                            class="next-button">
-
+                            class="primary-button">
                         확인 및 저장
-
                     </button>
 
                 </div>
@@ -778,80 +780,190 @@
 
         </section>
 
-        <!-- 기본정보 저장 완료 -->
+        <!-- 저장 완료 -->
         <section class="screen"
                  data-screen="complete">
 
-            <div class="complete-content">
+            <div class="complete-page">
 
                 <div class="complete-icon">
                     ✓
                 </div>
 
-                <h1>기본정보 저장 완료</h1>
+                <h1>
+                    기본정보 저장 완료
+                </h1>
 
                 <p>
-                    입력한 정보를 바탕으로<br>
-                    만세력 분석을 시작할 수 있습니다.
+                    입력한 정보를 바탕으로 만세력을 계산하고,
+                    웹툰형 사주 이야기를 만들 수 있습니다.
                 </p>
 
                 <button type="button"
                         id="startAnalysisButton"
-                        class="next-button">
-
+                        class="primary-button">
                     사주 분석 시작
-
                 </button>
 
                 <button type="button"
-                        class="secondary-button complete-home-button"
+                        class="secondary-button"
                         data-go="home">
-
                     홈으로
-
                 </button>
 
             </div>
 
         </section>
 
-        <!-- 분석 중 -->
+        <!-- 분석 진행 -->
         <section class="screen"
                  data-screen="analysis">
 
-            <div class="analysis-loading">
+            <div class="analysis-page">
 
-                <img src="/img/saju-character.png"
-                     alt="사주 분석 캐릭터"
-                     class="analysis-character">
+                <img class="analysis-background"
+                     th:src="@{/img/saju-character.png}"
+                     src="/img/saju-character.png"
+                     alt="분석 중인 관상선생">
 
-                <div class="analysis-loading-overlay"></div>
+                <div class="analysis-shade">
+                </div>
 
-                <div class="analysis-loading-content">
+                <div class="analysis-content">
 
-                    <div class="analysis-spinner"></div>
+                    <span class="pill">
+                        AI 만세력 분석
+                    </span>
 
-                    <h1>만세력을 계산하고 있습니다</h1>
+                    <div id="analysisProgressRing"
+                         class="progress-ring">
+
+                        <div>
+
+                            <strong id="analysisProgressPercent">
+                                0%
+                            </strong>
+
+                            <span>
+                                분석 중
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <h1>
+                        당신의 사주 이야기를 만들고 있습니다
+                    </h1>
 
                     <p id="analysisLoadingMessage">
-                        음력과 양력 정보를 확인하고 있습니다.
+                        입력한 생년월일을 확인하고 있습니다.
                     </p>
 
-                    <div class="analysis-loading-list">
+                    <div class="progress-track">
 
-                        <div class="active">
-                            <span>1</span>
-                            <strong>음양력·절입 확인</strong>
+                        <div id="analysisProgressBar"
+                             class="progress-bar">
                         </div>
 
-                        <div>
-                            <span>2</span>
-                            <strong>사주팔자·오행 계산</strong>
+                    </div>
+
+                    <div class="progress-caption">
+
+                        <span id="analysisProgressStatus">
+                            분석 준비
+                        </span>
+
+                        <strong id="analysisProgressNumber">
+                            0 / 100
+                        </strong>
+
+                    </div>
+
+                    <div class="analysis-steps">
+
+                        <div class="analysis-step is-active"
+                             data-analysis-step="0">
+
+                            <span class="analysis-step-number">
+                                1
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    음양력 정보 확인
+                                </strong>
+
+                                <small>
+                                    생년월일과 윤달 정보를 확인합니다.
+                                </small>
+
+                            </div>
+
                         </div>
 
-                        <div>
-                            <span>3</span>
-                            <strong>십성·대운·세운 분석</strong>
+                        <div class="analysis-step"
+                             data-analysis-step="1">
+
+                            <span class="analysis-step-number">
+                                2
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    사주팔자와 오행 계산
+                                </strong>
+
+                                <small>
+                                    년주·월주·일주·시주를 계산합니다.
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                        <div class="analysis-step"
+                             data-analysis-step="2">
+
+                            <span class="analysis-step-number">
+                                3
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    십성·신살·대운 분석
+                                </strong>
+
+                                <small>
+                                    관계와 운의 흐름을 분석합니다.
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                        <div class="analysis-step"
+                             data-analysis-step="3">
+
+                            <span class="analysis-step-number">
+                                4
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    웹툰 이야기 구성
+                                </strong>
+
+                                <small>
+                                    계산값을 이해하기 쉬운 장면으로 바꿉니다.
+                                </small>
+
+                            </div>
+
                         </div>
 
                     </div>
@@ -862,167 +974,60 @@
 
         </section>
 
-        <!-- 전체 분석 결과 -->
+        <!-- 웹툰형 사주 결과 -->
         <section class="screen"
                  data-screen="result">
 
-            <div class="result-hero">
+            <div id="webtoonCover"
+                 class="webtoon-cover">
 
-                <img src="/img/saju-character.png"
-                     alt="사주 결과 캐릭터">
+                <img th:src="@{/img/saju-character.png}"
+                     src="/img/saju-character.png"
+                     alt="관상선생">
 
-                <div class="result-hero-overlay"></div>
+                <div class="webtoon-cover-shade">
+                </div>
 
-                <div class="result-hero-content">
+                <div class="webtoon-cover-copy">
 
-                    <span class="step-chip">
-                        만세력 분석 완료
+                    <span class="cover-label">
+                        ORIGINAL SAJU STORY
                     </span>
 
                     <h1 id="resultTitle">
-                        사주 분석 결과
+                        당신의 사주 이야기
                     </h1>
 
                     <p id="resultSummary">
                     </p>
 
+                    <span class="scroll-guide">
+                        아래로 내려 이야기를 읽어보세요 ↓
+                    </span>
+
                 </div>
 
             </div>
 
-            <div class="result-content">
+            <div class="webtoon-page">
 
-                <section class="result-section">
+                <div id="webtoonResult"
+                     class="webtoon-story"
+                     aria-live="polite">
+                </div>
 
-                    <div class="result-section-heading">
-                        <h2>기본 만세력</h2>
-                    </div>
+                <section class="ending-actions">
 
-                    <div id="calendarResult"
-                         class="calendar-result">
-                    </div>
+                    <p id="resultDisclaimer">
+                    </p>
 
-                    <div id="pillarResult"
-                         class="pillar-grid">
-                    </div>
-
-                </section>
-
-                <section class="result-section">
-
-                    <div class="result-section-heading">
-                        <h2>오행과 음양</h2>
-                    </div>
-
-                    <div id="elementResult"
-                         class="balance-card">
-                    </div>
-
-                    <div id="yinYangResult"
-                         class="balance-card">
-                    </div>
+                    <button type="button"
+                            class="secondary-button"
+                            data-go="home">
+                        홈으로 돌아가기
+                    </button>
 
                 </section>
-
-                <section class="result-section">
-
-                    <div class="result-section-heading">
-                        <h2>십성 분포</h2>
-                    </div>
-
-                    <div id="tenGodResult"
-                         class="balance-card">
-                    </div>
-
-                </section>
-
-                <section class="result-section">
-
-                    <div class="result-section-heading">
-                        <h2>신강·신약과 용신</h2>
-                    </div>
-
-                    <div id="strengthResult"
-                         class="information-card">
-                    </div>
-
-                </section>
-
-                <section class="result-section">
-
-                    <div class="result-section-heading">
-                        <h2>태원·태식·명궁·신궁</h2>
-                    </div>
-
-                    <div id="structureResult"
-                         class="information-card">
-                    </div>
-
-                </section>
-
-                <section class="result-section">
-
-                    <div class="result-section-heading">
-                        <h2>합·충·형·파·해</h2>
-                    </div>
-
-                    <div id="relationResult"
-                         class="tag-result">
-                    </div>
-
-                </section>
-
-                <section class="result-section">
-
-                    <div class="result-section-heading">
-                        <h2>신살</h2>
-                    </div>
-
-                    <div id="shinsalResult"
-                         class="list-result">
-                    </div>
-
-                </section>
-
-                <section class="result-section">
-
-                    <div class="result-section-heading">
-                        <h2>대운과 세운</h2>
-                    </div>
-
-                    <div id="luckSummaryResult"
-                         class="information-card">
-                    </div>
-
-                    <div id="luckResult"
-                         class="luck-result">
-                    </div>
-
-                </section>
-
-                <section class="result-section">
-
-                    <div class="result-section-heading">
-                        <h2>분야별 해석</h2>
-                    </div>
-
-                    <div id="interpretationResult"
-                         class="interpretation-result">
-                    </div>
-
-                </section>
-
-                <p id="resultDisclaimer"
-                   class="result-disclaimer">
-                </p>
-
-                <button type="button"
-                        class="secondary-button"
-                        data-go="home">
-
-                    홈으로
-
-                </button>
 
             </div>
 
@@ -1030,11 +1035,12 @@
 
     </main>
 
+    <!-- 하단 내비게이션 -->
     <nav id="bottomNavigation"
          class="bottom-navigation">
 
         <button type="button"
-                class="navigation-item active"
+                class="navigation-item is-active"
                 data-go="home">
 
             <span>⌂</span>
@@ -1053,7 +1059,7 @@
 
         <button type="button"
                 class="navigation-item"
-                data-message="AI 타로">
+                onclick="window.location.href='/tarot'">
 
             <span>▣</span>
             <small>AI타로</small>
@@ -1088,7 +1094,9 @@
 
 </div>
 
-<script src="/js/index.js"></script>
+<script th:src="@{/js/index.js}"
+        src="/js/index.js">
+</script>
 
 </body>
 </html>
