@@ -1,53 +1,54 @@
 :root {
     /* 기본 배경 */
-    --bg: #f7f8fa;
-    --bg-soft: #eef2f7;
-    --bg-deep: #dce5ee;
+    --bg: #f5f1e8;
+    --bg-soft: #eee8dd;
+    --bg-deep: #dce4df;
 
     /* 카드 */
-    --surface: #ffffff;
-    --surface-2: #f1f4f8;
-    --surface-blue: #e4edf4;
+    --surface: #fffcf7;
+    --surface-2: #f3eee5;
+    --surface-teal: #e2ece8;
 
     /* 테두리 */
-    --line: rgba(48, 48, 79, 0.12);
+    --line: rgba(36, 75, 74, 0.13);
     --line-dark: rgba(255, 255, 255, 0.1);
 
     /* 글자 */
-    --text: #292b3b;
-    --sub: #73798a;
-    --muted: #9da5b5;
+    --text: #2f3431;
+    --sub: #747b75;
+    --muted: #9ba39d;
 
     /* 브랜드 메인 */
-    --midnight: #30304f;
-    --midnight-soft: #4a4c78;
-    --midnight-light: #858bbd;
-    --midnight-deep: #1b1c31;
+    --teal: #244b4a;
+    --teal-soft: #628a80;
+    --teal-light: #a8c1b8;
+    --teal-deep: #132d2c;
 
-    /* 인디고 */
-    --indigo: #656aa6;
-    --indigo-light: #aeb4dc;
-    --indigo-dark: #444978;
+    /* 보조 그린 */
+    --sage: #829f94;
+    --sage-light: #dce8e3;
+    --sage-dark: #4d7168;
 
-    /* 쿨 블루 */
-    --blue: #7fa3bd;
-    --blue-light: #dce8f0;
-    --blue-dark: #4f7188;
+    /* 브론즈 */
+    --bronze: #b88952;
+    --bronze-light: #dec39a;
+    --bronze-dark: #7a5632;
 
-    /* 샴페인 골드 */
-    --gold: #c9a86a;
-    --gold-light: #ead9b2;
-    --gold-dark: #95723d;
+    /* 샌드 */
+    --sand: #d8c6a8;
+    --sand-light: #f1e7d4;
+    --sand-dark: #a88d68;
 
     /* 기존 변수 호환 */
-    --pink: #656aa6;
-    --pink-light: #aeb4dc;
-    --pink-dark: #444978;
-    --purple: #656aa6;
+    --pink: #628a80;
+    --pink-light: #a8c1b8;
+    --pink-dark: #244b4a;
+    --purple: #527979;
+    --gold: #b88952;
 
     /* 상태 */
-    --green: #5b9a83;
-    --danger: #c75f72;
+    --green: #5f987b;
+    --danger: #bd665f;
 }
 
 * {
@@ -60,9 +61,9 @@ html {
     background:
             linear-gradient(
                     155deg,
-                    #fbfcfd 0%,
-                    #f1f4f8 52%,
-                    #dfe8ef 100%
+                    #fcfaf5 0%,
+                    #f5f1e8 52%,
+                    #e2e9e5 100%
             );
 }
 
@@ -73,19 +74,19 @@ body {
     background:
             radial-gradient(
                     circle at 92% 8%,
-                    rgba(101, 106, 166, 0.22),
+                    rgba(98, 138, 128, 0.24),
                     transparent 420px
             ),
             radial-gradient(
                     circle at 8% 72%,
-                    rgba(127, 163, 189, 0.24),
+                    rgba(184, 137, 82, 0.14),
                     transparent 370px
             ),
             linear-gradient(
                     155deg,
-                    #fbfcfd 0%,
-                    #f1f4f8 52%,
-                    #dfe8ef 100%
+                    #fcfaf5 0%,
+                    #f5f1e8 52%,
+                    #e2e9e5 100%
             );
 
     color: var(--text);
@@ -114,7 +115,7 @@ input:focus-visible,
 summary:focus-visible {
     outline:
             2px solid
-            var(--indigo-light);
+            var(--teal-light);
 
     outline-offset: 2px;
 }
@@ -164,16 +165,16 @@ legend {
     background:
             linear-gradient(
                     165deg,
-                    #fbfcfd 0%,
-                    #f2f5f8 52%,
-                    #e4ebf1 100%
+                    #fcfaf5 0%,
+                    #f5f1e8 52%,
+                    #e3eae6 100%
             );
 
     box-shadow:
             0
             22px
             70px
-            rgba(36, 39, 69, 0.18);
+            rgba(36, 75, 74, 0.18);
 }
 
 /* =========================================================
@@ -205,13 +206,13 @@ legend {
             1px solid var(--line);
 
     background:
-            rgba(248, 250, 252, 0.94);
+            rgba(252, 250, 245, 0.94);
 
     box-shadow:
             0
             6px
             22px
-            rgba(36, 39, 69, 0.06);
+            rgba(36, 75, 74, 0.06);
 
     backdrop-filter: blur(22px);
     -webkit-backdrop-filter: blur(22px);
@@ -227,20 +228,20 @@ legend {
 
     border:
             1px solid
-            rgba(48, 48, 79, 0.1);
+            rgba(36, 75, 74, 0.11);
 
     border-radius: 12px;
 
     background:
-            rgba(255, 255, 255, 0.84);
+            rgba(255, 252, 247, 0.86);
 
-    color: var(--midnight);
+    color: var(--teal);
 
     box-shadow:
             0
             5px
             15px
-            rgba(36, 39, 69, 0.07);
+            rgba(36, 75, 74, 0.07);
 
     font-size: 28px;
     line-height: 1;
@@ -284,7 +285,7 @@ legend {
 }
 
 .header-copy strong {
-    color: var(--midnight);
+    color: var(--teal);
 
     font-size: 15px;
 }
@@ -327,24 +328,24 @@ legend {
 
     border:
             1px solid
-            rgba(201, 168, 106, 0.28);
+            rgba(184, 137, 82, 0.3);
 
     border-radius: 999px;
 
     background:
             linear-gradient(
                     135deg,
-                    rgba(255, 255, 255, 0.94),
-                    rgba(234, 217, 178, 0.84)
+                    rgba(255, 252, 247, 0.96),
+                    rgba(222, 195, 154, 0.86)
             );
 
-    color: var(--midnight);
+    color: var(--teal);
 
     box-shadow:
             0
             5px
             13px
-            rgba(149, 114, 61, 0.12);
+            rgba(122, 86, 50, 0.13);
 
     font-size: 9px;
     font-weight: 900;
@@ -374,9 +375,9 @@ legend {
     background:
             linear-gradient(
                     135deg,
-                    #8188c1 0%,
-                    var(--indigo) 48%,
-                    var(--indigo-dark) 100%
+                    #739b91 0%,
+                    var(--teal-soft) 46%,
+                    var(--teal) 100%
             );
 
     color: #ffffff;
@@ -385,7 +386,7 @@ legend {
             0
             11px
             24px
-            rgba(68, 73, 120, 0.25);
+            rgba(36, 75, 74, 0.25);
 }
 
 .primary-button.compact {
@@ -419,7 +420,7 @@ legend {
             1px solid var(--line);
 
     background:
-            rgba(255, 255, 255, 0.92);
+            rgba(255, 252, 247, 0.94);
 
     color: var(--text);
 
@@ -427,7 +428,7 @@ legend {
             0
             7px
             18px
-            rgba(36, 39, 69, 0.07);
+            rgba(36, 75, 74, 0.07);
 
     font-size: 13px;
 }
@@ -470,19 +471,19 @@ legend {
     background:
             radial-gradient(
                     circle at 94% 4%,
-                    rgba(101, 106, 166, 0.22),
+                    rgba(98, 138, 128, 0.24),
                     transparent 280px
             ),
             radial-gradient(
                     circle at 5% 67%,
-                    rgba(127, 163, 189, 0.22),
+                    rgba(184, 137, 82, 0.14),
                     transparent 340px
             ),
             linear-gradient(
                     165deg,
-                    #fbfcfd 0%,
-                    #f2f5f8 50%,
-                    #e3ebf1 100%
+                    #fcfaf5 0%,
+                    #f5f1e8 50%,
+                    #e3eae6 100%
             );
 }
 
@@ -500,7 +501,7 @@ legend {
     background:
             radial-gradient(
                     circle,
-                    rgba(101, 106, 166, 0.14),
+                    rgba(36, 75, 74, 0.13),
                     transparent 70%
             );
 
@@ -525,7 +526,7 @@ legend {
     background:
             radial-gradient(
                     circle,
-                    rgba(127, 163, 189, 0.2),
+                    rgba(184, 137, 82, 0.14),
                     transparent 72%
             );
 
@@ -558,7 +559,7 @@ legend {
             0
             6px;
 
-    color: var(--midnight);
+    color: var(--teal);
 
     font-size: 20px;
     letter-spacing: -0.03em;
@@ -593,19 +594,19 @@ legend {
     background:
             radial-gradient(
                     circle at 35% 30%,
-                    #fffef8,
-                    var(--gold-light) 42%,
-                    var(--gold) 72%,
-                    var(--gold-dark) 100%
+                    #fffdf5,
+                    var(--bronze-light) 42%,
+                    var(--bronze) 72%,
+                    var(--bronze-dark) 100%
             );
 
-    color: var(--midnight);
+    color: var(--teal-deep);
 
     box-shadow:
             0
             11px
             25px
-            rgba(149, 114, 61, 0.2),
+            rgba(122, 86, 50, 0.22),
             inset
             0
             1px
@@ -648,17 +649,17 @@ legend {
     background:
             linear-gradient(
                     145deg,
-                    rgba(255, 255, 255, 0.97),
-                    rgba(241, 244, 248, 0.9)
+                    rgba(255, 252, 247, 0.98),
+                    rgba(243, 238, 229, 0.9)
             );
 
-    color: var(--midnight);
+    color: var(--teal);
 
     box-shadow:
             0
             9px
             22px
-            rgba(36, 39, 69, 0.08),
+            rgba(36, 75, 74, 0.08),
             inset
             0
             1px
@@ -683,7 +684,7 @@ legend {
             0
             5px
             14px
-            rgba(36, 39, 69, 0.08);
+            rgba(36, 75, 74, 0.08);
 }
 
 .fortune-menu button span {
@@ -699,17 +700,17 @@ legend {
     background:
             linear-gradient(
                     145deg,
-                    #e7e9f6,
-                    var(--indigo-light)
+                    #e6efeb,
+                    var(--teal-light)
             );
 
-    color: var(--indigo-dark);
+    color: var(--teal-deep);
 
     box-shadow:
             0
             5px
             12px
-            rgba(68, 73, 120, 0.14);
+            rgba(36, 75, 74, 0.14);
 
     font-size: 14px;
     font-weight: 900;
@@ -719,32 +720,32 @@ legend {
     background:
             linear-gradient(
                     145deg,
-                    #edf4f8,
-                    #a9c3d5
+                    #f3eadb,
+                    var(--sand)
             );
 
-    color: var(--blue-dark);
+    color: var(--bronze-dark);
 
     box-shadow:
             0
             5px
             12px
-            rgba(79, 113, 136, 0.14);
+            rgba(122, 86, 50, 0.14);
 }
 
 .fortune-menu button:nth-child(3n) span {
     background:
             linear-gradient(
                     145deg,
-                    #fff5df,
-                    var(--gold-light)
+                    #fff4df,
+                    var(--bronze-light)
             );
 
-    color: var(--gold-dark);
+    color: var(--bronze-dark);
 }
 
 .fortune-menu small {
-    color: var(--midnight);
+    color: var(--teal);
 
     font-size: 9px;
     font-weight: 800;
@@ -772,21 +773,21 @@ legend {
     background:
             radial-gradient(
                     circle at 78% 14%,
-                    rgba(201, 168, 106, 0.2),
+                    rgba(222, 195, 154, 0.22),
                     transparent 150px
             ),
             linear-gradient(
                     145deg,
-                    var(--midnight-soft) 0%,
-                    var(--midnight) 48%,
-                    var(--midnight-deep) 100%
+                    var(--teal-soft) 0%,
+                    var(--teal) 48%,
+                    var(--teal-deep) 100%
             );
 
     box-shadow:
             0
             18px
             40px
-            rgba(36, 39, 69, 0.25);
+            rgba(36, 75, 74, 0.26);
 
     isolation: isolate;
 }
@@ -805,7 +806,7 @@ legend {
     background:
             radial-gradient(
                     circle,
-                    rgba(234, 217, 178, 0.2),
+                    rgba(222, 195, 154, 0.2),
                     transparent 70%
             );
 
@@ -830,7 +831,7 @@ legend {
     background:
             radial-gradient(
                     circle,
-                    rgba(127, 163, 189, 0.22),
+                    rgba(168, 193, 184, 0.2),
                     transparent 70%
             );
 
@@ -852,7 +853,7 @@ legend {
     object-position: 57% 27%;
 
     filter:
-            brightness(0.8)
+            brightness(0.78)
             saturate(0.82)
             contrast(1.06);
 
@@ -867,9 +868,9 @@ legend {
     background:
             linear-gradient(
                     90deg,
-                    rgba(27, 28, 49, 0.98),
-                    rgba(48, 48, 79, 0.88) 43%,
-                    rgba(74, 76, 120, 0.34) 78%,
+                    rgba(19, 45, 44, 0.98),
+                    rgba(36, 75, 74, 0.88) 43%,
+                    rgba(98, 138, 128, 0.34) 78%,
                     rgba(255, 255, 255, 0.02) 100%
             );
 }
@@ -904,14 +905,14 @@ legend {
             0
             4px
             17px
-            rgba(27, 28, 49, 0.4);
+            rgba(19, 45, 44, 0.42);
 }
 
 .main-hero-copy p {
     margin: 0;
 
     color:
-            rgba(255, 255, 255, 0.8);
+            rgba(255, 255, 255, 0.81);
 
     font-size: 10px;
     line-height: 1.7;
@@ -940,7 +941,7 @@ legend {
 .section-heading h2 {
     margin: 0;
 
-    color: var(--midnight);
+    color: var(--teal);
 
     font-size: 15px;
 }
@@ -983,7 +984,7 @@ legend {
             0
             12px
             26px
-            rgba(36, 39, 69, 0.13);
+            rgba(36, 75, 74, 0.13);
 
     text-align: left;
 
@@ -999,7 +1000,7 @@ legend {
             0
             8px
             18px
-            rgba(36, 39, 69, 0.11);
+            rgba(36, 75, 74, 0.11);
 }
 
 .recommend-card img {
@@ -1010,8 +1011,8 @@ legend {
     object-position: 50% 27%;
 
     filter:
-            brightness(0.84)
-            saturate(0.86)
+            brightness(0.82)
+            saturate(0.84)
             contrast(1.04);
 }
 
@@ -1022,8 +1023,8 @@ legend {
     background:
             linear-gradient(
                     to top,
-                    rgba(27, 28, 49, 0.97),
-                    rgba(48, 48, 79, 0.56) 45%,
+                    rgba(19, 45, 44, 0.97),
+                    rgba(36, 75, 74, 0.58) 45%,
                     transparent 78%
             );
 }
@@ -1043,17 +1044,17 @@ legend {
     background:
             linear-gradient(
                     135deg,
-                    var(--gold-light),
-                    var(--gold)
+                    var(--bronze-light),
+                    var(--bronze)
             );
 
-    color: var(--midnight);
+    color: var(--teal-deep);
 
     box-shadow:
             0
             5px
             13px
-            rgba(149, 114, 61, 0.24);
+            rgba(122, 86, 50, 0.25);
 
     font-size: 8px;
     font-weight: 900;
@@ -1063,8 +1064,8 @@ legend {
     background:
             linear-gradient(
                     135deg,
-                    var(--indigo-light),
-                    var(--indigo)
+                    var(--teal-light),
+                    var(--teal-soft)
             );
 
     color: #ffffff;
@@ -1073,7 +1074,7 @@ legend {
             0
             5px
             13px
-            rgba(68, 73, 120, 0.25);
+            rgba(36, 75, 74, 0.25);
 }
 
 .recommend-card strong {
@@ -1091,7 +1092,7 @@ legend {
             0
             2px
             10px
-            rgba(27, 28, 49, 0.42);
+            rgba(19, 45, 44, 0.44);
 }
 
 .recommend-card small {
@@ -1115,19 +1116,19 @@ legend {
     background:
             radial-gradient(
                     circle at 72% 10%,
-                    rgba(234, 217, 178, 0.24),
+                    rgba(222, 195, 154, 0.25),
                     transparent 120px
             ),
             radial-gradient(
                     circle at 10% 85%,
-                    rgba(127, 163, 189, 0.18),
+                    rgba(168, 193, 184, 0.18),
                     transparent 140px
             ),
             linear-gradient(
                     145deg,
-                    var(--indigo-light) 0%,
-                    var(--indigo) 52%,
-                    var(--indigo-dark) 100%
+                    #73978f 0%,
+                    #416d68 52%,
+                    #193d3b 100%
             );
 }
 
@@ -1135,8 +1136,8 @@ legend {
     background:
             linear-gradient(
                     to top,
-                    rgba(27, 28, 49, 0.97),
-                    rgba(68, 73, 120, 0.42) 58%,
+                    rgba(19, 45, 44, 0.98),
+                    rgba(36, 75, 74, 0.42) 58%,
                     transparent 82%
             );
 }
@@ -1165,24 +1166,24 @@ legend {
 
     border:
             2px solid
-            var(--gold-light);
+            var(--bronze-light);
 
     border-radius: 7px;
 
     background:
             linear-gradient(
                     145deg,
-                    var(--indigo-dark),
-                    var(--midnight-deep)
+                    var(--teal),
+                    var(--teal-deep)
             );
 
-    color: var(--gold-light);
+    color: var(--bronze-light);
 
     box-shadow:
             0
             8px
             18px
-            rgba(27, 28, 49, 0.3);
+            rgba(19, 45, 44, 0.32);
 
     font-size: 20px;
 }
@@ -1207,18 +1208,18 @@ legend {
     background:
             radial-gradient(
                     circle at 75% 10%,
-                    rgba(101, 106, 166, 0.22),
+                    rgba(98, 138, 128, 0.2),
                     transparent 220px
             ),
             radial-gradient(
                     circle at 8% 80%,
-                    rgba(127, 163, 189, 0.18),
+                    rgba(184, 137, 82, 0.13),
                     transparent 240px
             ),
             linear-gradient(
                     180deg,
-                    #eef2f7,
-                    #dce6ee
+                    #f2eee5,
+                    #dce6e1
             );
 }
 
@@ -1251,7 +1252,7 @@ legend {
             linear-gradient(
                     to bottom,
                     transparent 38%,
-                    rgba(48, 48, 79, 0.14) 68%,
+                    rgba(36, 75, 74, 0.14) 68%,
                     var(--bg) 100%
             );
 }
@@ -1274,7 +1275,7 @@ legend {
     border-radius: 17px;
 
     background:
-            rgba(255, 255, 255, 0.97);
+            rgba(255, 252, 247, 0.97);
 
     color: var(--text);
 
@@ -1282,7 +1283,7 @@ legend {
             0
             12px
             30px
-            rgba(36, 39, 69, 0.16);
+            rgba(36, 75, 74, 0.16);
 }
 
 .speech-bubble.left {
@@ -1299,7 +1300,7 @@ legend {
     height: 13px;
 
     background:
-            rgba(255, 255, 255, 0.97);
+            rgba(255, 252, 247, 0.97);
 
     content: "";
 
@@ -1311,7 +1312,7 @@ legend {
 }
 
 .speech-bubble span {
-    color: var(--indigo);
+    color: var(--teal-soft);
 
     font-size: 9px;
     font-weight: 900;
@@ -1351,7 +1352,7 @@ legend {
     background:
             linear-gradient(
                     180deg,
-                    #fbfcfd,
+                    #fcfaf5,
                     var(--bg)
             );
 }
@@ -1363,7 +1364,7 @@ legend {
             0
             8px;
 
-    color: var(--midnight);
+    color: var(--teal);
 
     font-size: 24px;
 }
@@ -1397,13 +1398,13 @@ legend {
     border-radius: 13px;
 
     background:
-            rgba(255, 255, 255, 0.92);
+            rgba(255, 252, 247, 0.92);
 
     box-shadow:
             0
             7px
             18px
-            rgba(36, 39, 69, 0.05);
+            rgba(36, 75, 74, 0.05);
 }
 
 .step-guide strong {
@@ -1419,11 +1420,11 @@ legend {
     background:
             linear-gradient(
                     145deg,
-                    #e7e9f6,
-                    var(--indigo-light)
+                    #e6efeb,
+                    var(--teal-light)
             );
 
-    color: var(--indigo-dark);
+    color: var(--teal-deep);
 
     font-size: 10px;
 }
@@ -1461,7 +1462,7 @@ legend {
     outline: none;
 
     background:
-            rgba(255, 255, 255, 0.95);
+            rgba(255, 252, 247, 0.96);
 
     color: var(--text);
 
@@ -1480,14 +1481,14 @@ legend {
 }
 
 .text-input:focus {
-    border-color: var(--indigo);
+    border-color: var(--teal-soft);
 
     box-shadow:
             0
             0
             0
             3px
-            rgba(101, 106, 166, 0.13);
+            rgba(98, 138, 128, 0.14);
 }
 
 .error-message {
@@ -1519,7 +1520,7 @@ legend {
     border-radius: 14px;
 
     background:
-            rgba(255, 255, 255, 0.82);
+            rgba(255, 252, 247, 0.84);
 
     box-shadow:
             inset
@@ -1546,8 +1547,8 @@ legend {
     background:
             linear-gradient(
                     135deg,
-                    #8188c1,
-                    var(--indigo)
+                    #739b91,
+                    var(--teal)
             );
 
     color: #ffffff;
@@ -1556,7 +1557,7 @@ legend {
             0
             7px
             16px
-            rgba(68, 73, 120, 0.2);
+            rgba(36, 75, 74, 0.21);
 }
 
 .option-box {
@@ -1575,13 +1576,13 @@ legend {
     border-radius: 13px;
 
     background:
-            rgba(255, 255, 255, 0.78);
+            rgba(255, 252, 247, 0.8);
 
     box-shadow:
             0
             7px
             18px
-            rgba(36, 39, 69, 0.05);
+            rgba(36, 75, 74, 0.05);
 }
 
 .option-box label,
@@ -1603,7 +1604,7 @@ legend {
     width: 17px;
     height: 17px;
 
-    accent-color: var(--indigo);
+    accent-color: var(--teal-soft);
 }
 
 .option-box p {
@@ -1719,13 +1720,13 @@ legend {
     border-radius: 16px;
 
     background:
-            rgba(255, 255, 255, 0.94);
+            rgba(255, 252, 247, 0.95);
 
     box-shadow:
             0
             9px
             24px
-            rgba(36, 39, 69, 0.06);
+            rgba(36, 75, 74, 0.06);
 }
 
 .review-card div {
@@ -1776,18 +1777,18 @@ legend {
     background:
             radial-gradient(
                     circle at 80% 12%,
-                    rgba(101, 106, 166, 0.22),
+                    rgba(98, 138, 128, 0.22),
                     transparent 240px
             ),
             radial-gradient(
                     circle at 8% 70%,
-                    rgba(127, 163, 189, 0.2),
+                    rgba(184, 137, 82, 0.14),
                     transparent 260px
             ),
             linear-gradient(
                     165deg,
-                    #fbfcfd,
-                    #e8eef3
+                    #fcfaf5,
+                    #e6ece8
             );
 
     text-align: center;
@@ -1804,7 +1805,7 @@ legend {
     border-radius: 50%;
 
     background:
-            rgba(91, 154, 131, 0.14);
+            rgba(95, 152, 123, 0.14);
 
     color: var(--green);
 
@@ -1812,7 +1813,7 @@ legend {
             0
             12px
             28px
-            rgba(91, 154, 131, 0.14);
+            rgba(95, 152, 123, 0.14);
 
     font-size: 31px;
 }
@@ -1823,7 +1824,7 @@ legend {
             0
             9px;
 
-    color: var(--midnight);
+    color: var(--teal);
 
     font-size: 24px;
 }
@@ -1852,8 +1853,8 @@ legend {
 
 .analysis-page {
     --text: #ffffff;
-    --sub: #cfd3e2;
-    --muted: #9ea5bb;
+    --sub: #cedbd6;
+    --muted: #9eb0aa;
     --line: rgba(255, 255, 255, 0.1);
 
     position: relative;
@@ -1866,19 +1867,19 @@ legend {
     background:
             radial-gradient(
                     circle at 75% 8%,
-                    rgba(101, 106, 166, 0.28),
+                    rgba(98, 138, 128, 0.28),
                     transparent 240px
             ),
             radial-gradient(
                     circle at 15% 68%,
-                    rgba(127, 163, 189, 0.18),
+                    rgba(184, 137, 82, 0.17),
                     transparent 280px
             ),
             linear-gradient(
                     180deg,
-                    var(--midnight) 0%,
-                    var(--midnight-deep) 58%,
-                    #10111e 100%
+                    var(--teal) 0%,
+                    var(--teal-deep) 58%,
+                    #091b1a 100%
             );
 
     color: #ffffff;
@@ -1897,7 +1898,7 @@ legend {
     opacity: 0.34;
 
     filter:
-            saturate(0.82)
+            saturate(0.8)
             contrast(1.05);
 
     transform: scale(1.04);
@@ -1910,9 +1911,9 @@ legend {
     background:
             linear-gradient(
                     to bottom,
-                    rgba(48, 48, 79, 0.14),
-                    rgba(27, 28, 49, 0.9) 43%,
-                    #10111e 72%
+                    rgba(36, 75, 74, 0.14),
+                    rgba(19, 45, 44, 0.91) 43%,
+                    #091b1a 72%
             );
 }
 
@@ -1949,7 +1950,7 @@ legend {
 
     background:
             conic-gradient(
-                    var(--gold-light)
+                    var(--bronze-light)
                     calc(var(--progress) * 1%),
                     rgba(255, 255, 255, 0.1)
                     0
@@ -1959,7 +1960,7 @@ legend {
             0
             0
             42px
-            rgba(101, 106, 166, 0.34);
+            rgba(98, 138, 128, 0.34);
 }
 
 .progress-ring::before {
@@ -1975,7 +1976,7 @@ legend {
     border-radius: 50%;
 
     background:
-            rgba(27, 28, 49, 0.98);
+            rgba(19, 45, 44, 0.98);
 
     content: "";
 }
@@ -2056,16 +2057,16 @@ legend {
     background:
             linear-gradient(
                     90deg,
-                    var(--indigo),
-                    var(--blue),
-                    var(--gold-light)
+                    var(--teal-soft),
+                    var(--sage),
+                    var(--bronze-light)
             );
 
     box-shadow:
             0
             0
             18px
-            rgba(220, 232, 240, 0.36);
+            rgba(220, 195, 154, 0.38);
 
     transition:
             width 0.12s linear;
@@ -2119,7 +2120,7 @@ legend {
     border-radius: 14px;
 
     background:
-            rgba(48, 48, 79, 0.72);
+            rgba(36, 75, 74, 0.72);
 
     opacity: 0.42;
 
@@ -2129,10 +2130,10 @@ legend {
 
 .analysis-step.is-active {
     border-color:
-            rgba(234, 217, 178, 0.36);
+            rgba(222, 195, 154, 0.38);
 
     background:
-            rgba(101, 106, 166, 0.6);
+            rgba(98, 138, 128, 0.62);
 
     opacity: 1;
 
@@ -2141,7 +2142,7 @@ legend {
 
 .analysis-step.is-complete {
     border-color:
-            rgba(91, 154, 131, 0.34);
+            rgba(95, 152, 123, 0.34);
 
     opacity: 1;
 }
@@ -2156,18 +2157,18 @@ legend {
 
     border:
             1px solid
-            rgba(234, 217, 178, 0.26);
+            rgba(222, 195, 154, 0.28);
 
     border-radius: 10px;
 
     background:
             linear-gradient(
                     135deg,
-                    var(--indigo-light),
-                    var(--blue)
+                    var(--teal-light),
+                    var(--bronze-light)
             );
 
-    color: var(--midnight-deep);
+    color: var(--teal-deep);
 
     font-size: 10px;
     font-weight: 900;
@@ -2176,7 +2177,7 @@ legend {
 .analysis-step.is-complete
 .analysis-step-number {
     background:
-            rgba(91, 154, 131, 0.16);
+            rgba(95, 152, 123, 0.16);
 
     color: #a3ebc8;
 }
@@ -2207,8 +2208,8 @@ legend {
 
 .webtoon-cover {
     --text: #ffffff;
-    --sub: #cfd3e2;
-    --muted: #9ea5bb;
+    --sub: #cedbd6;
+    --muted: #9eb0aa;
     --line: rgba(255, 255, 255, 0.1);
 
     position: relative;
@@ -2220,13 +2221,13 @@ legend {
     background:
             radial-gradient(
                     circle at 75% 8%,
-                    rgba(101, 106, 166, 0.28),
+                    rgba(98, 138, 128, 0.28),
                     transparent 240px
             ),
             linear-gradient(
                     180deg,
-                    var(--midnight),
-                    var(--midnight-deep)
+                    var(--teal),
+                    var(--teal-deep)
             );
 
     color: #ffffff;
@@ -2243,7 +2244,7 @@ legend {
     object-position: 50% 23%;
 
     filter:
-            saturate(0.84)
+            saturate(0.82)
             contrast(1.05);
 
     transform: scale(1.04);
@@ -2262,10 +2263,10 @@ legend {
     background:
             linear-gradient(
                     to bottom,
-                    rgba(27, 28, 49, 0.02),
-                    rgba(27, 28, 49, 0.22) 48%,
-                    rgba(27, 28, 49, 0.91) 78%,
-                    #10111e 100%
+                    rgba(19, 45, 44, 0.02),
+                    rgba(19, 45, 44, 0.22) 48%,
+                    rgba(19, 45, 44, 0.92) 78%,
+                    #091b1a 100%
             );
 }
 
@@ -2288,14 +2289,14 @@ legend {
 
     border:
             1px solid
-            rgba(234, 217, 178, 0.32);
+            rgba(222, 195, 154, 0.34);
 
     border-radius: 999px;
 
     background:
-            rgba(27, 28, 49, 0.48);
+            rgba(19, 45, 44, 0.48);
 
-    color: var(--gold-light);
+    color: var(--bronze-light);
 
     font-size: 8px;
     font-weight: 900;
@@ -2339,7 +2340,7 @@ legend {
 
     margin-top: 18px;
 
-    color: var(--blue-light);
+    color: var(--bronze-light);
 
     font-size: 9px;
     font-weight: 800;
@@ -2353,8 +2354,8 @@ legend {
 
 .webtoon-page {
     --text: #ffffff;
-    --sub: #cfd3e2;
-    --muted: #9ea5bb;
+    --sub: #cedbd6;
+    --muted: #9eb0aa;
     --line: rgba(255, 255, 255, 0.1);
 
     padding:
@@ -2365,8 +2366,8 @@ legend {
     background:
             linear-gradient(
                     180deg,
-                    var(--midnight-deep),
-                    #10111e
+                    var(--teal-deep),
+                    #091b1a
             );
 
     color: #ffffff;
@@ -2390,9 +2391,9 @@ legend {
     overflow: hidden;
 
     border-bottom:
-            8px solid #0c0d18;
+            8px solid #061311;
 
-    background: var(--midnight-deep);
+    background: var(--teal-deep);
 
     opacity: 0;
 
@@ -2429,13 +2430,13 @@ legend {
     background:
             radial-gradient(
                     circle at 80% 5%,
-                    rgba(101, 106, 166, 0.18),
+                    rgba(98, 138, 128, 0.18),
                     transparent 180px
             ),
             linear-gradient(
                     180deg,
-                    var(--midnight),
-                    var(--midnight-deep)
+                    var(--teal),
+                    var(--teal-deep)
             );
 }
 
@@ -2443,13 +2444,13 @@ legend {
     background:
             radial-gradient(
                     circle at 70% 10%,
-                    rgba(101, 106, 166, 0.28),
+                    rgba(98, 138, 128, 0.28),
                     transparent 170px
             ),
             linear-gradient(
                     180deg,
-                    #292a4c,
-                    #151627
+                    #1c4846,
+                    #0d2827
             );
 }
 
@@ -2457,13 +2458,13 @@ legend {
     background:
             radial-gradient(
                     circle at 15% 15%,
-                    rgba(201, 168, 106, 0.18),
+                    rgba(184, 137, 82, 0.2),
                     transparent 180px
             ),
             linear-gradient(
                     180deg,
-                    #383229,
-                    #1c1914
+                    #45382a,
+                    #251d15
             );
 }
 
@@ -2471,13 +2472,13 @@ legend {
     background:
             radial-gradient(
                     circle at 85% 10%,
-                    rgba(127, 163, 189, 0.22),
+                    rgba(168, 193, 184, 0.22),
                     transparent 190px
             ),
             linear-gradient(
                     180deg,
-                    #2c3148,
-                    #171925
+                    #254542,
+                    #132825
             );
 }
 
@@ -2526,10 +2527,10 @@ legend {
     background:
             linear-gradient(
                     to bottom,
-                    rgba(27, 28, 49, 0.04),
-                    rgba(27, 28, 49, 0.25) 42%,
-                    rgba(27, 28, 49, 0.95) 88%,
-                    #10111e 100%
+                    rgba(19, 45, 44, 0.04),
+                    rgba(19, 45, 44, 0.25) 42%,
+                    rgba(19, 45, 44, 0.95) 88%,
+                    #091b1a 100%
             );
 }
 
@@ -2537,9 +2538,9 @@ legend {
     background:
             linear-gradient(
                     90deg,
-                    rgba(27, 28, 49, 0.95),
-                    rgba(27, 28, 49, 0.34) 62%,
-                    rgba(27, 28, 49, 0.08)
+                    rgba(19, 45, 44, 0.95),
+                    rgba(19, 45, 44, 0.34) 62%,
+                    rgba(19, 45, 44, 0.08)
             );
 }
 
@@ -2547,9 +2548,9 @@ legend {
     background:
             linear-gradient(
                     270deg,
-                    rgba(27, 28, 49, 0.95),
-                    rgba(27, 28, 49, 0.34) 62%,
-                    rgba(27, 28, 49, 0.08)
+                    rgba(19, 45, 44, 0.95),
+                    rgba(19, 45, 44, 0.34) 62%,
+                    rgba(19, 45, 44, 0.08)
             );
 }
 
@@ -2584,7 +2585,7 @@ legend {
 }
 
 .scene-kicker {
-    color: var(--gold-light);
+    color: var(--bronze-light);
 
     font-size: 9px;
     font-weight: 900;
@@ -2639,7 +2640,7 @@ legend {
     border-radius: 19px;
 
     background:
-            rgba(255, 255, 255, 0.97);
+            rgba(255, 252, 247, 0.97);
 
     color: var(--text);
 
@@ -2688,7 +2689,7 @@ legend {
     height: 14px;
 
     background:
-            rgba(255, 255, 255, 0.97);
+            rgba(255, 252, 247, 0.97);
 
     content: "";
 
@@ -2708,7 +2709,7 @@ legend {
 
     margin-bottom: 6px;
 
-    color: var(--indigo);
+    color: var(--teal-soft);
 
     font-size: 10px;
 }
@@ -2741,7 +2742,7 @@ legend {
     border-radius: 13px;
 
     background:
-            rgba(27, 28, 49, 0.78);
+            rgba(19, 45, 44, 0.8);
 
     color:
             rgba(255, 255, 255, 0.84);
@@ -2756,7 +2757,7 @@ legend {
 }
 
 .comic-caption strong {
-    color: var(--gold-light);
+    color: var(--bronze-light);
 }
 
 /* =========================================================
@@ -2835,18 +2836,18 @@ legend {
 
 .narration-line.accent {
     border-color:
-            rgba(220, 232, 240, 0.2);
+            rgba(222, 195, 154, 0.22);
 
     background:
             linear-gradient(
                     135deg,
-                    rgba(101, 106, 166, 0.16),
-                    rgba(127, 163, 189, 0.14)
+                    rgba(98, 138, 128, 0.16),
+                    rgba(184, 137, 82, 0.12)
             );
 }
 
 .narration-line.accent p {
-    color: var(--blue-light);
+    color: var(--bronze-light);
 
     font-weight: 800;
 }
@@ -2870,7 +2871,7 @@ legend {
     border-radius: 15px;
 
     background:
-            rgba(27, 28, 49, 0.88);
+            rgba(19, 45, 44, 0.88);
 
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -3002,7 +3003,7 @@ legend {
 
     border-left:
             3px solid
-            var(--gold);
+            var(--bronze);
 
     border-radius:
             0
@@ -3011,7 +3012,7 @@ legend {
             0;
 
     background:
-            rgba(201, 168, 106, 0.08);
+            rgba(184, 137, 82, 0.09);
 
     color: var(--sub);
 
@@ -3079,16 +3080,16 @@ legend {
     background:
             linear-gradient(
                     90deg,
-                    var(--indigo),
-                    var(--blue),
-                    var(--gold-light)
+                    var(--teal-soft),
+                    var(--sage),
+                    var(--bronze-light)
             );
 
     box-shadow:
             0
             0
             12px
-            rgba(220, 232, 240, 0.24);
+            rgba(222, 195, 154, 0.26);
 }
 
 /* =========================================================
@@ -3126,7 +3127,7 @@ legend {
 
     margin-bottom: 5px;
 
-    color: var(--blue-light);
+    color: var(--bronze-light);
 
     font-size: 10px;
 }
@@ -3165,7 +3166,7 @@ legend {
 
     border:
             1px solid
-            rgba(234, 217, 178, 0.12);
+            rgba(222, 195, 154, 0.13);
 
     border-radius: 11px;
 
@@ -3204,7 +3205,7 @@ legend {
 .pillar-mini small {
     display: block;
 
-    color: var(--gold-light);
+    color: var(--bronze-light);
 
     font-size: 7px;
 }
@@ -3236,13 +3237,13 @@ legend {
 
 .luck-block.is-current {
     border-color:
-            rgba(220, 232, 240, 0.28);
+            rgba(222, 195, 154, 0.3);
 
     background:
             linear-gradient(
                     135deg,
-                    rgba(101, 106, 166, 0.11),
-                    rgba(127, 163, 189, 0.09)
+                    rgba(98, 138, 128, 0.12),
+                    rgba(184, 137, 82, 0.09)
             );
 }
 
@@ -3315,7 +3316,7 @@ legend {
 
     margin-bottom: 4px;
 
-    color: var(--gold-light);
+    color: var(--bronze-light);
 }
 
 /* =========================================================
@@ -3433,13 +3434,13 @@ legend {
             1px solid var(--line);
 
     background:
-            rgba(248, 250, 252, 0.95);
+            rgba(252, 250, 245, 0.95);
 
     box-shadow:
             0
             -9px
             27px
-            rgba(36, 39, 69, 0.09);
+            rgba(36, 75, 74, 0.09);
 
     backdrop-filter: blur(22px);
     -webkit-backdrop-filter: blur(22px);
@@ -3462,7 +3463,7 @@ legend {
 
     background: transparent;
 
-    color: #8b92a3;
+    color: #8d9791;
 
     transition:
             background 0.2s ease,
@@ -3474,11 +3475,11 @@ legend {
     background:
             linear-gradient(
                     145deg,
-                    rgba(231, 233, 246, 0.86),
-                    rgba(220, 232, 240, 0.62)
+                    rgba(226, 236, 232, 0.88),
+                    rgba(241, 231, 212, 0.65)
             );
 
-    color: var(--indigo);
+    color: var(--teal);
 }
 
 .navigation-item:active {
@@ -3513,12 +3514,12 @@ legend {
 
     border:
             1px solid
-            rgba(234, 217, 178, 0.18);
+            rgba(222, 195, 154, 0.2);
 
     border-radius: 12px;
 
     background:
-            rgba(27, 28, 49, 0.96);
+            rgba(19, 45, 44, 0.96);
 
     color: #ffffff;
 
@@ -3526,7 +3527,7 @@ legend {
             0
             13px
             30px
-            rgba(27, 28, 49, 0.28);
+            rgba(19, 45, 44, 0.3);
 
     font-size: 11px;
 
@@ -3555,39 +3556,39 @@ legend {
 
 .cinematic-card {
     border-color:
-            rgba(201, 168, 106, 0.3);
+            rgba(184, 137, 82, 0.32);
 
     background:
             radial-gradient(
                     circle at top right,
-                    rgba(101, 106, 166, 0.32),
+                    rgba(98, 138, 128, 0.32),
                     transparent 115px
             ),
             radial-gradient(
                     circle at bottom left,
-                    rgba(127, 163, 189, 0.18),
+                    rgba(184, 137, 82, 0.18),
                     transparent 130px
             ),
             linear-gradient(
                     145deg,
-                    var(--midnight-soft) 0%,
-                    var(--midnight) 52%,
-                    var(--midnight-deep) 100%
+                    var(--teal-soft) 0%,
+                    var(--teal) 52%,
+                    var(--teal-deep) 100%
             );
 
     box-shadow:
             0
             14px
             30px
-            rgba(36, 39, 69, 0.21);
+            rgba(36, 75, 74, 0.22);
 }
 
 .cinematic-card img {
     object-position: 50% 27%;
 
     filter:
-            brightness(0.78)
-            saturate(0.82)
+            brightness(0.77)
+            saturate(0.8)
             contrast(1.06);
 }
 
@@ -3595,9 +3596,9 @@ legend {
     background:
             linear-gradient(
                     to top,
-                    rgba(27, 28, 49, 0.98),
-                    rgba(48, 48, 79, 0.54) 55%,
-                    rgba(127, 163, 189, 0.04) 100%
+                    rgba(19, 45, 44, 0.98),
+                    rgba(36, 75, 74, 0.56) 55%,
+                    rgba(168, 193, 184, 0.04) 100%
             );
 }
 
@@ -3607,17 +3608,17 @@ legend {
     background:
             linear-gradient(
                     135deg,
-                    var(--gold-light),
-                    var(--gold)
+                    var(--bronze-light),
+                    var(--bronze)
             );
 
-    color: var(--midnight-deep);
+    color: var(--teal-deep);
 
     box-shadow:
             0
             6px
             16px
-            rgba(27, 28, 49, 0.3);
+            rgba(19, 45, 44, 0.3);
 
     font-weight: 900;
 }
@@ -3630,7 +3631,7 @@ legend {
 
     .fortune-menu button:hover {
         border-color:
-                rgba(101, 106, 166, 0.22);
+                rgba(98, 138, 128, 0.24);
 
         transform: translateY(-2px);
 
@@ -3638,7 +3639,7 @@ legend {
                 0
                 13px
                 28px
-                rgba(36, 39, 69, 0.12);
+                rgba(36, 75, 74, 0.12);
     }
 
     .recommend-card:hover {
@@ -3648,7 +3649,7 @@ legend {
                 0
                 18px
                 36px
-                rgba(36, 39, 69, 0.18);
+                rgba(36, 75, 74, 0.19);
     }
 
     .primary-button:hover {
