@@ -1,23 +1,24 @@
 :root {
-    --bg: #07101f;
-    --bg-deep: #020711;
-    --surface: #101a2e;
-    --surface-2: #17243d;
+    --bg: #fff7fa;
+    --bg-deep: #f3dfe7;
 
-    --line: rgba(255, 255, 255, 0.09);
+    --surface: #ffffff;
+    --surface-2: #fff0f5;
 
-    --text: #ffffff;
-    --sub: #9da9be;
-    --muted: #6f7b91;
+    --line: rgba(118, 70, 89, 0.12);
 
-    --pink: #ec4a82;
-    --pink-light: #ff78a8;
-    --pink-dark: #c43269;
+    --text: #432c35;
+    --sub: #92707d;
+    --muted: #b3919d;
 
-    --purple: #8b6df3;
-    --gold: #ffc76b;
-    --green: #64daa1;
-    --danger: #ff7181;
+    --pink: #dc7297;
+    --pink-light: #f4b3ca;
+    --pink-dark: #b65076;
+
+    --purple: #bc93cb;
+    --gold: #d2a24f;
+    --green: #57b987;
+    --danger: #d95c72;
 }
 
 * {
@@ -26,7 +27,14 @@
 
 html {
     min-height: 100%;
-    background: var(--bg-deep);
+
+    background:
+            linear-gradient(
+                    155deg,
+                    #fffafb 0%,
+                    #f9eaf0 52%,
+                    #f2dce5 100%
+            );
 }
 
 body {
@@ -35,9 +43,20 @@ body {
 
     background:
             radial-gradient(
-                    circle at top,
-                    #172542 0,
-                    var(--bg-deep) 560px
+                    circle at 12% 0,
+                    rgba(255, 255, 255, 0.98),
+                    transparent 320px
+            ),
+            radial-gradient(
+                    circle at 92% 16%,
+                    rgba(242, 180, 203, 0.62),
+                    transparent 430px
+            ),
+            linear-gradient(
+                    155deg,
+                    #fffafb 0%,
+                    #faedf2 50%,
+                    #f2dce5 100%
             );
 
     color: var(--text);
@@ -63,13 +82,18 @@ button {
 button:focus-visible,
 input:focus-visible,
 summary:focus-visible {
-    outline: 2px solid var(--pink-light);
+    outline: 2px solid var(--pink);
     outline-offset: 2px;
 }
 
 fieldset {
     min-width: 0;
-    margin: 0 0 22px;
+
+    margin:
+            0
+            0
+            22px;
+
     padding: 0;
     border: 0;
 }
@@ -85,6 +109,10 @@ legend {
     display: none !important;
 }
 
+/* =========================================================
+   전체 앱 영역
+========================================================= */
+
 .app-shell {
     position: relative;
 
@@ -92,18 +120,30 @@ legend {
     max-width: 430px;
     min-height: 100vh;
 
-    margin: 0 auto;
+    margin:
+            0
+            auto;
 
     overflow-x: hidden;
 
-    background: var(--bg);
+    background:
+            linear-gradient(
+                    165deg,
+                    #fffafb 0%,
+                    #fdeef3 50%,
+                    #f7e1e9 100%
+            );
 
     box-shadow:
-            0 0 60px
-            rgba(0, 0, 0, 0.72);
+            0
+            22px
+            70px
+            rgba(118, 65, 85, 0.18);
 }
 
-/* 헤더 */
+/* =========================================================
+   헤더
+========================================================= */
 
 .app-header {
     position: sticky;
@@ -130,9 +170,16 @@ legend {
             1px solid var(--line);
 
     background:
-            rgba(7, 16, 31, 0.95);
+            rgba(255, 249, 251, 0.94);
 
-    backdrop-filter: blur(18px);
+    box-shadow:
+            0
+            6px
+            22px
+            rgba(126, 74, 94, 0.06);
+
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
 }
 
 .header-button {
@@ -143,12 +190,22 @@ legend {
     width: 38px;
     height: 38px;
 
+    border:
+            1px solid
+            rgba(126, 75, 94, 0.1);
+
     border-radius: 12px;
 
     background:
-            rgba(255, 255, 255, 0.05);
+            rgba(255, 255, 255, 0.78);
 
-    color: #ffffff;
+    color: #6c3e50;
+
+    box-shadow:
+            0
+            5px
+            15px
+            rgba(123, 72, 91, 0.07);
 
     font-size: 28px;
     line-height: 1;
@@ -156,6 +213,7 @@ legend {
 
 .header-button:last-child {
     justify-self: end;
+
     font-size: 17px;
 }
 
@@ -190,6 +248,8 @@ legend {
 }
 
 .header-copy strong {
+    color: #442c35;
+
     font-size: 15px;
 }
 
@@ -199,7 +259,9 @@ legend {
     font-size: 8px;
 }
 
-/* 화면 */
+/* =========================================================
+   화면
+========================================================= */
 
 .screen {
     display: none;
@@ -212,7 +274,9 @@ legend {
     display: block;
 }
 
-/* 공통 */
+/* =========================================================
+   공통 요소
+========================================================= */
 
 .pill {
     display: inline-flex;
@@ -225,12 +289,26 @@ legend {
             0
             10px;
 
+    border:
+            1px solid
+            rgba(220, 114, 151, 0.18);
+
     border-radius: 999px;
 
     background:
-            rgba(236, 74, 130, 0.15);
+            linear-gradient(
+                    135deg,
+                    rgba(255, 236, 243, 0.97),
+                    rgba(247, 202, 218, 0.92)
+            );
 
-    color: var(--pink-light);
+    color: var(--pink-dark);
+
+    box-shadow:
+            0
+            5px
+            13px
+            rgba(198, 89, 130, 0.12);
 
     font-size: 9px;
     font-weight: 900;
@@ -249,21 +327,29 @@ legend {
 
     font-size: 14px;
     font-weight: 900;
+
+    transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease,
+            filter 0.2s ease;
 }
 
 .primary-button {
     background:
             linear-gradient(
                     135deg,
-                    var(--pink-light),
-                    var(--pink-dark)
+                    #f6bfd2 0%,
+                    var(--pink) 52%,
+                    var(--pink-dark) 100%
             );
 
     color: #ffffff;
 
     box-shadow:
-            0 10px 24px
-            rgba(226, 55, 116, 0.27);
+            0
+            11px
+            25px
+            rgba(189, 77, 119, 0.24);
 }
 
 .primary-button.compact {
@@ -286,13 +372,26 @@ legend {
     box-shadow: none;
 }
 
+.primary-button:active {
+    transform:
+            translateY(1px)
+            scale(0.99);
+}
+
 .secondary-button {
     border:
             1px solid var(--line);
 
-    background: var(--surface);
+    background:
+            rgba(255, 255, 255, 0.9);
 
-    color: #ffffff;
+    color: var(--text);
+
+    box-shadow:
+            0
+            7px
+            18px
+            rgba(127, 76, 95, 0.07);
 
     font-size: 13px;
 }
@@ -315,13 +414,98 @@ legend {
     gap: 10px;
 }
 
-/* 홈 */
+/* =========================================================
+   홈
+========================================================= */
 
 .home-page {
+    position: relative;
+
+    min-height:
+            calc(100vh - 60px);
+
     padding:
             20px
             14px
             94px;
+
+    overflow: hidden;
+
+    background:
+            radial-gradient(
+                    circle at 96% 4%,
+                    rgba(246, 199, 217, 0.7),
+                    transparent 260px
+            ),
+            radial-gradient(
+                    circle at 8% 72%,
+                    rgba(255, 226, 236, 0.78),
+                    transparent 320px
+            ),
+            linear-gradient(
+                    165deg,
+                    #fffafb 0%,
+                    #fdeef3 50%,
+                    #f7e1e9 100%
+            );
+}
+
+.home-page::before {
+    position: absolute;
+    top: 165px;
+    right: -100px;
+    z-index: 0;
+
+    width: 250px;
+    height: 250px;
+
+    border-radius: 50%;
+
+    background:
+            radial-gradient(
+                    circle,
+                    rgba(221, 134, 167, 0.24),
+                    transparent 70%
+            );
+
+    content: "";
+
+    filter: blur(12px);
+
+    pointer-events: none;
+}
+
+.home-page::after {
+    position: absolute;
+    bottom: 120px;
+    left: -115px;
+    z-index: 0;
+
+    width: 285px;
+    height: 285px;
+
+    border-radius: 50%;
+
+    background:
+            radial-gradient(
+                    circle,
+                    rgba(255, 210, 226, 0.72),
+                    transparent 72%
+            );
+
+    content: "";
+
+    filter: blur(16px);
+
+    pointer-events: none;
+}
+
+.home-heading,
+.fortune-menu,
+.main-hero-card,
+.recommend-section {
+    position: relative;
+    z-index: 2;
 }
 
 .home-heading {
@@ -338,7 +522,10 @@ legend {
             0
             6px;
 
+    color: #3d2730;
+
     font-size: 20px;
+    letter-spacing: -0.03em;
 }
 
 .home-heading p {
@@ -357,20 +544,40 @@ legend {
     width: 44px;
     height: 44px;
 
+    border:
+            1px solid
+            rgba(255, 255, 255, 0.9);
+
     border-radius: 50%;
 
     background:
             radial-gradient(
                     circle at 35% 30%,
-                    #fffbd4,
-                    #ffc74f 62%,
-                    #ed9723
+                    #fffdf9,
+                    #ffe6ee 38%,
+                    #f0aac3 72%,
+                    #d9799c
             );
 
-    color: #13203a;
+    color: #713c51;
+
+    box-shadow:
+            0
+            11px
+            25px
+            rgba(192, 92, 130, 0.22),
+            inset
+            0
+            1px
+            0
+            rgba(255, 255, 255, 0.92);
 
     font-size: 26px;
 }
+
+/* =========================================================
+   운세 메뉴
+========================================================= */
 
 .fortune-menu {
     display: grid;
@@ -401,11 +608,39 @@ legend {
     background:
             linear-gradient(
                     145deg,
-                    #111d33,
-                    #0c1628
+                    rgba(255, 255, 255, 0.96),
+                    rgba(255, 242, 247, 0.88)
             );
 
-    color: #ffffff;
+    color: #654650;
+
+    box-shadow:
+            0
+            9px
+            22px
+            rgba(137, 77, 100, 0.08),
+            inset
+            0
+            1px
+            0
+            rgba(255, 255, 255, 0.96);
+
+    transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease,
+            border-color 0.2s ease;
+}
+
+.fortune-menu button:active {
+    transform:
+            translateY(1px)
+            scale(0.98);
+
+    box-shadow:
+            0
+            5px
+            14px
+            rgba(139, 78, 101, 0.08);
 }
 
 .fortune-menu button span {
@@ -419,9 +654,19 @@ legend {
     border-radius: 9px;
 
     background:
-            rgba(139, 109, 243, 0.22);
+            linear-gradient(
+                    145deg,
+                    #f8e2ed,
+                    #ddb9e1
+            );
 
-    color: #d9cbff;
+    color: #7a4f82;
+
+    box-shadow:
+            0
+            5px
+            12px
+            rgba(160, 102, 172, 0.14);
 
     font-size: 14px;
     font-weight: 900;
@@ -429,14 +674,42 @@ legend {
 
 .fortune-menu button:nth-child(2n) span {
     background:
-            rgba(236, 74, 130, 0.2);
+            linear-gradient(
+                    145deg,
+                    #ffe0e9,
+                    #f4abc2
+            );
 
-    color: #ff9abc;
+    color: #8a4660;
+
+    box-shadow:
+            0
+            5px
+            12px
+            rgba(206, 102, 141, 0.17);
+}
+
+.fortune-menu button:nth-child(3n) span {
+    background:
+            linear-gradient(
+                    145deg,
+                    #fff0df,
+                    #f4cfa8
+            );
+
+    color: #8f603f;
 }
 
 .fortune-menu small {
+    color: #654650;
+
     font-size: 9px;
+    font-weight: 800;
 }
+
+/* =========================================================
+   메인 사주 배너
+========================================================= */
 
 .main-hero-card {
     position: relative;
@@ -448,11 +721,76 @@ legend {
     overflow: hidden;
 
     border:
-            1px solid var(--line);
+            1px solid
+            rgba(255, 255, 255, 0.62);
 
     border-radius: 20px;
 
-    background: #142039;
+    background:
+            linear-gradient(
+                    145deg,
+                    #c77c99,
+                    #9d5874 55%,
+                    #704052
+            );
+
+    box-shadow:
+            0
+            18px
+            38px
+            rgba(126, 62, 87, 0.2);
+
+    isolation: isolate;
+}
+
+.main-hero-card::before {
+    position: absolute;
+    top: -90px;
+    left: -75px;
+    z-index: 1;
+
+    width: 240px;
+    height: 240px;
+
+    border-radius: 50%;
+
+    background:
+            radial-gradient(
+                    circle,
+                    rgba(255, 224, 235, 0.48),
+                    transparent 70%
+            );
+
+    content: "";
+
+    filter: blur(9px);
+
+    pointer-events: none;
+}
+
+.main-hero-card::after {
+    position: absolute;
+    right: -80px;
+    bottom: -115px;
+    z-index: 1;
+
+    width: 260px;
+    height: 260px;
+
+    border-radius: 50%;
+
+    background:
+            radial-gradient(
+                    circle,
+                    rgba(244, 184, 207, 0.36),
+                    transparent 70%
+            );
+
+    content: "";
+
+    filter: blur(12px);
+
+    pointer-events: none;
 }
 
 .main-hero-card img {
@@ -465,25 +803,32 @@ legend {
     object-fit: cover;
     object-position: 57% 27%;
 
+    filter:
+            brightness(0.86)
+            saturate(0.89)
+            contrast(1.04);
+
     transform: scale(1.04);
 }
 
 .main-hero-shade {
     position: absolute;
     inset: 0;
+    z-index: 1;
 
     background:
             linear-gradient(
                     90deg,
-                    rgba(5, 10, 22, 0.98),
-                    rgba(5, 10, 22, 0.84) 43%,
-                    rgba(5, 10, 22, 0.18) 78%
+                    rgba(73, 34, 49, 0.97),
+                    rgba(112, 54, 76, 0.82) 43%,
+                    rgba(211, 128, 159, 0.24) 78%,
+                    rgba(255, 222, 234, 0.04) 100%
             );
 }
 
 .main-hero-copy {
     position: relative;
-    z-index: 2;
+    z-index: 3;
 
     width: 68%;
 
@@ -492,6 +837,8 @@ legend {
             0
             23px
             20px;
+
+    color: #ffffff;
 }
 
 .main-hero-copy h2 {
@@ -500,15 +847,23 @@ legend {
             0
             9px;
 
+    color: #ffffff;
+
     font-size: 20px;
     line-height: 1.38;
+
+    text-shadow:
+            0
+            4px
+            17px
+            rgba(71, 29, 45, 0.3);
 }
 
 .main-hero-copy p {
     margin: 0;
 
     color:
-            rgba(255, 255, 255, 0.72);
+            rgba(255, 255, 255, 0.78);
 
     font-size: 10px;
     line-height: 1.7;
@@ -517,6 +872,10 @@ legend {
 .main-hero-copy .primary-button {
     margin-top: 17px;
 }
+
+/* =========================================================
+   추천 영역
+========================================================= */
 
 .recommend-section {
     margin-top: 23px;
@@ -532,6 +891,8 @@ legend {
 
 .section-heading h2 {
     margin: 0;
+
+    color: #402a33;
 
     font-size: 15px;
 }
@@ -561,7 +922,8 @@ legend {
     overflow: hidden;
 
     border:
-            1px solid var(--line);
+            1px solid
+            rgba(255, 255, 255, 0.66);
 
     border-radius: 16px;
 
@@ -569,7 +931,27 @@ legend {
 
     color: #ffffff;
 
+    box-shadow:
+            0
+            12px
+            26px
+            rgba(120, 65, 86, 0.12);
+
     text-align: left;
+
+    transition:
+            transform 0.22s ease,
+            box-shadow 0.22s ease;
+}
+
+.recommend-card:active {
+    transform: scale(0.985);
+
+    box-shadow:
+            0
+            8px
+            18px
+            rgba(125, 62, 87, 0.11);
 }
 
 .recommend-card img {
@@ -578,6 +960,11 @@ legend {
 
     object-fit: cover;
     object-position: 50% 27%;
+
+    filter:
+            brightness(0.88)
+            saturate(0.9)
+            contrast(1.03);
 }
 
 .recommend-shade {
@@ -587,8 +974,9 @@ legend {
     background:
             linear-gradient(
                     to top,
-                    rgba(5, 10, 22, 0.96),
-                    transparent 72%
+                    rgba(69, 31, 47, 0.96),
+                    rgba(109, 53, 75, 0.55) 45%,
+                    transparent 78%
             );
 }
 
@@ -596,6 +984,7 @@ legend {
     position: absolute;
     top: 10px;
     left: 10px;
+    z-index: 2;
 
     padding:
             4px
@@ -604,14 +993,36 @@ legend {
     border-radius: 999px;
 
     background:
-            rgba(229, 64, 121, 0.9);
+            linear-gradient(
+                    135deg,
+                    #f2a8c1,
+                    #c96389
+            );
+
+    color: #ffffff;
+
+    box-shadow:
+            0
+            5px
+            13px
+            rgba(192, 82, 123, 0.24);
 
     font-size: 8px;
 }
 
 .recommend-badge.purple {
     background:
-            rgba(109, 82, 201, 0.94);
+            linear-gradient(
+                    135deg,
+                    #dfbee6,
+                    #b682c3
+            );
+
+    box-shadow:
+            0
+            5px
+            13px
+            rgba(148, 90, 160, 0.2);
 }
 
 .recommend-card strong {
@@ -621,7 +1032,15 @@ legend {
     left: 10px;
     z-index: 2;
 
+    color: #ffffff;
+
     font-size: 12px;
+
+    text-shadow:
+            0
+            2px
+            10px
+            rgba(57, 23, 36, 0.38);
 }
 
 .recommend-card small {
@@ -632,19 +1051,38 @@ legend {
     z-index: 2;
 
     color:
-            rgba(255, 255, 255, 0.7);
+            rgba(255, 255, 255, 0.76);
 
     font-size: 9px;
 }
+
+/* =========================================================
+   타로 카드
+========================================================= */
 
 .tarot-card {
     background:
             radial-gradient(
                     circle at top,
-                    rgba(119, 86, 220, 0.42),
-                    transparent 100px
+                    rgba(246, 194, 219, 0.7),
+                    transparent 105px
             ),
-            #161c35;
+            linear-gradient(
+                    145deg,
+                    #f5dce8,
+                    #d7b2d0 58%,
+                    #b889b5
+            );
+}
+
+.tarot-card .recommend-shade {
+    background:
+            linear-gradient(
+                    to top,
+                    rgba(79, 38, 58, 0.96),
+                    rgba(124, 70, 98, 0.36) 58%,
+                    transparent 82%
+            );
 }
 
 .tarot-symbols {
@@ -674,9 +1112,20 @@ legend {
 
     border-radius: 7px;
 
-    background: #17223c;
+    background:
+            linear-gradient(
+                    145deg,
+                    #965875,
+                    #6c3d56
+            );
 
-    color: #e9cf75;
+    color: #ffe6b1;
+
+    box-shadow:
+            0
+            8px
+            17px
+            rgba(88, 43, 63, 0.22);
 
     font-size: 20px;
 }
@@ -689,14 +1138,21 @@ legend {
     transform: rotate(12deg);
 }
 
-/* 캐릭터와 입력 */
+/* =========================================================
+   캐릭터와 입력
+========================================================= */
 
 .character-stage {
     position: relative;
 
     overflow: hidden;
 
-    background: #152338;
+    background:
+            linear-gradient(
+                    180deg,
+                    #f4d9e4,
+                    #e8bbc9
+            );
 }
 
 .character-stage.tall {
@@ -728,7 +1184,7 @@ legend {
             linear-gradient(
                     to bottom,
                     transparent 38%,
-                    rgba(5, 11, 22, 0.34) 70%,
+                    rgba(92, 45, 64, 0.16) 68%,
                     var(--bg) 100%
             );
 }
@@ -745,18 +1201,21 @@ legend {
             15px;
 
     border:
-            1px solid rgba(255, 255, 255, 0.22);
+            1px solid
+            rgba(255, 255, 255, 0.52);
 
     border-radius: 17px;
 
     background:
             rgba(255, 255, 255, 0.96);
 
-    color: #1d2330;
+    color: #3f2933;
 
     box-shadow:
-            0 12px 30px
-            rgba(0, 0, 0, 0.18);
+            0
+            12px
+            30px
+            rgba(104, 55, 75, 0.16);
 }
 
 .speech-bubble.left {
@@ -832,6 +1291,8 @@ legend {
             0
             8px;
 
+    color: var(--text);
+
     font-size: 24px;
 }
 
@@ -863,7 +1324,14 @@ legend {
 
     border-radius: 13px;
 
-    background: var(--surface);
+    background:
+            rgba(255, 255, 255, 0.88);
+
+    box-shadow:
+            0
+            7px
+            18px
+            rgba(128, 77, 96, 0.05);
 }
 
 .step-guide strong {
@@ -877,14 +1345,16 @@ legend {
     border-radius: 9px;
 
     background:
-            rgba(236, 74, 130, 0.14);
+            rgba(220, 114, 151, 0.13);
 
-    color: var(--pink-light);
+    color: var(--pink-dark);
 
     font-size: 10px;
 }
 
 .step-guide span {
+    color: var(--text);
+
     font-size: 11px;
 }
 
@@ -892,6 +1362,8 @@ legend {
     display: block;
 
     margin-bottom: 8px;
+
+    color: var(--text);
 
     font-size: 11px;
     font-weight: 800;
@@ -912,9 +1384,17 @@ legend {
 
     outline: none;
 
-    background: var(--surface);
+    background:
+            rgba(255, 255, 255, 0.92);
 
-    color: #ffffff;
+    color: var(--text);
+
+    box-shadow:
+            inset
+            0
+            1px
+            0
+            rgba(255, 255, 255, 0.92);
 
     font-size: 14px;
 }
@@ -927,8 +1407,11 @@ legend {
     border-color: var(--pink);
 
     box-shadow:
-            0 0 0 3px
-            rgba(236, 74, 130, 0.12);
+            0
+            0
+            0
+            3px
+            rgba(220, 114, 151, 0.13);
 }
 
 .error-message {
@@ -959,7 +1442,15 @@ legend {
 
     border-radius: 14px;
 
-    background: var(--surface);
+    background:
+            rgba(255, 255, 255, 0.78);
+
+    box-shadow:
+            inset
+            0
+            1px
+            0
+            rgba(255, 255, 255, 0.9);
 }
 
 .segment-button {
@@ -984,6 +1475,12 @@ legend {
             );
 
     color: #ffffff;
+
+    box-shadow:
+            0
+            7px
+            16px
+            rgba(184, 73, 113, 0.18);
 }
 
 .option-box {
@@ -1002,7 +1499,13 @@ legend {
     border-radius: 13px;
 
     background:
-            rgba(255, 255, 255, 0.03);
+            rgba(255, 255, 255, 0.72);
+
+    box-shadow:
+            0
+            7px
+            18px
+            rgba(128, 77, 96, 0.05);
 }
 
 .option-box label,
@@ -1053,6 +1556,7 @@ legend {
 .date-grid label,
 .time-grid label {
     display: flex;
+
     flex-direction: column;
 
     gap: 7px;
@@ -1138,7 +1642,14 @@ legend {
 
     border-radius: 16px;
 
-    background: var(--surface);
+    background:
+            rgba(255, 255, 255, 0.9);
+
+    box-shadow:
+            0
+            9px
+            24px
+            rgba(128, 77, 96, 0.06);
 }
 
 .review-card div {
@@ -1167,6 +1678,8 @@ legend {
 }
 
 .review-card strong {
+    color: var(--text);
+
     font-size: 12px;
 }
 
@@ -1184,6 +1697,13 @@ legend {
             18px
             40px;
 
+    background:
+            linear-gradient(
+                    165deg,
+                    #fffafb,
+                    #f9e8ef
+            );
+
     text-align: center;
 }
 
@@ -1198,9 +1718,15 @@ legend {
     border-radius: 50%;
 
     background:
-            rgba(100, 218, 161, 0.15);
+            rgba(86, 185, 135, 0.14);
 
     color: var(--green);
+
+    box-shadow:
+            0
+            12px
+            28px
+            rgba(86, 185, 135, 0.14);
 
     font-size: 31px;
 }
@@ -1232,9 +1758,16 @@ legend {
     margin-top: 10px;
 }
 
-/* 분석 진행 */
+/* =========================================================
+   분석 진행 화면
+========================================================= */
 
 .analysis-page {
+    --text: #ffffff;
+    --sub: #d7b8c5;
+    --muted: #b990a0;
+    --line: rgba(255, 255, 255, 0.1);
+
     position: relative;
 
     min-height:
@@ -1242,7 +1775,14 @@ legend {
 
     overflow: hidden;
 
-    background: var(--bg);
+    background:
+            linear-gradient(
+                    180deg,
+                    #321722,
+                    #1f0f17
+            );
+
+    color: #ffffff;
 }
 
 .analysis-background {
@@ -1267,9 +1807,9 @@ legend {
     background:
             linear-gradient(
                     to bottom,
-                    rgba(7, 16, 31, 0.2),
-                    rgba(7, 16, 31, 0.92) 43%,
-                    var(--bg) 72%
+                    rgba(50, 23, 34, 0.18),
+                    rgba(50, 23, 34, 0.92) 43%,
+                    #1f0f17 72%
             );
 }
 
@@ -1313,8 +1853,10 @@ legend {
             );
 
     box-shadow:
-            0 0 40px
-            rgba(236, 74, 130, 0.25);
+            0
+            0
+            40px
+            rgba(220, 114, 151, 0.3);
 }
 
 .progress-ring::before {
@@ -1324,12 +1866,13 @@ legend {
     height: 119px;
 
     border:
-            1px solid rgba(255, 255, 255, 0.08);
+            1px solid
+            rgba(255, 255, 255, 0.08);
 
     border-radius: 50%;
 
     background:
-            rgba(7, 16, 31, 0.97);
+            rgba(37, 17, 26, 0.98);
 
     content: "";
 }
@@ -1346,6 +1889,8 @@ legend {
 }
 
 .progress-ring strong {
+    color: #ffffff;
+
     font-size: 32px;
     line-height: 1;
 }
@@ -1361,6 +1906,8 @@ legend {
             0
             0
             9px;
+
+    color: #ffffff;
 
     font-size: 22px;
     line-height: 1.4;
@@ -1387,7 +1934,8 @@ legend {
     overflow: hidden;
 
     border:
-            1px solid rgba(255, 255, 255, 0.06);
+            1px solid
+            rgba(255, 255, 255, 0.06);
 
     border-radius: 999px;
 
@@ -1409,8 +1957,10 @@ legend {
             );
 
     box-shadow:
-            0 0 18px
-            rgba(255, 120, 168, 0.5);
+            0
+            0
+            18px
+            rgba(244, 179, 202, 0.5);
 
     transition:
             width 0.12s linear;
@@ -1464,7 +2014,7 @@ legend {
     border-radius: 14px;
 
     background:
-            rgba(16, 26, 46, 0.9);
+            rgba(71, 34, 48, 0.9);
 
     opacity: 0.42;
 
@@ -1474,20 +2024,19 @@ legend {
 
 .analysis-step.is-active {
     border-color:
-            rgba(255, 120, 168, 0.45);
+            rgba(244, 179, 202, 0.45);
 
     background:
-            rgba(28, 33, 62, 0.96);
+            rgba(91, 40, 60, 0.96);
 
     opacity: 1;
 
-    transform:
-            translateX(3px);
+    transform: translateX(3px);
 }
 
 .analysis-step.is-complete {
     border-color:
-            rgba(100, 218, 161, 0.34);
+            rgba(86, 185, 135, 0.34);
 
     opacity: 1;
 }
@@ -1500,12 +2049,20 @@ legend {
     width: 29px;
     height: 29px;
 
+    border:
+            1px solid
+            rgba(244, 179, 202, 0.22);
+
     border-radius: 10px;
 
     background:
-            rgba(236, 74, 130, 0.15);
+            linear-gradient(
+                    135deg,
+                    #f6bfd2,
+                    #db769a
+            );
 
-    color: var(--pink-light);
+    color: #5c253a;
 
     font-size: 10px;
     font-weight: 900;
@@ -1514,19 +2071,22 @@ legend {
 .analysis-step.is-complete
 .analysis-step-number {
     background:
-            rgba(100, 218, 161, 0.16);
+            rgba(86, 185, 135, 0.16);
 
-    color: var(--green);
+    color: #9af0c4;
 }
 
 .analysis-step div {
     display: flex;
+
     flex-direction: column;
 
     gap: 4px;
 }
 
 .analysis-step strong {
+    color: #ffffff;
+
     font-size: 11px;
 }
 
@@ -1536,16 +2096,30 @@ legend {
     font-size: 9px;
 }
 
-/* 웹툰 표지 */
+/* =========================================================
+   웹툰 표지
+========================================================= */
 
 .webtoon-cover {
+    --text: #ffffff;
+    --sub: #d8bcc7;
+    --muted: #b994a3;
+    --line: rgba(255, 255, 255, 0.1);
+
     position: relative;
 
     height: 610px;
 
     overflow: hidden;
 
-    background: #0b1324;
+    background:
+            linear-gradient(
+                    180deg,
+                    #321722,
+                    #1e0e16
+            );
+
+    color: #ffffff;
 }
 
 .webtoon-cover img {
@@ -1574,10 +2148,10 @@ legend {
     background:
             linear-gradient(
                     to bottom,
-                    rgba(4, 8, 18, 0.02),
-                    rgba(4, 8, 18, 0.24) 48%,
-                    rgba(4, 8, 18, 0.88) 78%,
-                    var(--bg) 100%
+                    rgba(40, 18, 28, 0.02),
+                    rgba(40, 18, 28, 0.24) 48%,
+                    rgba(40, 18, 28, 0.9) 78%,
+                    #1f0f17 100%
             );
 }
 
@@ -1599,12 +2173,13 @@ legend {
             10px;
 
     border:
-            1px solid rgba(255, 255, 255, 0.2);
+            1px solid
+            rgba(255, 255, 255, 0.2);
 
     border-radius: 999px;
 
     background:
-            rgba(5, 10, 22, 0.3);
+            rgba(44, 19, 29, 0.42);
 
     color:
             rgba(255, 255, 255, 0.78);
@@ -1622,6 +2197,8 @@ legend {
             0
             0
             12px;
+
+    color: #ffffff;
 
     font-size: 32px;
     line-height: 1.28;
@@ -1662,12 +2239,24 @@ legend {
 }
 
 .webtoon-page {
+    --text: #ffffff;
+    --sub: #d8bcc7;
+    --muted: #b994a3;
+    --line: rgba(255, 255, 255, 0.1);
+
     padding:
             0
             0
             45px;
 
-    background: var(--bg);
+    background:
+            linear-gradient(
+                    180deg,
+                    #25111a,
+                    #180b11
+            );
+
+    color: #ffffff;
 }
 
 .webtoon-story {
@@ -1676,24 +2265,25 @@ legend {
     gap: 0;
 }
 
-/* 웹툰 공통 장면 */
+/* =========================================================
+   웹툰 공통 장면
+========================================================= */
 
 .webtoon-episode {
     position: relative;
 
-    overflow: hidden;
-
     min-height: 510px;
 
-    border-bottom:
-            8px solid var(--bg-deep);
+    overflow: hidden;
 
-    background: #121c31;
+    border-bottom:
+            8px solid #14080e;
+
+    background: #2b1420;
 
     opacity: 0;
 
-    transform:
-            translateY(30px);
+    transform: translateY(30px);
 
     transition:
             opacity 0.72s ease,
@@ -1704,8 +2294,7 @@ legend {
 .webtoon-episode.is-visible {
     opacity: 1;
 
-    transform:
-            translateY(0);
+    transform: translateY(0);
 }
 
 .webtoon-episode.scene-short {
@@ -1727,8 +2316,8 @@ legend {
     background:
             linear-gradient(
                     180deg,
-                    #131e35,
-                    #0a1222
+                    #331824,
+                    #1d0d15
             );
 }
 
@@ -1736,13 +2325,13 @@ legend {
     background:
             radial-gradient(
                     circle at 70% 10%,
-                    rgba(139, 109, 243, 0.24),
+                    rgba(196, 145, 207, 0.24),
                     transparent 170px
             ),
             linear-gradient(
                     180deg,
-                    #111a30,
-                    #080f1d
+                    #2f1724,
+                    #190b12
             );
 }
 
@@ -1750,13 +2339,13 @@ legend {
     background:
             radial-gradient(
                     circle at 15% 15%,
-                    rgba(255, 199, 107, 0.15),
+                    rgba(236, 190, 117, 0.16),
                     transparent 180px
             ),
             linear-gradient(
                     180deg,
-                    #181d30,
-                    #0b1222
+                    #352018,
+                    #1c100c
             );
 }
 
@@ -1764,13 +2353,13 @@ legend {
     background:
             radial-gradient(
                     circle at 85% 10%,
-                    rgba(236, 74, 130, 0.21),
+                    rgba(232, 121, 161, 0.24),
                     transparent 190px
             ),
             linear-gradient(
                     180deg,
-                    #18182d,
-                    #0a1120
+                    #341723,
+                    #1b0b12
             );
 }
 
@@ -1783,8 +2372,7 @@ legend {
 
     object-fit: cover;
 
-    transform:
-            scale(1.03);
+    transform: scale(1.03);
 
     transition:
             transform
@@ -1794,8 +2382,7 @@ legend {
 
 .webtoon-episode.is-visible
 .scene-image {
-    transform:
-            scale(1.1);
+    transform: scale(1.1);
 }
 
 .scene-image.focus-left {
@@ -1821,10 +2408,10 @@ legend {
     background:
             linear-gradient(
                     to bottom,
-                    rgba(5, 9, 18, 0.04),
-                    rgba(5, 9, 18, 0.26) 42%,
-                    rgba(5, 9, 18, 0.94) 88%,
-                    #070e1b 100%
+                    rgba(38, 17, 27, 0.04),
+                    rgba(38, 17, 27, 0.26) 42%,
+                    rgba(38, 17, 27, 0.95) 88%,
+                    #190b12 100%
             );
 }
 
@@ -1832,9 +2419,9 @@ legend {
     background:
             linear-gradient(
                     90deg,
-                    rgba(5, 9, 18, 0.93),
-                    rgba(5, 9, 18, 0.34) 62%,
-                    rgba(5, 9, 18, 0.08)
+                    rgba(38, 17, 27, 0.94),
+                    rgba(38, 17, 27, 0.34) 62%,
+                    rgba(38, 17, 27, 0.08)
             );
 }
 
@@ -1842,9 +2429,9 @@ legend {
     background:
             linear-gradient(
                     270deg,
-                    rgba(5, 9, 18, 0.93),
-                    rgba(5, 9, 18, 0.34) 62%,
-                    rgba(5, 9, 18, 0.08)
+                    rgba(38, 17, 27, 0.94),
+                    rgba(38, 17, 27, 0.34) 62%,
+                    rgba(38, 17, 27, 0.08)
             );
 }
 
@@ -1862,7 +2449,8 @@ legend {
     gap: 12px;
 }
 
-.scene-paper .scene-heading {
+.scene-paper
+.scene-heading {
     position: relative;
     top: auto;
     right: auto;
@@ -1871,6 +2459,7 @@ legend {
 
 .scene-heading-copy {
     display: flex;
+
     flex-direction: column;
 
     gap: 6px;
@@ -1889,6 +2478,8 @@ legend {
     max-width: 280px;
 
     margin: 0;
+
+    color: #ffffff;
 
     font-size: 20px;
     line-height: 1.35;
@@ -1912,6 +2503,7 @@ legend {
     z-index: 4;
 
     display: flex;
+
     flex-direction: column;
 
     gap: 12px;
@@ -1931,10 +2523,12 @@ legend {
     background:
             rgba(255, 255, 255, 0.97);
 
-    color: #1b2230;
+    color: #3f2933;
 
     box-shadow:
-            0 13px 30px
+            0
+            13px
+            30px
             rgba(0, 0, 0, 0.2);
 
     opacity: 0;
@@ -2004,6 +2598,8 @@ legend {
 .comic-bubble p {
     margin: 0;
 
+    color: #3f2933;
+
     font-size: 12px;
     font-weight: 700;
     line-height: 1.76;
@@ -2021,12 +2617,13 @@ legend {
             14px;
 
     border:
-            1px solid rgba(255, 255, 255, 0.08);
+            1px solid
+            rgba(255, 255, 255, 0.08);
 
     border-radius: 13px;
 
     background:
-            rgba(4, 9, 19, 0.74);
+            rgba(37, 16, 26, 0.78);
 
     color:
             rgba(255, 255, 255, 0.82);
@@ -2043,7 +2640,9 @@ legend {
     color: var(--gold);
 }
 
-/* 글 중심 웹툰 장면 */
+/* =========================================================
+   글 중심 웹툰 장면
+========================================================= */
 
 .narration-card {
     position: relative;
@@ -2056,7 +2655,8 @@ legend {
     padding-top: 58px;
 }
 
-.scene-paper .narration-card {
+.scene-paper
+.narration-card {
     padding-top: 20px;
 }
 
@@ -2066,7 +2666,8 @@ legend {
             16px;
 
     border:
-            1px solid rgba(255, 255, 255, 0.08);
+            1px solid
+            rgba(255, 255, 255, 0.08);
 
     border-radius: 16px;
 
@@ -2075,8 +2676,7 @@ legend {
 
     opacity: 0;
 
-    transform:
-            translateY(16px);
+    transform: translateY(16px);
 }
 
 .webtoon-episode.is-visible
@@ -2106,6 +2706,8 @@ legend {
 .narration-line p {
     margin: 0;
 
+    color: #ffffff;
+
     font-size: 13px;
     line-height: 1.82;
 
@@ -2114,13 +2716,13 @@ legend {
 
 .narration-line.accent {
     border-color:
-            rgba(255, 120, 168, 0.22);
+            rgba(244, 179, 202, 0.22);
 
     background:
             linear-gradient(
                     135deg,
-                    rgba(236, 74, 130, 0.13),
-                    rgba(139, 109, 243, 0.1)
+                    rgba(220, 114, 151, 0.13),
+                    rgba(188, 147, 203, 0.1)
             );
 }
 
@@ -2130,7 +2732,9 @@ legend {
     font-weight: 800;
 }
 
-/* 웹툰 내부 계산 근거 */
+/* =========================================================
+   웹툰 내부 계산 근거
+========================================================= */
 
 .story-note {
     position: relative;
@@ -2141,12 +2745,13 @@ legend {
     overflow: hidden;
 
     border:
-            1px solid rgba(255, 255, 255, 0.09);
+            1px solid
+            rgba(255, 255, 255, 0.09);
 
     border-radius: 15px;
 
     background:
-            rgba(7, 14, 28, 0.86);
+            rgba(42, 18, 28, 0.88);
 
     backdrop-filter: blur(12px);
 }
@@ -2175,12 +2780,15 @@ legend {
 
 .story-note summary div {
     display: flex;
+
     flex-direction: column;
 
     gap: 4px;
 }
 
 .story-note summary strong {
+    color: #ffffff;
+
     font-size: 10px;
 }
 
@@ -2213,7 +2821,8 @@ legend {
             12px;
 
     border-top:
-            1px solid rgba(255, 255, 255, 0.06);
+            1px solid
+            rgba(255, 255, 255, 0.06);
 }
 
 .evidence-grid {
@@ -2281,7 +2890,7 @@ legend {
             0;
 
     background:
-            rgba(236, 74, 130, 0.07);
+            rgba(220, 114, 151, 0.08);
 
     color: var(--sub);
 
@@ -2291,7 +2900,9 @@ legend {
     word-break: keep-all;
 }
 
-/* 오행 그래프 */
+/* =========================================================
+   오행 그래프
+========================================================= */
 
 .element-board {
     display: grid;
@@ -2315,6 +2926,8 @@ legend {
 }
 
 .element-row strong {
+    color: #ffffff;
+
     font-size: 10px;
 }
 
@@ -2348,9 +2961,17 @@ legend {
                     var(--purple),
                     var(--pink-light)
             );
+
+    box-shadow:
+            0
+            0
+            12px
+            rgba(244, 179, 202, 0.28);
 }
 
-/* 합충·신살 */
+/* =========================================================
+   합충·신살
+========================================================= */
 
 .relation-list,
 .shinsal-list {
@@ -2394,7 +3015,9 @@ legend {
     line-height: 1.65;
 }
 
-/* 사주팔자 */
+/* =========================================================
+   사주팔자
+========================================================= */
 
 .pillar-board {
     display: grid;
@@ -2415,7 +3038,8 @@ legend {
             4px;
 
     border:
-            1px solid rgba(255, 255, 255, 0.07);
+            1px solid
+            rgba(255, 255, 255, 0.07);
 
     border-radius: 11px;
 
@@ -2441,6 +3065,8 @@ legend {
             0
             4px;
 
+    color: #ffffff;
+
     font-size: 22px;
     line-height: 1;
 }
@@ -2453,7 +3079,9 @@ legend {
     font-size: 7px;
 }
 
-/* 대운과 세운 */
+/* =========================================================
+   대운과 세운
+========================================================= */
 
 .luck-timeline {
     display: grid;
@@ -2467,7 +3095,8 @@ legend {
     overflow: hidden;
 
     border:
-            1px solid rgba(255, 255, 255, 0.08);
+            1px solid
+            rgba(255, 255, 255, 0.08);
 
     border-radius: 12px;
 
@@ -2477,10 +3106,10 @@ legend {
 
 .luck-block.is-current {
     border-color:
-            rgba(255, 120, 168, 0.36);
+            rgba(244, 179, 202, 0.36);
 
     background:
-            rgba(236, 74, 130, 0.07);
+            rgba(220, 114, 151, 0.08);
 }
 
 .luck-block summary {
@@ -2506,6 +3135,8 @@ legend {
 }
 
 .luck-block summary strong {
+    color: #ffffff;
+
     font-size: 10px;
 }
 
@@ -2553,7 +3184,9 @@ legend {
     color: var(--gold);
 }
 
-/* 비밀 장부 */
+/* =========================================================
+   비밀 장부
+========================================================= */
 
 .secret-ledger {
     display: grid;
@@ -2575,7 +3208,8 @@ legend {
             11px;
 
     border-bottom:
-            1px solid rgba(255, 255, 255, 0.05);
+            1px solid
+            rgba(255, 255, 255, 0.05);
 }
 
 .ledger-row span {
@@ -2587,6 +3221,8 @@ legend {
 .ledger-row strong {
     max-width: 68%;
 
+    color: #ffffff;
+
     font-size: 9px;
 
     text-align: right;
@@ -2594,7 +3230,9 @@ legend {
     word-break: break-word;
 }
 
-/* 결과 하단 */
+/* =========================================================
+   결과 하단
+========================================================= */
 
 .ending-actions {
     padding:
@@ -2625,7 +3263,9 @@ legend {
     line-height: 1.65;
 }
 
-/* 하단 메뉴 */
+/* =========================================================
+   하단 메뉴
+========================================================= */
 
 .bottom-navigation {
     position: fixed;
@@ -2658,9 +3298,16 @@ legend {
             1px solid var(--line);
 
     background:
-            rgba(9, 18, 33, 0.97);
+            rgba(255, 248, 251, 0.95);
 
-    backdrop-filter: blur(18px);
+    box-shadow:
+            0
+            -9px
+            27px
+            rgba(124, 66, 88, 0.09);
+
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
 }
 
 .bottom-navigation.hidden {
@@ -2669,6 +3316,7 @@ legend {
 
 .navigation-item {
     display: flex;
+
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -2679,11 +3327,27 @@ legend {
 
     background: transparent;
 
-    color: #7f8ba1;
+    color: #ad8493;
+
+    transition:
+            background 0.2s ease,
+            color 0.2s ease,
+            transform 0.2s ease;
 }
 
 .navigation-item.is-active {
-    color: #ffffff;
+    background:
+            linear-gradient(
+                    145deg,
+                    rgba(255, 225, 235, 0.84),
+                    rgba(244, 187, 208, 0.46)
+            );
+
+    color: #b84f78;
+}
+
+.navigation-item:active {
+    transform: scale(0.97);
 }
 
 .navigation-item span {
@@ -2694,7 +3358,9 @@ legend {
     font-size: 8px;
 }
 
-/* 토스트 */
+/* =========================================================
+   토스트
+========================================================= */
 
 .toast {
     position: fixed;
@@ -2711,14 +3377,21 @@ legend {
             16px;
 
     border:
-            1px solid var(--line);
+            1px solid
+            rgba(255, 255, 255, 0.2);
 
     border-radius: 12px;
 
     background:
-            rgba(23, 33, 55, 0.98);
+            rgba(89, 47, 64, 0.96);
 
     color: #ffffff;
+
+    box-shadow:
+            0
+            13px
+            30px
+            rgba(91, 43, 62, 0.21);
 
     font-size: 11px;
 
@@ -2741,18 +3414,120 @@ legend {
             translate(50%, 0);
 }
 
-/* 애니메이션 */
+/* =========================================================
+   영상형 사주 카드
+========================================================= */
+
+.cinematic-card {
+    border-color:
+            rgba(225, 145, 177, 0.5);
+
+    background:
+            radial-gradient(
+                    circle at top right,
+                    rgba(255, 215, 230, 0.62),
+                    transparent 110px
+            ),
+            linear-gradient(
+                    145deg,
+                    #f8dfe9 0%,
+                    #d99ab5 58%,
+                    #b66b88 100%
+            );
+
+    box-shadow:
+            0
+            14px
+            30px
+            rgba(147, 69, 101, 0.16);
+}
+
+.cinematic-card img {
+    object-position: 50% 27%;
+
+    filter:
+            brightness(0.84)
+            saturate(0.88)
+            contrast(1.04);
+}
+
+.cinematic-card .recommend-shade {
+    background:
+            linear-gradient(
+                    to top,
+                    rgba(70, 33, 48, 0.97),
+                    rgba(115, 57, 80, 0.46) 55%,
+                    rgba(249, 216, 229, 0.04) 100%
+            );
+}
+
+.recommend-badge.cinematic {
+    z-index: 2;
+
+    background:
+            linear-gradient(
+                    135deg,
+                    #f5b3ca,
+                    #d56e97
+            );
+
+    color: #ffffff;
+
+    box-shadow:
+            0
+            6px
+            16px
+            rgba(193, 84, 126, 0.27);
+}
+
+/* =========================================================
+   마우스 효과
+========================================================= */
+
+@media (hover: hover) {
+
+    .fortune-menu button:hover {
+        border-color:
+                rgba(198, 101, 139, 0.24);
+
+        transform: translateY(-2px);
+
+        box-shadow:
+                0
+                13px
+                28px
+                rgba(139, 78, 101, 0.12);
+    }
+
+    .recommend-card:hover {
+        transform: translateY(-3px);
+
+        box-shadow:
+                0
+                18px
+                36px
+                rgba(125, 62, 87, 0.17);
+    }
+
+    .primary-button:hover {
+        filter: brightness(1.035);
+
+        transform: translateY(-1px);
+    }
+}
+
+/* =========================================================
+   애니메이션
+========================================================= */
 
 @keyframes coverBreath {
 
     from {
-        transform:
-                scale(1.04);
+        transform: scale(1.04);
     }
 
     to {
-        transform:
-                scale(1.11);
+        transform: scale(1.11);
     }
 }
 
@@ -2760,13 +3535,11 @@ legend {
 
     0%,
     100% {
-        transform:
-                translateY(0);
+        transform: translateY(0);
     }
 
     50% {
-        transform:
-                translateY(5px);
+        transform: translateY(5px);
     }
 }
 
@@ -2802,17 +3575,19 @@ legend {
     from {
         opacity: 0;
 
-        transform:
-                translateY(16px);
+        transform: translateY(16px);
     }
 
     to {
         opacity: 1;
 
-        transform:
-                translateY(0);
+        transform: translateY(0);
     }
 }
+
+/* =========================================================
+   움직임 축소 설정
+========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
 
@@ -2840,10 +3615,18 @@ legend {
     }
 }
 
+/* =========================================================
+   작은 화면
+========================================================= */
+
 @media (max-width: 370px) {
 
     .fortune-menu {
         gap: 6px;
+    }
+
+    .fortune-menu button {
+        min-height: 62px;
     }
 
     .character-stage.tall {
@@ -2887,55 +3670,4 @@ legend {
     .pillar-mini strong {
         font-size: 19px;
     }
-}
-
-/* =========================================================
-   천명해설 영상형 사주 카드 추가
-========================================================= */
-
-.cinematic-card {
-    border-color:
-            rgba(139, 109, 243, 0.34);
-
-    background:
-            radial-gradient(
-                    circle at top right,
-                    rgba(139, 109, 243, 0.24),
-                    transparent 105px
-            ),
-            var(--surface);
-}
-
-.cinematic-card img {
-    object-position: 50% 27%;
-
-    filter:
-            brightness(0.78)
-            saturate(0.95)
-            contrast(1.05);
-}
-
-.cinematic-card .recommend-shade {
-    background:
-            linear-gradient(
-                    to top,
-                    rgba(5, 10, 22, 0.97),
-                    rgba(5, 10, 22, 0.18) 65%,
-                    transparent 100%
-            );
-}
-
-.recommend-badge.cinematic {
-    z-index: 2;
-
-    background:
-            linear-gradient(
-                    135deg,
-                    rgba(139, 109, 243, 0.97),
-                    rgba(83, 57, 166, 0.97)
-            );
-
-    box-shadow:
-            0 5px 14px
-            rgba(79, 54, 160, 0.3);
 }
