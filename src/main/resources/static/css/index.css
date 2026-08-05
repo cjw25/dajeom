@@ -1,53 +1,53 @@
 :root {
     /* 기본 배경 */
-    --bg: #f8f6f2;
-    --bg-soft: #f1edf4;
-    --bg-deep: #e4dde7;
+    --bg: #f7f8fa;
+    --bg-soft: #eef2f7;
+    --bg-deep: #dce5ee;
 
     /* 카드 */
-    --surface: #fffcfd;
-    --surface-soft: #f7f3f7;
-    --surface-jade: #dcebe6;
+    --surface: #ffffff;
+    --surface-2: #f1f4f8;
+    --surface-blue: #e4edf4;
 
     /* 테두리 */
-    --line: rgba(63, 38, 62, 0.12);
-    --line-light: rgba(255, 255, 255, 0.1);
+    --line: rgba(48, 48, 79, 0.12);
+    --line-dark: rgba(255, 255, 255, 0.1);
 
     /* 글자 */
-    --text: #30242e;
-    --sub: #81727c;
-    --muted: #a3949e;
+    --text: #292b3b;
+    --sub: #73798a;
+    --muted: #9da5b5;
 
     /* 브랜드 메인 */
-    --plum: #3f263e;
-    --plum-soft: #74506f;
-    --plum-light: #b49ab1;
-    --plum-deep: #241623;
+    --midnight: #30304f;
+    --midnight-soft: #4a4c78;
+    --midnight-light: #858bbd;
+    --midnight-deep: #1b1c31;
 
-    /* 타로 */
-    --indigo: #625a9c;
-    --indigo-light: #aaa4d1;
-    --indigo-deep: #38345f;
+    /* 인디고 */
+    --indigo: #656aa6;
+    --indigo-light: #aeb4dc;
+    --indigo-dark: #444978;
 
-    /* AI·신뢰 */
-    --jade: #6e9e91;
-    --jade-light: #dcebe6;
-    --jade-dark: #416d62;
+    /* 쿨 블루 */
+    --blue: #7fa3bd;
+    --blue-light: #dce8f0;
+    --blue-dark: #4f7188;
 
-    /* 프리미엄 */
+    /* 샴페인 골드 */
     --gold: #c9a86a;
-    --gold-light: #ead7ac;
-    --gold-dark: #98743d;
+    --gold-light: #ead9b2;
+    --gold-dark: #95723d;
 
     /* 기존 변수 호환 */
-    --pink: #74506f;
-    --pink-light: #b49ab1;
-    --pink-dark: #3f263e;
-    --purple: #625a9c;
+    --pink: #656aa6;
+    --pink-light: #aeb4dc;
+    --pink-dark: #444978;
+    --purple: #656aa6;
 
     /* 상태 */
-    --green: #5b9d79;
-    --danger: #c65f72;
+    --green: #5b9a83;
+    --danger: #c75f72;
 }
 
 * {
@@ -60,9 +60,9 @@ html {
     background:
             linear-gradient(
                     155deg,
-                    #fbfaf7 0%,
-                    #f4f0f4 52%,
-                    #e9eeee 100%
+                    #fbfcfd 0%,
+                    #f1f4f8 52%,
+                    #dfe8ef 100%
             );
 }
 
@@ -73,19 +73,19 @@ body {
     background:
             radial-gradient(
                     circle at 92% 8%,
-                    rgba(170, 164, 209, 0.28),
+                    rgba(101, 106, 166, 0.22),
                     transparent 420px
             ),
             radial-gradient(
                     circle at 8% 72%,
-                    rgba(110, 158, 145, 0.2),
-                    transparent 360px
+                    rgba(127, 163, 189, 0.24),
+                    transparent 370px
             ),
             linear-gradient(
                     155deg,
-                    #fbfaf7 0%,
-                    #f4f0f4 52%,
-                    #e9eeee 100%
+                    #fbfcfd 0%,
+                    #f1f4f8 52%,
+                    #dfe8ef 100%
             );
 
     color: var(--text);
@@ -164,16 +164,16 @@ legend {
     background:
             linear-gradient(
                     165deg,
-                    #fbfaf7 0%,
-                    #f4f0f4 52%,
-                    #e9eeee 100%
+                    #fbfcfd 0%,
+                    #f2f5f8 52%,
+                    #e4ebf1 100%
             );
 
     box-shadow:
             0
             22px
             70px
-            rgba(63, 38, 62, 0.18);
+            rgba(36, 39, 69, 0.18);
 }
 
 /* =========================================================
@@ -205,13 +205,13 @@ legend {
             1px solid var(--line);
 
     background:
-            rgba(251, 250, 247, 0.94);
+            rgba(248, 250, 252, 0.94);
 
     box-shadow:
             0
             6px
             22px
-            rgba(63, 38, 62, 0.06);
+            rgba(36, 39, 69, 0.06);
 
     backdrop-filter: blur(22px);
     -webkit-backdrop-filter: blur(22px);
@@ -227,20 +227,20 @@ legend {
 
     border:
             1px solid
-            rgba(63, 38, 62, 0.1);
+            rgba(48, 48, 79, 0.1);
 
     border-radius: 12px;
 
     background:
-            rgba(255, 252, 253, 0.84);
+            rgba(255, 255, 255, 0.84);
 
-    color: var(--plum);
+    color: var(--midnight);
 
     box-shadow:
             0
             5px
             15px
-            rgba(63, 38, 62, 0.07);
+            rgba(36, 39, 69, 0.07);
 
     font-size: 28px;
     line-height: 1;
@@ -284,7 +284,7 @@ legend {
 }
 
 .header-copy strong {
-    color: var(--plum);
+    color: var(--midnight);
 
     font-size: 15px;
 }
@@ -334,17 +334,17 @@ legend {
     background:
             linear-gradient(
                     135deg,
-                    rgba(255, 252, 253, 0.92),
-                    rgba(234, 215, 172, 0.82)
+                    rgba(255, 255, 255, 0.94),
+                    rgba(234, 217, 178, 0.84)
             );
 
-    color: var(--plum);
+    color: var(--midnight);
 
     box-shadow:
             0
             5px
             13px
-            rgba(152, 116, 61, 0.12);
+            rgba(149, 114, 61, 0.12);
 
     font-size: 9px;
     font-weight: 900;
@@ -374,9 +374,9 @@ legend {
     background:
             linear-gradient(
                     135deg,
-                    #806b94 0%,
+                    #8188c1 0%,
                     var(--indigo) 48%,
-                    #463b71 100%
+                    var(--indigo-dark) 100%
             );
 
     color: #ffffff;
@@ -385,7 +385,7 @@ legend {
             0
             11px
             24px
-            rgba(79, 68, 125, 0.24);
+            rgba(68, 73, 120, 0.25);
 }
 
 .primary-button.compact {
@@ -419,7 +419,7 @@ legend {
             1px solid var(--line);
 
     background:
-            rgba(255, 252, 253, 0.92);
+            rgba(255, 255, 255, 0.92);
 
     color: var(--text);
 
@@ -427,7 +427,7 @@ legend {
             0
             7px
             18px
-            rgba(63, 38, 62, 0.07);
+            rgba(36, 39, 69, 0.07);
 
     font-size: 13px;
 }
@@ -470,19 +470,19 @@ legend {
     background:
             radial-gradient(
                     circle at 94% 4%,
-                    rgba(170, 164, 209, 0.28),
-                    transparent 275px
+                    rgba(101, 106, 166, 0.22),
+                    transparent 280px
             ),
             radial-gradient(
-                    circle at 5% 66%,
-                    rgba(110, 158, 145, 0.2),
-                    transparent 335px
+                    circle at 5% 67%,
+                    rgba(127, 163, 189, 0.22),
+                    transparent 340px
             ),
             linear-gradient(
                     165deg,
-                    #fbfaf7 0%,
-                    #f4f0f4 52%,
-                    #e9eeee 100%
+                    #fbfcfd 0%,
+                    #f2f5f8 50%,
+                    #e3ebf1 100%
             );
 }
 
@@ -500,7 +500,7 @@ legend {
     background:
             radial-gradient(
                     circle,
-                    rgba(98, 90, 156, 0.14),
+                    rgba(101, 106, 166, 0.14),
                     transparent 70%
             );
 
@@ -525,7 +525,7 @@ legend {
     background:
             radial-gradient(
                     circle,
-                    rgba(110, 158, 145, 0.2),
+                    rgba(127, 163, 189, 0.2),
                     transparent 72%
             );
 
@@ -558,7 +558,7 @@ legend {
             0
             6px;
 
-    color: var(--plum);
+    color: var(--midnight);
 
     font-size: 20px;
     letter-spacing: -0.03em;
@@ -599,13 +599,13 @@ legend {
                     var(--gold-dark) 100%
             );
 
-    color: var(--plum);
+    color: var(--midnight);
 
     box-shadow:
             0
             11px
             25px
-            rgba(152, 116, 61, 0.2),
+            rgba(149, 114, 61, 0.2),
             inset
             0
             1px
@@ -648,17 +648,17 @@ legend {
     background:
             linear-gradient(
                     145deg,
-                    rgba(255, 252, 253, 0.97),
-                    rgba(247, 243, 247, 0.88)
+                    rgba(255, 255, 255, 0.97),
+                    rgba(241, 244, 248, 0.9)
             );
 
-    color: var(--plum);
+    color: var(--midnight);
 
     box-shadow:
             0
             9px
             22px
-            rgba(63, 38, 62, 0.08),
+            rgba(36, 39, 69, 0.08),
             inset
             0
             1px
@@ -683,7 +683,7 @@ legend {
             0
             5px
             14px
-            rgba(63, 38, 62, 0.08);
+            rgba(36, 39, 69, 0.08);
 }
 
 .fortune-menu button span {
@@ -699,17 +699,17 @@ legend {
     background:
             linear-gradient(
                     145deg,
-                    #e8e5f4,
+                    #e7e9f6,
                     var(--indigo-light)
             );
 
-    color: var(--indigo-deep);
+    color: var(--indigo-dark);
 
     box-shadow:
             0
             5px
             12px
-            rgba(56, 52, 95, 0.14);
+            rgba(68, 73, 120, 0.14);
 
     font-size: 14px;
     font-weight: 900;
@@ -719,17 +719,17 @@ legend {
     background:
             linear-gradient(
                     145deg,
-                    #e9f2ef,
-                    #9fc5b9
+                    #edf4f8,
+                    #a9c3d5
             );
 
-    color: var(--jade-dark);
+    color: var(--blue-dark);
 
     box-shadow:
             0
             5px
             12px
-            rgba(65, 109, 98, 0.14);
+            rgba(79, 113, 136, 0.14);
 }
 
 .fortune-menu button:nth-child(3n) span {
@@ -744,7 +744,7 @@ legend {
 }
 
 .fortune-menu small {
-    color: var(--plum);
+    color: var(--midnight);
 
     font-size: 9px;
     font-weight: 800;
@@ -765,7 +765,7 @@ legend {
 
     border:
             1px solid
-            rgba(255, 255, 255, 0.58);
+            rgba(255, 255, 255, 0.55);
 
     border-radius: 20px;
 
@@ -777,16 +777,16 @@ legend {
             ),
             linear-gradient(
                     145deg,
-                    var(--plum-soft) 0%,
-                    #51334f 48%,
-                    #2d1c2c 100%
+                    var(--midnight-soft) 0%,
+                    var(--midnight) 48%,
+                    var(--midnight-deep) 100%
             );
 
     box-shadow:
             0
             18px
             40px
-            rgba(63, 38, 62, 0.24);
+            rgba(36, 39, 69, 0.25);
 
     isolation: isolate;
 }
@@ -805,7 +805,7 @@ legend {
     background:
             radial-gradient(
                     circle,
-                    rgba(234, 215, 172, 0.2),
+                    rgba(234, 217, 178, 0.2),
                     transparent 70%
             );
 
@@ -830,7 +830,7 @@ legend {
     background:
             radial-gradient(
                     circle,
-                    rgba(170, 164, 209, 0.2),
+                    rgba(127, 163, 189, 0.22),
                     transparent 70%
             );
 
@@ -852,9 +852,9 @@ legend {
     object-position: 57% 27%;
 
     filter:
-            brightness(0.82)
-            saturate(0.86)
-            contrast(1.05);
+            brightness(0.8)
+            saturate(0.82)
+            contrast(1.06);
 
     transform: scale(1.04);
 }
@@ -867,9 +867,9 @@ legend {
     background:
             linear-gradient(
                     90deg,
-                    rgba(36, 22, 35, 0.98),
-                    rgba(63, 38, 62, 0.87) 43%,
-                    rgba(116, 80, 111, 0.3) 78%,
+                    rgba(27, 28, 49, 0.98),
+                    rgba(48, 48, 79, 0.88) 43%,
+                    rgba(74, 76, 120, 0.34) 78%,
                     rgba(255, 255, 255, 0.02) 100%
             );
 }
@@ -904,7 +904,7 @@ legend {
             0
             4px
             17px
-            rgba(36, 22, 35, 0.38);
+            rgba(27, 28, 49, 0.4);
 }
 
 .main-hero-copy p {
@@ -940,7 +940,7 @@ legend {
 .section-heading h2 {
     margin: 0;
 
-    color: var(--plum);
+    color: var(--midnight);
 
     font-size: 15px;
 }
@@ -983,7 +983,7 @@ legend {
             0
             12px
             26px
-            rgba(63, 38, 62, 0.13);
+            rgba(36, 39, 69, 0.13);
 
     text-align: left;
 
@@ -999,7 +999,7 @@ legend {
             0
             8px
             18px
-            rgba(63, 38, 62, 0.11);
+            rgba(36, 39, 69, 0.11);
 }
 
 .recommend-card img {
@@ -1010,9 +1010,9 @@ legend {
     object-position: 50% 27%;
 
     filter:
-            brightness(0.86)
-            saturate(0.88)
-            contrast(1.03);
+            brightness(0.84)
+            saturate(0.86)
+            contrast(1.04);
 }
 
 .recommend-shade {
@@ -1022,8 +1022,8 @@ legend {
     background:
             linear-gradient(
                     to top,
-                    rgba(36, 22, 35, 0.97),
-                    rgba(63, 38, 62, 0.56) 45%,
+                    rgba(27, 28, 49, 0.97),
+                    rgba(48, 48, 79, 0.56) 45%,
                     transparent 78%
             );
 }
@@ -1047,13 +1047,13 @@ legend {
                     var(--gold)
             );
 
-    color: var(--plum);
+    color: var(--midnight);
 
     box-shadow:
             0
             5px
             13px
-            rgba(152, 116, 61, 0.24);
+            rgba(149, 114, 61, 0.24);
 
     font-size: 8px;
     font-weight: 900;
@@ -1073,7 +1073,7 @@ legend {
             0
             5px
             13px
-            rgba(56, 52, 95, 0.25);
+            rgba(68, 73, 120, 0.25);
 }
 
 .recommend-card strong {
@@ -1091,7 +1091,7 @@ legend {
             0
             2px
             10px
-            rgba(36, 22, 35, 0.42);
+            rgba(27, 28, 49, 0.42);
 }
 
 .recommend-card small {
@@ -1115,14 +1115,19 @@ legend {
     background:
             radial-gradient(
                     circle at 72% 10%,
-                    rgba(234, 215, 172, 0.24),
+                    rgba(234, 217, 178, 0.24),
                     transparent 120px
+            ),
+            radial-gradient(
+                    circle at 10% 85%,
+                    rgba(127, 163, 189, 0.18),
+                    transparent 140px
             ),
             linear-gradient(
                     145deg,
                     var(--indigo-light) 0%,
                     var(--indigo) 52%,
-                    var(--indigo-deep) 100%
+                    var(--indigo-dark) 100%
             );
 }
 
@@ -1130,8 +1135,8 @@ legend {
     background:
             linear-gradient(
                     to top,
-                    rgba(36, 22, 35, 0.97),
-                    rgba(56, 52, 95, 0.4) 58%,
+                    rgba(27, 28, 49, 0.97),
+                    rgba(68, 73, 120, 0.42) 58%,
                     transparent 82%
             );
 }
@@ -1167,8 +1172,8 @@ legend {
     background:
             linear-gradient(
                     145deg,
-                    var(--indigo-deep),
-                    var(--plum-deep)
+                    var(--indigo-dark),
+                    var(--midnight-deep)
             );
 
     color: var(--gold-light);
@@ -1177,7 +1182,7 @@ legend {
             0
             8px
             18px
-            rgba(36, 22, 35, 0.28);
+            rgba(27, 28, 49, 0.3);
 
     font-size: 20px;
 }
@@ -1202,13 +1207,18 @@ legend {
     background:
             radial-gradient(
                     circle at 75% 10%,
-                    rgba(170, 164, 209, 0.25),
+                    rgba(101, 106, 166, 0.22),
                     transparent 220px
+            ),
+            radial-gradient(
+                    circle at 8% 80%,
+                    rgba(127, 163, 189, 0.18),
+                    transparent 240px
             ),
             linear-gradient(
                     180deg,
-                    #f1edf4,
-                    #dfe8e5
+                    #eef2f7,
+                    #dce6ee
             );
 }
 
@@ -1241,7 +1251,7 @@ legend {
             linear-gradient(
                     to bottom,
                     transparent 38%,
-                    rgba(63, 38, 62, 0.14) 68%,
+                    rgba(48, 48, 79, 0.14) 68%,
                     var(--bg) 100%
             );
 }
@@ -1264,7 +1274,7 @@ legend {
     border-radius: 17px;
 
     background:
-            rgba(255, 252, 253, 0.97);
+            rgba(255, 255, 255, 0.97);
 
     color: var(--text);
 
@@ -1272,7 +1282,7 @@ legend {
             0
             12px
             30px
-            rgba(63, 38, 62, 0.16);
+            rgba(36, 39, 69, 0.16);
 }
 
 .speech-bubble.left {
@@ -1289,7 +1299,7 @@ legend {
     height: 13px;
 
     background:
-            rgba(255, 252, 253, 0.97);
+            rgba(255, 255, 255, 0.97);
 
     content: "";
 
@@ -1341,7 +1351,7 @@ legend {
     background:
             linear-gradient(
                     180deg,
-                    #fbfaf7,
+                    #fbfcfd,
                     var(--bg)
             );
 }
@@ -1353,7 +1363,7 @@ legend {
             0
             8px;
 
-    color: var(--plum);
+    color: var(--midnight);
 
     font-size: 24px;
 }
@@ -1387,13 +1397,13 @@ legend {
     border-radius: 13px;
 
     background:
-            rgba(255, 252, 253, 0.9);
+            rgba(255, 255, 255, 0.92);
 
     box-shadow:
             0
             7px
             18px
-            rgba(63, 38, 62, 0.05);
+            rgba(36, 39, 69, 0.05);
 }
 
 .step-guide strong {
@@ -1409,11 +1419,11 @@ legend {
     background:
             linear-gradient(
                     145deg,
-                    #e8e5f4,
+                    #e7e9f6,
                     var(--indigo-light)
             );
 
-    color: var(--indigo-deep);
+    color: var(--indigo-dark);
 
     font-size: 10px;
 }
@@ -1451,7 +1461,7 @@ legend {
     outline: none;
 
     background:
-            rgba(255, 252, 253, 0.95);
+            rgba(255, 255, 255, 0.95);
 
     color: var(--text);
 
@@ -1477,7 +1487,7 @@ legend {
             0
             0
             3px
-            rgba(98, 90, 156, 0.13);
+            rgba(101, 106, 166, 0.13);
 }
 
 .error-message {
@@ -1509,7 +1519,7 @@ legend {
     border-radius: 14px;
 
     background:
-            rgba(255, 252, 253, 0.82);
+            rgba(255, 255, 255, 0.82);
 
     box-shadow:
             inset
@@ -1536,7 +1546,7 @@ legend {
     background:
             linear-gradient(
                     135deg,
-                    #806b94,
+                    #8188c1,
                     var(--indigo)
             );
 
@@ -1546,7 +1556,7 @@ legend {
             0
             7px
             16px
-            rgba(79, 68, 125, 0.2);
+            rgba(68, 73, 120, 0.2);
 }
 
 .option-box {
@@ -1565,13 +1575,13 @@ legend {
     border-radius: 13px;
 
     background:
-            rgba(255, 252, 253, 0.78);
+            rgba(255, 255, 255, 0.78);
 
     box-shadow:
             0
             7px
             18px
-            rgba(63, 38, 62, 0.05);
+            rgba(36, 39, 69, 0.05);
 }
 
 .option-box label,
@@ -1709,13 +1719,13 @@ legend {
     border-radius: 16px;
 
     background:
-            rgba(255, 252, 253, 0.94);
+            rgba(255, 255, 255, 0.94);
 
     box-shadow:
             0
             9px
             24px
-            rgba(63, 38, 62, 0.06);
+            rgba(36, 39, 69, 0.06);
 }
 
 .review-card div {
@@ -1766,18 +1776,18 @@ legend {
     background:
             radial-gradient(
                     circle at 80% 12%,
-                    rgba(170, 164, 209, 0.24),
+                    rgba(101, 106, 166, 0.22),
                     transparent 240px
             ),
             radial-gradient(
                     circle at 8% 70%,
-                    rgba(110, 158, 145, 0.18),
+                    rgba(127, 163, 189, 0.2),
                     transparent 260px
             ),
             linear-gradient(
                     165deg,
-                    #fbfaf7,
-                    #edf0ef
+                    #fbfcfd,
+                    #e8eef3
             );
 
     text-align: center;
@@ -1794,7 +1804,7 @@ legend {
     border-radius: 50%;
 
     background:
-            rgba(91, 157, 121, 0.14);
+            rgba(91, 154, 131, 0.14);
 
     color: var(--green);
 
@@ -1802,7 +1812,7 @@ legend {
             0
             12px
             28px
-            rgba(91, 157, 121, 0.14);
+            rgba(91, 154, 131, 0.14);
 
     font-size: 31px;
 }
@@ -1813,7 +1823,7 @@ legend {
             0
             9px;
 
-    color: var(--plum);
+    color: var(--midnight);
 
     font-size: 24px;
 }
@@ -1842,8 +1852,8 @@ legend {
 
 .analysis-page {
     --text: #ffffff;
-    --sub: #d5cad4;
-    --muted: #aa9baa;
+    --sub: #cfd3e2;
+    --muted: #9ea5bb;
     --line: rgba(255, 255, 255, 0.1);
 
     position: relative;
@@ -1856,19 +1866,19 @@ legend {
     background:
             radial-gradient(
                     circle at 75% 8%,
-                    rgba(170, 164, 209, 0.24),
+                    rgba(101, 106, 166, 0.28),
                     transparent 240px
             ),
             radial-gradient(
                     circle at 15% 68%,
-                    rgba(110, 158, 145, 0.16),
+                    rgba(127, 163, 189, 0.18),
                     transparent 280px
             ),
             linear-gradient(
                     180deg,
-                    var(--plum) 0%,
-                    var(--plum-deep) 58%,
-                    #120b12 100%
+                    var(--midnight) 0%,
+                    var(--midnight-deep) 58%,
+                    #10111e 100%
             );
 
     color: #ffffff;
@@ -1887,8 +1897,8 @@ legend {
     opacity: 0.34;
 
     filter:
-            saturate(0.84)
-            contrast(1.04);
+            saturate(0.82)
+            contrast(1.05);
 
     transform: scale(1.04);
 }
@@ -1900,9 +1910,9 @@ legend {
     background:
             linear-gradient(
                     to bottom,
-                    rgba(63, 38, 62, 0.14),
-                    rgba(36, 22, 35, 0.9) 43%,
-                    #120b12 72%
+                    rgba(48, 48, 79, 0.14),
+                    rgba(27, 28, 49, 0.9) 43%,
+                    #10111e 72%
             );
 }
 
@@ -1949,7 +1959,7 @@ legend {
             0
             0
             42px
-            rgba(98, 90, 156, 0.3);
+            rgba(101, 106, 166, 0.34);
 }
 
 .progress-ring::before {
@@ -1965,7 +1975,7 @@ legend {
     border-radius: 50%;
 
     background:
-            rgba(36, 22, 35, 0.98);
+            rgba(27, 28, 49, 0.98);
 
     content: "";
 }
@@ -2047,7 +2057,7 @@ legend {
             linear-gradient(
                     90deg,
                     var(--indigo),
-                    var(--jade),
+                    var(--blue),
                     var(--gold-light)
             );
 
@@ -2055,7 +2065,7 @@ legend {
             0
             0
             18px
-            rgba(234, 215, 172, 0.42);
+            rgba(220, 232, 240, 0.36);
 
     transition:
             width 0.12s linear;
@@ -2109,7 +2119,7 @@ legend {
     border-radius: 14px;
 
     background:
-            rgba(63, 38, 62, 0.7);
+            rgba(48, 48, 79, 0.72);
 
     opacity: 0.42;
 
@@ -2119,10 +2129,10 @@ legend {
 
 .analysis-step.is-active {
     border-color:
-            rgba(234, 215, 172, 0.36);
+            rgba(234, 217, 178, 0.36);
 
     background:
-            rgba(98, 90, 156, 0.58);
+            rgba(101, 106, 166, 0.6);
 
     opacity: 1;
 
@@ -2131,7 +2141,7 @@ legend {
 
 .analysis-step.is-complete {
     border-color:
-            rgba(91, 157, 121, 0.34);
+            rgba(91, 154, 131, 0.34);
 
     opacity: 1;
 }
@@ -2146,7 +2156,7 @@ legend {
 
     border:
             1px solid
-            rgba(234, 215, 172, 0.26);
+            rgba(234, 217, 178, 0.26);
 
     border-radius: 10px;
 
@@ -2154,10 +2164,10 @@ legend {
             linear-gradient(
                     135deg,
                     var(--indigo-light),
-                    var(--jade)
+                    var(--blue)
             );
 
-    color: var(--plum-deep);
+    color: var(--midnight-deep);
 
     font-size: 10px;
     font-weight: 900;
@@ -2166,9 +2176,9 @@ legend {
 .analysis-step.is-complete
 .analysis-step-number {
     background:
-            rgba(91, 157, 121, 0.16);
+            rgba(91, 154, 131, 0.16);
 
-    color: #a0ebc3;
+    color: #a3ebc8;
 }
 
 .analysis-step div {
@@ -2197,8 +2207,8 @@ legend {
 
 .webtoon-cover {
     --text: #ffffff;
-    --sub: #d5cad4;
-    --muted: #aa9baa;
+    --sub: #cfd3e2;
+    --muted: #9ea5bb;
     --line: rgba(255, 255, 255, 0.1);
 
     position: relative;
@@ -2210,13 +2220,13 @@ legend {
     background:
             radial-gradient(
                     circle at 75% 8%,
-                    rgba(170, 164, 209, 0.24),
+                    rgba(101, 106, 166, 0.28),
                     transparent 240px
             ),
             linear-gradient(
                     180deg,
-                    var(--plum),
-                    var(--plum-deep)
+                    var(--midnight),
+                    var(--midnight-deep)
             );
 
     color: #ffffff;
@@ -2233,8 +2243,8 @@ legend {
     object-position: 50% 23%;
 
     filter:
-            saturate(0.86)
-            contrast(1.04);
+            saturate(0.84)
+            contrast(1.05);
 
     transform: scale(1.04);
 
@@ -2252,10 +2262,10 @@ legend {
     background:
             linear-gradient(
                     to bottom,
-                    rgba(36, 22, 35, 0.02),
-                    rgba(36, 22, 35, 0.22) 48%,
-                    rgba(36, 22, 35, 0.9) 78%,
-                    #120b12 100%
+                    rgba(27, 28, 49, 0.02),
+                    rgba(27, 28, 49, 0.22) 48%,
+                    rgba(27, 28, 49, 0.91) 78%,
+                    #10111e 100%
             );
 }
 
@@ -2278,12 +2288,12 @@ legend {
 
     border:
             1px solid
-            rgba(234, 215, 172, 0.32);
+            rgba(234, 217, 178, 0.32);
 
     border-radius: 999px;
 
     background:
-            rgba(36, 22, 35, 0.46);
+            rgba(27, 28, 49, 0.48);
 
     color: var(--gold-light);
 
@@ -2329,7 +2339,7 @@ legend {
 
     margin-top: 18px;
 
-    color: var(--gold-light);
+    color: var(--blue-light);
 
     font-size: 9px;
     font-weight: 800;
@@ -2343,8 +2353,8 @@ legend {
 
 .webtoon-page {
     --text: #ffffff;
-    --sub: #d5cad4;
-    --muted: #aa9baa;
+    --sub: #cfd3e2;
+    --muted: #9ea5bb;
     --line: rgba(255, 255, 255, 0.1);
 
     padding:
@@ -2355,8 +2365,8 @@ legend {
     background:
             linear-gradient(
                     180deg,
-                    var(--plum-deep),
-                    #120b12
+                    var(--midnight-deep),
+                    #10111e
             );
 
     color: #ffffff;
@@ -2380,9 +2390,9 @@ legend {
     overflow: hidden;
 
     border-bottom:
-            8px solid #0d080d;
+            8px solid #0c0d18;
 
-    background: var(--plum-deep);
+    background: var(--midnight-deep);
 
     opacity: 0;
 
@@ -2419,13 +2429,13 @@ legend {
     background:
             radial-gradient(
                     circle at 80% 5%,
-                    rgba(170, 164, 209, 0.16),
+                    rgba(101, 106, 166, 0.18),
                     transparent 180px
             ),
             linear-gradient(
                     180deg,
-                    var(--plum),
-                    var(--plum-deep)
+                    var(--midnight),
+                    var(--midnight-deep)
             );
 }
 
@@ -2433,13 +2443,13 @@ legend {
     background:
             radial-gradient(
                     circle at 70% 10%,
-                    rgba(98, 90, 156, 0.26),
+                    rgba(101, 106, 166, 0.28),
                     transparent 170px
             ),
             linear-gradient(
                     180deg,
-                    #30213d,
-                    #17101e
+                    #292a4c,
+                    #151627
             );
 }
 
@@ -2452,8 +2462,8 @@ legend {
             ),
             linear-gradient(
                     180deg,
-                    #3a3026,
-                    #1c1712
+                    #383229,
+                    #1c1914
             );
 }
 
@@ -2461,13 +2471,13 @@ legend {
     background:
             radial-gradient(
                     circle at 85% 10%,
-                    rgba(116, 80, 111, 0.26),
+                    rgba(127, 163, 189, 0.22),
                     transparent 190px
             ),
             linear-gradient(
                     180deg,
-                    #382537,
-                    #1d111c
+                    #2c3148,
+                    #171925
             );
 }
 
@@ -2516,10 +2526,10 @@ legend {
     background:
             linear-gradient(
                     to bottom,
-                    rgba(36, 22, 35, 0.04),
-                    rgba(36, 22, 35, 0.25) 42%,
-                    rgba(36, 22, 35, 0.95) 88%,
-                    #120b12 100%
+                    rgba(27, 28, 49, 0.04),
+                    rgba(27, 28, 49, 0.25) 42%,
+                    rgba(27, 28, 49, 0.95) 88%,
+                    #10111e 100%
             );
 }
 
@@ -2527,9 +2537,9 @@ legend {
     background:
             linear-gradient(
                     90deg,
-                    rgba(36, 22, 35, 0.95),
-                    rgba(36, 22, 35, 0.34) 62%,
-                    rgba(36, 22, 35, 0.08)
+                    rgba(27, 28, 49, 0.95),
+                    rgba(27, 28, 49, 0.34) 62%,
+                    rgba(27, 28, 49, 0.08)
             );
 }
 
@@ -2537,9 +2547,9 @@ legend {
     background:
             linear-gradient(
                     270deg,
-                    rgba(36, 22, 35, 0.95),
-                    rgba(36, 22, 35, 0.34) 62%,
-                    rgba(36, 22, 35, 0.08)
+                    rgba(27, 28, 49, 0.95),
+                    rgba(27, 28, 49, 0.34) 62%,
+                    rgba(27, 28, 49, 0.08)
             );
 }
 
@@ -2629,7 +2639,7 @@ legend {
     border-radius: 19px;
 
     background:
-            rgba(255, 252, 253, 0.97);
+            rgba(255, 255, 255, 0.97);
 
     color: var(--text);
 
@@ -2678,7 +2688,7 @@ legend {
     height: 14px;
 
     background:
-            rgba(255, 252, 253, 0.97);
+            rgba(255, 255, 255, 0.97);
 
     content: "";
 
@@ -2731,7 +2741,7 @@ legend {
     border-radius: 13px;
 
     background:
-            rgba(36, 22, 35, 0.78);
+            rgba(27, 28, 49, 0.78);
 
     color:
             rgba(255, 255, 255, 0.84);
@@ -2825,18 +2835,18 @@ legend {
 
 .narration-line.accent {
     border-color:
-            rgba(234, 215, 172, 0.24);
+            rgba(220, 232, 240, 0.2);
 
     background:
             linear-gradient(
                     135deg,
-                    rgba(98, 90, 156, 0.15),
-                    rgba(110, 158, 145, 0.12)
+                    rgba(101, 106, 166, 0.16),
+                    rgba(127, 163, 189, 0.14)
             );
 }
 
 .narration-line.accent p {
-    color: var(--gold-light);
+    color: var(--blue-light);
 
     font-weight: 800;
 }
@@ -2860,7 +2870,7 @@ legend {
     border-radius: 15px;
 
     background:
-            rgba(36, 22, 35, 0.88);
+            rgba(27, 28, 49, 0.88);
 
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -3070,7 +3080,7 @@ legend {
             linear-gradient(
                     90deg,
                     var(--indigo),
-                    var(--jade),
+                    var(--blue),
                     var(--gold-light)
             );
 
@@ -3078,7 +3088,7 @@ legend {
             0
             0
             12px
-            rgba(234, 215, 172, 0.24);
+            rgba(220, 232, 240, 0.24);
 }
 
 /* =========================================================
@@ -3116,7 +3126,7 @@ legend {
 
     margin-bottom: 5px;
 
-    color: var(--gold-light);
+    color: var(--blue-light);
 
     font-size: 10px;
 }
@@ -3155,7 +3165,7 @@ legend {
 
     border:
             1px solid
-            rgba(234, 215, 172, 0.12);
+            rgba(234, 217, 178, 0.12);
 
     border-radius: 11px;
 
@@ -3226,13 +3236,13 @@ legend {
 
 .luck-block.is-current {
     border-color:
-            rgba(234, 215, 172, 0.32);
+            rgba(220, 232, 240, 0.28);
 
     background:
             linear-gradient(
                     135deg,
-                    rgba(98, 90, 156, 0.1),
-                    rgba(110, 158, 145, 0.08)
+                    rgba(101, 106, 166, 0.11),
+                    rgba(127, 163, 189, 0.09)
             );
 }
 
@@ -3423,13 +3433,13 @@ legend {
             1px solid var(--line);
 
     background:
-            rgba(251, 250, 247, 0.95);
+            rgba(248, 250, 252, 0.95);
 
     box-shadow:
             0
             -9px
             27px
-            rgba(63, 38, 62, 0.09);
+            rgba(36, 39, 69, 0.09);
 
     backdrop-filter: blur(22px);
     -webkit-backdrop-filter: blur(22px);
@@ -3452,7 +3462,7 @@ legend {
 
     background: transparent;
 
-    color: #94858f;
+    color: #8b92a3;
 
     transition:
             background 0.2s ease,
@@ -3464,8 +3474,8 @@ legend {
     background:
             linear-gradient(
                     145deg,
-                    rgba(232, 229, 244, 0.82),
-                    rgba(220, 235, 230, 0.55)
+                    rgba(231, 233, 246, 0.86),
+                    rgba(220, 232, 240, 0.62)
             );
 
     color: var(--indigo);
@@ -3503,12 +3513,12 @@ legend {
 
     border:
             1px solid
-            rgba(234, 215, 172, 0.18);
+            rgba(234, 217, 178, 0.18);
 
     border-radius: 12px;
 
     background:
-            rgba(36, 22, 35, 0.96);
+            rgba(27, 28, 49, 0.96);
 
     color: #ffffff;
 
@@ -3516,7 +3526,7 @@ legend {
             0
             13px
             30px
-            rgba(36, 22, 35, 0.26);
+            rgba(27, 28, 49, 0.28);
 
     font-size: 11px;
 
@@ -3550,44 +3560,44 @@ legend {
     background:
             radial-gradient(
                     circle at top right,
-                    rgba(170, 164, 209, 0.32),
+                    rgba(101, 106, 166, 0.32),
                     transparent 115px
             ),
             radial-gradient(
                     circle at bottom left,
-                    rgba(110, 158, 145, 0.16),
+                    rgba(127, 163, 189, 0.18),
                     transparent 130px
             ),
             linear-gradient(
                     145deg,
-                    var(--plum-soft) 0%,
-                    #51334f 52%,
-                    var(--plum-deep) 100%
+                    var(--midnight-soft) 0%,
+                    var(--midnight) 52%,
+                    var(--midnight-deep) 100%
             );
 
     box-shadow:
             0
             14px
             30px
-            rgba(63, 38, 62, 0.2);
+            rgba(36, 39, 69, 0.21);
 }
 
 .cinematic-card img {
     object-position: 50% 27%;
 
     filter:
-            brightness(0.8)
-            saturate(0.84)
-            contrast(1.05);
+            brightness(0.78)
+            saturate(0.82)
+            contrast(1.06);
 }
 
 .cinematic-card .recommend-shade {
     background:
             linear-gradient(
                     to top,
-                    rgba(36, 22, 35, 0.98),
-                    rgba(63, 38, 62, 0.54) 55%,
-                    rgba(170, 164, 209, 0.04) 100%
+                    rgba(27, 28, 49, 0.98),
+                    rgba(48, 48, 79, 0.54) 55%,
+                    rgba(127, 163, 189, 0.04) 100%
             );
 }
 
@@ -3601,13 +3611,13 @@ legend {
                     var(--gold)
             );
 
-    color: var(--plum-deep);
+    color: var(--midnight-deep);
 
     box-shadow:
             0
             6px
             16px
-            rgba(36, 22, 35, 0.28);
+            rgba(27, 28, 49, 0.3);
 
     font-weight: 900;
 }
@@ -3620,7 +3630,7 @@ legend {
 
     .fortune-menu button:hover {
         border-color:
-                rgba(98, 90, 156, 0.22);
+                rgba(101, 106, 166, 0.22);
 
         transform: translateY(-2px);
 
@@ -3628,7 +3638,7 @@ legend {
                 0
                 13px
                 28px
-                rgba(63, 38, 62, 0.12);
+                rgba(36, 39, 69, 0.12);
     }
 
     .recommend-card:hover {
@@ -3638,7 +3648,7 @@ legend {
                 0
                 18px
                 36px
-                rgba(63, 38, 62, 0.18);
+                rgba(36, 39, 69, 0.18);
     }
 
     .primary-button:hover {
