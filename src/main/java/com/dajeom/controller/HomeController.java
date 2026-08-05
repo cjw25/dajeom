@@ -15,4 +15,9 @@ public class HomeController {
     public String tarot() {
         return "tarot";
     }
+
+    @GetMapping("/saju-cinematic")
+    public String sajuCinematic() {
+        return "saju-cinematic";
+    }
 }

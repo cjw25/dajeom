@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width,
+                   initial-scale=1.0,
+                   maximum-scale=1.0,
+                   user-scalable=no">
+
+    <meta name="theme-color"
+          content="#050b16">
+
+    <title>다점 - 천명해설</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/saju-cinematic.css}"
+          href="/css/saju-cinematic.css">
+
+</head>
+
+<body>
+
+<div class="page-shell">
+
+    <!-- =====================================================
+         상단 헤더
+    ====================================================== -->
+    <header class="top-header">
+
+        <button type="button"
+                id="backButton"
+                class="header-button"
+                aria-label="뒤로가기">
+            ‹
+        </button>
+
+        <div class="header-copy">
+
+            <strong id="headerTitle">
+                천명해설
+            </strong>
+
+            <span id="headerStep">
+                사주정보 입력
+            </span>
+
+        </div>
+
+        <div class="header-actions">
+
+            <button type="button"
+                    id="skipButton"
+                    class="header-text-button hidden">
+                건너뛰기
+            </button>
+
+            <button type="button"
+                    id="homeButtonTop"
+                    class="header-text-button">
+                홈
+            </button>
+
+        </div>
+
+    </header>
+
+    <main class="main-content">
+
+        <!-- =================================================
+             1. 사주정보 입력
+        ================================================== -->
+        <section class="screen active"
+                 data-screen="input">
+
+            <div class="input-hero">
+
+                <img th:src="@{/img/saju-character.png}"
+                     src="/img/saju-character.png"
+                     alt="천명해설 캐릭터">
+
+                <div class="input-hero-shade">
+                </div>
+
+                <div class="input-hero-copy">
+
+                    <span>
+                        天命解說
+                    </span>
+
+                    <h1>
+                        태어난 순간의 흐름을<br>
+                        영상으로 쉽게 풀어드립니다
+                    </h1>
+
+                    <p>
+                        사주 명식표, 오행, 십성, 신살과 대운을
+                        캐릭터 이미지와 장면별 자막으로 설명합니다.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="input-panel">
+
+                <div class="section-heading">
+
+                    <span>
+                        STEP 01
+                    </span>
+
+                    <h2>
+                        사주정보 입력
+                    </h2>
+
+                    <p>
+                        이름과 생년월일, 출생시간을 입력해주세요.
+                    </p>
+
+                </div>
+
+                <form id="sajuInputForm"
+                      novalidate>
+
+                    <!-- 이름 -->
+                    <div class="form-group">
+
+                        <label class="field-label"
+                               for="nameInput">
+                            이름
+                        </label>
+
+                        <input id="nameInput"
+                               class="text-input"
+                               type="text"
+                               maxlength="20"
+                               autocomplete="off"
+                               placeholder="이름을 입력해주세요">
+
+                    </div>
+
+                    <!-- 성별 -->
+                    <fieldset class="form-group">
+
+                        <legend>
+                            성별
+                        </legend>
+
+                        <div class="segment-control">
+
+                            <button type="button"
+                                    class="segment-button"
+                                    data-gender="MALE">
+                                남성
+                            </button>
+
+                            <button type="button"
+                                    class="segment-button"
+                                    data-gender="FEMALE">
+                                여성
+                            </button>
+
+                        </div>
+
+                    </fieldset>
+
+                    <!-- 양력/음력 -->
+                    <fieldset class="form-group">
+
+                        <legend>
+                            달력 구분
+                        </legend>
+
+                        <div class="segment-control">
+
+                            <button type="button"
+                                    class="segment-button active"
+                                    data-calendar="SOLAR">
+                                양력
+                            </button>
+
+                            <button type="button"
+                                    class="segment-button"
+                                    data-calendar="LUNAR">
+                                음력
+                            </button>
+
+                        </div>
+
+                    </fieldset>
+
+                    <!-- 윤달 -->
+                    <div id="lunarLeapWrap"
+                         class="sub-option hidden">
+
+                        <label class="check-line">
+
+                            <input id="lunarLeapMonth"
+                                   type="checkbox">
+
+                            <span>
+                                윤달로 태어났습니다
+                            </span>
+
+                        </label>
+
+                        <p>
+                            일반 음력 생일은 선택하지 않습니다.
+                        </p>
+
+                    </div>
+
+                    <!-- 생년월일 -->
+                    <fieldset class="form-group">
+
+                        <legend>
+                            생년월일
+                        </legend>
+
+                        <div class="birth-grid">
+
+                            <label>
+
+                                <span>
+                                    연도
+                                </span>
+
+                                <input id="birthYear"
+                                       class="text-input numeric-input"
+                                       type="text"
+                                       inputmode="numeric"
+                                       maxlength="4"
+                                       placeholder="1993">
+
+                            </label>
+
+                            <label>
+
+                                <span>
+                                    월
+                                </span>
+
+                                <input id="birthMonth"
+                                       class="text-input numeric-input"
+                                       type="text"
+                                       inputmode="numeric"
+                                       maxlength="2"
+                                       placeholder="08">
+
+                            </label>
+
+                            <label>
+
+                                <span>
+                                    일
+                                </span>
+
+                                <input id="birthDay"
+                                       class="text-input numeric-input"
+                                       type="text"
+                                       inputmode="numeric"
+                                       maxlength="2"
+                                       placeholder="24">
+
+                            </label>
+
+                        </div>
+
+                    </fieldset>
+
+                    <!-- 출생시간 -->
+                    <fieldset class="form-group">
+
+                        <div class="legend-row">
+
+                            <legend>
+                                출생시간
+                            </legend>
+
+                            <label class="check-line">
+
+                                <input id="birthTimeUnknown"
+                                       type="checkbox">
+
+                                <span>
+                                    시간 모름
+                                </span>
+
+                            </label>
+
+                        </div>
+
+                        <div id="timeInputWrap"
+                             class="time-grid">
+
+                            <label>
+
+                                <span>
+                                    시
+                                </span>
+
+                                <input id="birthHour"
+                                       class="text-input numeric-input"
+                                       type="text"
+                                       inputmode="numeric"
+                                       maxlength="2"
+                                       placeholder="13">
+
+                            </label>
+
+                            <strong>
+                                :
+                            </strong>
+
+                            <label>
+
+                                <span>
+                                    분
+                                </span>
+
+                                <input id="birthMinute"
+                                       class="text-input numeric-input"
+                                       type="text"
+                                       inputmode="numeric"
+                                       maxlength="2"
+                                       placeholder="30">
+
+                            </label>
+
+                        </div>
+
+                        <p class="field-help">
+                            24시간 기준입니다. 오후 1시 30분은 13:30으로 입력합니다.
+                        </p>
+
+                    </fieldset>
+
+                    <p id="inputError"
+                       class="error-text">
+                    </p>
+
+                    <button type="submit"
+                            class="primary-button">
+                        입력정보 확인
+                    </button>
+
+                </form>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             2. 입력정보 확인
+        ================================================== -->
+        <section class="screen"
+                 data-screen="review">
+
+            <div class="simple-page">
+
+                <div class="section-heading">
+
+                    <span>
+                        STEP 02
+                    </span>
+
+                    <h2>
+                        입력정보 확인
+                    </h2>
+
+                    <p>
+                        이 정보로 사주 명식표와 영상 해설을 생성합니다.
+                    </p>
+
+                </div>
+
+                <div class="review-card">
+
+                    <div>
+
+                        <span>
+                            이름
+                        </span>
+
+                        <strong id="reviewName">
+                        </strong>
+
+                    </div>
+
+                    <div>
+
+                        <span>
+                            성별
+                        </span>
+
+                        <strong id="reviewGender">
+                        </strong>
+
+                    </div>
+
+                    <div>
+
+                        <span>
+                            달력
+                        </span>
+
+                        <strong id="reviewCalendar">
+                        </strong>
+
+                    </div>
+
+                    <div id="reviewLeapRow"
+                         class="hidden">
+
+                        <span>
+                            음력 구분
+                        </span>
+
+                        <strong id="reviewLeap">
+                        </strong>
+
+                    </div>
+
+                    <div>
+
+                        <span>
+                            생년월일
+                        </span>
+
+                        <strong id="reviewBirthDate">
+                        </strong>
+
+                    </div>
+
+                    <div>
+
+                        <span>
+                            출생시간
+                        </span>
+
+                        <strong id="reviewBirthTime">
+                        </strong>
+
+                    </div>
+
+                </div>
+
+                <div class="button-stack">
+
+                    <button type="button"
+                            id="editButton"
+                            class="secondary-button">
+                        수정하기
+                    </button>
+
+                    <button type="button"
+                            id="analyzeButton"
+                            class="primary-button">
+                        분석하고 영상 시작
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             3. 분석 진행
+        ================================================== -->
+        <section class="screen"
+                 data-screen="analysis">
+
+            <div class="analysis-page">
+
+                <img class="analysis-background"
+                     th:src="@{/img/saju-character.png}"
+                     src="/img/saju-character.png"
+                     alt="분석 중인 천명해설 캐릭터">
+
+                <div class="analysis-shade">
+                </div>
+
+                <div class="analysis-content">
+
+                    <span class="analysis-label">
+                        AI 만세력 분석
+                    </span>
+
+                    <div id="analysisCircle"
+                         class="analysis-circle">
+
+                        <div>
+
+                            <strong id="analysisPercent">
+                                0%
+                            </strong>
+
+                            <span id="analysisStage">
+                                준비 중
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <h2>
+                        영상 해설을 만들고 있습니다
+                    </h2>
+
+                    <p id="analysisMessage">
+                        입력한 정보를 확인하고 있습니다.
+                    </p>
+
+                    <div class="analysis-progress-track">
+
+                        <div id="analysisBar"
+                             class="analysis-progress-value">
+                        </div>
+
+                    </div>
+
+                    <div class="analysis-progress-caption">
+
+                        <span id="analysisProgressText">
+                            분석 준비
+                        </span>
+
+                        <strong id="analysisProgressNumber">
+                            0 / 100
+                        </strong>
+
+                    </div>
+
+                    <div class="analysis-step-list">
+
+                        <div class="analysis-step active"
+                             data-analysis-step="0">
+
+                            <span>
+                                1
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    출생정보 확인
+                                </strong>
+
+                                <small>
+                                    양력·음력과 윤달 정보를 확인합니다.
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                        <div class="analysis-step"
+                             data-analysis-step="1">
+
+                            <span>
+                                2
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    사주 명식표 계산
+                                </strong>
+
+                                <small>
+                                    년주·월주·일주·시주를 계산합니다.
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                        <div class="analysis-step"
+                             data-analysis-step="2">
+
+                            <span>
+                                3
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    오행·십성·신살 분석
+                                </strong>
+
+                                <small>
+                                    원국의 구조와 보조 흐름을 분석합니다.
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                        <div class="analysis-step"
+                             data-analysis-step="3">
+
+                            <span>
+                                4
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    이미지 영상 구성
+                                </strong>
+
+                                <small>
+                                    캐릭터 이미지와 결과 화면을 장면으로 구성합니다.
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             4. 영상형 사주 화면
+        ================================================== -->
+        <section class="screen cinematic-screen"
+                 data-screen="cinematic">
+
+            <div id="cinematicStage"
+                 class="cinematic-stage camera-wide">
+
+                <!-- 장면 배경 이미지 -->
+                <img id="sceneBackgroundImage"
+                     class="scene-background-image"
+                     th:src="@{/img/saju-character.png}"
+                     src="/img/saju-character.png"
+                     alt="천명해설 영상 배경">
+
+                <div class="scene-background-shade">
+                </div>
+
+                <div class="scene-vignette">
+                </div>
+
+                <div class="scene-light scene-light-one">
+                </div>
+
+                <div class="scene-light scene-light-two">
+                </div>
+
+                <div class="scene-smoke scene-smoke-one">
+                </div>
+
+                <div class="scene-smoke scene-smoke-two">
+                </div>
+
+                <!-- 장면 안에 삽입되는 추가 이미지 -->
+                <figure id="sceneImageFrame"
+                        class="scene-image-frame hidden">
+
+                    <img id="sceneForegroundImage"
+                         th:src="@{/img/saju-character.png}"
+                         src="/img/saju-character.png"
+                         alt="사주 해설 장면 이미지">
+
+                    <figcaption id="sceneImageCaption">
+                    </figcaption>
+
+                </figure>
+
+                <!-- 명식표·오행·신살 등 시각 자료 -->
+                <section id="sceneVisualPanel"
+                         class="scene-visual-panel hidden">
+
+                    <div id="sceneVisualContent">
+                    </div>
+
+                </section>
+
+                <!-- 장면 제목 -->
+                <section id="sceneHeading"
+                         class="cinematic-heading">
+
+                    <span id="sceneKicker">
+                        天命解說
+                    </span>
+
+                    <h2 id="sceneTitle">
+                        사주의 문을 엽니다
+                    </h2>
+
+                </section>
+
+                <!-- 자막 -->
+                <section id="captionBox"
+                         class="caption-box">
+
+                    <p id="captionText">
+                    </p>
+
+                </section>
+
+                <!-- 진행률 -->
+                <footer class="cinematic-footer">
+
+                    <div class="cinematic-progress-track">
+
+                        <div id="cinematicProgressValue"
+                             class="cinematic-progress-value">
+                        </div>
+
+                    </div>
+
+                    <div class="cinematic-progress-number">
+
+                        <span id="currentSceneNumber">
+                            0
+                        </span>
+
+                        <span>
+                            /
+                        </span>
+
+                        <span id="totalSceneNumber">
+                            0
+                        </span>
+
+                    </div>
+
+                </footer>
+
+            </div>
+
+        </section>
+
+        <!-- =================================================
+             5. 전체 결과
+        ================================================== -->
+        <section class="screen"
+                 data-screen="result">
+
+            <div class="result-page">
+
+                <div class="result-top">
+
+                    <span>
+                        영상 해설 완료
+                    </span>
+
+                    <h1 id="resultTitle">
+                        사주 전체 결과
+                    </h1>
+
+                    <p id="resultSummary">
+                    </p>
+
+                </div>
+
+                <!-- 사주 명식표 -->
+                <section class="result-card">
+
+                    <div class="result-card-heading">
+
+                        <span>
+                            命
+                        </span>
+
+                        <div>
+
+                            <strong id="chartPersonTitle">
+                                사주 명식표
+                            </strong>
+
+                            <small id="chartDateTitle">
+                                -
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                    <div id="resultChart"
+                         class="result-chart">
+                    </div>
+
+                </section>
+
+                <!-- 오행 -->
+                <section class="result-section">
+
+                    <div class="result-section-heading">
+
+                        <h2>
+                            오행 한눈에 보기
+                        </h2>
+
+                        <p>
+                            비율과 생활에서 드러나는 특징을 함께 보여줍니다.
+                        </p>
+
+                    </div>
+
+                    <div id="resultElementList"
+                         class="result-element-list">
+                    </div>
+
+                    <div id="resultElementEasyList"
+                         class="easy-card-list">
+                    </div>
+
+                </section>
+
+                <!-- 쉬운 해설 -->
+                <section class="result-section">
+
+                    <div class="result-section-heading">
+
+                        <h2>
+                            일반인이 이해하는 쉬운 해설
+                        </h2>
+
+                        <p>
+                            전문용어를 생활에서 이해하기 쉬운 말로 바꿨습니다.
+                        </p>
+
+                    </div>
+
+                    <div id="resultEasyList"
+                         class="easy-card-list">
+                    </div>
+
+                </section>
+
+                <!-- 신살 -->
+                <section class="result-section">
+
+                    <div class="result-section-heading">
+
+                        <h2>
+                            신살 쉽게 보기
+                        </h2>
+
+                        <p>
+                            무서운 예언이 아니라 성향을 보조하는 의미로 설명합니다.
+                        </p>
+
+                    </div>
+
+                    <div id="resultShinsalList"
+                         class="easy-card-list">
+                    </div>
+
+                </section>
+
+                <!-- 대운 -->
+                <section class="result-section">
+
+                    <div class="result-section-heading">
+
+                        <h2>
+                            대운과 세운
+                        </h2>
+
+                        <p>
+                            현재 큰 흐름과 앞으로의 시기를 확인합니다.
+                        </p>
+
+                    </div>
+
+                    <div id="resultLuckList"
+                         class="easy-card-list">
+                    </div>
+
+                </section>
+
+                <!-- 전문 정보 -->
+                <section class="result-section">
+
+                    <details class="advanced-details">
+
+                        <summary>
+                            전문 명리 정보 더보기
+                        </summary>
+
+                        <div id="resultAdvancedList"
+                             class="advanced-list">
+                        </div>
+
+                    </details>
+
+                </section>
+
+                <p id="resultDisclaimer"
+                   class="result-disclaimer">
+                </p>
+
+                <div class="result-actions">
+
+                    <button type="button"
+                            id="replayButton"
+                            class="secondary-button">
+                        영상 다시 보기
+                    </button>
+
+                    <button type="button"
+                            id="restartButton"
+                            class="secondary-button">
+                        새로 입력하기
+                    </button>
+
+                    <button type="button"
+                            id="goHomeButton"
+                            class="primary-button">
+                        메인으로
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <div id="toast"
+         class="toast"
+         role="status"
+         aria-live="polite">
+    </div>
+
+</div>
+
+<script th:src="@{/js/saju-cinematic.js}"
+        src="/js/saju-cinematic.js">
+</script>
+
+</body>
+</html>

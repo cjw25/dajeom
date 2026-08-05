@@ -2888,3 +2888,54 @@ legend {
         font-size: 19px;
     }
 }
+
+/* =========================================================
+   천명해설 영상형 사주 카드 추가
+========================================================= */
+
+.cinematic-card {
+    border-color:
+            rgba(139, 109, 243, 0.34);
+
+    background:
+            radial-gradient(
+                    circle at top right,
+                    rgba(139, 109, 243, 0.24),
+                    transparent 105px
+            ),
+            var(--surface);
+}
+
+.cinematic-card img {
+    object-position: 50% 27%;
+
+    filter:
+            brightness(0.78)
+            saturate(0.95)
+            contrast(1.05);
+}
+
+.cinematic-card .recommend-shade {
+    background:
+            linear-gradient(
+                    to top,
+                    rgba(5, 10, 22, 0.97),
+                    rgba(5, 10, 22, 0.18) 65%,
+                    transparent 100%
+            );
+}
+
+.recommend-badge.cinematic {
+    z-index: 2;
+
+    background:
+            linear-gradient(
+                    135deg,
+                    rgba(139, 109, 243, 0.97),
+                    rgba(83, 57, 166, 0.97)
+            );
+
+    box-shadow:
+            0 5px 14px
+            rgba(79, 54, 160, 0.3);
+}

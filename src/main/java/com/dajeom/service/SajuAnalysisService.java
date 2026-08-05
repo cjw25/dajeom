@@ -18,6 +18,7 @@ public class SajuAnalysisService {
     private final BirthProfileRepository birthProfileRepository;
     private final SajuAnalysisRepository sajuAnalysisRepository;
     private final SajuCalculatorService sajuCalculatorService;
+    private final SajuEasyExplanationService sajuEasyExplanationService;
 
     @Transactional
     public SajuAnalysisResponse createAnalysis(
@@ -43,16 +44,31 @@ public class SajuAnalysisService {
                 );
 
         try {
-            savedAnalysis.updateProgress(30);
+            savedAnalysis.updateProgress(
+                    30
+            );
+
+            savedAnalysis.updateProgress(
+                    80
+            );
 
             /*
-             * 만세력 계산이 끝난 뒤 상태를 완료로 바꾸고
-             * 전체 Response를 생성한다.
+             * 응답에 COMPLETED 상태와 완료 시각을 넣기 위해
+             * 계산 결과를 만들기 전에 분석 상태를 완료로 변경한다.
              */
             savedAnalysis.complete();
 
-            return sajuCalculatorService.calculate(
-                    savedAnalysis
+            SajuAnalysisResponse calculatedResponse =
+                    sajuCalculatorService.calculate(
+                            savedAnalysis
+                    );
+
+            /*
+             * 만세력과 사주 계산값은 그대로 유지하고
+             * summary와 interpretations만 쉬운 문장으로 바꾼다.
+             */
+            return sajuEasyExplanationService.enrich(
+                    calculatedResponse
             );
 
         } catch (IllegalArgumentException exception) {
@@ -92,8 +108,13 @@ public class SajuAnalysisService {
             );
         }
 
-        return sajuCalculatorService.calculate(
-                analysis
+        SajuAnalysisResponse calculatedResponse =
+                sajuCalculatorService.calculate(
+                        analysis
+                );
+
+        return sajuEasyExplanationService.enrich(
+                calculatedResponse
         );
     }
 }
