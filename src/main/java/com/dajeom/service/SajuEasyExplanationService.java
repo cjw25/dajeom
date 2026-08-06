@@ -29,7 +29,7 @@ public class SajuEasyExplanationService {
 
     /**
      * 만세력 계산값은 변경하지 않고
-     * 사용자가 직접 상담받는 듯한 심층 해설을 결합한다.
+     * 반말 형식의 심층 해설을 결합한다.
      */
     public SajuAnalysisResponse enrich(
             SajuAnalysisResponse source
@@ -83,7 +83,7 @@ public class SajuEasyExplanationService {
     }
 
     /**
-     * 전체 결과 상단에 표시되는 핵심 요약이다.
+     * 전체 결과 화면 상단에 표시할 핵심 요약을 만든다.
      */
     private String buildSummary(
             SajuFacts facts
@@ -122,6 +122,9 @@ public class SajuEasyExplanationService {
         );
     }
 
+    /**
+     * 현대사주와 전통사주 심층 해설을 생성한다.
+     */
     private List<InterpretationResponse> buildInterpretations(
             SajuFacts facts
     ) {
@@ -151,7 +154,7 @@ public class SajuEasyExplanationService {
     }
 
     /**
-     * 카테고리별 약 1,800~2,200자의 심층 해설을 생성한다.
+     * 카테고리별 약 1,800자에서 2,200자의 해설을 만든다.
      */
     private String buildDeepContent(
             DeepTopic topic,
@@ -506,6 +509,12 @@ public class SajuEasyExplanationService {
         };
     }
 
+    /**
+     * 현실에서 나타나기 쉬운 모습을 설명한다.
+     *
+     * FUTURE_OVERALL과 FUTURE를 서로 다른 case로 분리해서
+     * 중복 case 오류가 발생하지 않도록 한다.
+     */
     private String topicReality(
             DeepTopic topic,
             SajuFacts facts
@@ -523,7 +532,7 @@ public class SajuEasyExplanationService {
                             + "여러 제안이 들어와도 네 경력과 수입에 무엇이 남는지 확인해야 해. "
                             + "단기적인 기분이나 주변 사람의 기대 때문에 일정을 과도하게 벌리면 체력과 돈이 먼저 흔들릴 수 있어.";
 
-            case FUTURE_OVERALL, FUTURE ->
+            case FUTURE_OVERALL ->
                     "앞으로는 네가 직접 만든 결과물과 경력이 중요한 자산이 돼. "
                             + "이름만 그럴듯한 계획보다 실제 사용자, 고객, 매출, 자격, 포트폴리오처럼 확인 가능한 결과를 남겨야 해. "
                             + "인간관계에서도 친한 사람의 부탁과 네 책임을 분리해야 장기적으로 안정돼.";
@@ -846,7 +855,6 @@ public class SajuEasyExplanationService {
                     + "여러 일을 동시에 벌이기보다 실제 결과가 남는 목표를 고르고, "
                     + "사람과 돈이 함께 움직이는 제안은 조건을 먼저 확인해야 해. "
                     + "올해의 핵심은 확장보다 선택과 완성이야.";
-
         }
 
         return facts.reportYear()
@@ -1599,7 +1607,7 @@ public class SajuEasyExplanationService {
     }
 
     /**
-     * 해설에서 특정 월과 날짜 표현은 제거한다.
+     * 해설에서 특정 월과 날짜 표현을 제거한다.
      *
      * 현재 연도 자체는 종합운 제목과 해설에 사용할 수 있다.
      */
