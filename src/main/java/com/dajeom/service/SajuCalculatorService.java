@@ -293,6 +293,337 @@ public class SajuCalculatorService {
         );
     }
 
+    /**
+     * 미래 운세 계산에 필요한 원국·용희기신·현재 대운 자료를 구조화해서 반환한다.
+     *
+     * SajuForecastService가 SajuAnalysisResponse를 JSON으로 다시 검색하지 않고
+     * 현재 만세력 계산 결과를 직접 사용할 수 있도록 제공하는 전용 메서드다.
+     */
+    public ForecastBaseData calculateForecastBaseData(
+            SajuAnalysis analysis
+    ) {
+        if (analysis == null) {
+            throw new IllegalArgumentException("사주 분석 정보가 없습니다.");
+        }
+
+        BirthProfile profile = analysis.getBirthProfile();
+
+        if (profile == null) {
+            throw new IllegalArgumentException("사주 기본정보를 찾을 수 없습니다.");
+        }
+
+        Chart chart = calculateBirthChart(profile);
+
+        List<PillarResponse> pillars = buildPillarResponses(chart);
+        ElementBalanceResponse elementBalance = buildElementBalance(pillars);
+        StrengthResponse strength = buildStrength(
+                chart.dayPillar().stemIndex(),
+                elementBalance
+        );
+
+        List<String> natalStems = chart.knownPillars()
+                .stream()
+                .map(item -> item.pillar().stem())
+                .toList();
+
+        List<String> natalBranches = chart.knownPillars()
+                .stream()
+                .map(item -> item.pillar().branch())
+                .toList();
+
+        List<ForecastNatalPillarData> natalPillars = chart.knownPillars()
+                .stream()
+                .map(item -> new ForecastNatalPillarData(
+                        item.label(),
+                        item.pillar().ganZhi(),
+                        item.pillar().ganZhiKorean(),
+                        item.pillar().stem(),
+                        item.pillar().branch(),
+                        STEM_ELEMENTS[item.pillar().stemIndex()],
+                        BRANCH_ELEMENTS[item.pillar().branchIndex()],
+                        tenGod(
+                                chart.dayPillar().stemIndex(),
+                                item.pillar().stemIndex(),
+                                "일주".equals(item.label())
+                        )
+                ))
+                .toList();
+
+        ForecastLuckData currentDaeun = calculateCurrentForecastLuckData(
+                profile,
+                chart,
+                LocalDate.now(KOREA_ZONE).getYear()
+        );
+
+        return new ForecastBaseData(
+                profile.getId(),
+                chart.dayPillar().stem(),
+                chart.dayPillar().branch(),
+                STEM_ELEMENTS[chart.dayPillar().stemIndex()],
+                List.copyOf(natalStems),
+                List.copyOf(natalBranches),
+                natalPillars,
+                strength.classification(),
+                strength.usefulGod(),
+                strength.favorableGod(),
+                strength.unfavorableGod(),
+                currentDaeun,
+                profile.isBirthTimeUnknown()
+        );
+    }
+
+    /**
+     * 입춘부터 다음 해 입춘 직전까지를 한 해의 세운 적용 기간으로 계산한다.
+     */
+    public ForecastPillarData calculateYearForecastPillar(
+            SajuAnalysis analysis,
+            int year
+    ) {
+        validateForecastYear(year);
+
+        if (analysis == null || analysis.getBirthProfile() == null) {
+            throw new IllegalArgumentException("사주 분석 기본정보가 없습니다.");
+        }
+
+        Chart birthChart = calculateBirthChart(
+                analysis.getBirthProfile()
+        );
+
+        PillarData yearPillar = pillarFromCycleIndex(
+                Math.floorMod(year - 4, 60)
+        );
+
+        LocalDateTime periodStart = solarTerm(year, 2);
+        LocalDateTime periodEnd = solarTerm(year + 1, 2)
+                .minusNanos(1);
+
+        return new ForecastPillarData(
+                year,
+                null,
+                "입춘",
+                yearPillar.ganZhi(),
+                yearPillar.ganZhiKorean(),
+                yearPillar.stem(),
+                yearPillar.branch(),
+                STEM_ELEMENTS[yearPillar.stemIndex()],
+                BRANCH_ELEMENTS[yearPillar.branchIndex()],
+                tenGod(
+                        birthChart.dayPillar().stemIndex(),
+                        yearPillar.stemIndex(),
+                        false
+                ),
+                periodStart,
+                periodEnd
+        );
+    }
+
+    /**
+     * 특정 양력 월에 시작되는 절기월의 월주와 실제 절입 기간을 계산한다.
+     *
+     * 1월은 소한, 2월은 입춘, 3월은 경칩 순으로 시작하며
+     * 일반 달력의 1일부터 말일까지가 아니라 절기 시각을 기준으로 한다.
+     */
+    public ForecastPillarData calculateMonthForecastPillar(
+            SajuAnalysis analysis,
+            int year,
+            int month
+    ) {
+        validateForecastYear(year);
+
+        if (month < 1 || month > 12) {
+            throw new IllegalArgumentException("조회 월은 1월부터 12월 사이여야 합니다.");
+        }
+
+        if (analysis == null || analysis.getBirthProfile() == null) {
+            throw new IllegalArgumentException("사주 분석 기본정보가 없습니다.");
+        }
+
+        Chart birthChart = calculateBirthChart(
+                analysis.getBirthProfile()
+        );
+
+        int startTermIndex = (month - 1) * 2;
+        LocalDateTime periodStart = solarTerm(
+                year,
+                startTermIndex
+        );
+
+        LocalDateTime nextPeriodStart = month == 12
+                ? solarTerm(year + 1, 0)
+                : solarTerm(year, startTermIndex + 2);
+
+        LocalDateTime periodEnd = nextPeriodStart.minusNanos(1);
+
+        Chart periodChart = calculateChart(
+                periodStart.plusSeconds(1),
+                true
+        );
+
+        PillarData monthPillar = periodChart.monthPillar();
+
+        return new ForecastPillarData(
+                year,
+                month,
+                solarTermName(startTermIndex),
+                monthPillar.ganZhi(),
+                monthPillar.ganZhiKorean(),
+                monthPillar.stem(),
+                monthPillar.branch(),
+                STEM_ELEMENTS[monthPillar.stemIndex()],
+                BRANCH_ELEMENTS[monthPillar.branchIndex()],
+                tenGod(
+                        birthChart.dayPillar().stemIndex(),
+                        monthPillar.stemIndex(),
+                        false
+                ),
+                periodStart,
+                periodEnd
+        );
+    }
+
+    /**
+     * 외부 서비스가 절기 경계 시각을 직접 조회할 때 사용한다.
+     */
+    public LocalDateTime calculateSolarTerm(
+            int year,
+            int termIndex
+    ) {
+        return solarTerm(year, termIndex);
+    }
+
+    private Chart calculateBirthChart(
+            BirthProfile profile
+    ) {
+        KoreanLunarConverter.Result calendar = resolveCalendar(profile);
+
+        LocalTime inputTime = profile.isBirthTimeUnknown()
+                ? LocalTime.NOON
+                : profile.getBirthTime();
+
+        LocalDateTime birthDateTime = LocalDateTime.of(
+                calendar.solarDate(),
+                inputTime
+        );
+
+        return calculateChart(
+                birthDateTime,
+                profile.isBirthTimeUnknown()
+        );
+    }
+
+    private ForecastLuckData calculateCurrentForecastLuckData(
+            BirthProfile profile,
+            Chart chart,
+            int targetYear
+    ) {
+        boolean yearStemYang = "양".equals(
+                STEM_YIN_YANG[chart.yearPillar().stemIndex()]
+        );
+
+        boolean male = profile.getGender() == Gender.MALE;
+        boolean forward = (male && yearStemYang)
+                || (!male && !yearStemYang);
+
+        LocalDateTime targetTerm = forward
+                ? nextJie(chart.birthDateTime())
+                : previousJie(chart.birthDateTime());
+
+        long differenceMinutes = Math.abs(
+                Duration.between(
+                        chart.birthDateTime(),
+                        targetTerm
+                ).toMinutes()
+        );
+
+        long totalStartMonths = differenceMinutes / 360L;
+        int startYears = (int) (totalStartMonths / 12L);
+        int firstStartAge = Math.max(1, startYears);
+
+        for (int index = 0; index < 12; index++) {
+            int step = forward
+                    ? index + 1
+                    : -(index + 1);
+
+            PillarData decadePillar = pillarFromCycleIndex(
+                    chart.monthPillar().cycleIndex() + step
+            );
+
+            int decadeStartAge = firstStartAge + index * 10;
+            int decadeEndAge = decadeStartAge + 9;
+            int decadeStartYear = profile.getBirthDate().getYear()
+                    + decadeStartAge;
+            int decadeEndYear = decadeStartYear + 9;
+
+            if (
+                    targetYear >= decadeStartYear
+                            && targetYear <= decadeEndYear
+            ) {
+                return new ForecastLuckData(
+                        decadePillar.ganZhi(),
+                        decadePillar.ganZhiKorean(),
+                        decadePillar.stem(),
+                        decadePillar.branch(),
+                        STEM_ELEMENTS[decadePillar.stemIndex()],
+                        BRANCH_ELEMENTS[decadePillar.branchIndex()],
+                        tenGod(
+                                chart.dayPillar().stemIndex(),
+                                decadePillar.stemIndex(),
+                                false
+                        ),
+                        decadeStartAge,
+                        decadeEndAge,
+                        decadeStartYear,
+                        decadeEndYear,
+                        forward ? "순행" : "역행"
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private void validateForecastYear(
+            int year
+    ) {
+        if (year < 1900 || year > 2100) {
+            throw new IllegalArgumentException(
+                    "미래 운세 계산 지원 연도는 1900년부터 2100년까지입니다."
+            );
+        }
+    }
+
+    private String solarTermName(
+            int termIndex
+    ) {
+        return switch (termIndex) {
+            case 0 -> "소한";
+            case 1 -> "대한";
+            case 2 -> "입춘";
+            case 3 -> "우수";
+            case 4 -> "경칩";
+            case 5 -> "춘분";
+            case 6 -> "청명";
+            case 7 -> "곡우";
+            case 8 -> "입하";
+            case 9 -> "소만";
+            case 10 -> "망종";
+            case 11 -> "하지";
+            case 12 -> "소서";
+            case 13 -> "대서";
+            case 14 -> "입추";
+            case 15 -> "처서";
+            case 16 -> "백로";
+            case 17 -> "추분";
+            case 18 -> "한로";
+            case 19 -> "상강";
+            case 20 -> "입동";
+            case 21 -> "소설";
+            case 22 -> "대설";
+            case 23 -> "동지";
+            default -> throw new IllegalArgumentException("절기 번호가 올바르지 않습니다.");
+        };
+    }
+
     private KoreanLunarConverter.Result resolveCalendar(BirthProfile profile) {
         if (profile.getCalendarType() == CalendarType.LUNAR) {
             return lunarConverter.fromLunar(
@@ -384,8 +715,8 @@ public class SajuCalculatorService {
             int year,
             int termIndex
     ) {
-        if (year < 1900 || year > 2100) {
-            throw new IllegalArgumentException("절기 계산 지원 연도는 1900년부터 2100년까지입니다.");
+        if (year < 1900 || year > 2101) {
+            throw new IllegalArgumentException("절기 계산 지원 연도는 1900년부터 2101년까지입니다.");
         }
 
         if (termIndex < 0 || termIndex >= SOLAR_TERM_MINUTES.length) {
@@ -1574,6 +1905,92 @@ public class SajuCalculatorService {
             case "수" -> "연구·데이터·상담·유통처럼 정보와 흐름을 다루는 분야를 검토할 수 있습니다.";
             default -> "현재 경력과 강점을 중심으로 현실적인 직무를 비교하는 것이 좋습니다.";
         };
+    }
+
+    /**
+     * 미래 분석 서비스에 전달하는 원국 기본자료.
+     */
+    public record ForecastBaseData(
+            Long profileId,
+            String dayStem,
+            String dayBranch,
+            String dayElement,
+            List<String> natalStems,
+            List<String> natalBranches,
+            List<ForecastNatalPillarData> natalPillars,
+            String strengthClassification,
+            String usefulElement,
+            String favorableElement,
+            String unfavorableElement,
+            ForecastLuckData currentDaeun,
+            boolean birthTimeUnknown
+    ) {
+        public ForecastBaseData {
+            natalStems = natalStems == null
+                    ? List.of()
+                    : List.copyOf(natalStems);
+
+            natalBranches = natalBranches == null
+                    ? List.of()
+                    : List.copyOf(natalBranches);
+
+            natalPillars = natalPillars == null
+                    ? List.of()
+                    : List.copyOf(natalPillars);
+        }
+    }
+
+    /**
+     * 원국의 개별 기둥 자료.
+     */
+    public record ForecastNatalPillarData(
+            String type,
+            String ganji,
+            String ganjiKorean,
+            String stem,
+            String branch,
+            String stemElement,
+            String branchElement,
+            String stemTenGod
+    ) {
+    }
+
+    /**
+     * 현재 대운 자료.
+     */
+    public record ForecastLuckData(
+            String ganji,
+            String ganjiKorean,
+            String stem,
+            String branch,
+            String stemElement,
+            String branchElement,
+            String tenGod,
+            int startAge,
+            int endAge,
+            int startYear,
+            int endYear,
+            String direction
+    ) {
+    }
+
+    /**
+     * 세운 또는 월운의 기둥과 실제 적용 기간.
+     */
+    public record ForecastPillarData(
+            int year,
+            Integer month,
+            String solarTermName,
+            String ganji,
+            String ganjiKorean,
+            String stem,
+            String branch,
+            String stemElement,
+            String branchElement,
+            String tenGod,
+            LocalDateTime periodStart,
+            LocalDateTime periodEnd
+    ) {
     }
 
     private record PillarData(

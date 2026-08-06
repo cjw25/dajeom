@@ -64,43 +64,14 @@
 
 html {
     min-height: 100%;
-
-    background:
-            linear-gradient(
-                    155deg,
-                    #fffafd 0%,
-                    #f9eaf1 52%,
-                    #eee3ed 100%
-            );
+    background: #ffffff;
 }
 
 body {
     min-height: 100vh;
     margin: 0;
 
-    background:
-            radial-gradient(
-                    circle at 92% 8%,
-                    rgba(244, 191, 209, 0.5),
-                    transparent 420px
-            ),
-            radial-gradient(
-                    circle at 8% 72%,
-                    rgba(201, 180, 221, 0.26),
-                    transparent 370px
-            ),
-            radial-gradient(
-                    circle at 55% 100%,
-                    rgba(125, 159, 149, 0.14),
-                    transparent 360px
-            ),
-            linear-gradient(
-                    155deg,
-                    #fffafd 0%,
-                    #f9eaf1 52%,
-                    #eee3ed 100%
-            );
-
+    background: #ffffff;
     color: var(--text);
 
     font-family:
@@ -118,7 +89,6 @@ input {
 button {
     padding: 0;
     border: 0;
-
     cursor: pointer;
 }
 
@@ -176,10 +146,10 @@ legend {
 
     background:
             linear-gradient(
-                    165deg,
-                    #fffafd 0%,
-                    #fcecf3 50%,
-                    #f1e6ef 100%
+                    180deg,
+                    #fff4f7 0%,
+                    #fde7ec 55%,
+                    #f9dce4 100%
             );
 
     box-shadow:
@@ -261,13 +231,11 @@ legend {
 
 .header-button:last-child {
     justify-self: end;
-
     font-size: 17px;
 }
 
 .header-button.is-hidden {
     visibility: hidden;
-
     pointer-events: none;
 }
 
@@ -298,13 +266,11 @@ legend {
 
 .header-copy strong {
     color: var(--plum);
-
     font-size: 15px;
 }
 
 .header-copy span {
     color: var(--sub);
-
     font-size: 8px;
 }
 
@@ -401,6 +367,24 @@ legend {
             rgba(180, 82, 120, 0.25);
 }
 
+/* AI 사주 내부 주요 버튼 */
+
+.form-panel .primary-button,
+.simple-page .primary-button,
+.complete-page .primary-button,
+.analysis-page .primary-button,
+.webtoon-page .primary-button,
+.ending-actions .primary-button {
+    background: #ef88a3;
+    color: #ffffff;
+
+    box-shadow:
+            0
+            10px
+            24px
+            rgba(239, 136, 163, 0.3);
+}
+
 .primary-button.compact {
     width: auto;
     min-width: 94px;
@@ -415,9 +399,7 @@ legend {
 
 .primary-button:disabled {
     cursor: not-allowed;
-
     opacity: 0.42;
-
     box-shadow: none;
 }
 
@@ -459,7 +441,6 @@ legend {
 
 .button-stack {
     display: grid;
-
     gap: 10px;
 }
 
@@ -483,24 +464,19 @@ legend {
     background:
             radial-gradient(
                     circle at 94% 4%,
-                    rgba(244, 191, 209, 0.52),
+                    rgba(244, 191, 209, 0.5),
                     transparent 280px
             ),
             radial-gradient(
                     circle at 5% 67%,
-                    rgba(201, 180, 221, 0.25),
+                    rgba(250, 204, 195, 0.24),
                     transparent 340px
             ),
-            radial-gradient(
-                    circle at 92% 84%,
-                    rgba(125, 159, 149, 0.13),
-                    transparent 280px
-            ),
             linear-gradient(
-                    165deg,
-                    #fffafd 0%,
-                    #fcecf3 48%,
-                    #f1e6ef 100%
+                    180deg,
+                    #fff4f7 0%,
+                    #fde7ec 55%,
+                    #f9dce4 100%
             );
 }
 
@@ -543,7 +519,7 @@ legend {
     background:
             radial-gradient(
                     circle,
-                    rgba(201, 180, 221, 0.24),
+                    rgba(244, 191, 209, 0.22),
                     transparent 72%
             );
 
@@ -1327,7 +1303,6 @@ legend {
 
 .speech-bubble.left {
     left: 16px;
-
     border-bottom-left-radius: 5px;
 }
 
@@ -1470,7 +1445,6 @@ legend {
 
 .step-guide span {
     color: var(--text);
-
     font-size: 11px;
 }
 
@@ -1520,14 +1494,14 @@ legend {
 }
 
 .text-input:focus {
-    border-color: var(--pink);
+    border-color: #ef88a3;
 
     box-shadow:
             0
             0
             0
             3px
-            rgba(217, 120, 157, 0.15);
+            rgba(239, 136, 163, 0.15);
 }
 
 .error-message {
@@ -1583,20 +1557,14 @@ legend {
 }
 
 .segment-button.is-active {
-    background:
-            linear-gradient(
-                    135deg,
-                    var(--pink-light),
-                    var(--pink)
-            );
-
+    background: #ef88a3;
     color: #ffffff;
 
     box-shadow:
             0
             7px
             16px
-            rgba(180, 82, 120, 0.22);
+            rgba(239, 136, 163, 0.26);
 }
 
 .option-box {
@@ -1643,7 +1611,7 @@ legend {
     width: 17px;
     height: 17px;
 
-    accent-color: var(--pink);
+    accent-color: #ef88a3;
 }
 
 .option-box p {
@@ -1720,7 +1688,6 @@ legend {
 
 .time-grid.is-disabled {
     opacity: 0.35;
-
     pointer-events: none;
 }
 
@@ -1789,13 +1756,11 @@ legend {
 
 .review-card span {
     color: var(--sub);
-
     font-size: 10px;
 }
 
 .review-card strong {
     color: var(--text);
-
     font-size: 12px;
 }
 
@@ -1821,13 +1786,13 @@ legend {
             ),
             radial-gradient(
                     circle at 8% 70%,
-                    rgba(201, 180, 221, 0.2),
+                    rgba(250, 204, 195, 0.2),
                     transparent 260px
             ),
             linear-gradient(
-                    165deg,
-                    #fffafd,
-                    #eee7ed
+                    180deg,
+                    #fff4f7,
+                    #fde7ec
             );
 
     text-align: center;
@@ -2046,7 +2011,6 @@ legend {
 
 .progress-ring span {
     color: var(--sub);
-
     font-size: 9px;
 }
 
@@ -2137,7 +2101,6 @@ legend {
 
 .analysis-steps {
     display: grid;
-
     gap: 8px;
 
     text-align: left;
@@ -2218,8 +2181,7 @@ legend {
     font-weight: 900;
 }
 
-.analysis-step.is-complete
-.analysis-step-number {
+.analysis-step.is-complete .analysis-step-number {
     background:
             rgba(94, 170, 128, 0.16);
 
@@ -2228,7 +2190,6 @@ legend {
 
 .analysis-step div {
     display: flex;
-
     flex-direction: column;
 
     gap: 4px;
@@ -2236,13 +2197,11 @@ legend {
 
 .analysis-step strong {
     color: #ffffff;
-
     font-size: 11px;
 }
 
 .analysis-step small {
     color: var(--sub);
-
     font-size: 9px;
 }
 
@@ -2419,7 +2378,6 @@ legend {
 
 .webtoon-story {
     display: grid;
-
     gap: 0;
 }
 
@@ -2451,7 +2409,6 @@ legend {
 
 .webtoon-episode.is-visible {
     opacity: 1;
-
     transform: translateY(0);
 }
 
@@ -2548,8 +2505,7 @@ legend {
             ease-out;
 }
 
-.webtoon-episode.is-visible
-.scene-image {
+.webtoon-episode.is-visible .scene-image {
     transform: scale(1.1);
 }
 
@@ -2617,8 +2573,7 @@ legend {
     gap: 12px;
 }
 
-.scene-paper
-.scene-heading {
+.scene-paper .scene-heading {
     position: relative;
     top: auto;
     right: auto;
@@ -2627,7 +2582,6 @@ legend {
 
 .scene-heading-copy {
     display: flex;
-
     flex-direction: column;
 
     gap: 6px;
@@ -2671,7 +2625,6 @@ legend {
     z-index: 4;
 
     display: flex;
-
     flex-direction: column;
 
     gap: 12px;
@@ -2702,8 +2655,7 @@ legend {
     opacity: 0;
 }
 
-.webtoon-episode.is-visible
-.comic-bubble {
+.webtoon-episode.is-visible .comic-bubble {
     animation:
             bubblePop
             0.68s
@@ -2818,14 +2770,12 @@ legend {
     z-index: 2;
 
     display: grid;
-
     gap: 14px;
 
     padding-top: 58px;
 }
 
-.scene-paper
-.narration-card {
+.scene-paper .narration-card {
     padding-top: 20px;
 }
 
@@ -2848,8 +2798,7 @@ legend {
     transform: translateY(16px);
 }
 
-.webtoon-episode.is-visible
-.narration-line {
+.webtoon-episode.is-visible .narration-line {
     animation:
             lineReveal
             0.55s
@@ -2857,18 +2806,15 @@ legend {
             forwards;
 }
 
-.webtoon-episode.is-visible
-.narration-line:nth-child(2) {
+.webtoon-episode.is-visible .narration-line:nth-child(2) {
     animation-delay: 0.14s;
 }
 
-.webtoon-episode.is-visible
-.narration-line:nth-child(3) {
+.webtoon-episode.is-visible .narration-line:nth-child(3) {
     animation-delay: 0.28s;
 }
 
-.webtoon-episode.is-visible
-.narration-line:nth-child(4) {
+.webtoon-episode.is-visible .narration-line:nth-child(4) {
     animation-delay: 0.42s;
 }
 
@@ -2897,7 +2843,6 @@ legend {
 
 .narration-line.accent p {
     color: #ffd8e6;
-
     font-weight: 800;
 }
 
@@ -2940,7 +2885,6 @@ legend {
     gap: 12px;
 
     cursor: pointer;
-
     list-style: none;
 }
 
@@ -2950,7 +2894,6 @@ legend {
 
 .story-note summary div {
     display: flex;
-
     flex-direction: column;
 
     gap: 4px;
@@ -2958,13 +2901,11 @@ legend {
 
 .story-note summary strong {
     color: #ffffff;
-
     font-size: 10px;
 }
 
 .story-note summary small {
     color: var(--muted);
-
     font-size: 8px;
 }
 
@@ -2979,8 +2920,7 @@ legend {
             ease;
 }
 
-.story-note[open]
-.story-note-arrow {
+.story-note[open] .story-note-arrow {
     transform: rotate(180deg);
 }
 
@@ -3077,7 +3017,6 @@ legend {
 
 .element-board {
     display: grid;
-
     gap: 10px;
 
     padding-top: 12px;
@@ -3098,7 +3037,6 @@ legend {
 
 .element-row strong {
     color: #ffffff;
-
     font-size: 10px;
 }
 
@@ -3148,7 +3086,6 @@ legend {
 .relation-list,
 .shinsal-list {
     display: grid;
-
     gap: 7px;
 
     padding-top: 12px;
@@ -3265,7 +3202,6 @@ legend {
 
 .luck-timeline {
     display: grid;
-
     gap: 8px;
 
     padding-top: 12px;
@@ -3310,7 +3246,6 @@ legend {
     gap: 8px;
 
     cursor: pointer;
-
     list-style: none;
 }
 
@@ -3320,7 +3255,6 @@ legend {
 
 .luck-block summary strong {
     color: #ffffff;
-
     font-size: 10px;
 }
 
@@ -3374,7 +3308,6 @@ legend {
 
 .secret-ledger {
     display: grid;
-
     gap: 8px;
 
     padding-top: 12px;
@@ -3398,7 +3331,6 @@ legend {
 
 .ledger-row span {
     color: var(--muted);
-
     font-size: 8px;
 }
 
@@ -3525,7 +3457,7 @@ legend {
             linear-gradient(
                     145deg,
                     rgba(255, 226, 237, 0.88),
-                    rgba(222, 209, 233, 0.65)
+                    rgba(250, 218, 226, 0.72)
             );
 
     color: var(--pink-dark);
@@ -3594,9 +3526,7 @@ legend {
 
 .toast.is-show {
     opacity: 1;
-
-    transform:
-            translate(50%, 0);
+    transform: translate(50%, 0);
 }
 
 /* =========================================================
@@ -3704,8 +3634,17 @@ legend {
 
     .primary-button:hover {
         filter: brightness(1.04);
-
         transform: translateY(-1px);
+    }
+
+    .form-panel .primary-button:not(:disabled):hover,
+    .simple-page .primary-button:not(:disabled):hover,
+    .complete-page .primary-button:not(:disabled):hover,
+    .analysis-page .primary-button:not(:disabled):hover,
+    .webtoon-page .primary-button:not(:disabled):hover,
+    .ending-actions .primary-button:not(:disabled):hover {
+        background: #e97d9a;
+        filter: none;
     }
 }
 
@@ -3767,13 +3706,11 @@ legend {
 
     from {
         opacity: 0;
-
         transform: translateY(16px);
     }
 
     to {
         opacity: 1;
-
         transform: translateY(0);
     }
 }

@@ -106,9 +106,7 @@ img {
     display: none !important;
 }
 
-/* =========================================================
-   전체 화면
-========================================================= */
+/* 전체 화면 */
 
 .page-shell {
     position: relative;
@@ -144,9 +142,7 @@ img {
     display: block;
 }
 
-/* =========================================================
-   헤더
-========================================================= */
+/* 헤더 */
 
 .top-header {
     position: sticky;
@@ -158,7 +154,7 @@ img {
     grid-template-columns:
             48px
             minmax(0, 1fr)
-            68px;
+            76px;
 
     align-items: center;
 
@@ -208,7 +204,7 @@ img {
 .header-text-button {
     padding:
             8px
-            7px;
+            5px;
 
     font-size: 10px;
     font-weight: 800;
@@ -250,9 +246,7 @@ img {
     font-size: 8px;
 }
 
-/* =========================================================
-   입력 화면
-========================================================= */
+/* 입력 화면 */
 
 .input-hero {
     position: relative;
@@ -633,9 +627,7 @@ img {
     line-height: 1.5;
 }
 
-/* =========================================================
-   버튼
-========================================================= */
+/* 버튼 */
 
 .primary-button,
 .secondary-button {
@@ -685,15 +677,14 @@ img {
     color: var(--text);
 }
 
-.button-stack {
+.button-stack,
+.result-actions {
     display: grid;
 
     gap: 9px;
 }
 
-/* =========================================================
-   확인 화면
-========================================================= */
+/* 확인 화면 */
 
 .simple-page {
     min-height:
@@ -748,9 +739,7 @@ img {
     text-align: right;
 }
 
-/* =========================================================
-   분석 화면
-========================================================= */
+/* 분석 화면 */
 
 .analysis-page {
     position: relative;
@@ -1003,8 +992,8 @@ img {
     opacity: 0.42;
 
     transition:
-            0.24s
-            ease;
+            opacity 0.24s ease,
+            border-color 0.24s ease;
 }
 
 .analysis-step.active,
@@ -1042,6 +1031,13 @@ img {
 }
 
 .analysis-step.complete > span {
+-light);
+
+    font-size: 9px;
+    font-weight: 900;
+}
+
+.analysis-step.complete > span {
     background:
             rgba(109, 213, 160, 0.16);
 
@@ -1068,9 +1064,7 @@ img {
     font-size: 8px;
 }
 
-/* =========================================================
-   영상형 화면
-========================================================= */
+/* 영상형 화면 */
 
 .cinematic-screen {
     height:
@@ -1094,8 +1088,6 @@ img {
     background: var(--bg-dark);
 }
 
-/* 배경 장면 이미지 */
-
 .scene-background-image {
     position: absolute;
     inset: 0;
@@ -1107,7 +1099,7 @@ img {
     object-position: 50% 22%;
 
     filter:
-            brightness(0.72)
+            brightness(0.7)
             saturate(0.94)
             contrast(1.06);
 
@@ -1116,8 +1108,7 @@ img {
             scale(1.04);
 
     transition:
-            transform 2.2s
-            cubic-bezier(0.22, 1, 0.36, 1),
+            transform 2.2s cubic-bezier(0.22, 1, 0.36, 1),
             object-position 2.2s ease,
             filter 0.8s ease,
             opacity 0.5s ease;
@@ -1128,8 +1119,6 @@ img {
             ease-in-out
             infinite;
 }
-
-/* 카메라 이동 */
 
 .camera-wide .scene-background-image {
     object-position: 50% 22%;
@@ -1175,7 +1164,7 @@ img {
     object-position: 50% 24%;
 
     filter:
-            brightness(0.58)
+            brightness(0.56)
             saturate(0.75)
             blur(1px);
 
@@ -1185,7 +1174,6 @@ img {
 }
 
 @keyframes scene-breath {
-
     0%,
     100% {
         margin-top: 0;
@@ -1227,8 +1215,6 @@ img {
 
     pointer-events: none;
 }
-
-/* 빛과 연기 */
 
 .scene-light,
 .scene-smoke {
@@ -1320,7 +1306,6 @@ img {
 }
 
 @keyframes scene-light-one {
-
     0%,
     100% {
         transform:
@@ -1336,7 +1321,6 @@ img {
 }
 
 @keyframes scene-light-two {
-
     0%,
     100% {
         transform:
@@ -1350,7 +1334,6 @@ img {
 }
 
 @keyframes scene-smoke-one {
-
     0%,
     100% {
         transform:
@@ -1370,7 +1353,6 @@ img {
 }
 
 @keyframes scene-smoke-two {
-
     0%,
     100% {
         transform:
@@ -1388,8 +1370,6 @@ img {
         opacity: 0.12;
     }
 }
-
-/* 장면에 삽입되는 이미지 */
 
 .scene-image-frame {
     position: absolute;
@@ -1425,8 +1405,7 @@ img {
 
     transition:
             opacity 0.55s ease,
-            transform 0.65s
-            cubic-bezier(0.22, 1, 0.36, 1);
+            transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .scene-image-frame.show {
@@ -1459,8 +1438,6 @@ img {
     line-height: 1.45;
 }
 
-/* 명식표·오행·십성 자료 */
-
 .scene-visual-panel {
     position: absolute;
     top: 98px;
@@ -1471,7 +1448,7 @@ img {
     max-height:
             calc(100% - 286px);
 
-    overflow: hidden;
+    overflow-y: auto;
 
     border:
             1px solid
@@ -1480,7 +1457,7 @@ img {
     border-radius: 18px;
 
     background:
-            rgba(6, 12, 25, 0.89);
+            rgba(6, 12, 25, 0.9);
 
     box-shadow:
             0 18px 42px
@@ -1497,8 +1474,7 @@ img {
 
     transition:
             opacity 0.5s ease,
-            transform 0.6s
-            cubic-bezier(0.22, 1, 0.36, 1);
+            transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .scene-visual-panel.show {
@@ -1512,8 +1488,6 @@ img {
 .scene-visual-panel > div {
     padding: 12px;
 }
-
-/* 장면 제목 */
 
 .cinematic-heading {
     position: absolute;
@@ -1568,8 +1542,6 @@ img {
 
     word-break: keep-all;
 }
-
-/* 자막 */
 
 .caption-box {
     position: absolute;
@@ -1638,8 +1610,6 @@ img {
 
     word-break: keep-all;
 }
-
-/* 영상 진행률 */
 
 .cinematic-footer {
     position: absolute;
@@ -1713,9 +1683,7 @@ img {
     font-size: 7px;
 }
 
-/* =========================================================
-   영상 안 명식표
-========================================================= */
+/* 영상 내부 자료 */
 
 .video-chart-title {
     margin-bottom: 9px;
@@ -1804,8 +1772,6 @@ img {
     font-weight: 800;
 }
 
-/* 영상 안 오행 */
-
 .video-element-list {
     display: grid;
 
@@ -1864,85 +1830,87 @@ img {
             );
 }
 
-/* 영상 안 해설 */
-
-.video-easy-card {
-    padding: 12px;
-
-    border:
-            1px solid
-            rgba(255, 255, 255, 0.09);
-
-    border-radius: 13px;
-
-    background:
-            rgba(255, 255, 255, 0.045);
-}
-
-.video-easy-card strong {
-    display: block;
-
-    margin-bottom: 7px;
-
-    color: var(--gold);
-
-    font-size: 10px;
-}
-
-.video-easy-card p {
-    margin: 0;
-
-    color: #d9dfeb;
-
-    font-size: 8px;
-    line-height: 1.65;
-
-    white-space: pre-line;
-}
-
-.video-mini-list {
+.video-mini-list,
+.scene-detail-list {
     display: grid;
 
-    gap: 6px;
+    gap: 7px;
 }
 
-.video-mini-item {
+.video-mini-item,
+.scene-detail-item {
     padding:
-            8px
-            9px;
+            9px
+            10px;
 
     border:
             1px solid
             rgba(255, 255, 255, 0.08);
 
-    border-radius: 10px;
+    border-radius: 11px;
 
     background:
-            rgba(255, 255, 255, 0.04);
+            rgba(255, 255, 255, 0.045);
 }
 
-.video-mini-item strong {
+.video-mini-item strong,
+.scene-detail-item strong {
     display: block;
 
-    margin-bottom: 3px;
+    margin-bottom: 4px;
 
     color: var(--primary-light);
 
     font-size: 8px;
 }
 
-.video-mini-item p {
+.video-mini-item p,
+.scene-detail-item p {
     margin: 0;
 
-    color: #b8c1d1;
+    color: #c4ccda;
 
     font-size: 7px;
-    line-height: 1.5;
+    line-height: 1.55;
+
+    white-space: pre-line;
 }
 
-/* =========================================================
-   결과 화면
-========================================================= */
+.scene-period-card {
+    margin-bottom: 8px;
+
+    padding: 10px;
+
+    border:
+            1px solid
+            rgba(239, 209, 124, 0.2);
+
+    border-radius: 12px;
+
+    background:
+            rgba(239, 209, 124, 0.07);
+}
+
+.scene-period-card strong {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: var(--gold);
+
+    font-size: 9px;
+}
+
+.scene-period-card p {
+    margin: 0;
+
+    color: #dce2ee;
+
+    font-size: 7px;
+    line-height: 1.6;
+}
+
+/* 결과 화면 */
 
 .result-page {
     min-height:
@@ -2146,17 +2114,8 @@ img {
     font-weight: 800;
 }
 
-.result-chart-divider {
-    margin-top: 10px;
-
-    padding-top: 10px;
-
-    border-top:
-            1px solid var(--line);
-}
-
 .result-section {
-    margin-top: 19px;
+    margin-top: 20px;
 }
 
 .result-section-heading {
@@ -2244,7 +2203,8 @@ img {
             );
 }
 
-.easy-card-list {
+.easy-card-list,
+.forecast-card-list {
     display: grid;
 
     gap: 9px;
@@ -2252,7 +2212,8 @@ img {
     margin-top: 10px;
 }
 
-.easy-card {
+.easy-card,
+.forecast-card {
     padding:
             14px
             13px;
@@ -2266,7 +2227,8 @@ img {
     background: #ffffff;
 }
 
-.easy-card strong {
+.easy-card strong,
+.forecast-card strong {
     display: block;
 
     margin-bottom: 6px;
@@ -2274,7 +2236,8 @@ img {
     font-size: 12px;
 }
 
-.easy-card p {
+.easy-card p,
+.forecast-card p {
     margin: 0;
 
     color: #454b58;
@@ -2283,6 +2246,74 @@ img {
     line-height: 1.75;
 
     white-space: pre-line;
+}
+
+.forecast-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 5px;
+
+    margin-bottom: 8px;
+}
+
+.forecast-card-meta span {
+    display: inline-flex;
+
+    padding:
+            5px
+            7px;
+
+    border-radius: 999px;
+
+    background:
+            rgba(128, 96, 237, 0.1);
+
+    color: var(--primary-dark);
+
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.forecast-score-grid {
+    display: grid;
+
+    grid-template-columns:
+            repeat(4, minmax(0, 1fr));
+
+    gap: 5px;
+
+    margin-top: 10px;
+}
+
+.forecast-score-grid div {
+    padding:
+            7px
+            4px;
+
+    border-radius: 9px;
+
+    background: #f4f2fc;
+
+    text-align: center;
+}
+
+.forecast-score-grid span {
+    display: block;
+
+    margin-bottom: 2px;
+
+    color: var(--sub);
+
+    font-size: 7px;
+}
+
+.forecast-score-grid strong {
+    margin: 0;
+
+    color: var(--primary-dark);
+
+    font-size: 10px;
 }
 
 .advanced-details {
@@ -2363,15 +2394,7 @@ img {
     line-height: 1.65;
 }
 
-.result-actions {
-    display: grid;
-
-    gap: 8px;
-}
-
-/* =========================================================
-   오행 카드 색상
-========================================================= */
+/* 오행 색상 */
 
 .element-wood {
     background: var(--wood);
@@ -2403,9 +2426,7 @@ img {
     color: #ffffff;
 }
 
-/* =========================================================
-   토스트
-========================================================= */
+/* 토스트 */
 
 .toast {
     position: fixed;
@@ -2453,12 +2474,9 @@ img {
             translate(50%, 0);
 }
 
-/* =========================================================
-   모바일 대응
-========================================================= */
+/* 반응형 */
 
 @media (max-width: 430px) {
-
     .page-shell {
         max-width: none;
 
@@ -2467,7 +2485,6 @@ img {
 }
 
 @media (max-width: 370px) {
-
     .input-hero {
         height: 285px;
     }
@@ -2497,10 +2514,14 @@ img {
     .result-pillar-card strong {
         font-size: 34px;
     }
+
+    .forecast-score-grid {
+        grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-height: 760px) {
-
     .scene-visual-panel {
         top: 82px;
 
@@ -2524,7 +2545,6 @@ img {
 }
 
 @media (prefers-reduced-motion: reduce) {
-
     *,
     *::before,
     *::after {

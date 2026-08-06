@@ -5,121 +5,48 @@ document.addEventListener(
         const MIN_ANALYSIS_TIME =
             3200;
 
-        const STORAGE_KEYS = {
-            form:
-                "sajuCinematicForm",
-
-            profileId:
-                "sajuCinematicProfileId",
-
-            analysisId:
-                "sajuCinematicAnalysisId",
-
-            result:
-                "sajuCinematicAnalysisResult"
-        };
-
-        /*
-         * 영상에서 사용할 장면 이미지 경로다.
-         *
-         * 파일이 없으면 자동으로
-         * /img/saju-character.png 이미지가 대신 표시된다.
-         */
         const IMAGE_PATHS = {
             fallback:
                 "/img/saju-character.png",
 
-            intro:
+            opening:
                 "/img/saju-character.png",
 
-            chart:
+            manse:
                 "/img/saju-cinematic/chart.png",
 
-            element:
+            energy:
                 "/img/saju-cinematic/element.png",
-
-            strength:
-                "/img/saju-cinematic/strength.png",
 
             personality:
                 "/img/saju-cinematic/personality.png",
 
-            career:
-                "/img/saju-cinematic/career.png",
+            strength:
+                "/img/saju-cinematic/strength.png",
 
             wealth:
                 "/img/saju-cinematic/wealth.png",
 
+            career:
+                "/img/saju-cinematic/career.png",
+
             relationship:
                 "/img/saju-cinematic/relationship.png",
 
-            health:
-                "/img/saju-cinematic/health.png",
-
-            study:
-                "/img/saju-cinematic/study.png",
-
-            startup:
-                "/img/saju-cinematic/startup.png",
-
-            shinsal:
-                "/img/saju-cinematic/shinsal.png",
+            romance:
+                "/img/saju-cinematic/relationship.png",
 
             luck:
                 "/img/saju-cinematic/luck.png",
 
-            ending:
+            future:
+                "/img/saju-cinematic/luck.png",
+
+            caution:
+                "/img/saju-cinematic/shinsal.png",
+
+            advice:
                 "/img/saju-character.png"
-        };
-
-        const CATEGORY_IMAGE_MAP = {
-            성격:
-                IMAGE_PATHS.personality,
-
-            기질:
-                IMAGE_PATHS.personality,
-
-            직업:
-                IMAGE_PATHS.career,
-
-            취업:
-                IMAGE_PATHS.career,
-
-            진로:
-                IMAGE_PATHS.career,
-
-            재물:
-                IMAGE_PATHS.wealth,
-
-            금전:
-                IMAGE_PATHS.wealth,
-
-            연애:
-                IMAGE_PATHS.relationship,
-
-            인연:
-                IMAGE_PATHS.relationship,
-
-            관계:
-                IMAGE_PATHS.relationship,
-
-            건강:
-                IMAGE_PATHS.health,
-
-            시험:
-                IMAGE_PATHS.study,
-
-            학업:
-                IMAGE_PATHS.study,
-
-            학습:
-                IMAGE_PATHS.study,
-
-            창업:
-                IMAGE_PATHS.startup,
-
-            사업:
-                IMAGE_PATHS.startup
         };
 
         const state = {
@@ -129,8 +56,20 @@ document.addEventListener(
             form:
                 createEmptyForm(),
 
-            result:
+            profileId:
                 null,
+
+            analysisId:
+                null,
+
+            analysis:
+                null,
+
+            cinematic:
+                null,
+
+            forecasts:
+                [],
 
             scenes:
                 [],
@@ -153,10 +92,6 @@ document.addEventListener(
             progressValue:
                 0
         };
-
-        /* =====================================================
-           공통 요소
-        ===================================================== */
 
         const screens =
             document.querySelectorAll(
@@ -192,10 +127,6 @@ document.addEventListener(
             document.getElementById(
                 "toast"
             );
-
-        /* =====================================================
-           입력 요소
-        ===================================================== */
 
         const sajuInputForm =
             document.getElementById(
@@ -257,10 +188,6 @@ document.addEventListener(
                 "inputError"
             );
 
-        /* =====================================================
-           확인 요소
-        ===================================================== */
-
         const reviewName =
             document.getElementById(
                 "reviewName"
@@ -306,10 +233,6 @@ document.addEventListener(
                 "analyzeButton"
             );
 
-        /* =====================================================
-           분석 요소
-        ===================================================== */
-
         const analysisCircle =
             document.getElementById(
                 "analysisCircle"
@@ -351,10 +274,6 @@ document.addEventListener(
                     "[data-analysis-step]"
                 )
             );
-
-        /* =====================================================
-           영상 요소
-        ===================================================== */
 
         const cinematicStage =
             document.getElementById(
@@ -431,10 +350,6 @@ document.addEventListener(
                 "totalSceneNumber"
             );
 
-        /* =====================================================
-           결과 요소
-        ===================================================== */
-
         const resultTitle =
             document.getElementById(
                 "resultTitle"
@@ -485,6 +400,11 @@ document.addEventListener(
                 "resultLuckList"
             );
 
+        const resultForecastList =
+            document.getElementById(
+                "resultForecastList"
+            );
+
         const resultAdvancedList =
             document.getElementById(
                 "resultAdvancedList"
@@ -512,26 +432,26 @@ document.addEventListener(
 
         initialize();
 
-        /* =====================================================
-           초기화
-        ===================================================== */
-
         function initialize() {
-
-            clearCinematicStorage();
-
-            state.form =
-                createEmptyForm();
-
-            state.result =
-                null;
-
-            resetInputForm();
 
             bindEvents();
 
+            resetApplication();
+
             showScreen(
                 "input"
+            );
+
+            window.addEventListener(
+                "pageshow",
+                function (event) {
+
+                    if (
+                        event.persisted
+                    ) {
+                        stopCinematic();
+                    }
+                }
             );
         }
 
@@ -561,23 +481,42 @@ document.addEventListener(
             };
         }
 
-        function clearCinematicStorage() {
+        function resetApplication() {
 
-            sessionStorage.removeItem(
-                STORAGE_KEYS.form
-            );
+            stopCinematic();
 
-            sessionStorage.removeItem(
-                STORAGE_KEYS.profileId
-            );
+            stopFakeProgress();
 
-            sessionStorage.removeItem(
-                STORAGE_KEYS.analysisId
-            );
+            state.form =
+                createEmptyForm();
 
-            sessionStorage.removeItem(
-                STORAGE_KEYS.result
-            );
+            state.profileId =
+                null;
+
+            state.analysisId =
+                null;
+
+            state.analysis =
+                null;
+
+            state.cinematic =
+                null;
+
+            state.forecasts =
+                [];
+
+            state.scenes =
+                [];
+
+            state.sceneIndex =
+                -1;
+
+            state.progressValue =
+                0;
+
+            resetInputForm();
+
+            resetSceneUi();
         }
 
         function resetInputForm() {
@@ -651,10 +590,6 @@ document.addEventListener(
             inputError.textContent =
                 "";
         }
-
-        /* =====================================================
-           이벤트
-        ===================================================== */
 
         function bindEvents() {
 
@@ -864,13 +799,7 @@ document.addEventListener(
 
             homeButtonTop.addEventListener(
                 "click",
-                function () {
-
-                    stopCinematic();
-
-                    window.location.href =
-                        "/";
-                }
+                goHome
             );
 
             skipButton.addEventListener(
@@ -887,20 +816,7 @@ document.addEventListener(
                 "click",
                 function () {
 
-                    stopCinematic();
-
-                    clearCinematicStorage();
-
-                    state.form =
-                        createEmptyForm();
-
-                    state.result =
-                        null;
-
-                    state.scenes =
-                        [];
-
-                    resetInputForm();
+                    resetApplication();
 
                     showScreen(
                         "input"
@@ -910,14 +826,16 @@ document.addEventListener(
 
             goHomeButton.addEventListener(
                 "click",
-                function () {
-
-                    stopCinematic();
-
-                    window.location.href =
-                        "/";
-                }
+                goHome
             );
+        }
+
+        function goHome() {
+
+            stopCinematic();
+
+            window.location.href =
+                "/";
         }
 
         function handleBackButton() {
@@ -926,8 +844,7 @@ document.addEventListener(
                 state.currentScreen
                 === "input"
             ) {
-                window.location.href =
-                    "/";
+                goHome();
 
                 return;
             }
@@ -954,11 +871,7 @@ document.addEventListener(
                 state.currentScreen
                 === "cinematic"
             ) {
-                stopCinematic();
-
-                showScreen(
-                    "review"
-                );
+                finishCinematic();
 
                 return;
             }
@@ -967,14 +880,9 @@ document.addEventListener(
                 state.currentScreen
                 === "result"
             ) {
-                window.location.href =
-                    "/";
+                goHome();
             }
         }
-
-        /* =====================================================
-           화면 전환
-        ===================================================== */
 
         function showScreen(
             screenName
@@ -1075,10 +983,6 @@ document.addEventListener(
             });
         }
 
-        /* =====================================================
-           입력 검증
-        ===================================================== */
-
         function validateAndSaveForm() {
 
             const name =
@@ -1089,14 +993,6 @@ document.addEventListener(
             ) {
                 return setInputError(
                     "이름은 두 글자 이상 입력해주세요."
-                );
-            }
-
-            if (
-                name.length > 20
-            ) {
-                return setInputError(
-                    "이름은 20자 이하로 입력해주세요."
                 );
             }
 
@@ -1144,8 +1040,8 @@ document.addEventListener(
                 !birthTimeUnknown.checked
             ) {
                 if (
-                    !birthHour.value
-                    || !birthMinute.value
+                    birthHour.value === ""
+                    || birthMinute.value === ""
                 ) {
                     return setInputError(
                         "출생시간을 입력하거나 시간 모름을 선택해주세요."
@@ -1196,13 +1092,6 @@ document.addEventListener(
                 state.form.calendarType
                 === "LUNAR"
                 && lunarLeapMonth.checked;
-
-            sessionStorage.setItem(
-                STORAGE_KEYS.form,
-                JSON.stringify(
-                    state.form
-                )
-            );
 
             inputError.textContent =
                 "";
@@ -1341,10 +1230,6 @@ document.addEventListener(
             );
         }
 
-        /* =====================================================
-           확인 화면
-        ===================================================== */
-
         function renderReview() {
 
             reviewName.textContent =
@@ -1384,10 +1269,6 @@ document.addEventListener(
                     : state.form.birthTime;
         }
 
-        /* =====================================================
-           저장 및 분석 요청
-        ===================================================== */
-
         async function startAnalysis() {
 
             analyzeButton.disabled =
@@ -1409,17 +1290,12 @@ document.addEventListener(
                 analysisMessage.textContent =
                     "입력한 사주 정보를 저장하고 있습니다.";
 
-                const profileResponse =
-                    await fetch(
+                const profileResult =
+                    await requestJson(
                         "/api/saju/profiles",
                         {
                             method:
                                 "POST",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
 
                             body:
                                 JSON.stringify(
@@ -1428,23 +1304,10 @@ document.addEventListener(
                         }
                     );
 
-                const profileResult =
-                    await safeJson(
-                        profileResponse
-                    );
-
-                if (
-                    !profileResponse.ok
-                ) {
-                    throw new Error(
-                        profileResult.message
-                        || "사주정보 저장에 실패했습니다."
-                    );
-                }
-
                 const profileId =
                     Number(
                         profileResult.profileId
+                        ?? profileResult.id
                     );
 
                 if (
@@ -1458,27 +1321,18 @@ document.addEventListener(
                     );
                 }
 
-                sessionStorage.setItem(
-                    STORAGE_KEYS.profileId,
-                    String(
-                        profileId
-                    )
-                );
+                state.profileId =
+                    profileId;
 
                 analysisMessage.textContent =
-                    "사주 명식표와 오행을 계산하고 있습니다.";
+                    "만세력 원국과 오행, 십성을 계산하고 있습니다.";
 
-                const analysisResponse =
-                    await fetch(
+                const analysisResult =
+                    await requestJson(
                         "/api/saju/analyses",
                         {
                             method:
                                 "POST",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
 
                             body:
                                 JSON.stringify({
@@ -1488,19 +1342,56 @@ document.addEventListener(
                         }
                     );
 
-                const analysisResult =
-                    await safeJson(
-                        analysisResponse
+                const analysisId =
+                    Number(
+                        analysisResult.analysisId
+                        ?? analysisResult.id
                     );
 
                 if (
-                    !analysisResponse.ok
+                    !Number.isInteger(
+                        analysisId
+                    )
+                    || analysisId <= 0
                 ) {
                     throw new Error(
-                        analysisResult.message
-                        || "사주 분석에 실패했습니다."
+                        "생성된 분석 번호를 확인할 수 없습니다."
                     );
                 }
+
+                state.analysisId =
+                    analysisId;
+
+                analysisMessage.textContent =
+                    "대운과 세운, 월운을 영상 장면으로 구성하고 있습니다.";
+
+                const [
+                    cinematicResult,
+                    forecastsResult
+                ] =
+                    await Promise.all([
+                        requestJson(
+                            "/api/saju/analyses/"
+                            + analysisId
+                            + "/cinematic"
+                        ),
+
+                        requestJson(
+                            "/api/saju/analyses/"
+                            + analysisId
+                            + "/forecast/years"
+                        ).catch(
+                            function (error) {
+
+                                console.warn(
+                                    "연도별 운세 조회 실패",
+                                    error
+                                );
+
+                                return [];
+                            }
+                        )
+                    ]);
 
                 const elapsed =
                     Date.now()
@@ -1528,47 +1419,41 @@ document.addEventListener(
                     520
                 );
 
-                state.result =
+                state.analysis =
                     analysisResult;
 
+                state.cinematic =
+                    cinematicResult;
+
+                state.forecasts =
+                    Array.isArray(
+                        forecastsResult
+                    )
+                        ? forecastsResult
+                        : [];
+
                 state.scenes =
-                    createScenes(
-                        analysisResult
+                    normalizeCinematicScenes(
+                        cinematicResult.scenes
                     );
 
-                sessionStorage.setItem(
-                    STORAGE_KEYS.result,
-                    JSON.stringify(
-                        analysisResult
-                    )
-                );
-
                 if (
-                    analysisResult.analysisId
+                    state.scenes.length === 0
                 ) {
-                    sessionStorage.setItem(
-                        STORAGE_KEYS.analysisId,
-                        String(
-                            analysisResult.analysisId
-                        )
+                    throw new Error(
+                        "영상 장면 데이터를 생성하지 못했습니다."
                     );
                 }
 
-                renderFullResult(
-                    analysisResult
-                );
+                renderFullResult();
 
                 analysisMessage.textContent =
-                    "이미지 영상 해설 준비가 완료되었습니다.";
+                    "영상형 사주 해설 준비가 완료되었습니다.";
 
                 await wait(
-                    550
+                    500
                 );
 
-                /*
-                 * 분석이 끝난 뒤 결과로 바로 가지 않고
-                 * 반드시 영상형 화면을 먼저 재생한다.
-                 */
                 startCinematic();
 
             } catch (error) {
@@ -1576,7 +1461,7 @@ document.addEventListener(
                 stopFakeProgress();
 
                 console.error(
-                    "천명해설 분석 오류",
+                    "영상형 사주 분석 오류",
                     error
                 );
 
@@ -1599,35 +1484,107 @@ document.addEventListener(
             }
         }
 
-        async function safeJson(
-            response
+        async function requestJson(
+            url,
+            options
         ) {
+
+            const requestOptions = {
+                method:
+                    "GET",
+
+                headers: {
+                    "Accept":
+                        "application/json"
+                },
+
+                ...options
+            };
+
+            requestOptions.headers = {
+                "Accept":
+                    "application/json",
+
+                ...(options?.headers || {})
+            };
+
+            if (
+                requestOptions.body
+            ) {
+                requestOptions.headers[
+                    "Content-Type"
+                ] =
+                    "application/json";
+            }
+
+            const csrfToken =
+                document
+                    .querySelector(
+                        'meta[name="_csrf"]'
+                    )
+                    ?.getAttribute(
+                        "content"
+                    );
+
+            const csrfHeader =
+                document
+                    .querySelector(
+                        'meta[name="_csrf_header"]'
+                    )
+                    ?.getAttribute(
+                        "content"
+                    );
+
+            if (
+                csrfToken
+                && csrfHeader
+            ) {
+                requestOptions.headers[
+                    csrfHeader
+                ] =
+                    csrfToken;
+            }
+
+            const response =
+                await fetch(
+                    url,
+                    requestOptions
+                );
 
             const text =
                 await response.text();
 
+            let data = {};
+
             if (
-                !text
+                text
             ) {
-                return {};
+                try {
+                    data =
+                        JSON.parse(
+                            text
+                        );
+
+                } catch (error) {
+                    data = {
+                        message:
+                            text
+                    };
+                }
             }
 
-            try {
-                return JSON.parse(
-                    text
+            if (
+                !response.ok
+            ) {
+                throw new Error(
+                    data.message
+                    || data.error
+                    || "요청 처리에 실패했습니다."
                 );
-
-            } catch (error) {
-                return {
-                    message:
-                        text
-                };
             }
-        }
 
-        /* =====================================================
-           분석 진행률
-        ===================================================== */
+            return data;
+        }
 
         function startFakeProgress() {
 
@@ -1652,8 +1609,7 @@ document.addEventListener(
                         if (
                             next < 22
                         ) {
-                            next +=
-                                4;
+                            next += 4;
 
                             setProgress(
                                 next,
@@ -1667,8 +1623,7 @@ document.addEventListener(
                         if (
                             next < 52
                         ) {
-                            next +=
-                                3;
+                            next += 3;
 
                             setProgress(
                                 next,
@@ -1682,13 +1637,12 @@ document.addEventListener(
                         if (
                             next < 78
                         ) {
-                            next +=
-                                2;
+                            next += 2;
 
                             setProgress(
                                 next,
-                                "구조 분석",
-                                "오행, 십성, 신살과 대운을 분석하고 있습니다."
+                                "운의 흐름",
+                                "대운·세운·월운의 반복 작용을 계산하고 있습니다."
                             );
 
                             return;
@@ -1697,13 +1651,12 @@ document.addEventListener(
                         if (
                             next < 94
                         ) {
-                            next +=
-                                1;
+                            next += 1;
 
                             setProgress(
                                 next,
                                 "영상 구성",
-                                "캐릭터 이미지와 쉬운 해설을 장면으로 구성하고 있습니다."
+                                "내레이션과 자막, 화면 장면을 구성하고 있습니다."
                             );
                         }
 
@@ -1776,7 +1729,7 @@ document.addEventListener(
                                 : "완료",
 
                             ratio < 1
-                                ? "이미지와 자막을 정리하고 있습니다."
+                                ? "영상 장면을 정리하고 있습니다."
                                 : "영상 해설 준비가 완료되었습니다."
                         );
 
@@ -1930,414 +1883,591 @@ document.addEventListener(
             );
         }
 
-        /* =====================================================
-           영상 장면 생성
-        ===================================================== */
-
-        function createScenes(
-            result
+        function normalizeCinematicScenes(
+            source
         ) {
 
-            const scenes =
-                [];
-
-            const name =
-                result.name
-                || state.form.name
-                || "회원";
-
-            scenes.push({
-                kicker:
-                    "天命解說",
-
-                title:
-                    "사주의 문을 엽니다",
-
-                header:
-                    "영상 해설 시작",
-
-                text:
-                    name
-                    + "님, 지금부터 캐릭터 이미지와 사주 명식표를 함께 보면서 어려운 용어를 생활에서 이해하기 쉬운 말로 풀어드리겠습니다.",
-
-                duration:
-                    6500,
-
-                camera:
-                    "camera-wide",
-
-                backgroundImage:
-                    IMAGE_PATHS.intro,
-
-                foregroundImage:
-                    null,
-
-                visualType:
-                    null
-            });
-
-            scenes.push({
-                kicker:
-                    "四柱命式",
-
-                title:
-                    "태어난 순간의 사주 명식표",
-
-                header:
-                    "사주 원국",
-
-                text:
-                    createChartNarration(
-                        result
-                    ),
-
-                duration:
-                    8500,
-
-                camera:
-                    "camera-soft",
-
-                backgroundImage:
-                    IMAGE_PATHS.chart,
-
-                foregroundImage:
-                    null,
-
-                visualType:
-                    "CHART"
-            });
-
-            scenes.push({
-                kicker:
-                    "五行分布",
-
-                title:
-                    "오행의 분포를 살펴봅니다",
-
-                header:
-                    "오행 분석",
-
-                text:
-                    createElementNarration(
-                        result.elementBalance
-                    ),
-
-                duration:
-                    8200,
-
-                camera:
-                    "camera-left",
-
-                backgroundImage:
-                    IMAGE_PATHS.element,
-
-                foregroundImage:
-                    null,
-
-                visualType:
-                    "ELEMENT"
-            });
-
-            scenes.push({
-                kicker:
-                    "日干强弱",
-
-                title:
-                    "중심 기운과 보완 방향",
-
-                header:
-                    "신강·신약과 십성",
-
-                text:
-                    createStrengthNarration(
-                        result
-                    ),
-
-                duration:
-                    8200,
-
-                camera:
-                    "camera-right",
-
-                backgroundImage:
-                    IMAGE_PATHS.strength,
-
-                foregroundImage:
-                    null,
-
-                visualType:
-                    "STRENGTH"
-            });
-
-            const interpretations =
-                Array.isArray(
-                    result.interpretations
-                )
-                    ? result.interpretations
-                    : [];
-
-            interpretations.forEach(
-                function (
-                    item,
-                    index
-                ) {
-
-                    const category =
-                        item.category
-                        || "분야별 해설";
-
-                    const sceneImage =
-                        resolveCategoryImage(
-                            category,
-                            item.title
-                        );
-
-                    scenes.push({
-                        kicker:
-                            category,
-
-                        title:
-                            item.title
-                            || category,
-
-                        header:
-                            category
-                            + " 해설",
-
-                        text:
-                            simplifyInterpretationText(
-                                item.content
-                                || "해석 내용이 없습니다."
-                            ),
-
-                        duration:
-                            calculateSceneDuration(
-                                item.content
-                            ),
-
-                        camera:
-                            index % 2 === 0
-                                ? "camera-left"
-                                : "camera-right",
-
-                        backgroundImage:
-                            sceneImage,
-
-                        foregroundImage:
-                            sceneImage,
-
-                        foregroundCaption:
-                            category
-                            + "을 상징하는 이미지",
-
-                        visualType:
-                            null
-                    });
-                }
-            );
-
-            const shinsal =
-                Array.isArray(
-                    result.shinsal
-                )
-                    ? result.shinsal
-                    : [];
-
             if (
-                shinsal.length > 0
+                !Array.isArray(
+                    source
+                )
             ) {
-                scenes.push({
-                    kicker:
-                        "神煞補助",
-
-                    title:
-                        "신살은 무서운 예언이 아닙니다",
-
-                    header:
-                        "신살 쉬운 설명",
-
-                    text:
-                        createShinsalNarration(
-                            shinsal
-                        ),
-
-                    duration:
-                        8500,
-
-                    camera:
-                        "camera-close",
-
-                    backgroundImage:
-                        IMAGE_PATHS.shinsal,
-
-                    foregroundImage:
-                        null,
-
-                    visualType:
-                        "SHINSAL"
-                });
+                return [];
             }
 
-            if (
-                result.luck
-            ) {
-                scenes.push({
-                    kicker:
-                        "大運歲運",
+            return source
+                .filter(
+                    function (scene) {
 
-                    title:
-                        "큰 운의 흐름을 살펴봅니다",
+                        return scene
+                        && typeof scene
+                        === "object";
+                    }
+                )
+                .sort(
+                    function (
+                        first,
+                        second
+                    ) {
 
-                    header:
-                        "대운과 세운",
-
-                    text:
-                        createLuckNarration(
-                            result.luck
-                        ),
-
-                    duration:
-                        8500,
-
-                    camera:
-                        "camera-medium",
-
-                    backgroundImage:
-                        IMAGE_PATHS.luck,
-
-                    foregroundImage:
-                        null,
-
-                    visualType:
-                        "LUCK"
-                });
-            }
-
-            scenes.push({
-                kicker:
-                    "綜合解說",
-
-                title:
-                    "전체 흐름을 정리합니다",
-
-                header:
-                    "최종 정리",
-
-                text:
-                    simplifyInterpretationText(
-                        result.summary
-                        || createEasySummary(
-                            result
+                        return Number(
+                            first.order
+                            || 0
                         )
-                    ),
+                        - Number(
+                            second.order
+                            || 0
+                        );
+                    }
+                )
+                .map(
+                    function (
+                        scene,
+                        index
+                    ) {
 
-                duration:
-                    8800,
+                        const sceneType =
+                            String(
+                                scene.sceneType
+                                || "OPENING"
+                            );
 
-                camera:
-                    "camera-close",
+                        return {
+                            order:
+                                Number(
+                                    scene.order
+                                    || index + 1
+                                ),
 
-                backgroundImage:
-                    IMAGE_PATHS.ending,
+                            sceneType:
+                                sceneType,
 
-                foregroundImage:
-                    IMAGE_PATHS.ending,
+                            kicker:
+                                sceneTypeKicker(
+                                    sceneType
+                                ),
 
-                foregroundCaption:
-                    "천명해설 마무리 장면",
+                            title:
+                                scene.title
+                                || "천명해설",
 
-                visualType:
-                    null
-            });
+                            header:
+                                sceneTypeLabel(
+                                    sceneType
+                                ),
 
-            return scenes;
+                            text:
+                                scene.narration
+                                || scene.subtitle
+                                || "해설을 준비하고 있습니다.",
+
+                            subtitle:
+                                scene.subtitle
+                                || "",
+
+                            duration:
+                                normalizeSceneDuration(
+                                    scene.durationSeconds
+                                ),
+
+                            camera:
+                                resolveCamera(
+                                    sceneType,
+                                    scene.visualKey,
+                                    index
+                                ),
+
+                            backgroundImage:
+                                resolveSceneImage(
+                                    sceneType,
+                                    scene.visualKey
+                                ),
+
+                            foregroundImage:
+                                resolveForegroundImage(
+                                    sceneType,
+                                    scene.visualKey
+                                ),
+
+                            foregroundCaption:
+                                scene.title
+                                || "영상 장면",
+
+                            visualType:
+                                resolveVisualType(
+                                    sceneType
+                                ),
+
+                            period:
+                                scene.period
+                                || null,
+
+                            highlights:
+                                Array.isArray(
+                                    scene.highlights
+                                )
+                                    ? scene.highlights
+                                    : [],
+
+                            evidences:
+                                Array.isArray(
+                                    scene.evidences
+                                )
+                                    ? scene.evidences
+                                    : []
+                        };
+                    }
+                );
         }
 
-        function resolveCategoryImage(
-            category,
-            title
+        function normalizeSceneDuration(
+            seconds
         ) {
 
-            const searchable =
-                String(
-                    category
-                    || ""
-                )
-                + " "
-                + String(
-                    title
-                    || ""
+            const numeric =
+                Number(
+                    seconds
                 );
 
-            for (
-                const [
-                    keyword,
-                    imagePath
-                ]
-                of Object.entries(
-                    CATEGORY_IMAGE_MAP
+            if (
+                !Number.isFinite(
+                    numeric
                 )
             ) {
-                if (
-                    searchable.includes(
-                        keyword
-                    )
-                ) {
-                    return imagePath;
-                }
+                return 9000;
             }
 
-            return IMAGE_PATHS.fallback;
-        }
-
-        function calculateSceneDuration(
-            text
-        ) {
-
-            const length =
-                String(
-                    text
-                    || ""
-                )
-                    .length;
-
             return Math.max(
-                6800,
+                5000,
                 Math.min(
-                    9800,
-                    5200
-                    + length
-                    * 25
+                    20000,
+                    numeric
+                    * 1000
                 )
             );
         }
 
-        /* =====================================================
-           영상 재생
-        ===================================================== */
+        function sceneTypeKicker(
+            sceneType
+        ) {
+
+            const map = {
+                OPENING:
+                    "天命解說",
+
+                MANSE_CALENDAR:
+                    "四柱命式",
+
+                BASIC_ENERGY:
+                    "五行氣運",
+
+                PERSONALITY_OUTER:
+                    "外面性格",
+
+                PERSONALITY_INNER:
+                    "內面心性",
+
+                STRENGTHS:
+                    "長點解說",
+
+                WEAKNESSES:
+                    "補完方向",
+
+                WEALTH:
+                    "財物運",
+
+                CAREER_BUSINESS:
+                    "職業事業",
+
+                RELATIONSHIPS:
+                    "人間關係",
+
+                ROMANCE:
+                    "戀愛因緣",
+
+                CURRENT_DAEUN:
+                    "大運流轉",
+
+                FUTURE_OVERVIEW:
+                    "未來流向",
+
+                YEAR_FORECAST:
+                    "歲運解說",
+
+                MONTH_PERIOD:
+                    "月運期間",
+
+                CAUTION_PERIOD:
+                    "注意期間",
+
+                OPPORTUNITY_PERIOD:
+                    "機會期間",
+
+                ADVICE:
+                    "現實助言",
+
+                EVIDENCE:
+                    "命理根據"
+            };
+
+            return map[
+                sceneType
+            ]
+            || "天命解說";
+        }
+
+        function sceneTypeLabel(
+            sceneType
+        ) {
+
+            const map = {
+                OPENING:
+                    "영상 해설 시작",
+
+                MANSE_CALENDAR:
+                    "사주 명식표",
+
+                BASIC_ENERGY:
+                    "타고난 기본 기운",
+
+                PERSONALITY_OUTER:
+                    "겉으로 보이는 성격",
+
+                PERSONALITY_INNER:
+                    "실제 속마음",
+
+                STRENGTHS:
+                    "장점",
+
+                WEAKNESSES:
+                    "단점과 보완",
+
+                WEALTH:
+                    "재물운",
+
+                CAREER_BUSINESS:
+                    "직업과 사업운",
+
+                RELATIONSHIPS:
+                    "사람복",
+
+                ROMANCE:
+                    "연애와 인연",
+
+                CURRENT_DAEUN:
+                    "현재 대운",
+
+                FUTURE_OVERVIEW:
+                    "미래 전체 흐름",
+
+                YEAR_FORECAST:
+                    "연도별 세운",
+
+                MONTH_PERIOD:
+                    "집중 작용월",
+
+                CAUTION_PERIOD:
+                    "주의 기간",
+
+                OPPORTUNITY_PERIOD:
+                    "기회 활용 기간",
+
+                ADVICE:
+                    "현실적인 조언",
+
+                EVIDENCE:
+                    "해석 근거"
+            };
+
+            return map[
+                sceneType
+            ]
+            || "천명해설";
+        }
+
+        function resolveCamera(
+            sceneType,
+            visualKey,
+            index
+        ) {
+
+            if (
+                sceneType
+                === "MANSE_CALENDAR"
+                || sceneType
+                === "BASIC_ENERGY"
+            ) {
+                return "camera-soft";
+            }
+
+            if (
+                sceneType
+                === "CAUTION_PERIOD"
+            ) {
+                return "camera-close";
+            }
+
+            if (
+                sceneType
+                === "CURRENT_DAEUN"
+                || sceneType
+                === "FUTURE_OVERVIEW"
+                || sceneType
+                === "YEAR_FORECAST"
+            ) {
+                return "camera-medium";
+            }
+
+            if (
+                String(
+                    visualKey
+                    || ""
+                ).includes(
+                    "CLOSE"
+                )
+            ) {
+                return "camera-close";
+            }
+
+            return index % 2 === 0
+                ? "camera-left"
+                : "camera-right";
+        }
+
+        function resolveSceneImage(
+            sceneType,
+            visualKey
+        ) {
+
+            const map = {
+                OPENING:
+                    IMAGE_PATHS.opening,
+
+                MANSE_CALENDAR:
+                    IMAGE_PATHS.manse,
+
+                BASIC_ENERGY:
+                    IMAGE_PATHS.energy,
+
+                PERSONALITY_OUTER:
+                    IMAGE_PATHS.personality,
+
+                PERSONALITY_INNER:
+                    IMAGE_PATHS.personality,
+
+                STRENGTHS:
+                    IMAGE_PATHS.strength,
+
+                WEAKNESSES:
+                    IMAGE_PATHS.strength,
+
+                WEALTH:
+                    IMAGE_PATHS.wealth,
+
+                CAREER_BUSINESS:
+                    IMAGE_PATHS.career,
+
+                RELATIONSHIPS:
+                    IMAGE_PATHS.relationship,
+
+                ROMANCE:
+                    IMAGE_PATHS.romance,
+
+                CURRENT_DAEUN:
+                    IMAGE_PATHS.luck,
+
+                FUTURE_OVERVIEW:
+                    IMAGE_PATHS.future,
+
+                YEAR_FORECAST:
+                    IMAGE_PATHS.future,
+
+                MONTH_PERIOD:
+                    IMAGE_PATHS.future,
+
+                CAUTION_PERIOD:
+                    IMAGE_PATHS.caution,
+
+                OPPORTUNITY_PERIOD:
+                    IMAGE_PATHS.future,
+
+                ADVICE:
+                    IMAGE_PATHS.advice,
+
+                EVIDENCE:
+                    IMAGE_PATHS.manse
+            };
+
+            return map[
+                sceneType
+            ]
+            || visualKeyToImage(
+                visualKey
+            )
+            || IMAGE_PATHS.fallback;
+        }
+
+        function visualKeyToImage(
+            visualKey
+        ) {
+
+            const key =
+                String(
+                    visualKey
+                    || ""
+                ).toUpperCase();
+
+            if (
+                key.includes(
+                    "WEALTH"
+                )
+            ) {
+                return IMAGE_PATHS.wealth;
+            }
+
+            if (
+                key.includes(
+                    "CAREER"
+                )
+                || key.includes(
+                    "BUSINESS"
+                )
+            ) {
+                return IMAGE_PATHS.career;
+            }
+
+            if (
+                key.includes(
+                    "ROMANCE"
+                )
+                || key.includes(
+                    "RELATION"
+                )
+            ) {
+                return IMAGE_PATHS.relationship;
+            }
+
+            if (
+                key.includes(
+                    "CAUTION"
+                )
+                || key.includes(
+                    "WARNING"
+                )
+            ) {
+                return IMAGE_PATHS.caution;
+            }
+
+            if (
+                key.includes(
+                    "YEAR"
+                )
+                || key.includes(
+                    "FUTURE"
+                )
+                || key.includes(
+                    "DAEUN"
+                )
+            ) {
+                return IMAGE_PATHS.future;
+            }
+
+            return null;
+        }
+
+        function resolveForegroundImage(
+            sceneType,
+            visualKey
+        ) {
+
+            const excludedTypes = [
+                "OPENING",
+                "MANSE_CALENDAR",
+                "BASIC_ENERGY",
+                "CURRENT_DAEUN",
+                "FUTURE_OVERVIEW",
+                "YEAR_FORECAST",
+                "MONTH_PERIOD",
+                "CAUTION_PERIOD",
+                "OPPORTUNITY_PERIOD",
+                "EVIDENCE"
+            ];
+
+            if (
+                excludedTypes.includes(
+                    sceneType
+                )
+            ) {
+                return null;
+            }
+
+            return resolveSceneImage(
+                sceneType,
+                visualKey
+            );
+        }
+
+        function resolveVisualType(
+            sceneType
+        ) {
+
+            if (
+                sceneType
+                === "MANSE_CALENDAR"
+            ) {
+                return "CHART";
+            }
+
+            if (
+                sceneType
+                === "BASIC_ENERGY"
+            ) {
+                return "ELEMENT";
+            }
+
+            if (
+                sceneType
+                === "CURRENT_DAEUN"
+            ) {
+                return "LUCK";
+            }
+
+            if (
+                [
+                    "FUTURE_OVERVIEW",
+                    "YEAR_FORECAST",
+                    "MONTH_PERIOD",
+                    "CAUTION_PERIOD",
+                    "OPPORTUNITY_PERIOD",
+                    "EVIDENCE"
+                ].includes(
+                    sceneType
+                )
+            ) {
+                return "DETAIL";
+            }
+
+            return null;
+        }
 
         function startCinematic() {
 
             stopCinematic();
 
             if (
-                !state.result
+                !state.cinematic
+                || state.scenes.length === 0
             ) {
                 showToast(
-                    "분석 결과가 없습니다."
+                    "영상 장면 데이터가 없습니다."
                 );
 
                 showScreen(
-                    "review"
+                    "result"
                 );
 
                 return;
             }
-
-            state.scenes =
-                createScenes(
-                    state.result
-                );
 
             state.sceneIndex =
                 -1;
@@ -2366,7 +2496,7 @@ document.addEventListener(
                         0
                     );
                 },
-                350
+                300
             );
         }
 
@@ -2454,7 +2584,6 @@ document.addEventListener(
             setImageWithFallback(
                 sceneBackgroundImage,
                 scene.backgroundImage
-                || IMAGE_PATHS.fallback
             );
 
             renderSceneImage(
@@ -2494,8 +2623,7 @@ document.addEventListener(
             );
 
             sceneImageCaption.textContent =
-                scene.foregroundCaption
-                || "장면 이미지";
+                scene.foregroundCaption;
 
             setImageWithFallback(
                 sceneForegroundImage,
@@ -2539,61 +2667,42 @@ document.addEventListener(
             sceneVisualContent.innerHTML =
                 "";
 
-            switch (
+            if (
                 scene.visualType
+                === "CHART"
             ) {
-                case "CHART":
+                sceneVisualContent.innerHTML =
+                    createVideoChartHtml();
 
-                    sceneVisualContent.innerHTML =
-                        createVideoChartHtml(
-                            state.result
-                        );
+            } else if (
+                scene.visualType
+                === "ELEMENT"
+            ) {
+                sceneVisualContent.innerHTML =
+                    createVideoElementHtml();
 
-                    break;
+            } else if (
+                scene.visualType
+                === "LUCK"
+            ) {
+                sceneVisualContent.innerHTML =
+                    createVideoLuckHtml();
 
-                case "ELEMENT":
-
-                    sceneVisualContent.innerHTML =
-                        createVideoElementHtml(
-                            state.result.elementBalance
-                        );
-
-                    break;
-
-                case "STRENGTH":
-
-                    sceneVisualContent.innerHTML =
-                        createVideoStrengthHtml(
-                            state.result
-                        );
-
-                    break;
-
-                case "SHINSAL":
-
-                    sceneVisualContent.innerHTML =
-                        createVideoShinsalHtml(
-                            state.result.shinsal
-                        );
-
-                    break;
-
-                case "LUCK":
-
-                    sceneVisualContent.innerHTML =
-                        createVideoLuckHtml(
-                            state.result.luck
-                        );
-
-                    break;
-
-                default:
-
-                    sceneVisualPanel.classList.add(
-                        "hidden"
+            } else if (
+                scene.visualType
+                === "DETAIL"
+            ) {
+                sceneVisualContent.innerHTML =
+                    createSceneDetailHtml(
+                        scene
                     );
 
-                    return;
+            } else {
+                sceneVisualPanel.classList.add(
+                    "hidden"
+                );
+
+                return;
             }
 
             sceneVisualPanel.classList.remove(
@@ -2607,6 +2716,177 @@ document.addEventListener(
                         "show"
                     );
                 }
+            );
+        }
+
+        function createSceneDetailHtml(
+            scene
+        ) {
+
+            const periodHtml =
+                createScenePeriodHtml(
+                    scene.period
+                );
+
+            const highlights =
+                scene.highlights
+                    .filter(
+                        isNotBlank
+                    )
+                    .slice(
+                        0,
+                        7
+                    );
+
+            const evidences =
+                scene.evidences
+                    .filter(
+                        isNotBlank
+                    )
+                    .slice(
+                        0,
+                        6
+                    );
+
+            const highlightHtml =
+                highlights
+                    .map(
+                        function (item) {
+
+                            return createVideoMiniItem(
+                                "핵심 내용",
+                                item
+                            );
+                        }
+                    )
+                    .join("");
+
+            const evidenceHtml =
+                evidences
+                    .map(
+                        function (item) {
+
+                            return createVideoMiniItem(
+                                "해석 근거",
+                                item
+                            );
+                        }
+                    )
+                    .join("");
+
+            if (
+                !periodHtml
+                && !highlightHtml
+                && !evidenceHtml
+            ) {
+                return createVideoMiniItem(
+                    "천명해설",
+                    scene.subtitle
+                    || scene.text
+                );
+            }
+
+            return periodHtml
+                + '<div class="scene-detail-list">'
+                + highlightHtml
+                + evidenceHtml
+                + "</div>";
+        }
+
+        function createScenePeriodHtml(
+            period
+        ) {
+
+            if (
+                !period
+                || typeof period
+                !== "object"
+            ) {
+                return "";
+            }
+
+            const displayText =
+                period.displayText
+                || createPeriodDisplayText(
+                    period
+                );
+
+            if (
+                !displayText
+            ) {
+                return "";
+            }
+
+            return `
+                <div class="scene-period-card">
+
+                    <strong>
+                        영향 기간
+                    </strong>
+
+                    <p>
+                        ${escapeHtml(
+                            displayText
+                        )}
+                    </p>
+
+                </div>
+            `;
+        }
+
+        function createPeriodDisplayText(
+            period
+        ) {
+
+            const start =
+                formatYearMonthValue(
+                    period.startYearMonth
+                );
+
+            const peakStart =
+                formatYearMonthValue(
+                    period.peakStartYearMonth
+                );
+
+            const peakEnd =
+                formatYearMonthValue(
+                    period.peakEndYearMonth
+                );
+
+            const end =
+                formatYearMonthValue(
+                    period.endYearMonth
+                );
+
+            const parts =
+                [];
+
+            if (
+                start !== "-"
+                && end !== "-"
+            ) {
+                parts.push(
+                    "전체 영향 "
+                    + start
+                    + " ~ "
+                    + end
+                );
+            }
+
+            if (
+                peakStart !== "-"
+                && peakEnd !== "-"
+            ) {
+                parts.push(
+                    "집중 작용 "
+                    + peakStart
+                    + " ~ "
+                    + peakEnd
+                );
+            }
+
+            return parts.join(
+                " · "
             );
         }
 
@@ -2630,7 +2910,7 @@ document.addEventListener(
                         duration
                     );
                 },
-                320
+                300
             );
         }
 
@@ -2681,8 +2961,7 @@ document.addEventListener(
                 window.setInterval(
                     function () {
 
-                        index +=
-                            1;
+                        index += 1;
 
                         captionText.textContent =
                             characters
@@ -2803,17 +3082,11 @@ document.addEventListener(
                 "";
         }
 
-        /* =====================================================
-           영상 안 명식표
-        ===================================================== */
-
-        function createVideoChartHtml(
-            result
-        ) {
+        function createVideoChartHtml() {
 
             const ordered =
                 getOrderedPillars(
-                    result.pillars
+                    state.analysis?.pillars
                 );
 
             return `
@@ -2821,8 +3094,7 @@ document.addEventListener(
 
                     <strong>
                         ${escapeHtml(
-                            result.name
-                            || state.form.name
+                            state.form.name
                         )}님의 사주
                     </strong>
 
@@ -2837,23 +3109,10 @@ document.addEventListener(
                 </div>
 
                 <div class="video-chart-grid">
-
-                    <div class="video-chart-label">
-                        시
-                    </div>
-
-                    <div class="video-chart-label">
-                        일
-                    </div>
-
-                    <div class="video-chart-label">
-                        월
-                    </div>
-
-                    <div class="video-chart-label">
-                        년
-                    </div>
-
+                    <div class="video-chart-label">시</div>
+                    <div class="video-chart-label">일</div>
+                    <div class="video-chart-label">월</div>
+                    <div class="video-chart-label">년</div>
                 </div>
 
                 <div class="video-chart-grid">
@@ -2865,11 +3124,8 @@ document.addEventListener(
                                 return `
                                     <div class="video-chart-info">
                                         ${escapeHtml(
-                                            withEasyMeaning(
-                                                pillar.stemTenGod,
-                                                tenGodEasyLabel(
-                                                    pillar.stemTenGod
-                                                )
+                                            valueOrDash(
+                                                pillar.stemTenGod
                                             )
                                         )}
                                     </div>
@@ -2926,35 +3182,8 @@ document.addEventListener(
                                 return `
                                     <div class="video-chart-info">
                                         ${escapeHtml(
-                                            withEasyMeaning(
-                                                pillar.branchTenGod,
-                                                tenGodEasyLabel(
-                                                    pillar.branchTenGod
-                                                )
-                                            )
-                                        )}
-                                    </div>
-                                `;
-                            }
-                        )
-                        .join("")}
-
-                </div>
-
-                <div class="video-chart-grid">
-
-                    ${ordered
-                        .map(
-                            function (pillar) {
-
-                                return `
-                                    <div class="video-chart-info">
-                                        ${escapeHtml(
-                                            withEasyMeaning(
-                                                pillar.twelveStage,
-                                                twelveStageEasyLabel(
-                                                    pillar.twelveStage
-                                                )
+                                            valueOrDash(
+                                                pillar.twelveStage
                                             )
                                         )}
                                     </div>
@@ -2975,7 +3204,9 @@ document.addEventListener(
         ) {
 
             return `
-                <div class="video-pillar-card ${escapeHtml(className)}">
+                <div class="video-pillar-card ${escapeHtml(
+                    className
+                )}">
 
                     <span>
                         ${escapeHtml(
@@ -3005,13 +3236,12 @@ document.addEventListener(
             `;
         }
 
-        function createVideoElementHtml(
-            elementBalance
-        ) {
+        function createVideoElementHtml() {
 
             const items =
                 normalizeElementItems(
-                    elementBalance
+                    state.analysis
+                        ?.elementBalance
                 );
 
             return `
@@ -3053,101 +3283,18 @@ document.addEventListener(
             `;
         }
 
-        function createVideoStrengthHtml(
-            result
-        ) {
+        function createVideoLuckHtml() {
 
-            const strength =
-                result.strength
-                || {};
-
-            const dominantTenGod =
-                result.tenGodBalance
-                    ?.dominant
-                || "-";
-
-            return `
-                <div class="video-mini-list">
-
-                    ${createVideoMiniItem(
-                        "중심 기운",
-                        strength.classification
-                        || "분석값 없음"
-                    )}
-
-                    ${createVideoMiniItem(
-                        "도움 되는 기운",
-                        strength.usefulGod
-                        || "분석값 없음"
-                    )}
-
-                    ${createVideoMiniItem(
-                        "잘 활용하면 좋은 기운",
-                        strength.favorableGod
-                        || "분석값 없음"
-                    )}
-
-                    ${createVideoMiniItem(
-                        "두드러진 십성",
-                        dominantTenGod
-                        + " · "
-                        + tenGodEasyLabel(
-                            dominantTenGod
-                        )
-                    )}
-
-                </div>
-            `;
-        }
-
-        function createVideoShinsalHtml(
-            shinsal
-        ) {
-
-            const items =
-                Array.isArray(
-                    shinsal
-                )
-                    ? shinsal.slice(
-                        0,
-                        4
-                    )
-                    : [];
-
-            return `
-                <div class="video-mini-list">
-
-                    ${items
-                        .map(
-                            function (item) {
-
-                                return createVideoMiniItem(
-                                    item.name
-                                    || "신살",
-
-                                    explainShinsalEasy(
-                                        item.name,
-                                        item.description
-                                    )
-                                );
-                            }
-                        )
-                        .join("")}
-
-                </div>
-            `;
-        }
-
-        function createVideoLuckHtml(
-            luck
-        ) {
+            const luck =
+                state.analysis
+                    ?.luck;
 
             if (
                 !luck
             ) {
                 return createVideoMiniItem(
-                    "대운",
-                    "대운 정보가 없습니다."
+                    "현재 대운",
+                    "현재 대운 정보를 확인할 수 없습니다."
                 );
             }
 
@@ -3155,7 +3302,14 @@ document.addEventListener(
                 <div class="video-mini-list">
 
                     ${createVideoMiniItem(
-                        "운행 방향",
+                        "현재 대운",
+                        valueOrDash(
+                            luck.currentDecade
+                        )
+                    )}
+
+                    ${createVideoMiniItem(
+                        "대운 방향",
                         valueOrDash(
                             luck.direction
                         )
@@ -3169,9 +3323,9 @@ document.addEventListener(
                     )}
 
                     ${createVideoMiniItem(
-                        "현재 대운",
+                        "대운 설명",
                         valueOrDash(
-                            luck.currentDecade
+                            luck.note
                         )
                     )}
 
@@ -3207,30 +3361,30 @@ document.addEventListener(
             `;
         }
 
-        /* =====================================================
-           전체 결과 렌더링
-        ===================================================== */
+        function renderFullResult() {
 
-        function renderFullResult(
-            result
-        ) {
+            const analysis =
+                state.analysis
+                || {};
+
+            const cinematic =
+                state.cinematic
+                || {};
 
             const name =
-                result.name
-                || state.form.name
-                || "회원";
+                state.form.name
+                || analysis.name
+                || "사용자";
 
             resultTitle.textContent =
-                name
+                cinematic.title
+                || name
                 + "님의 사주";
 
             resultSummary.textContent =
-                simplifyInterpretationText(
-                    result.summary
-                    || createEasySummary(
-                        result
-                    )
-                );
+                analysis.summary
+                || cinematic.subtitle
+                || "만세력 원국과 미래 흐름을 종합한 결과입니다.";
 
             chartPersonTitle.textContent =
                 name
@@ -3243,53 +3397,54 @@ document.addEventListener(
 
             resultChart.innerHTML =
                 createResultChartHtml(
-                    result
+                    analysis
                 );
 
             renderResultElements(
-                result
+                analysis
             );
 
             renderResultEasyInterpretations(
-                result
+                analysis
             );
 
             renderResultShinsal(
-                result
+                analysis
             );
 
             renderResultLuck(
-                result
+                analysis
             );
 
+            renderResultForecasts();
+
             renderResultAdvanced(
-                result
+                analysis
             );
 
             resultDisclaimer.textContent =
-                result.disclaimer
-                || "사주 해설은 가능성과 경향을 설명하는 참고용 콘텐츠입니다. 중요한 결정은 현실적인 정보와 함께 판단해야 합니다.";
+                cinematic.disclaimer
+                || analysis.disclaimer
+                || "사주 해설은 가능성과 경향을 설명하는 참고용 콘텐츠입니다.";
         }
 
         function createResultChartHtml(
-            result
+            analysis
         ) {
 
             const ordered =
                 getOrderedPillars(
-                    result.pillars
+                    analysis.pillars
                 );
 
             return `
                 <div class="result-chart-table">
 
                     <div class="result-chart-row result-chart-header">
-
                         <div>시</div>
                         <div>일</div>
                         <div>월</div>
                         <div>년</div>
-
                     </div>
 
                     <div class="result-chart-row result-chart-info">
@@ -3301,11 +3456,8 @@ document.addEventListener(
                                     return `
                                         <div>
                                             ${escapeHtml(
-                                                withEasyMeaning(
-                                                    pillar.stemTenGod,
-                                                    tenGodEasyLabel(
-                                                        pillar.stemTenGod
-                                                    )
+                                                valueOrDash(
+                                                    pillar.stemTenGod
                                                 )
                                             )}
                                         </div>
@@ -3361,11 +3513,8 @@ document.addEventListener(
                                     return `
                                         <div>
                                             ${escapeHtml(
-                                                withEasyMeaning(
-                                                    pillar.branchTenGod,
-                                                    tenGodEasyLabel(
-                                                        pillar.branchTenGod
-                                                    )
+                                                valueOrDash(
+                                                    pillar.twelveStage
                                                 )
                                             )}
                                         </div>
@@ -3373,62 +3522,6 @@ document.addEventListener(
                                 }
                             )
                             .join("")}
-
-                    </div>
-
-                    <div class="result-chart-divider">
-
-                        <div class="result-chart-row result-chart-info">
-
-                            ${ordered
-                                .map(
-                                    function (pillar) {
-
-                                        return `
-                                            <div>
-                                                ${escapeHtml(
-                                                    withEasyMeaning(
-                                                        pillar.twelveStage,
-                                                        twelveStageEasyLabel(
-                                                            pillar.twelveStage
-                                                        )
-                                                    )
-                                                )}
-                                            </div>
-                                        `;
-                                    }
-                                )
-                                .join("")}
-
-                        </div>
-
-                    </div>
-
-                    <div class="result-chart-divider">
-
-                        <div class="result-chart-row result-chart-info">
-
-                            ${ordered
-                                .map(
-                                    function (pillar) {
-
-                                        return `
-                                            <div>
-                                                ${escapeHtml(
-                                                    formatListText(
-                                                        findPillarShinsalNames(
-                                                            result.shinsal,
-                                                            pillar.type
-                                                        )
-                                                    )
-                                                )}
-                                            </div>
-                                        `;
-                                    }
-                                )
-                                .join("")}
-
-                        </div>
 
                     </div>
 
@@ -3444,7 +3537,9 @@ document.addEventListener(
         ) {
 
             return `
-                <div class="result-pillar-card ${escapeHtml(className)}">
+                <div class="result-pillar-card ${escapeHtml(
+                    className
+                )}">
 
                     <span>
                         ${escapeHtml(
@@ -3475,11 +3570,11 @@ document.addEventListener(
         }
 
         function renderResultElements(
-            result
+            analysis
         ) {
 
             const elementBalance =
-                result.elementBalance
+                analysis.elementBalance
                 || {};
 
             const items =
@@ -3538,7 +3633,9 @@ document.addEventListener(
                 <article class="easy-card">
 
                     <strong>
-                        가장 강한 기운 · ${escapeHtml(dominant)}
+                        가장 강한 기운 · ${escapeHtml(
+                            dominant
+                        )}
                     </strong>
 
                     <p>
@@ -3554,7 +3651,9 @@ document.addEventListener(
                 <article class="easy-card">
 
                     <strong>
-                        보완이 필요한 기운 · ${escapeHtml(weakest)}
+                        보완이 필요한 기운 · ${escapeHtml(
+                            weakest
+                        )}
                     </strong>
 
                     <p>
@@ -3570,71 +3669,70 @@ document.addEventListener(
         }
 
         function renderResultEasyInterpretations(
-            result
+            analysis
         ) {
-
-            const items =
-                [];
-
-            items.push({
-                title:
-                    "성향 핵심",
-
-                content:
-                    createStrengthEasyExplanation(
-                        result
-                    )
-            });
 
             const interpretations =
                 Array.isArray(
-                    result.interpretations
+                    analysis.interpretations
                 )
-                    ? result.interpretations
+                    ? analysis.interpretations
                     : [];
 
-            interpretations.forEach(
-                function (item) {
+            if (
+                interpretations.length === 0
+            ) {
+                resultEasyList.innerHTML = `
+                    <article class="easy-card">
 
-                    items.push({
-                        title:
-                            (
-                                item.category
-                                    ? item.category
-                                    + " · "
-                                    : ""
-                            )
-                            + (
-                                item.title
-                                || "사주 해설"
-                            ),
+                        <strong>
+                            종합 해설
+                        </strong>
 
-                        content:
-                            simplifyInterpretationText(
-                                item.content
-                                || "해석 내용이 없습니다."
-                            )
-                    });
-                }
-            );
+                        <p>
+                            ${escapeHtml(
+                                analysis.summary
+                                || "쉬운 사주 해설을 확인할 수 없습니다."
+                            )}
+                        </p>
+
+                    </article>
+                `;
+
+                return;
+            }
 
             resultEasyList.innerHTML =
-                items
+                interpretations
                     .map(
                         function (item) {
+
+                            const title =
+                                [
+                                    item.category,
+                                    item.title
+                                ]
+                                    .filter(
+                                        isNotBlank
+                                    )
+                                    .join(
+                                        " · "
+                                    )
+                                || "사주 해설";
 
                             return `
                                 <article class="easy-card">
 
                                     <strong>
                                         ${escapeHtml(
-                                            item.title
+                                            title
                                         )}
                                     </strong>
 
                                     <p>
                                         ${escapeHtml(
                                             item.content
+                                            || "해석 내용이 없습니다."
                                         )}
                                     </p>
 
@@ -3646,14 +3744,14 @@ document.addEventListener(
         }
 
         function renderResultShinsal(
-            result
+            analysis
         ) {
 
             const shinsal =
                 Array.isArray(
-                    result.shinsal
+                    analysis.shinsal
                 )
-                    ? result.shinsal
+                    ? analysis.shinsal
                     : [];
 
             if (
@@ -3663,11 +3761,11 @@ document.addEventListener(
                     <article class="easy-card">
 
                         <strong>
-                            신살 요약
+                            주요 신살
                         </strong>
 
                         <p>
-                            현재 표시할 주요 신살이 많지 않습니다. 신살은 전체 사주를 보조적으로 설명하는 참고 자료입니다.
+                            표시할 주요 신살이 없습니다. 신살은 전체 사주를 보조하는 참고 요소입니다.
                         </p>
 
                     </article>
@@ -3693,10 +3791,8 @@ document.addEventListener(
 
                                     <p>
                                         ${escapeHtml(
-                                            explainShinsalEasy(
-                                                item.name,
-                                                item.description
-                                            )
+                                            item.description
+                                            || "전체 원국을 보조적으로 설명하는 요소입니다."
                                         )}
                                     </p>
 
@@ -3708,11 +3804,11 @@ document.addEventListener(
         }
 
         function renderResultLuck(
-            result
+            analysis
         ) {
 
             const luck =
-                result.luck;
+                analysis.luck;
 
             if (
                 !luck
@@ -3721,11 +3817,11 @@ document.addEventListener(
                     <article class="easy-card">
 
                         <strong>
-                            대운
+                            현재 대운
                         </strong>
 
                         <p>
-                            현재 대운 정보가 없습니다.
+                            현재 대운 정보를 확인할 수 없습니다.
                         </p>
 
                     </article>
@@ -3763,28 +3859,207 @@ document.addEventListener(
                 <article class="easy-card">
 
                     <strong>
-                        대운을 쉽게 이해하면
+                        대운 설명
                     </strong>
 
                     <p>
-                        대운은 좋은 시기와 나쁜 시기를 단정하는 표가 아니라,
-                        인생에서 어떤 주제가 강해지는지를 보는 큰 흐름입니다.
-                        실제 선택에서는 경력, 자금, 건강과 주변 환경을 함께 확인해야 합니다.
+                        ${escapeHtml(
+                            luck.note
+                            || "대운은 약 10년 동안 이어지는 큰 흐름이며 매년의 세운과 월운이 그 위에 겹칩니다."
+                        )}
                     </p>
 
                 </article>
             `;
         }
 
+        function renderResultForecasts() {
+
+            if (
+                !Array.isArray(
+                    state.forecasts
+                )
+                || state.forecasts.length === 0
+            ) {
+                resultForecastList.innerHTML = `
+                    <article class="forecast-card">
+
+                        <strong>
+                            연도별 흐름
+                        </strong>
+
+                        <p>
+                            연도별 미래 흐름을 확인할 수 없습니다.
+                        </p>
+
+                    </article>
+                `;
+
+                return;
+            }
+
+            resultForecastList.innerHTML =
+                state.forecasts
+                    .map(
+                        function (forecast) {
+
+                            const period =
+                                forecast.influencePeriod
+                                || {};
+
+                            const scores =
+                                forecast.scores
+                                || {};
+
+                            const periodText =
+                                createPeriodDisplayText(
+                                    period
+                                );
+
+                            return `
+                                <article class="forecast-card">
+
+                                    <strong>
+                                        ${escapeHtml(
+                                            forecast.year
+                                            + "년 · "
+                                            + valueOrDash(
+                                                forecast.theme
+                                            )
+                                        )}
+                                    </strong>
+
+                                    <div class="forecast-card-meta">
+
+                                        <span>
+                                            ${escapeHtml(
+                                                valueOrDash(
+                                                    forecast.ganji
+                                                )
+                                            )}
+                                        </span>
+
+                                        <span>
+                                            ${escapeHtml(
+                                                valueOrDash(
+                                                    forecast.confidence
+                                                )
+                                            )}
+                                        </span>
+
+                                        <span>
+                                            근거 ${escapeHtml(
+                                                valueOrDash(
+                                                    forecast.evidenceCount
+                                                )
+                                            )}개
+                                        </span>
+
+                                    </div>
+
+                                    <p>
+                                        ${escapeHtml(
+                                            forecast.summary
+                                            || forecast.headline
+                                            || "연도별 흐름입니다."
+                                        )}
+                                    </p>
+
+                                    ${periodText
+                                        ? `
+                                            <p style="margin-top: 8px;">
+                                                <strong style="font-size: 9px;">
+                                                    영향 기간
+                                                </strong>
+                                                ${escapeHtml(
+                                                    periodText
+                                                )}
+                                            </p>
+                                        `
+                                        : ""
+                                    }
+
+                                    <div class="forecast-score-grid">
+
+                                        ${createForecastScore(
+                                            "직업",
+                                            scores.career
+                                        )}
+
+                                        ${createForecastScore(
+                                            "재물",
+                                            scores.wealth
+                                        )}
+
+                                        ${createForecastScore(
+                                            "사업",
+                                            scores.business
+                                        )}
+
+                                        ${createForecastScore(
+                                            "관계",
+                                            scores.relationship
+                                        )}
+
+                                        ${createForecastScore(
+                                            "연애",
+                                            scores.romance
+                                        )}
+
+                                        ${createForecastScore(
+                                            "변화",
+                                            scores.change
+                                        )}
+
+                                        ${createForecastScore(
+                                            "주의",
+                                            scores.caution
+                                        )}
+
+                                    </div>
+
+                                </article>
+                            `;
+                        }
+                    )
+                    .join("");
+        }
+
+        function createForecastScore(
+            label,
+            score
+        ) {
+
+            return `
+                <div>
+
+                    <span>
+                        ${escapeHtml(
+                            label
+                        )}
+                    </span>
+
+                    <strong>
+                        ${escapeHtml(
+                            valueOrDash(
+                                score
+                            )
+                        )}
+                    </strong>
+
+                </div>
+            `;
+        }
+
         function renderResultAdvanced(
-            result
+            analysis
         ) {
 
             const cards =
                 [];
 
             if (
-                result.calendar
+                analysis.calendar
             ) {
                 cards.push({
                     title:
@@ -3793,33 +4068,33 @@ document.addEventListener(
                     content:
                         "입력 달력: "
                         + valueOrDash(
-                            result.calendar.inputCalendarType
+                            analysis.calendar.inputCalendarType
                         )
                         + "\n양력: "
                         + valueOrDash(
-                            result.calendar.solarDate
+                            analysis.calendar.solarDate
                         )
                         + "\n음력: "
                         + valueOrDash(
-                            result.calendar.lunarDate
+                            analysis.calendar.lunarDate
                         )
                         + "\n출생시간: "
                         + (
-                            result.calendar.birthTimeUnknown
+                            analysis.calendar.birthTimeUnknown
                                 ? "시간 모름"
                                 : valueOrDash(
-                                    result.calendar.birthTime
+                                    analysis.calendar.birthTime
                                 )
                         )
                         + "\n계산 기준: "
                         + valueOrDash(
-                            result.calendar.calculationStandard
+                            analysis.calendar.calculationStandard
                         )
                 });
             }
 
             if (
-                result.strength
+                analysis.strength
             ) {
                 cards.push({
                     title:
@@ -3828,33 +4103,33 @@ document.addEventListener(
                     content:
                         "분류: "
                         + valueOrDash(
-                            result.strength.classification
+                            analysis.strength.classification
                         )
                         + "\n점수: "
                         + valueOrDash(
-                            result.strength.score
+                            analysis.strength.score
                         )
                         + "\n용신: "
                         + valueOrDash(
-                            result.strength.usefulGod
+                            analysis.strength.usefulGod
                         )
                         + "\n희신: "
                         + valueOrDash(
-                            result.strength.favorableGod
+                            analysis.strength.favorableGod
                         )
                         + "\n기신: "
                         + valueOrDash(
-                            result.strength.unfavorableGod
+                            analysis.strength.unfavorableGod
                         )
                         + "\n설명: "
                         + valueOrDash(
-                            result.strength.note
+                            analysis.strength.note
                         )
                 });
             }
 
             if (
-                result.structure
+                analysis.structure
             ) {
                 cards.push({
                     title:
@@ -3863,41 +4138,37 @@ document.addEventListener(
                     content:
                         "태원: "
                         + valueOrDash(
-                            result.structure.fetalOriginKorean
-                            || result.structure.fetalOrigin
+                            analysis.structure.fetalOriginKorean
+                            || analysis.structure.fetalOrigin
                         )
                         + "\n태식: "
                         + valueOrDash(
-                            result.structure.fetalBreathKorean
-                            || result.structure.fetalBreath
+                            analysis.structure.fetalBreathKorean
+                            || analysis.structure.fetalBreath
                         )
                         + "\n명궁: "
                         + valueOrDash(
-                            result.structure.lifePalaceKorean
-                            || result.structure.lifePalace
+                            analysis.structure.lifePalaceKorean
+                            || analysis.structure.lifePalace
                         )
                         + "\n신궁: "
                         + valueOrDash(
-                            result.structure.bodyPalaceKorean
-                            || result.structure.bodyPalace
-                        )
-                        + "\n설명: "
-                        + valueOrDash(
-                            result.structure.note
+                            analysis.structure.bodyPalaceKorean
+                            || analysis.structure.bodyPalace
                         )
                 });
             }
 
             if (
-                result.relations
+                analysis.relations
             ) {
                 cards.push({
                     title:
-                        "합충형파해",
+                        "합·충·형·파·해",
 
                     content:
                         createRelationText(
-                            result.relations
+                            analysis.relations
                         )
                 });
             }
@@ -3912,7 +4183,7 @@ document.addEventListener(
                             </strong>
 
                             <p>
-                                추가 전문 정보가 없습니다.
+                                표시할 추가 전문 정보가 없습니다.
                             </p>
 
                         </article>
@@ -3942,10 +4213,6 @@ document.addEventListener(
                         )
                         .join("");
         }
-
-        /* =====================================================
-           명식표 정규화
-        ===================================================== */
 
         function getOrderedPillars(
             source
@@ -4001,14 +4268,20 @@ document.addEventListener(
 
                     const stemCode =
                         pillar.stem
-                        || extractStemFromGanZhi(
+                        || String(
                             pillar.ganZhi
+                            || ""
+                        ).charAt(
+                            0
                         );
 
                     const branchCode =
                         pillar.branch
-                        || extractBranchFromGanZhi(
+                        || String(
                             pillar.ganZhi
+                            || ""
+                        ).charAt(
+                            1
                         );
 
                     const stemMeta =
@@ -4020,17 +4293,6 @@ document.addEventListener(
                         getBranchMeta(
                             branchCode
                         );
-
-                    const hiddenStems =
-                        Array.isArray(
-                            pillar.hiddenStems
-                        )
-                            ? pillar.hiddenStems
-                            : [];
-
-                    const mainHiddenStem =
-                        hiddenStems[0]
-                        || null;
 
                     return {
                         type:
@@ -4100,46 +4362,12 @@ document.addEventListener(
                                 )
                                 : "-",
 
-                        /*
-                         * 지지 십성은 대표 지장간의 십성을 사용한다.
-                         */
-                        branchTenGod:
-                            known
-                                ? valueOrDash(
-                                    mainHiddenStem
-                                        ?.tenGod
-                                )
-                                : "-",
-
                         twelveStage:
                             known
                                 ? valueOrDash(
                                     pillar.twelveStage
                                 )
-                                : "-",
-
-                        hiddenStems:
-                            hiddenStems,
-
-                        naYin:
-                            valueOrDash(
-                                pillar.naYin
-                            ),
-
-                        xun:
-                            valueOrDash(
-                                pillar.xun
-                            ),
-
-                        xunKong:
-                            valueOrDash(
-                                pillar.xunKong
-                            ),
-
-                        note:
-                            valueOrDash(
-                                pillar.note
-                            )
+                                : "-"
                     };
                 }
             );
@@ -4183,61 +4411,9 @@ document.addEventListener(
                 stemTenGod:
                     "-",
 
-                branchTenGod:
-                    "-",
-
                 twelveStage:
-                    "-",
-
-                hiddenStems:
-                    [],
-
-                naYin:
-                    "-",
-
-                xun:
-                    "-",
-
-                xunKong:
-                    "-",
-
-                note:
                     "-"
             };
-        }
-
-        function extractStemFromGanZhi(
-            ganZhi
-        ) {
-
-            if (
-                !ganZhi
-                || typeof ganZhi
-                !== "string"
-            ) {
-                return "";
-            }
-
-            return ganZhi.charAt(
-                0
-            );
-        }
-
-        function extractBranchFromGanZhi(
-            ganZhi
-        ) {
-
-            if (
-                !ganZhi
-                || typeof ganZhi
-                !== "string"
-            ) {
-                return "";
-            }
-
-            return ganZhi.charAt(
-                1
-            );
         }
 
         function normalizePillarType(
@@ -4522,13 +4698,6 @@ document.addEventListener(
                     element
                 );
 
-            if (
-                normalizedYinYang === "-"
-                && normalizedElement === "-"
-            ) {
-                return "-";
-            }
-
             return (
                 normalizedYinYang === "-"
                     ? ""
@@ -4538,7 +4707,8 @@ document.addEventListener(
                 normalizedElement === "-"
                     ? ""
                     : normalizedElement
-            );
+            )
+            || "-";
         }
 
         function normalizeYinYang(
@@ -4732,295 +4902,6 @@ document.addEventListener(
             );
         }
 
-        function findPillarShinsalNames(
-            shinsal,
-            pillarType
-        ) {
-
-            if (
-                !Array.isArray(
-                    shinsal
-                )
-            ) {
-                return [];
-            }
-
-            const locationNames = {
-                HOUR: [
-                    "시주",
-                    "시지",
-                    "시간"
-                ],
-
-                DAY: [
-                    "일주",
-                    "일지",
-                    "일간"
-                ],
-
-                MONTH: [
-                    "월주",
-                    "월지",
-                    "월간"
-                ],
-
-                YEAR: [
-                    "년주",
-                    "연주",
-                    "년지",
-                    "연지",
-                    "년간",
-                    "연간"
-                ]
-            };
-
-            const keywords =
-                locationNames[
-                    pillarType
-                ]
-                || [];
-
-            return shinsal
-                .filter(
-                    function (item) {
-
-                        const location =
-                            String(
-                                item
-                                    ?.location
-                                || ""
-                            );
-
-                        return keywords.some(
-                            function (keyword) {
-
-                                return location.includes(
-                                    keyword
-                                );
-                            }
-                        );
-                    }
-                )
-                .map(
-                    function (item) {
-
-                        return item.name
-                        || "신살";
-                    }
-                );
-        }
-
-        /* =====================================================
-           쉬운 해설 문장
-        ===================================================== */
-
-        function createChartNarration(
-            result
-        ) {
-
-            const ordered =
-                getOrderedPillars(
-                    result.pillars
-                );
-
-            const known =
-                ordered
-                    .filter(
-                        function (pillar) {
-
-                            return pillar.known;
-                        }
-                    )
-                    .map(
-                        function (pillar) {
-
-                            return pillar.stemKorean
-                                + pillar.branchKorean;
-                        }
-                    )
-                    .join(", ");
-
-            if (
-                !known
-            ) {
-                return "사주 명식표의 네 기둥을 확인하고 있습니다.";
-            }
-
-            return "화면의 네 기둥은 태어난 해, 달, 날과 시간을 나타냅니다. "
-                + "가운데 일주는 나 자신을 보는 중심이며, 현재 명식은 "
-                + known
-                + "의 흐름으로 계산되었습니다.";
-        }
-
-        function createElementNarration(
-            elementBalance
-        ) {
-
-            const dominant =
-                normalizeElementName(
-                    elementBalance
-                        ?.dominant
-                );
-
-            const weakest =
-                normalizeElementName(
-                    elementBalance
-                        ?.weakest
-                );
-
-            return "오행은 목, 화, 토, 금, 수의 다섯 기운을 뜻합니다. "
-                + dominant
-                + " 기운이 가장 두드러져 "
-                + explainElementStrongest(
-                    dominant
-                )
-                + " 반대로 "
-                + weakest
-                + " 기운은 상대적으로 적어 "
-                + explainElementWeakest(
-                    weakest
-                );
-        }
-
-        function createStrengthNarration(
-            result
-        ) {
-
-            const strength =
-                result.strength
-                || {};
-
-            const dominantTenGod =
-                result.tenGodBalance
-                    ?.dominant
-                || "확인되지 않음";
-
-            return "중심 기운은 "
-                + valueOrDash(
-                    strength.classification
-                )
-                + "으로 분석됩니다. 두드러진 십성은 "
-                + dominantTenGod
-                + "이며, 쉽게 말하면 "
-                + tenGodEasyMeaning(
-                    dominantTenGod
-                )
-                + " 도움 되는 기운은 "
-                + valueOrDash(
-                    strength.usefulGod
-                )
-                + "입니다.";
-        }
-
-        function createShinsalNarration(
-            shinsal
-        ) {
-
-            return shinsal
-                .slice(
-                    0,
-                    4
-                )
-                .map(
-                    function (item) {
-
-                        return (
-                            item.name
-                            || "신살"
-                        )
-                        + "은 "
-                        + explainShinsalEasy(
-                            item.name,
-                            item.description
-                        );
-                    }
-                )
-                .join(" ");
-        }
-
-        function createLuckNarration(
-            luck
-        ) {
-
-            return "대운은 인생에서 어떤 주제가 강해지는지를 보는 큰 흐름입니다. "
-                + "현재 대운은 "
-                + valueOrDash(
-                    luck.currentDecade
-                )
-                + "이며 운행 방향은 "
-                + valueOrDash(
-                    luck.direction
-                )
-                + "입니다. 좋고 나쁨만 단정하기보다 현실의 경력과 자금, 건강을 함께 살펴봐야 합니다.";
-        }
-
-        function createStrengthEasyExplanation(
-            result
-        ) {
-
-            const strength =
-                result.strength
-                || {};
-
-            const classification =
-                String(
-                    strength.classification
-                    || ""
-                );
-
-            const usefulGod =
-                valueOrDash(
-                    strength.usefulGod
-                );
-
-            const favorableGod =
-                valueOrDash(
-                    strength.favorableGod
-                );
-
-            if (
-                classification.includes(
-                    "신강"
-                )
-            ) {
-                return "자기 중심과 버티는 힘이 비교적 강한 편입니다. "
-                    + "주도성이 장점이지만 혼자 모든 일을 감당하거나 자신의 방식만 고집하지 않도록 균형을 잡는 것이 중요합니다. "
-                    + "도움 되는 기운은 "
-                    + usefulGod
-                    + ", 잘 활용하면 좋은 기운은 "
-                    + favorableGod
-                    + "입니다.";
-            }
-
-            if (
-                classification.includes(
-                    "신약"
-                )
-            ) {
-                return "주변 상황을 세밀하게 느끼고 배려하는 힘이 있지만 환경의 영향을 많이 받아 쉽게 지칠 수 있습니다. "
-                    + "혼자 버티기보다 사람과 환경의 도움을 잘 활용하는 것이 중요합니다. "
-                    + "보완에 도움 되는 기운은 "
-                    + usefulGod
-                    + ", 잘 활용하면 좋은 기운은 "
-                    + favorableGod
-                    + "입니다.";
-            }
-
-            if (
-                classification.includes(
-                    "중화"
-                )
-            ) {
-                return "한쪽으로 크게 치우치지 않아 상황에 맞춰 균형을 잡는 힘이 있습니다. "
-                    + "운과 환경에 따라 장점이 다르게 나타날 수 있으며 도움 되는 기운은 "
-                    + usefulGod
-                    + "입니다.";
-            }
-
-            return "사주의 중심 기운은 계절과 전체 구조를 함께 살펴봐야 합니다. "
-                + "현재 판정은 참고값으로 이해하고 실제 생활환경과 함께 보는 것이 좋습니다.";
-        }
-
         function explainElementStrongest(
             element
         ) {
@@ -5045,7 +4926,7 @@ document.addEventListener(
             return map[
                 element
             ]
-            || "가장 강한 기운은 장점으로 활용할 수 있지만 한쪽으로 지나치게 쓰이지 않도록 균형을 함께 보는 것이 좋습니다.";
+            || "강한 기운은 장점이지만 지나치게 사용되지 않도록 균형을 보는 것이 좋습니다.";
         }
 
         function explainElementWeakest(
@@ -5054,348 +4935,25 @@ document.addEventListener(
 
             const map = {
                 목:
-                    "작은 목표부터 바로 시작하고 배움의 흐름을 꾸준히 이어가는 연습이 도움이 됩니다.",
+                    "작은 목표부터 시작하고 배움의 흐름을 이어가는 연습이 도움이 됩니다.",
 
                 화:
-                    "생각과 감정을 말과 행동으로 조금 더 분명하게 표현하는 연습이 도움이 됩니다.",
+                    "생각과 감정을 말과 행동으로 표현하는 연습이 도움이 됩니다.",
 
                 토:
-                    "수면, 식사와 일정처럼 반복되는 생활 리듬을 안정시키는 것이 도움이 됩니다.",
+                    "수면과 식사, 일정 같은 생활 리듬을 안정시키는 것이 도움이 됩니다.",
 
                 금:
-                    "기준과 우선순위를 미리 정하고 불필요한 일을 정리하는 습관이 도움이 됩니다.",
+                    "기준과 우선순위를 정하고 불필요한 일을 정리하는 습관이 도움이 됩니다.",
 
                 수:
-                    "한 가지 방식만 고집하지 않고 상황에 맞춰 생각과 계획을 유연하게 조정하는 연습이 도움이 됩니다."
+                    "상황에 맞춰 생각과 계획을 유연하게 조정하는 연습이 도움이 됩니다."
             };
 
             return map[
                 element
             ]
-            || "부족한 기운은 결함이 아니라 생활 습관과 환경을 통해 의식적으로 보완할 수 있는 부분입니다.";
-        }
-
-        function explainShinsalEasy(
-            name,
-            description
-        ) {
-
-            const normalized =
-                String(
-                    name
-                    || ""
-                );
-
-            if (
-                normalized.includes(
-                    "백호"
-                )
-            ) {
-                return "이름이 강해서 무섭게 느껴질 수 있지만 사고가 반드시 생긴다는 뜻은 아닙니다. "
-                    + "위기 상황에서 판단이 빠르고 필요할 때 강하게 대응하는 성향으로 이해하는 것이 좋습니다.";
-            }
-
-            if (
-                normalized.includes(
-                    "역마"
-                )
-            ) {
-                return "이동과 변화의 흐름을 뜻합니다. "
-                    + "여행, 이직, 환경 변화와 새로운 분야에 도전할 때 활동성이 살아날 수 있습니다.";
-            }
-
-            if (
-                normalized.includes(
-                    "화개"
-                )
-            ) {
-                return "혼자 깊이 생각하고 한 분야를 오래 파고드는 성향입니다. "
-                    + "예술, 연구, 상담, 철학과 전문 기술 분야에서 장점으로 나타날 수 있습니다.";
-            }
-
-            if (
-                normalized.includes(
-                    "도화"
-                )
-            ) {
-                return "사람의 시선을 끌거나 매력이 드러나는 흐름입니다. "
-                    + "연애뿐 아니라 대인관계와 표현 활동에서도 존재감으로 나타날 수 있습니다.";
-            }
-
-            if (
-                normalized.includes(
-                    "장성"
-                )
-            ) {
-                return "책임을 맡고 사람이나 일을 이끄는 주도성과 리더십을 보조적으로 설명합니다.";
-            }
-
-            if (
-                normalized.includes(
-                    "천을귀인"
-                )
-            ) {
-                return "어려운 상황에서 도움을 받거나 해결의 실마리를 만나는 흐름으로 설명합니다.";
-            }
-
-            if (
-                normalized.includes(
-                    "문창"
-                )
-            ) {
-                return "공부, 문서, 글쓰기, 기획과 표현 능력을 보조하는 흐름입니다.";
-            }
-
-            if (
-                normalized.includes(
-                    "괴강"
-                )
-            ) {
-                return "강한 자존감과 독립성, 결단력이 나타날 수 있습니다. "
-                    + "자신의 기준을 유지하되 타인과의 완급 조절이 중요합니다.";
-            }
-
-            if (
-                normalized.includes(
-                    "양인"
-                )
-            ) {
-                return "결단력과 추진력이 강한 흐름입니다. "
-                    + "감정이나 행동이 너무 급해지지 않도록 조절하면 장점으로 활용할 수 있습니다.";
-            }
-
-            if (
-                normalized.includes(
-                    "귀문"
-                )
-            ) {
-                return "감각과 집중력이 예민할 수 있다는 의미입니다. "
-                    + "생각과 긴장이 지나치게 쌓이지 않도록 휴식이 중요합니다.";
-            }
-
-            if (
-                description
-                && String(
-                    description
-                ).trim()
-            ) {
-                return description
-                    + " 다만 이 요소 하나만으로 특정 사건이나 결과를 단정하지 않습니다.";
-            }
-
-            return "전체 사주 흐름을 보조적으로 설명하는 요소입니다. "
-                + "특정 사건이 반드시 생긴다는 의미로 받아들이지 않는 것이 좋습니다.";
-        }
-
-        function simplifyInterpretationText(
-            text
-        ) {
-
-            if (
-                !text
-            ) {
-                return "해석 내용이 없습니다.";
-            }
-
-            return String(
-                text
-            )
-                .replace(
-                    /용신/g,
-                    "균형을 잡는 데 도움 되는 기운"
-                )
-                .replace(
-                    /희신/g,
-                    "잘 활용하면 좋은 기운"
-                )
-                .replace(
-                    /기신/g,
-                    "지나치면 부담이 될 수 있는 기운"
-                )
-                .replace(
-                    /신약/g,
-                    "주변 영향을 섬세하게 느끼는 편"
-                )
-                .replace(
-                    /신강/g,
-                    "자기 중심과 버티는 힘이 있는 편"
-                )
-                .replace(
-                    /백호살/g,
-                    "위기 대응력이 강하게 나타나는 백호살"
-                )
-                .replace(
-                    /역마살/g,
-                    "이동과 변화의 흐름을 뜻하는 역마살"
-                )
-                .replace(
-                    /화개살/g,
-                    "깊이 탐구하는 성향을 뜻하는 화개살"
-                );
-        }
-
-        function tenGodEasyLabel(
-            tenGod
-        ) {
-
-            const map = {
-                일원:
-                    "나 자신",
-
-                비견:
-                    "독립심",
-
-                겁재:
-                    "경쟁·추진",
-
-                식신:
-                    "생산·표현",
-
-                상관:
-                    "아이디어·표현",
-
-                편재:
-                    "기회형 재물",
-
-                정재:
-                    "안정형 재물",
-
-                편관:
-                    "압박·책임",
-
-                정관:
-                    "규칙·책임",
-
-                편인:
-                    "직관·탐구",
-
-                정인:
-                    "배움·보호"
-            };
-
-            return map[
-                tenGod
-            ]
-            || "";
-        }
-
-        function tenGodEasyMeaning(
-            tenGod
-        ) {
-
-            const map = {
-                비견:
-                    "자기주도성과 동료의식이 강하게 나타날 수 있습니다.",
-
-                겁재:
-                    "경쟁심과 빠른 추진력이 나타날 수 있습니다.",
-
-                식신:
-                    "기술과 결과물을 꾸준히 만들어내는 힘이 있습니다.",
-
-                상관:
-                    "아이디어와 표현력, 기존 방식을 바꾸는 힘이 있습니다.",
-
-                편재:
-                    "사람과 기회를 통해 돈과 자원을 움직이는 성향입니다.",
-
-                정재:
-                    "안정적인 수입과 계획적인 관리를 중요하게 보는 성향입니다.",
-
-                편관:
-                    "압박 속에서 책임지고 대응하는 힘이 있습니다.",
-
-                정관:
-                    "규칙과 책임, 신뢰를 중요하게 보는 성향입니다.",
-
-                편인:
-                    "직관과 독창적인 탐구 성향이 있습니다.",
-
-                정인:
-                    "배움과 문서, 자격을 통해 안정적으로 성장하는 힘이 있습니다."
-            };
-
-            return map[
-                tenGod
-            ]
-            || "사람과 일, 돈과 표현 방식을 설명하는 보조 요소입니다.";
-        }
-
-        function twelveStageEasyLabel(
-            stage
-        ) {
-
-            const map = {
-                장생:
-                    "성장 시작",
-
-                목욕:
-                    "경험·표현",
-
-                관대:
-                    "자신감 형성",
-
-                건록:
-                    "자립·안정",
-
-                제왕:
-                    "강한 추진",
-
-                쇠:
-                    "정리·관리",
-
-                병:
-                    "속도 조절",
-
-                사:
-                    "전환·마무리",
-
-                묘:
-                    "저장·내면",
-
-                절:
-                    "새 전환 준비",
-
-                태:
-                    "가능성 형성",
-
-                양:
-                    "보호·성장"
-            };
-
-            return map[
-                stage
-            ]
-            || "";
-        }
-
-        function createEasySummary(
-            result
-        ) {
-
-            const name =
-                result.name
-                || state.form.name
-                || "회원";
-
-            const dominant =
-                normalizeElementName(
-                    result.elementBalance
-                        ?.dominant
-                );
-
-            const weakest =
-                normalizeElementName(
-                    result.elementBalance
-                        ?.weakest
-                );
-
-            return name
-                + "님의 사주는 "
-                + dominant
-                + " 기운의 장점이 비교적 잘 드러나며, "
-                + weakest
-                + " 기운과 관련된 생활 습관을 보완하면 전체 균형을 잡는 데 도움이 됩니다.";
+            || "부족한 기운은 생활 습관과 환경으로 보완할 수 있는 부분입니다.";
         }
 
         function createRelationText(
@@ -5464,52 +5022,7 @@ document.addEventListener(
                 : "특별히 표시할 관계 정보가 많지 않습니다.";
         }
 
-        /* =====================================================
-           공통 유틸
-        ===================================================== */
-
-        function withEasyMeaning(
-            primary,
-            secondary
-        ) {
-
-            const first =
-                cleanDash(
-                    primary
-                );
-
-            const second =
-                cleanDash(
-                    secondary
-                );
-
-            if (
-                first !== "-"
-                && second !== "-"
-                && second !== ""
-            ) {
-                return first
-                    + "\n("
-                    + second
-                    + ")";
-            }
-
-            if (
-                first !== "-"
-            ) {
-                return first;
-            }
-
-            if (
-                second !== "-"
-            ) {
-                return second;
-            }
-
-            return "-";
-        }
-
-        function cleanDash(
+        function formatYearMonthValue(
             value
         ) {
 
@@ -5517,32 +5030,50 @@ document.addEventListener(
                 value === null
                 || value === undefined
                 || value === ""
-                || value === "null"
             ) {
                 return "-";
             }
 
-            return String(
-                value
-            );
-        }
-
-        function formatListText(
-            list
-        ) {
-
             if (
-                !Array.isArray(
-                    list
+                Array.isArray(
+                    value
                 )
-                || list.length === 0
+                && value.length >= 2
             ) {
-                return "(없음)";
+                return Number(
+                    value[0]
+                )
+                + "년 "
+                + Number(
+                    value[1]
+                )
+                + "월";
             }
 
-            return list.join(
-                "\n"
-            );
+            const text =
+                String(
+                    value
+                );
+
+            const matched =
+                text.match(
+                    /^(\d{4})-(\d{1,2})/
+                );
+
+            if (
+                matched
+            ) {
+                return Number(
+                    matched[1]
+                )
+                + "년 "
+                + Number(
+                    matched[2]
+                )
+                + "월";
+            }
+
+            return text;
         }
 
         function formatBirthTitle(
@@ -5559,10 +5090,9 @@ document.addEventListener(
             const parts =
                 String(
                     dateText
-                )
-                    .split(
-                        "-"
-                    );
+                ).split(
+                    "-"
+                );
 
             if (
                 parts.length !== 3
@@ -5638,7 +5168,7 @@ document.addEventListener(
                             "show"
                         );
                     },
-                    2300
+                    2400
                 );
         }
 
@@ -5663,11 +5193,10 @@ document.addEventListener(
 
             return String(
                 value
-            )
-                .padStart(
-                    2,
-                    "0"
-                );
+            ).padStart(
+                2,
+                "0"
+            );
         }
 
         function valueOrDash(
@@ -5685,6 +5214,17 @@ document.addEventListener(
             return String(
                 value
             );
+        }
+
+        function isNotBlank(
+            value
+        ) {
+
+            return value !== null
+                && value !== undefined
+                && String(
+                    value
+                ).trim() !== "";
         }
 
         function escapeHtml(
