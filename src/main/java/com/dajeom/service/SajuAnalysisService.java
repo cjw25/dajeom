@@ -20,56 +20,28 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SajuAnalysisService {
 
-    /*
-     * SajuCalculatorService의 절기 계산 지원 범위와 동일하게 맞춘다.
-     */
     private static final int MIN_FORECAST_YEAR = 1900;
     private static final int MAX_FORECAST_YEAR = 2100;
 
     private final BirthProfileRepository birthProfileRepository;
     private final SajuAnalysisRepository sajuAnalysisRepository;
 
-    /*
-     * 만세력과 명리학 계산을 담당한다.
-     *
-     * 연주·월주·일주·시주
-     * 오행·음양
-     * 십성·십이운성
-     * 합·충·형·파·해
-     * 신살
-     * 대운·세운·월운 계산
-     */
     private final SajuCalculatorService sajuCalculatorService;
-
-    /*
-     * 계산된 사주 결과를
-     * 일반인이 이해하기 쉬운 문장으로 바꾼다.
-     */
     private final SajuEasyExplanationService sajuEasyExplanationService;
-
-    /*
-     * 원국·대운·세운·월운을 비교해
-     * 연도별 및 월별 미래 흐름을 생성한다.
-     */
     private final SajuForecastService sajuForecastService;
-
-    /*
-     * 종합 사주 결과와 미래 운세를
-     * 영상형 장면 데이터로 변환한다.
-     */
     private final SajuCinematicService sajuCinematicService;
 
     /**
-     * 새로운 사주 종합 분석을 생성한다.
+     * 새로운 종합 사주 분석을 생성한다.
      *
-     * 처리 순서
+     * 처리 순서:
      *
-     * 1. 프로필 조회
-     * 2. 분석 엔티티 생성
-     * 3. 만세력 계산 검증
-     * 4. 쉬운 설명 생성 검증
+     * 1. 사주 프로필 조회
+     * 2. 계산 중 상태의 분석 엔티티 생성
+     * 3. 만세력과 명리 데이터 계산
+     * 4. 현대 종합사주와 전통 심층사주 생성
      * 5. 분석 완료 처리
-     * 6. 완료 상태가 반영된 최종 응답 반환
+     * 6. 완료 상태가 적용된 최종 결과 반환
      */
     @Transactional
     public SajuAnalysisResponse createAnalysis(
@@ -99,47 +71,48 @@ public class SajuAnalysisService {
                 );
 
         try {
-            /*
-             * 분석 엔티티와 프로필 확인 완료
-             */
             savedAnalysis.updateProgress(
                     20
             );
 
-            /*
-             * 만세력 계산이 정상적으로 가능한지 먼저 확인한다.
-             */
             SajuAnalysisResponse calculatedResponse =
                     sajuCalculatorService.calculate(
                             savedAnalysis
                     );
 
+            if (
+                    calculatedResponse == null
+            ) {
+                throw new IllegalStateException(
+                        "사주 계산 결과를 생성하지 못했습니다."
+                );
+            }
+
             savedAnalysis.updateProgress(
-                    70
+                    65
             );
 
-            /*
-             * 쉬운 풀이 생성 과정까지 정상적으로 처리되는지 확인한다.
-             */
-            sajuEasyExplanationService.enrich(
-                    calculatedResponse
-            );
+            SajuAnalysisResponse enrichedResponse =
+                    sajuEasyExplanationService.enrich(
+                            calculatedResponse
+                    );
+
+            if (
+                    enrichedResponse == null
+            ) {
+                throw new IllegalStateException(
+                        "사주 심층 해설을 생성하지 못했습니다."
+                );
+            }
 
             savedAnalysis.updateProgress(
                     90
             );
 
-            /*
-             * 모든 계산과 설명 생성이 끝난 뒤 완료 상태로 변경한다.
-             */
             savedAnalysis.complete();
 
             sajuAnalysisRepository.flush();
 
-            /*
-             * COMPLETED 상태와 completedAt이 포함된
-             * 최종 계산 결과를 다시 생성한다.
-             */
             return calculateEnrichedAnalysis(
                     savedAnalysis
             );
@@ -157,14 +130,14 @@ public class SajuAnalysisService {
             );
 
             throw new IllegalStateException(
-                    "사주 만세력 계산 중 오류가 발생했습니다.",
+                    "사주 만세력과 심층 해설 생성 중 오류가 발생했습니다.",
                     exception
             );
         }
     }
 
     /**
-     * 저장된 종합 사주 분석 결과를 조회한다.
+     * 저장된 종합 사주 결과를 조회한다.
      */
     @Transactional(readOnly = true)
     public SajuAnalysisResponse getAnalysis(
@@ -181,28 +154,11 @@ public class SajuAnalysisService {
     }
 
     /**
-     * 영상형 사주 결과를 조회한다.
+     * 영상형 사주 장면 데이터를 조회한다.
      *
-     * 다음 내용이 장면 단위로 반환된다.
-     *
-     * 오프닝
-     * 만세력
-     * 기본 기운
-     * 겉 성격
-     * 속마음
-     * 장점
-     * 단점과 보완점
-     * 재물운
-     * 직업과 사업운
-     * 사람복
-     * 연애운
-     * 현재 대운
-     * 미래 연도 흐름
-     * 월별 영향 기간
-     * 조심해야 할 기간
-     * 기회 활용 기간
-     * 현실적인 조언
-     * 해석 근거
+     * 영상에서는 별도의 연도별 Forecast API를 호출하지 않는다.
+     * 종합 분석에 포함된 올해 운과 현재 대운,
+     * 전통 심층풀이를 영상용 분량으로 변환한다.
      */
     @Transactional(readOnly = true)
     public SajuCinematicResponse getCinematic(
@@ -218,23 +174,14 @@ public class SajuAnalysisService {
                         analysis
                 );
 
-        List<SajuYearForecastResponse> yearForecasts =
-                sajuForecastService.getYearForecasts(
-                        analysis,
-                        analysisResponse
-                );
-
         return sajuCinematicService.createCinematic(
                 analysis,
-                analysisResponse,
-                yearForecasts
+                analysisResponse
         );
     }
 
     /**
-     * 현재 연도부터 앞으로의 연도별 흐름을 조회한다.
-     *
-     * 기본 조회 기간은 SajuForecastService에서 정한다.
+     * 기술적인 연도별 미래 흐름을 조회한다.
      */
     @Transactional(readOnly = true)
     public List<SajuYearForecastResponse> getYearForecasts(
@@ -257,8 +204,7 @@ public class SajuAnalysisService {
     }
 
     /**
-     * 특정 연도의 종합 흐름과
-     * 1월부터 12월까지의 월별 운세를 조회한다.
+     * 특정 연도의 기술적인 종합 흐름을 조회한다.
      */
     @Transactional(readOnly = true)
     public SajuYearForecastResponse getYearForecast(
@@ -287,10 +233,7 @@ public class SajuAnalysisService {
     }
 
     /**
-     * 특정 연도와 월의 상세 흐름을 조회한다.
-     *
-     * 일반 달력의 매월 1일부터 말일까지가 아니라
-     * 절기 기준 적용 시작 시각과 종료 시각을 함께 반환한다.
+     * 특정 연도와 월의 기술적인 월운 데이터를 조회한다.
      */
     @Transactional(readOnly = true)
     public SajuMonthForecastResponse getMonthForecast(
@@ -324,9 +267,6 @@ public class SajuAnalysisService {
         );
     }
 
-    /**
-     * 사주 분석 요청값을 검증한다.
-     */
     private void validateAnalysisRequest(
             SajuAnalysisRequest request
     ) {
@@ -355,10 +295,6 @@ public class SajuAnalysisService {
         }
     }
 
-    /**
-     * 분석 결과가 존재하며
-     * 완료된 상태인지 공통으로 확인한다.
-     */
     private SajuAnalysis getCompletedAnalysis(
             Long analysisId
     ) {
@@ -413,9 +349,6 @@ public class SajuAnalysisService {
         return analysis;
     }
 
-    /**
-     * 분석 ID를 검증한다.
-     */
     private void validateAnalysisId(
             Long analysisId
     ) {
@@ -436,10 +369,6 @@ public class SajuAnalysisService {
         }
     }
 
-    /**
-     * 만세력 계산 결과에
-     * 쉬운 설명을 결합한다.
-     */
     private SajuAnalysisResponse calculateEnrichedAnalysis(
             SajuAnalysis analysis
     ) {
@@ -473,16 +402,13 @@ public class SajuAnalysisService {
                 enrichedResponse == null
         ) {
             throw new IllegalStateException(
-                    "사주 쉬운 풀이 결과를 생성하지 못했습니다."
+                    "사주 심층 해설을 생성하지 못했습니다."
             );
         }
 
         return enrichedResponse;
     }
 
-    /**
-     * 분석 처리 실패 상태로 변경한다.
-     */
     private void markAnalysisFailed(
             SajuAnalysis analysis
     ) {
@@ -499,15 +425,12 @@ public class SajuAnalysisService {
 
         } catch (Exception ignored) {
             /*
-             * 원래 발생한 계산 오류가
-             * 실패 상태 저장 오류로 가려지지 않도록 한다.
+             * 원래 계산 오류가 실패 상태 기록 오류로
+             * 가려지지 않도록 별도 예외를 던지지 않는다.
              */
         }
     }
 
-    /**
-     * 조회 가능한 미래 운세 연도 범위를 검증한다.
-     */
     private void validateYear(
             int year
     ) {
@@ -525,9 +448,6 @@ public class SajuAnalysisService {
         }
     }
 
-    /**
-     * 월 입력값을 검증한다.
-     */
     private void validateMonth(
             int month
     ) {

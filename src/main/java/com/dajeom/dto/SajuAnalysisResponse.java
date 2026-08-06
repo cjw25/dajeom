@@ -314,6 +314,21 @@ public record SajuAnalysisResponse(
     ) {
     }
 
+    /**
+     * category 예시
+     *
+     * 현대 종합사주
+     * 전통 심층사주
+     *
+     * title 예시
+     *
+     * 타고난 종합운
+     * 2026년 종합운
+     * 앞으로의 종합운
+     * 연애 스타일
+     * 부모와의 인연
+     * 관재수와 분쟁 성향
+     */
     public record InterpretationResponse(
 
             String category,
