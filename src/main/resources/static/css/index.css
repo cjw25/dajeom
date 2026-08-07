@@ -3801,3 +3801,1153 @@ legend {
         font-size: 19px;
     }
 }
+
+/* =========================================================
+   MZ 천명도령 카드 · 상담 모드
+   기존 관상선생과 분리된 4번째 정통 종합사주 UI
+========================================================= */
+
+.mz-doryeong-card {
+    background:
+        radial-gradient(
+            circle at 80% 14%,
+            rgba(210, 255, 73, 0.22),
+            transparent 105px
+        ),
+        linear-gradient(
+            145deg,
+            #291c46 0%,
+            #151022 52%,
+            #09070d 100%
+        );
+}
+
+.mz-doryeong-card::after {
+    position: absolute;
+    top: 13px;
+    right: 10px;
+    z-index: 3;
+
+    padding: 4px 7px;
+
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+
+    background: rgba(11, 8, 18, 0.58);
+    color: #f8f4ff;
+
+    content: "직설풀이";
+
+    font-size: 7px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.mz-doryeong-card img {
+    object-position: 50% 23%;
+
+    filter:
+        brightness(0.88)
+        saturate(1.12)
+        contrast(1.08);
+}
+
+.mz-doryeong-shade {
+    background:
+        linear-gradient(
+            to top,
+            rgba(8, 6, 13, 0.99),
+            rgba(29, 18, 52, 0.64) 46%,
+            transparent 80%
+        );
+}
+
+.recommend-badge.mz {
+    background:
+        linear-gradient(
+            135deg,
+            #d9ff55,
+            #a7d91e
+        );
+
+    color: #171a08;
+
+    box-shadow:
+        0 5px 14px
+        rgba(172, 220, 34, 0.32);
+}
+
+body.is-mz-doryeong-mode .app-header {
+    border-bottom-color: rgba(196, 155, 255, 0.16);
+
+    background:
+        rgba(20, 15, 31, 0.94);
+}
+
+body.is-mz-doryeong-mode .header-copy strong {
+    color: #f7f2ff;
+}
+
+body.is-mz-doryeong-mode .header-copy span {
+    color: rgba(230, 216, 255, 0.66);
+}
+
+body.is-mz-doryeong-mode .header-button {
+    border-color: rgba(219, 200, 255, 0.16);
+
+    background: rgba(255, 255, 255, 0.07);
+    color: #f6efff;
+}
+
+body.is-mz-doryeong-mode .character-stage {
+    background:
+        radial-gradient(
+            circle at 80% 12%,
+            rgba(210, 255, 73, 0.17),
+            transparent 170px
+        ),
+        linear-gradient(
+            155deg,
+            #372252 0%,
+            #1d142c 48%,
+            #0b0810 100%
+        );
+}
+
+body.is-mz-doryeong-mode .character-stage::before {
+    position: absolute;
+    top: 20px;
+    right: 16px;
+    z-index: 4;
+
+    padding: 6px 9px;
+
+    border: 1px solid rgba(218, 255, 86, 0.35);
+    border-radius: 999px;
+
+    background: rgba(10, 7, 16, 0.55);
+    color: #dcff64;
+
+    content: "MZ 천명도령";
+
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+body.is-mz-doryeong-mode .character-stage .character-shade {
+    background:
+        linear-gradient(
+            to top,
+            rgba(11, 8, 16, 0.96),
+            rgba(30, 19, 45, 0.4) 48%,
+            transparent 78%
+        );
+}
+
+body.is-mz-doryeong-mode .speech-bubble {
+    border-color: rgba(217, 255, 85, 0.25);
+
+    background:
+        rgba(16, 11, 25, 0.9);
+
+    color: #faf6ff;
+
+    box-shadow:
+        0 13px 30px
+        rgba(8, 6, 12, 0.3);
+}
+
+body.is-mz-doryeong-mode .speech-bubble span {
+    color: #d9ff55;
+}
+
+body.is-mz-doryeong-mode .speech-bubble p {
+    color: rgba(250, 246, 255, 0.82);
+}
+
+body.is-mz-doryeong-mode .form-panel,
+body.is-mz-doryeong-mode .simple-page,
+body.is-mz-doryeong-mode .complete-page {
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            rgba(197, 153, 255, 0.12),
+            transparent 180px
+        ),
+        linear-gradient(
+            180deg,
+            #fdfaff 0%,
+            #f4edfa 100%
+        );
+}
+
+body.is-mz-doryeong-mode .form-panel .pill,
+body.is-mz-doryeong-mode .simple-page .pill,
+body.is-mz-doryeong-mode .analysis-page .pill {
+    border-color: rgba(121, 76, 170, 0.18);
+
+    background:
+        linear-gradient(
+            135deg,
+            #f3e9ff,
+            #dcc3f7
+        );
+
+    color: #5e347e;
+}
+
+body.is-mz-doryeong-mode .form-panel .primary-button,
+body.is-mz-doryeong-mode .simple-page .primary-button,
+body.is-mz-doryeong-mode .complete-page .primary-button {
+    background:
+        linear-gradient(
+            135deg,
+            #7c45ae 0%,
+            #4a246e 65%,
+            #251133 100%
+        );
+
+    box-shadow:
+        0 12px 28px
+        rgba(73, 35, 104, 0.28);
+}
+
+body.is-mz-doryeong-mode .analysis-page {
+    background: #0c0812;
+}
+
+body.is-mz-doryeong-mode .analysis-shade {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(10, 7, 15, 0.25),
+            rgba(10, 7, 15, 0.91) 56%,
+            #0a0710 100%
+        );
+}
+
+body.is-mz-doryeong-mode .progress-ring {
+    background:
+        conic-gradient(
+            #d9ff55 calc(var(--progress) * 1%),
+            rgba(255, 255, 255, 0.1) 0
+        );
+}
+
+body.is-mz-doryeong-mode .progress-bar {
+    background:
+        linear-gradient(
+            90deg,
+            #ab78df,
+            #d9ff55
+        );
+}
+
+body.is-mz-doryeong-mode .analysis-step.is-active {
+    border-color: rgba(217, 255, 85, 0.35);
+
+    background: rgba(217, 255, 85, 0.1);
+}
+
+body.is-mz-doryeong-mode .analysis-step.is-active .analysis-step-number,
+body.is-mz-doryeong-mode .analysis-step.is-complete .analysis-step-number {
+    background: #d9ff55;
+    color: #161909;
+}
+
+/* =========================================================
+   MZ 천명도령 결과 화면
+========================================================= */
+
+.mz-doryeong-result-screen {
+    background: #0e0a14;
+}
+
+.mz-result-hero {
+    position: relative;
+
+    min-height: 620px;
+
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            circle at 70% 12%,
+            rgba(207, 158, 255, 0.28),
+            transparent 260px
+        ),
+        linear-gradient(
+            165deg,
+            #2e1d44,
+            #120c1b 62%,
+            #08060c
+        );
+
+    color: #ffffff;
+
+    isolation: isolate;
+}
+
+.mz-result-hero > img {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+    object-position: 50% 18%;
+
+    filter:
+        brightness(0.82)
+        saturate(1.08)
+        contrast(1.08);
+}
+
+.mz-result-hero-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(8, 6, 12, 0.08) 0%,
+            rgba(8, 6, 12, 0.32) 38%,
+            rgba(8, 6, 12, 0.95) 80%,
+            #0e0a14 100%
+        ),
+        linear-gradient(
+            90deg,
+            rgba(8, 6, 12, 0.28),
+            transparent 58%
+        );
+}
+
+.mz-result-sticker {
+    position: absolute;
+    z-index: 4;
+
+    padding: 8px 11px;
+
+    border: 2px solid #11130a;
+    border-radius: 10px;
+
+    background: #d9ff55;
+    color: #141707;
+
+    box-shadow:
+        4px 4px 0
+        rgba(0, 0, 0, 0.55);
+
+    font-size: 10px;
+    font-weight: 1000;
+    letter-spacing: -0.02em;
+
+    transform: rotate(-4deg);
+}
+
+.mz-result-sticker-top {
+    top: 24px;
+    right: 18px;
+}
+
+.mz-result-hero-copy {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 3;
+
+    padding:
+        78px
+        20px
+        30px;
+}
+
+.mz-result-eyebrow {
+    display: block;
+
+    margin-bottom: 10px;
+
+    color: #d9ff55;
+
+    font-size: 8px;
+    font-weight: 1000;
+    letter-spacing: 0.16em;
+}
+
+.mz-result-hero-copy h1 {
+    max-width: 340px;
+
+    margin:
+        0
+        0
+        12px;
+
+    color: #ffffff;
+
+    font-size: 31px;
+    font-weight: 1000;
+    line-height: 1.16;
+    letter-spacing: -0.055em;
+
+    text-shadow:
+        0 4px 18px
+        rgba(0, 0, 0, 0.42);
+}
+
+.mz-result-hero-copy > p {
+    max-width: 340px;
+
+    margin: 0;
+
+    color: rgba(248, 242, 255, 0.72);
+
+    font-size: 11px;
+    line-height: 1.75;
+}
+
+.mz-result-quote {
+    margin-top: 18px;
+
+    padding: 14px 15px;
+
+    border: 1px solid rgba(217, 255, 85, 0.24);
+    border-radius: 16px;
+
+    background: rgba(10, 7, 15, 0.68);
+
+    box-shadow:
+        inset
+        0
+        1px
+        0
+        rgba(255, 255, 255, 0.08);
+
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.mz-result-quote span {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #d9ff55;
+
+    font-size: 8px;
+    font-weight: 1000;
+}
+
+.mz-result-quote strong {
+    display: block;
+
+    color: #ffffff;
+
+    font-size: 14px;
+    line-height: 1.55;
+    letter-spacing: -0.03em;
+}
+
+.mz-result-pillars {
+    display: flex;
+
+    margin-top: 13px;
+
+    padding: 13px 14px;
+
+    flex-direction: column;
+
+    gap: 4px;
+
+    border: 1px solid rgba(221, 200, 255, 0.16);
+    border-radius: 14px;
+
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.mz-result-pillars strong {
+    color: #f6efff;
+
+    font-family:
+        Georgia,
+        "Noto Serif KR",
+        serif;
+
+    font-size: 20px;
+    letter-spacing: 0.08em;
+}
+
+.mz-result-pillars span {
+    color: rgba(246, 239, 255, 0.58);
+
+    font-size: 9px;
+}
+
+.mz-result-page {
+    min-height: 100vh;
+
+    padding:
+        20px
+        14px
+        56px;
+
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            rgba(157, 95, 217, 0.12),
+            transparent 230px
+        ),
+        linear-gradient(
+            180deg,
+            #120d19 0%,
+            #f7f2fb 330px,
+            #f7f2fb 100%
+        );
+}
+
+.mz-quick-section,
+.mz-signal-section,
+.mz-report-section {
+    margin-bottom: 28px;
+}
+
+.mz-section-heading {
+    display: flex;
+
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-bottom: 13px;
+}
+
+.mz-section-heading span {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: #8c58b4;
+
+    font-size: 8px;
+    font-weight: 1000;
+    letter-spacing: 0.13em;
+}
+
+.mz-section-heading h2 {
+    margin: 0;
+
+    color: #281d31;
+
+    font-size: 20px;
+    font-weight: 1000;
+    letter-spacing: -0.045em;
+}
+
+.mz-section-heading small {
+    flex: 0 0 auto;
+
+    color: #927f9e;
+
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.mz-quick-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 9px;
+}
+
+.mz-quick-card {
+    position: relative;
+
+    display: flex;
+
+    min-height: 126px;
+
+    padding: 14px;
+
+    overflow: hidden;
+
+    flex-direction: column;
+    justify-content: space-between;
+
+    gap: 9px;
+
+    border: 1px solid rgba(72, 42, 92, 0.11);
+    border-radius: 17px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.98),
+            rgba(243, 233, 250, 0.94)
+        );
+
+    box-shadow:
+        0 11px 25px
+        rgba(61, 35, 76, 0.09);
+}
+
+.mz-quick-card::after {
+    position: absolute;
+    top: -35px;
+    right: -35px;
+
+    width: 92px;
+    height: 92px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(169, 101, 221, 0.15),
+            transparent 70%
+        );
+
+    content: "";
+}
+
+.mz-quick-card:nth-child(2n) {
+    background:
+        linear-gradient(
+            145deg,
+            #f4fbd8,
+            #ffffff 72%
+        );
+}
+
+.mz-quick-card span {
+    position: relative;
+    z-index: 2;
+
+    color: #8d669f;
+
+    font-size: 8px;
+    font-weight: 1000;
+}
+
+.mz-quick-card strong {
+    position: relative;
+    z-index: 2;
+
+    overflow-wrap: anywhere;
+
+    color: #2d2036;
+
+    font-size: 18px;
+    font-weight: 1000;
+    line-height: 1.28;
+    letter-spacing: -0.04em;
+}
+
+.mz-quick-card small {
+    position: relative;
+    z-index: 2;
+
+    color: #88768f;
+
+    font-size: 9px;
+    line-height: 1.55;
+}
+
+.mz-signal-card {
+    display: grid;
+
+    grid-template-columns:
+        92px
+        minmax(0, 1fr);
+
+    align-items: center;
+
+    gap: 14px;
+
+    min-height: 132px;
+
+    padding: 16px;
+
+    border: 1px solid rgba(217, 255, 85, 0.2);
+    border-radius: 20px;
+
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            rgba(217, 255, 85, 0.16),
+            transparent 150px
+        ),
+        linear-gradient(
+            145deg,
+            #281b39,
+            #110c18
+        );
+
+    box-shadow:
+        0 16px 34px
+        rgba(26, 15, 35, 0.23);
+}
+
+.mz-signal-score {
+    display: flex;
+
+    width: 88px;
+    height: 88px;
+
+    align-items: baseline;
+    justify-content: center;
+
+    padding-top: 25px;
+
+    border: 5px solid rgba(217, 255, 85, 0.25);
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(217, 255, 85, 0.15),
+            transparent 66%
+        );
+}
+
+.mz-signal-score strong {
+    color: #d9ff55;
+
+    font-size: 29px;
+    font-weight: 1000;
+    letter-spacing: -0.06em;
+}
+
+.mz-signal-score span {
+    color: rgba(217, 255, 85, 0.72);
+
+    font-size: 9px;
+    font-weight: 900;
+}
+
+.mz-signal-level {
+    display: inline-flex;
+
+    margin-bottom: 7px;
+
+    padding: 5px 8px;
+
+    border-radius: 999px;
+
+    background: #d9ff55;
+    color: #171a08;
+
+    font-size: 8px;
+    font-weight: 1000;
+}
+
+.mz-signal-card p {
+    margin: 0;
+
+    color: rgba(248, 243, 255, 0.72);
+
+    font-size: 10px;
+    line-height: 1.7;
+}
+
+.mz-report-navigation {
+    display: flex;
+
+    margin:
+        0
+        -14px
+        14px;
+
+    padding:
+        0
+        14px
+        7px;
+
+    gap: 7px;
+
+    overflow-x: auto;
+
+    scrollbar-width: none;
+}
+
+.mz-report-navigation::-webkit-scrollbar {
+    display: none;
+}
+
+.mz-report-navigation button {
+    flex: 0 0 auto;
+
+    min-height: 34px;
+
+    padding: 0 12px;
+
+    border: 1px solid rgba(92, 55, 119, 0.13);
+    border-radius: 999px;
+
+    background: #ffffff;
+    color: #654477;
+
+    box-shadow:
+        0 6px 14px
+        rgba(61, 35, 76, 0.07);
+
+    font-size: 9px;
+    font-weight: 900;
+}
+
+.mz-report-navigation button:active {
+    transform: scale(0.98);
+}
+
+.mz-report-list {
+    display: grid;
+    gap: 11px;
+}
+
+.mz-report-card {
+    scroll-margin-top: 74px;
+
+    overflow: hidden;
+
+    border: 1px solid rgba(72, 42, 92, 0.1);
+    border-radius: 19px;
+
+    background: rgba(255, 255, 255, 0.96);
+
+    box-shadow:
+        0 12px 28px
+        rgba(61, 35, 76, 0.08);
+}
+
+.mz-report-card summary {
+    display: grid;
+
+    grid-template-columns:
+        47px
+        minmax(0, 1fr)
+        22px;
+
+    align-items: center;
+
+    gap: 10px;
+
+    min-height: 86px;
+
+    padding: 14px;
+
+    cursor: pointer;
+
+    list-style: none;
+}
+
+.mz-report-card summary::-webkit-details-marker {
+    display: none;
+}
+
+.mz-report-number {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 45px;
+    height: 45px;
+
+    border: 2px solid #25192e;
+    border-radius: 14px;
+
+    background: #d9ff55;
+    color: #1b1f08;
+
+    box-shadow:
+        3px 3px 0
+        rgba(37, 25, 46, 0.95);
+
+    font-size: 11px;
+    font-weight: 1000;
+}
+
+.mz-report-heading {
+    min-width: 0;
+}
+
+.mz-report-heading span {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: #8b5ba7;
+
+    font-size: 8px;
+    font-weight: 1000;
+}
+
+.mz-report-heading strong {
+    display: block;
+
+    overflow: hidden;
+
+    color: #2d2036;
+
+    font-size: 14px;
+    line-height: 1.4;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mz-report-arrow {
+    color: #8c6b9d;
+
+    font-size: 18px;
+
+    transition: transform 0.2s ease;
+}
+
+.mz-report-card[open] .mz-report-arrow {
+    transform: rotate(180deg);
+}
+
+.mz-report-body {
+    padding:
+        0
+        15px
+        17px;
+
+    border-top: 1px solid rgba(72, 42, 92, 0.08);
+}
+
+.mz-report-core {
+    position: relative;
+
+    margin:
+        15px
+        0;
+
+    padding: 14px;
+
+    border: 1px solid rgba(133, 77, 172, 0.12);
+    border-radius: 14px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #f1e6f8,
+            #f8f4fb
+        );
+
+    color: #50365f;
+
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1.7;
+}
+
+.mz-report-core::before {
+    display: inline-block;
+
+    margin-right: 5px;
+
+    color: #7b4599;
+
+    content: "도령픽";
+
+    font-size: 8px;
+    font-weight: 1000;
+}
+
+.mz-report-content p {
+    margin:
+        0
+        0
+        14px;
+
+    color: #5d5063;
+
+    font-size: 11px;
+    line-height: 1.92;
+
+    word-break: keep-all;
+}
+
+.mz-report-content p:last-child {
+    margin-bottom: 0;
+}
+
+.mz-report-scores {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 7px;
+
+    margin-top: 18px;
+}
+
+.mz-report-score {
+    display: flex;
+
+    min-height: 58px;
+
+    padding: 9px;
+
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 4px;
+
+    border: 1px solid rgba(72, 42, 92, 0.09);
+    border-radius: 12px;
+
+    background: #faf7fc;
+}
+
+.mz-report-score span {
+    color: #937da0;
+
+    font-size: 8px;
+    font-weight: 900;
+}
+
+.mz-report-score strong {
+    color: #4a3158;
+
+    font-size: 13px;
+}
+
+.mz-report-empty {
+    padding: 30px 18px;
+
+    border: 1px dashed rgba(93, 53, 121, 0.2);
+    border-radius: 17px;
+
+    background: rgba(255, 255, 255, 0.75);
+    color: #7e6b88;
+
+    text-align: center;
+
+    font-size: 11px;
+    line-height: 1.7;
+}
+
+.mz-final-message {
+    display: grid;
+
+    grid-template-columns:
+        110px
+        minmax(0, 1fr);
+
+    align-items: stretch;
+
+    min-height: 164px;
+
+    margin-top: 30px;
+
+    overflow: hidden;
+
+    border-radius: 20px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #261735,
+            #0f0a16
+        );
+
+    box-shadow:
+        0 16px 34px
+        rgba(31, 17, 42, 0.22);
+}
+
+.mz-final-message img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+    object-position: 50% 22%;
+
+    filter:
+        brightness(0.85)
+        saturate(1.04);
+}
+
+.mz-final-message > div {
+    display: flex;
+
+    padding: 16px;
+
+    flex-direction: column;
+    justify-content: center;
+}
+
+.mz-final-message span {
+    margin-bottom: 5px;
+
+    color: #d9ff55;
+
+    font-size: 8px;
+    font-weight: 1000;
+}
+
+.mz-final-message strong {
+    color: #ffffff;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.mz-final-message p {
+    margin:
+        7px
+        0
+        0;
+
+    color: rgba(247, 240, 255, 0.65);
+
+    font-size: 9px;
+    line-height: 1.65;
+}
+
+.mz-ending-actions {
+    margin-top: 20px;
+}
+
+@media (max-width: 360px) {
+    .mz-result-hero-copy h1 {
+        font-size: 27px;
+    }
+
+    .mz-signal-card {
+        grid-template-columns: 80px minmax(0, 1fr);
+    }
+
+    .mz-signal-score {
+        width: 76px;
+        height: 76px;
+
+        padding-top: 20px;
+    }
+
+    .mz-signal-score strong {
+        font-size: 25px;
+    }
+
+    .mz-final-message {
+        grid-template-columns: 92px minmax(0, 1fr);
+    }
+}

@@ -3,6 +3,21 @@ document.addEventListener("DOMContentLoaded", function () {
     const MINIMUM_ANALYSIS_LOADING_TIME = 4200;
     const MAX_WAITING_PROGRESS = 94;
 
+    const CONSULTATION_MODE_KEY =
+        "sajuConsultationMode";
+
+    const WEBTOON_MODE =
+        "WEBTOON";
+
+    const MZ_DORYEONG_MODE =
+        "MZ_DORYEONG";
+
+    const MZ_SAJU_API_URL =
+        "/api/saju/calculate";
+
+    const ENABLE_MZ_MOCK_FALLBACK =
+        true;
+
     const screens =
         Array.from(
             document.querySelectorAll(
@@ -204,6 +219,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         bindNavigationEvents();
 
+        bindMzReportEvents();
+
         bindNameEvents();
 
         bindBirthEvents();
@@ -219,6 +236,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         startAnalysisButton.textContent =
             "사주 분석 시작";
+
+        applyConsultationModeUi();
+
+        restoreMzResult();
 
         showScreen(
             "home",
@@ -371,6 +392,17 @@ document.addEventListener("DOMContentLoaded", function () {
                         "click",
                         function () {
 
+                            if (
+                                button.dataset
+                                    .consultationMode
+                            ) {
+
+                                setConsultationMode(
+                                    button.dataset
+                                        .consultationMode
+                                );
+                            }
+
                             if (!analysisRunning) {
 
                                 showScreen(
@@ -482,6 +514,11 @@ document.addEventListener("DOMContentLoaded", function () {
             result: {
                 title: "나의 사주 이야기",
                 progress: "웹툰 결과"
+            },
+
+            "mz-result": {
+                title: "MZ 천명도령",
+                progress: "정통 종합사주"
             }
         };
 
@@ -498,8 +535,11 @@ document.addEventListener("DOMContentLoaded", function () {
             addHistory !== false;
 
         if (
-            currentScreen === "result"
-            && screenName !== "result"
+            (
+                currentScreen === "result"
+                || currentScreen === "mz-result"
+            )
+            && screenName !== currentScreen
         ) {
 
             stopWebtoonReveal();
@@ -528,6 +568,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         currentScreen =
             screenName;
+
+        applyConsultationModeUi();
 
         const header =
             getHeaderInformation(
@@ -1327,6 +1369,34 @@ document.addEventListener("DOMContentLoaded", function () {
             "click",
             async function () {
 
+                if (isMzDoryeongMode()) {
+
+                    const validationMessage =
+                        validateMzSajuInput();
+
+                    if (validationMessage) {
+
+                        showToast(
+                            validationMessage
+                        );
+
+                        return;
+                    }
+
+                    sessionStorage.setItem(
+                        "mzSajuForm",
+                        JSON.stringify(
+                            sajuForm
+                        )
+                    );
+
+                    showScreen(
+                        "complete"
+                    );
+
+                    return;
+                }
+
                 submitProfileButton.disabled =
                     true;
 
@@ -1411,6 +1481,13 @@ document.addEventListener("DOMContentLoaded", function () {
             async function () {
 
                 if (analysisRunning) {
+                    return;
+                }
+
+                if (isMzDoryeongMode()) {
+
+                    await runMzDoryeongAnalysis();
+
                     return;
                 }
 
@@ -1714,10 +1791,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         analysisLoadingMessage.textContent =
-            "당신의 사주 이야기가 완성되었습니다.";
+            isMzDoryeongMode()
+                ? "원국과 운의 흐름을 정리한 종합 보고서가 완성되었습니다."
+                : "당신의 사주 이야기가 완성되었습니다.";
 
         analysisProgressStatus.textContent =
-            "웹툰 결과 완성";
+            isMzDoryeongMode()
+                ? "종합 보고서 완성"
+                : "웹툰 결과 완성";
 
         await wait(
             650
@@ -1773,13 +1854,24 @@ document.addEventListener("DOMContentLoaded", function () {
         let status =
             "음양력 정보 확인";
 
+        if (isMzDoryeongMode()) {
+
+            message =
+                "입력한 생년월일과 출생시간을 확인하고 있습니다.";
+
+            status =
+                "출생정보 확인";
+        }
+
         if (progress >= 25) {
 
             activeStep =
                 1;
 
             message =
-                "년주·월주·일주·시주와 오행을 계산하고 있습니다.";
+                isMzDoryeongMode()
+                    ? "원국의 사주팔자와 오행 세력을 계산하고 있습니다."
+                    : "년주·월주·일주·시주와 오행을 계산하고 있습니다.";
 
             status =
                 "사주팔자 계산";
@@ -1791,10 +1883,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 2;
 
             message =
-                "십성·관계·신살과 운의 흐름을 분석하고 있습니다.";
+                isMzDoryeongMode()
+                    ? "용신과 대운·세운의 상호작용을 분석하고 있습니다."
+                    : "십성·관계·신살과 운의 흐름을 분석하고 있습니다.";
 
             status =
-                "삶의 흐름 분석";
+                isMzDoryeongMode()
+                    ? "원국·운세 상호작용"
+                    : "삶의 흐름 분석";
         }
 
         if (progress >= 82) {
@@ -1803,19 +1899,27 @@ document.addEventListener("DOMContentLoaded", function () {
                 3;
 
             message =
-                "계산값을 소비자가 이해하기 쉬운 웹툰 장면으로 바꾸고 있습니다.";
+                isMzDoryeongMode()
+                    ? "핵심 신호와 13개 분야 상세 보고서를 구성하고 있습니다."
+                    : "계산값을 소비자가 이해하기 쉬운 웹툰 장면으로 바꾸고 있습니다.";
 
             status =
-                "웹툰 이야기 구성";
+                isMzDoryeongMode()
+                    ? "13개 보고서 구성"
+                    : "웹툰 이야기 구성";
         }
 
         if (progress >= 100) {
 
             message =
-                "모든 장면이 완성되었습니다.";
+                isMzDoryeongMode()
+                    ? "정통 종합사주 보고서가 완성되었습니다."
+                    : "모든 장면이 완성되었습니다.";
 
             status =
-                "웹툰 결과 완성";
+                isMzDoryeongMode()
+                    ? "종합 보고서 완성"
+                    : "웹툰 결과 완성";
         }
 
         analysisLoadingMessage.textContent =
@@ -1876,6 +1980,1327 @@ document.addEventListener("DOMContentLoaded", function () {
                     String(index + 1);
             }
         );
+    }
+
+
+    function getConsultationMode() {
+
+        const storedMode =
+            sessionStorage.getItem(
+                CONSULTATION_MODE_KEY
+            );
+
+        return storedMode === MZ_DORYEONG_MODE
+            ? MZ_DORYEONG_MODE
+            : WEBTOON_MODE;
+    }
+
+    function setConsultationMode(mode) {
+
+        const normalizedMode =
+            mode === MZ_DORYEONG_MODE
+                ? MZ_DORYEONG_MODE
+                : WEBTOON_MODE;
+
+        sessionStorage.setItem(
+            CONSULTATION_MODE_KEY,
+            normalizedMode
+        );
+
+        applyConsultationModeUi();
+    }
+
+    function isMzDoryeongMode() {
+
+        return getConsultationMode()
+            === MZ_DORYEONG_MODE;
+    }
+
+    function applyConsultationModeUi() {
+
+        const mzMode =
+            isMzDoryeongMode();
+
+        document.body.classList.toggle(
+            "is-mz-doryeong-mode",
+            mzMode
+            && currentScreen !== "home"
+        );
+
+        const characterPath =
+            mzMode
+                ? "/img/mz-doryeong-intro.png"
+                : "/img/saju-character.png";
+
+        document
+            .querySelectorAll(
+                ".mode-character-image"
+            )
+            .forEach(
+                function (image) {
+
+                    image.onerror =
+                        function () {
+
+                            image.onerror =
+                                null;
+
+                            image.src =
+                                "/img/saju-character.png";
+                        };
+
+                    image.src =
+                        characterPath;
+
+                    image.alt =
+                        mzMode
+                            ? "MZ 천명도령"
+                            : "관상선생";
+                }
+            );
+
+        document
+            .querySelectorAll(
+                ".mode-counselor-name"
+            )
+            .forEach(
+                function (element) {
+
+                    element.textContent =
+                        mzMode
+                            ? "MZ 천명도령"
+                            : "관상선생";
+                }
+            );
+
+        setText(
+            "#introCounselorName",
+            mzMode
+                ? "MZ 천명도령"
+                : "관상선생"
+        );
+
+        setText(
+            "#introCounselorSpeech",
+            mzMode
+                ? "긴 말 안 할게요. 지금 막히는 이유와 앞으로 힘을 써야 할 곳부터 바로 짚어드릴게요."
+                : "반갑습니다. 어려운 명리 용어는 잠시 내려놓고, 당신의 삶에 어떤 의미인지 이야기로 풀어드릴게요."
+        );
+
+        setText(
+            "#introModeBadge",
+            mzMode
+                ? "NEW · 정통 종합사주"
+                : "AI 사주 상담사"
+        );
+
+        setText(
+            "#introModeTitle",
+            mzMode
+                ? "MZ 천명도령"
+                : "관상선생"
+        );
+
+        setText(
+            "#introModeDescription",
+            mzMode
+                ? "원국·용신·대운·세운을 계산하고, 기본 성향부터 재물·직업·연애·현재운까지 13개 분야로 정리합니다."
+                : "생년월일과 출생시간을 기반으로 만세력을 계산한 뒤, 소비자가 이해하기 쉬운 웹툰형 해석을 제공합니다."
+        );
+
+        setText(
+            "#introResultStepText",
+            mzMode
+                ? "도령의 10초 요약과 13개 분야 정밀 보고서 확인"
+                : "분석 후 웹툰형 사주 결과 확인"
+        );
+
+        setText(
+            "#nameScreenSpeech",
+            mzMode
+                ? "결과에서 어떻게 불러드릴까요? 이름이나 닉네임을 알려주세요."
+                : "이야기 속에서 불러드릴 이름을 알려주세요."
+        );
+
+        setText(
+            "#completeModeTitle",
+            mzMode
+                ? "도령에게 물어볼 준비 완료"
+                : "기본정보 저장 완료"
+        );
+
+        setText(
+            "#completeModeDescription",
+            mzMode
+                ? "이제 원국부터 용신·대운·세운까지 계산해, 핵심과 상세 보고서를 함께 보여드릴게요."
+                : "입력한 정보를 바탕으로 만세력을 계산하고, 웹툰형 사주 이야기를 만들 수 있습니다."
+        );
+
+        setText(
+            "#analysisModeBadge",
+            mzMode
+                ? "MZ 천명도령 정밀 분석"
+                : "AI 만세력 분석"
+        );
+
+        setText(
+            "#analysisModeTitle",
+            mzMode
+                ? "당신의 원국과 운의 흐름을 뜯어보고 있습니다"
+                : "당신의 사주 이야기를 만들고 있습니다"
+        );
+
+        setText(
+            "#analysisThirdStepTitle",
+            mzMode
+                ? "용신·대운·세운 분석"
+                : "십성·신살·대운 분석"
+        );
+
+        setText(
+            "#analysisThirdStepDescription",
+            mzMode
+                ? "원국과 현재 운이 부딪히는 지점을 확인합니다."
+                : "관계와 운의 흐름을 분석합니다."
+        );
+
+        setText(
+            "#analysisFourthStepTitle",
+            mzMode
+                ? "13개 분야 보고서 구성"
+                : "웹툰 이야기 구성"
+        );
+
+        setText(
+            "#analysisFourthStepDescription",
+            mzMode
+                ? "핵심 신호를 짧고 선명한 카드로 정리합니다."
+                : "계산값을 이해하기 쉬운 장면으로 바꿉니다."
+        );
+
+        if (!analysisRunning) {
+
+            startAnalysisButton.textContent =
+                mzMode
+                    ? "MZ 천명도령에게 물어보기"
+                    : "사주 분석 시작";
+        }
+
+        if (birthTimeUnknown) {
+
+            birthTimeUnknown.disabled =
+                mzMode;
+
+            if (
+                mzMode
+                && birthTimeUnknown.checked
+            ) {
+
+                birthTimeUnknown.checked =
+                    false;
+
+                sajuForm.birthTimeUnknown =
+                    false;
+
+                birthHour.disabled =
+                    false;
+
+                birthMinute.disabled =
+                    false;
+
+                timeInputArea.classList.remove(
+                    "is-disabled"
+                );
+            }
+        }
+    }
+
+    function validateMzSajuInput() {
+
+        if (!sajuForm.name) {
+
+            return "이름이나 닉네임을 입력해주세요.";
+        }
+
+        if (!sajuForm.gender) {
+
+            return "성별을 선택해주세요.";
+        }
+
+        if (
+            !/^\d{4}-\d{2}-\d{2}$/
+                .test(
+                    sajuForm.birthDate
+                    || ""
+                )
+        ) {
+
+            return "생년월일을 정확하게 입력해주세요.";
+        }
+
+        if (
+            sajuForm.birthTimeUnknown
+            || !/^\d{2}:\d{2}$/
+                .test(
+                    sajuForm.birthTime
+                    || ""
+                )
+        ) {
+
+            return "정통 종합사주는 정확한 출생시간이 필요합니다.";
+        }
+
+        return "";
+    }
+
+    async function runMzDoryeongAnalysis() {
+
+        const validationMessage =
+            validateMzSajuInput();
+
+        if (validationMessage) {
+
+            showToast(
+                validationMessage
+            );
+
+            return;
+        }
+
+        analysisRunning =
+            true;
+
+        startAnalysisButton.disabled =
+            true;
+
+        startAnalysisButton.textContent =
+            "원국 확인 중...";
+
+        try {
+
+            resetAnalysisProgress();
+
+            showScreen(
+                "analysis"
+            );
+
+            startAnalysisProgress();
+
+            const request =
+                createMzSajuRequest();
+
+            const result =
+                await requestMzSajuAnalysis(
+                    request
+                );
+
+            sessionStorage.setItem(
+                "mzSajuAnalysisResult",
+                JSON.stringify(
+                    result
+                )
+            );
+
+            await completeAnalysisProgress();
+
+            renderMzSajuResult(
+                result
+            );
+
+            screenHistory.length =
+                0;
+
+            screenHistory.push(
+                "home"
+            );
+
+            showScreen(
+                "mz-result",
+                false
+            );
+
+        } catch (error) {
+
+            stopAnalysisProgress();
+
+            console.error(
+                "MZ 천명도령 분석 오류",
+                error
+            );
+
+            showToast(
+                error.message
+                || "정통 종합사주 분석 중 오류가 발생했습니다."
+            );
+
+            showScreen(
+                "complete",
+                false
+            );
+
+        } finally {
+
+            analysisRunning =
+                false;
+
+            startAnalysisButton.disabled =
+                false;
+
+            startAnalysisButton.textContent =
+                "MZ 천명도령에게 물어보기";
+        }
+    }
+
+    function createMzSajuRequest() {
+
+        return {
+            calendarType:
+                sajuForm.calendarType,
+
+            birthDate:
+                sajuForm.birthDate,
+
+            birthTime:
+                sajuForm.birthTime,
+
+            gender:
+                sajuForm.gender,
+
+            leapMonth:
+                sajuForm.calendarType === "LUNAR"
+                && Boolean(
+                    sajuForm.lunarLeapMonth
+                ),
+
+            targetYear:
+                new Date()
+                    .getFullYear()
+        };
+    }
+
+    async function requestMzSajuAnalysis(request) {
+
+        const startedAt =
+            Date.now();
+
+        try {
+
+            const response =
+                await fetch(
+                    MZ_SAJU_API_URL,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                request
+                            )
+                    }
+                );
+
+            const result =
+                await readJsonResponse(
+                    response
+                );
+
+            if (!response.ok) {
+
+                throw new Error(
+                    result.message
+                    || "정통 종합사주 분석 요청에 실패했습니다."
+                );
+            }
+
+            await waitForMinimumAnalysisTime(
+                startedAt
+            );
+
+            return result;
+
+        } catch (error) {
+
+            if (!ENABLE_MZ_MOCK_FALLBACK) {
+
+                throw error;
+            }
+
+            console.warn(
+                "백엔드 연결 전이라 MZ 천명도령 목업 결과를 사용합니다.",
+                error
+            );
+
+            await waitForMinimumAnalysisTime(
+                startedAt
+            );
+
+            return createMzMockResult(
+                request
+            );
+        }
+    }
+
+    async function waitForMinimumAnalysisTime(
+        startedAt
+    ) {
+
+        const elapsed =
+            Date.now()
+            - startedAt;
+
+        if (
+            elapsed
+            < MINIMUM_ANALYSIS_LOADING_TIME
+        ) {
+
+            await wait(
+                MINIMUM_ANALYSIS_LOADING_TIME
+                - elapsed
+            );
+        }
+    }
+
+    function restoreMzResult() {
+
+        try {
+
+            const stored =
+                sessionStorage.getItem(
+                    "mzSajuAnalysisResult"
+                );
+
+            if (!stored) {
+                return;
+            }
+
+            renderMzSajuResult(
+                JSON.parse(
+                    stored
+                )
+            );
+
+        } catch (error) {
+
+            console.error(
+                "MZ 천명도령 결과 복원 오류",
+                error
+            );
+        }
+    }
+
+    function renderMzSajuResult(result) {
+
+        const report =
+            result.sajuReport
+            || {};
+
+        const sections =
+            Array.isArray(
+                report.sections
+            )
+                ? report.sections
+                : [];
+
+        const targetYear =
+            result.targetYear
+            || report.targetYear
+            || new Date()
+                .getFullYear();
+
+        const fullChinese =
+            safeText(
+                result.fullSajuChinese
+                || report.fullSajuChinese,
+                "사주팔자 계산 결과"
+            );
+
+        const fullKorean =
+            safeText(
+                result.fullSajuKorean
+                || report.fullSajuKorean,
+                ""
+            );
+
+        const interaction =
+            result.luckInteractionAnalysis
+            || {};
+
+        const combinedScore =
+            numberOrDash(
+                interaction.combinedScore
+            );
+
+        const combinedLevel =
+            safeText(
+                interaction.combinedLevelKorean,
+                "운의 흐름 확인"
+            );
+
+        setText(
+            "#mzResultTitle",
+            sajuForm.name
+            + "님, 사주 핵심부터 바로 볼게요"
+        );
+
+        setText(
+            "#mzResultLead",
+            targetYear
+            + "년을 기준으로 원국·용신·현재 대운·세운을 한 번에 정리했습니다."
+        );
+
+        setText(
+            "#mzResultOneLiner",
+            createMzOneLiner(
+                result
+            )
+        );
+
+        setText(
+            "#mzFullSajuChinese",
+            fullChinese
+        );
+
+        setText(
+            "#mzFullSajuKorean",
+            fullKorean
+        );
+
+        setText(
+            "#mzYearSignalTitle",
+            targetYear
+            + "년의 신호"
+        );
+
+        setText(
+            "#mzCombinedScore",
+            combinedScore
+        );
+
+        setText(
+            "#mzCombinedLevel",
+            combinedLevel
+        );
+
+        setText(
+            "#mzCombinedMessage",
+            createCombinedMessage(
+                interaction
+            )
+        );
+
+        setText(
+            "#mzReportCount",
+            sections.length
+            + "개 보고서"
+        );
+
+        setText(
+            "#mzResultDisclaimer",
+            safeText(
+                result.disclaimer,
+                "본 결과는 명리 계산을 기반으로 제공되는 참고 정보이며 중요한 결정은 현실적인 조건과 함께 판단해야 합니다."
+            )
+        );
+
+        renderMzQuickSummary(
+            result
+        );
+
+        renderMzReportNavigation(
+            sections
+        );
+
+        renderMzReportSections(
+            sections
+        );
+    }
+
+    function createMzOneLiner(result) {
+
+        const strength =
+            result.strengthAnalysis
+            || {};
+
+        const useful =
+            result.usefulGodAnalysis
+            || {};
+
+        const primary =
+            useful.primaryUsefulGod
+            || {};
+
+        const strengthName =
+            safeText(
+                strength.levelKorean
+                || strength.strengthLevelKorean,
+                "균형형"
+            );
+
+        const elementName =
+            safeText(
+                primary.elementKorean,
+                "보완 기운"
+            );
+
+        return "핵심은 "
+            + strengthName
+            + "의 힘을 "
+            + elementName
+            + " 방식으로 살리는 겁니다. 무리하게 버티기보다 유리한 환경을 먼저 잡으세요.";
+    }
+
+    function createCombinedMessage(
+        interaction
+    ) {
+
+        const score =
+            Number(
+                interaction.combinedScore
+            );
+
+        if (!Number.isFinite(score)) {
+
+            return "현재 대운과 세운의 상호작용을 확인해 행동 시점과 주의할 부분을 함께 살펴보세요.";
+        }
+
+        if (score >= 70) {
+
+            return "움직였을 때 결과를 만들기 쉬운 흐름입니다. 다만 자신감이 과해지지 않도록 돈과 일정의 상한선은 먼저 정하세요.";
+        }
+
+        if (score >= 56) {
+
+            return "기회가 들어오지만 선택과 집중이 필요한 흐름입니다. 동시에 여러 일을 벌이기보다 한 가지를 끝까지 밀어붙이는 편이 좋습니다.";
+        }
+
+        if (score >= 45) {
+
+            return "좋고 나쁜 신호가 섞인 구간입니다. 큰 결정은 검증 단계를 늘리고, 이미 준비한 일부터 차례대로 실행하세요.";
+        }
+
+        return "속도보다 방어가 중요한 흐름입니다. 계약·부채·건강·사람 관계의 경계를 먼저 정리하면 불필요한 손실을 줄일 수 있습니다.";
+    }
+
+    function renderMzQuickSummary(result) {
+
+        const container =
+            document.querySelector(
+                "#mzQuickSummary"
+            );
+
+        if (!container) {
+            return;
+        }
+
+        const strength =
+            result.strengthAnalysis
+            || {};
+
+        const useful =
+            result.usefulGodAnalysis
+            || {};
+
+        const luck =
+            result.luckAnalysis
+            || {};
+
+        const interaction =
+            result.luckInteractionAnalysis
+            || {};
+
+        const primary =
+            useful.primaryUsefulGod
+            || {};
+
+        const secondary =
+            useful.secondaryFavorableGod
+            || {};
+
+        const decade =
+            luck.currentDecadeLuck
+            || {};
+
+        const annual =
+            luck.annualLuck
+            || {};
+
+        const cards = [
+            {
+                label: "나를 움직이는 일간",
+                value:
+                    safeText(
+                        result.dayMasterKorean
+                        || result.dayMaster,
+                        "-"
+                    ),
+                description:
+                    joinNonEmpty(
+                        [
+                            result.dayMasterElementKorean,
+                            result.dayMasterYinYangKorean
+                        ],
+                        " · "
+                    )
+            },
+            {
+                label: "기본 체력",
+                value:
+                    safeText(
+                        strength.levelKorean
+                        || strength.strengthLevelKorean
+                        || strength.level,
+                        "-"
+                    ),
+                description:
+                    "일간과 주변 오행의 세력 비교"
+            },
+            {
+                label: "1순위 용신",
+                value:
+                    safeText(
+                        primary.elementKorean,
+                        "-"
+                    ),
+                description:
+                    safeText(
+                        primary.typeKorean,
+                        "핵심 보완 오행"
+                    )
+            },
+            {
+                label: "보조 희신",
+                value:
+                    safeText(
+                        secondary.elementKorean,
+                        "-"
+                    ),
+                description:
+                    safeText(
+                        secondary.typeKorean,
+                        "용신을 돕는 오행"
+                    )
+            },
+            {
+                label: "현재 대운",
+                value:
+                    safeText(
+                        decade.pillar
+                        && decade.pillar.koreanName,
+                        "계산 범위 외"
+                    ),
+                description:
+                    decade.startDate
+                    && decade.endDate
+                        ? decade.startDate
+                            + " ~ "
+                            + decade.endDate
+                        : safeText(
+                            luck.directionKorean,
+                            "장기 흐름"
+                        )
+            },
+            {
+                label:
+                    safeText(
+                        annual.targetYear
+                        || result.targetYear,
+                        new Date()
+                            .getFullYear()
+                    )
+                    + "년 세운",
+                value:
+                    safeText(
+                        annual.pillar
+                        && annual.pillar.koreanName,
+                        numberOrDash(
+                            interaction.combinedScore
+                        )
+                        + "점"
+                    ),
+                description:
+                    safeText(
+                        interaction.combinedLevelKorean,
+                        "연간 흐름"
+                    )
+            }
+        ];
+
+        container.innerHTML =
+            cards.map(
+                function (card) {
+
+                    return `
+                        <article class="mz-quick-card">
+
+                            <span>
+                                ${escapeHtml(card.label)}
+                            </span>
+
+                            <strong>
+                                ${escapeHtml(card.value)}
+                            </strong>
+
+                            <small>
+                                ${escapeHtml(card.description)}
+                            </small>
+
+                        </article>
+                    `;
+                }
+            ).join("");
+    }
+
+    function renderMzReportNavigation(
+        sections
+    ) {
+
+        const navigation =
+            document.querySelector(
+                "#mzReportNavigation"
+            );
+
+        if (!navigation) {
+            return;
+        }
+
+        navigation.innerHTML =
+            sections.map(
+                function (
+                    section,
+                    index
+                ) {
+
+                    const id =
+                        createMzSectionId(
+                            section,
+                            index
+                        );
+
+                    return `
+                        <button type="button"
+                                data-mz-report-target="${escapeHtml(id)}">
+                            ${escapeHtml(
+                                safeText(
+                                    section.categoryKorean,
+                                    "상세 "
+                                    + (index + 1)
+                                )
+                            )}
+                        </button>
+                    `;
+                }
+            ).join("");
+    }
+
+    function renderMzReportSections(
+        sections
+    ) {
+
+        const container =
+            document.querySelector(
+                "#mzReportList"
+            );
+
+        if (!container) {
+            return;
+        }
+
+        if (!sections.length) {
+
+            container.innerHTML =
+                `
+                <div class="mz-report-empty">
+                    상세 보고서 데이터가 없습니다.<br>
+                    백엔드 응답의 sajuReport.sections를 확인해주세요.
+                </div>
+                `;
+
+            return;
+        }
+
+        container.innerHTML =
+            sections.map(
+                function (
+                    section,
+                    index
+                ) {
+
+                    const id =
+                        createMzSectionId(
+                            section,
+                            index
+                        );
+
+                    return `
+                        <details class="mz-report-card"
+                                 id="${escapeHtml(id)}"
+                                 ${index === 0
+                                    ? "open"
+                                    : ""}>
+
+                            <summary>
+
+                                <span class="mz-report-number">
+                                    ${String(index + 1)
+                                        .padStart(
+                                            2,
+                                            "0"
+                                        )}
+                                </span>
+
+                                <span class="mz-report-heading">
+
+                                    <span>
+                                        ${escapeHtml(
+                                            safeText(
+                                                section.categoryKorean,
+                                                "상세 해석"
+                                            )
+                                        )}
+                                    </span>
+
+                                    <strong>
+                                        ${escapeHtml(
+                                            safeText(
+                                                section.title
+                                                || section.categoryKorean,
+                                                "상세 해석"
+                                            )
+                                        )}
+                                    </strong>
+
+                                </span>
+
+                                <span class="mz-report-arrow">
+                                    ⌄
+                                </span>
+
+                            </summary>
+
+                            <div class="mz-report-body">
+
+                                <p class="mz-report-core">
+                                    ${escapeHtml(
+                                        safeText(
+                                            section.coreSummary,
+                                            "핵심 신호를 확인해보세요."
+                                        )
+                                    )}
+                                </p>
+
+                                <div class="mz-report-content">
+                                    ${formatMzReportContent(
+                                        section.content
+                                    )}
+                                </div>
+
+                                ${renderMzScores(
+                                    section
+                                )}
+
+                            </div>
+
+                        </details>
+                    `;
+                }
+            ).join("");
+    }
+
+    function renderMzScores(section) {
+
+        const scores = [
+            {
+                label: "유리",
+                value:
+                    section.favorableScore
+                    ?? 0
+            },
+            {
+                label: "주의",
+                value:
+                    section.challengingScore
+                    ?? 0
+            },
+            {
+                label: "순점수",
+                value:
+                    section.netScore
+                    ?? 0
+            }
+        ];
+
+        return `
+            <div class="mz-report-scores">
+                ${scores.map(
+                    function (score) {
+
+                        return `
+                            <div class="mz-report-score">
+                                <span>
+                                    ${escapeHtml(score.label)}
+                                </span>
+                                <strong>
+                                    ${escapeHtml(score.value)}
+                                </strong>
+                            </div>
+                        `;
+                    }
+                ).join("")}
+            </div>
+        `;
+    }
+
+    function formatMzReportContent(content) {
+
+        return safeText(
+            content,
+            "상세 해석 내용이 없습니다."
+        )
+            .split(
+                /\n{2,}/
+            )
+            .map(
+                function (paragraph) {
+
+                    return paragraph.trim();
+                }
+            )
+            .filter(Boolean)
+            .map(
+                function (paragraph) {
+
+                    return "<p>"
+                        + escapeHtml(
+                            paragraph
+                        )
+                        + "</p>";
+                }
+            )
+            .join("");
+    }
+
+    function createMzSectionId(
+        section,
+        index
+    ) {
+
+        return (
+            "mz-report-"
+            + safeText(
+                section.category,
+                "section-"
+                + index
+            )
+        )
+            .toLowerCase()
+            .replace(
+                /[^a-z0-9_-]/g,
+                "-"
+            );
+    }
+
+    function bindMzReportEvents() {
+
+        document.addEventListener(
+            "click",
+            function (event) {
+
+                const button =
+                    event.target.closest(
+                        "[data-mz-report-target]"
+                    );
+
+                if (!button) {
+                    return;
+                }
+
+                const target =
+                    document.getElementById(
+                        button.dataset
+                            .mzReportTarget
+                    );
+
+                if (!target) {
+                    return;
+                }
+
+                target.open =
+                    true;
+
+                target.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+            }
+        );
+    }
+
+    function createMzMockResult(request) {
+
+        const targetYear =
+            request.targetYear;
+
+        const categories = [
+            ["PERSONALITY", "기본 성향", "섬세하지만 기준이 분명한 사람", "환경의 흐름을 빠르게 읽고, 납득한 일은 끝까지 밀어붙이는 편입니다."],
+            ["PAST_LUCK", "과거운", "일찍 현실을 체감한 흐름", "과거에는 자신의 속도보다 주변의 상황과 책임에 맞춰 움직여야 하는 일이 많았을 수 있습니다."],
+            ["PARENTS", "부모운", "보호와 기대가 함께 들어오는 관계", "도움을 받는 동시에 기대받는 역할도 커질 수 있어, 정서와 경제의 경계를 분명히 하는 것이 중요합니다."],
+            ["SIBLINGS", "형제운", "가까울수록 경쟁과 의리가 강함", "친한 사람과 힘을 합치면 성과가 커지지만 돈과 책임을 애매하게 나누면 서운함이 남기 쉽습니다."],
+            ["LOVE_STYLE", "연애 스타일", "진심을 확인한 뒤 깊어지는 타입", "처음에는 신중하지만 신뢰가 생기면 상대의 문제까지 자신의 일처럼 받아들이는 경향이 있습니다."],
+            ["PARTNER_LUCK", "배우자·인연운", "말보다 행동이 안정적인 인연", "강한 끌림만 주는 사람보다 약속과 생활 리듬을 지키는 사람과 장기 관계가 안정됩니다."],
+            ["WEALTH", "재물운", "버는 힘보다 지키는 구조가 핵심", "수익 기회는 만들 수 있지만 사람과 계획 밖 지출로 자금이 흩어지지 않도록 통장을 목적별로 나누는 것이 좋습니다."],
+            ["CAREER", "직업운", "기술과 기획을 결과물로 만드는 직업", "반복 업무만 하는 자리보다 직접 문제를 해결하고 책임 범위가 분명한 업무에서 실력이 살아납니다."],
+            ["LEGAL_RISK", "관재수", "말보다 기록이 먼저", "가까운 사람과의 돈 문제, 공동 작업, 계약에서는 감정적 약속보다 문자와 문서로 기준을 남겨야 합니다."],
+            ["HEALTH_TENDENCY", "건강 경향", "과로 뒤 회복이 늦어질 수 있음", "수면과 식사 시간이 무너지면 집중력과 컨디션이 함께 흔들릴 수 있으므로 실제 증상은 의료기관에서 확인해야 합니다."],
+            ["CURRENT_LUCK", "현재운", "삶의 구조를 다시 짜는 시기", "새로운 일을 무작정 늘리기보다 장기 목표와 직접 연결되는 일에 시간과 돈을 모아야 합니다."],
+            ["YEAR_LUCK", targetYear + "년 종합운", "움직일수록 기회가 보이는 해", "실행력은 높아지지만 경쟁심과 지출도 함께 커질 수 있으므로 돈과 일정의 상한선을 미리 정하세요."],
+            ["FUTURE_LUCK", "미래운", "준비한 것을 확장하는 흐름", "유리한 흐름이 오기 전에 기술, 포트폴리오, 부채와 생활 리듬을 정리하면 기회를 더 크게 활용할 수 있습니다."]
+        ];
+
+        const sections =
+            categories.map(
+                function (
+                    item,
+                    index
+                ) {
+
+                    const content =
+                        item[3]
+                        + "\n\n"
+                        + "이 신호는 결과를 확정하는 예언이 아니라 반복되기 쉬운 선택 패턴을 보여줍니다. 장점이 살아나는 환경을 고르고, 부담이 커지는 조건을 미리 피하는 방식으로 활용하는 것이 좋습니다."
+                        + "\n\n"
+                        + "현실적으로는 중요한 결정을 내릴 때 감정, 비용, 기한과 책임자를 따로 적어보세요. 머릿속의 불안을 실제 행동 계획으로 바꾸면 흐름을 훨씬 안정적으로 사용할 수 있습니다.";
+
+                    return {
+                        category: item[0],
+                        categoryKorean: item[1],
+                        categoryDescription: item[1] + "에 대한 정통 명리 해석",
+                        title: item[2],
+                        coreSummary: item[3],
+                        content: content,
+                        characterCount: content.length,
+                        favorableScore: 58 + index % 4 * 5,
+                        challengingScore: 30 + index % 3 * 6,
+                        netScore: 28 + index % 5 * 3,
+                        usedSignalCodes: [
+                            "MZ_MOCK_"
+                            + item[0]
+                        ]
+                    };
+                }
+            );
+
+        return {
+            calendarType: request.calendarType,
+            birthDate: request.birthDate,
+            birthTime: request.birthTime,
+            gender: request.gender,
+            targetYear: targetYear,
+            fullSajuChinese: "癸酉 庚申 丁丑 甲辰",
+            fullSajuKorean: "계유 경신 정축 갑진",
+            dayMaster: "丁",
+            dayMasterKorean: "정화",
+            dayMasterElementKorean: "화",
+            dayMasterYinYangKorean: "음",
+            strengthAnalysis: {
+                level: "WEAK",
+                levelKorean: "신약",
+                strengthLevelKorean: "신약"
+            },
+            usefulGodAnalysis: {
+                primaryUsefulGod: {
+                    element: "WOOD",
+                    elementKorean: "목",
+                    typeKorean: "용신"
+                },
+                secondaryFavorableGod: {
+                    element: "FIRE",
+                    elementKorean: "화",
+                    typeKorean: "희신"
+                }
+            },
+            luckAnalysis: {
+                directionKorean: "순행",
+                currentDecadeLuck: {
+                    pillar: {
+                        chineseName: "癸亥",
+                        koreanName: "계해"
+                    },
+                    startDate: "2022-01-01",
+                    endDate: "2031-12-31"
+                },
+                annualLuck: {
+                    targetYear: targetYear,
+                    pillar: {
+                        chineseName: "丙午",
+                        koreanName: "병오"
+                    }
+                }
+            },
+            luckInteractionAnalysis: {
+                combinedScore: 72,
+                combinedLevel: "FAVORABLE",
+                combinedLevelKorean: "유리한 운",
+                summarySignals: [
+                    "실행력 상승",
+                    "경쟁과 지출 관리 필요"
+                ]
+            },
+            sajuReport: {
+                targetYear: targetYear,
+                fullSajuChinese: "癸酉 庚申 丁丑 甲辰",
+                fullSajuKorean: "계유 경신 정축 갑진",
+                sections: sections,
+                sectionCount: sections.length,
+                totalCharacterCount: sections.reduce(
+                    function (sum, section) {
+
+                        return sum
+                            + section.characterCount;
+                    },
+                    0
+                ),
+                generationMode: "MOCK_TEMPLATE",
+                ruleVersion: "DAJEOM_MZ_DORYEONG_FRONT_V1"
+            },
+            disclaimer: "현재 화면은 서버 연결 전 프론트 확인용 목업 결과입니다. 실제 서버 연결 후 계산 결과로 자동 교체됩니다."
+        };
+    }
+
+    function numberOrDash(value) {
+
+        const number =
+            Number(value);
+
+        return Number.isFinite(number)
+            ? String(
+                Math.round(
+                    number * 100
+                ) / 100
+            )
+            : "-";
+    }
+
+    function joinNonEmpty(
+        values,
+        separator
+    ) {
+
+        return values
+            .filter(
+                function (value) {
+
+                    return value !== undefined
+                        && value !== null
+                        && value !== "";
+                }
+            )
+            .join(
+                separator
+            );
     }
 
     function renderSajuResult(result) {

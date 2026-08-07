@@ -193,6 +193,7 @@
 
                         <button type="button"
                                 class="primary-button compact"
+                                data-consultation-mode="WEBTOON"
                                 data-go="intro">
                             상담 시작
                         </button>
@@ -222,6 +223,7 @@
                         <!-- AI 사주 -->
                         <button type="button"
                                 class="recommend-card"
+                                data-consultation-mode="WEBTOON"
                                 data-go="intro">
 
                             <img th:src="@{/img/saju-character.png}"
@@ -301,6 +303,34 @@
 
                         </button>
 
+                        <!-- MZ 천명도령 정통 종합사주 -->
+                        <button type="button"
+                                class="recommend-card mz-doryeong-card"
+                                data-consultation-mode="MZ_DORYEONG"
+                                data-go="intro">
+
+                            <img th:src="@{/img/mz-doryeong-card.png}"
+                                 src="/img/mz-doryeong-card.png"
+                                 onerror="this.onerror=null; this.src='/img/saju-character.png';"
+                                 alt="MZ 천명도령">
+
+                            <div class="recommend-shade mz-doryeong-shade">
+                            </div>
+
+                            <span class="recommend-badge mz">
+                                NEW · 종합
+                            </span>
+
+                            <strong>
+                                MZ 천명도령
+                            </strong>
+
+                            <small>
+                                핵심부터 꽂아주는 13개 분야 정통 사주
+                            </small>
+
+                        </button>
+
                     </div>
 
                 </section>
@@ -315,20 +345,23 @@
 
             <div class="character-stage tall">
 
-                <img th:src="@{/img/saju-character.png}"
+                <img id="consultationCharacterImage"
+                     class="mode-character-image"
+                     th:src="@{/img/saju-character.png}"
                      src="/img/saju-character.png"
-                     alt="관상선생">
+                     onerror="this.onerror=null; this.src='/img/saju-character.png';"
+                     alt="사주 상담 캐릭터">
 
                 <div class="character-shade">
                 </div>
 
                 <div class="speech-bubble left">
 
-                    <span>
+                    <span id="introCounselorName">
                         관상선생
                     </span>
 
-                    <p>
+                    <p id="introCounselorSpeech">
                         반갑습니다. 어려운 명리 용어는 잠시 내려놓고,
                         당신의 삶에 어떤 의미인지 이야기로 풀어드릴게요.
                     </p>
@@ -339,15 +372,17 @@
 
             <div class="form-panel">
 
-                <span class="pill">
+                <span id="introModeBadge"
+                      class="pill">
                     AI 사주 상담사
                 </span>
 
-                <h1>
+                <h1 id="introModeTitle">
                     관상선생
                 </h1>
 
-                <p class="description">
+                <p id="introModeDescription"
+                   class="description">
                     생년월일과 출생시간을 기반으로 만세력을 계산한 뒤,
                     소비자가 이해하기 쉬운 웹툰형 해석을 제공합니다.
                 </p>
@@ -378,7 +413,7 @@
 
                         <strong>3</strong>
 
-                        <span>
+                        <span id="introResultStepText">
                             분석 후 웹툰형 사주 결과 확인
                         </span>
 
@@ -402,20 +437,22 @@
 
             <div class="character-stage form-stage">
 
-                <img th:src="@{/img/saju-character.png}"
+                <img class="mode-character-image"
+                     th:src="@{/img/saju-character.png}"
                      src="/img/saju-character.png"
-                     alt="관상선생">
+                     onerror="this.onerror=null; this.src='/img/saju-character.png';"
+                     alt="사주 상담 캐릭터">
 
                 <div class="character-shade">
                 </div>
 
                 <div class="speech-bubble left">
 
-                    <span>
+                    <span class="mode-counselor-name">
                         관상선생
                     </span>
 
-                    <p>
+                    <p id="nameScreenSpeech">
                         이야기 속에서 불러드릴 이름을 알려주세요.
                     </p>
 
@@ -475,16 +512,18 @@
 
             <div class="character-stage form-stage">
 
-                <img th:src="@{/img/saju-character.png}"
+                <img class="mode-character-image"
+                     th:src="@{/img/saju-character.png}"
                      src="/img/saju-character.png"
-                     alt="관상선생">
+                     onerror="this.onerror=null; this.src='/img/saju-character.png';"
+                     alt="사주 상담 캐릭터">
 
                 <div class="character-shade">
                 </div>
 
                 <div class="speech-bubble left">
 
-                    <span>
+                    <span class="mode-counselor-name">
                         관상선생
                     </span>
 
@@ -816,11 +855,11 @@
                     ✓
                 </div>
 
-                <h1>
+                <h1 id="completeModeTitle">
                     기본정보 저장 완료
                 </h1>
 
-                <p>
+                <p id="completeModeDescription">
                     입력한 정보를 바탕으로 만세력을 계산하고,
                     웹툰형 사주 이야기를 만들 수 있습니다.
                 </p>
@@ -847,17 +886,20 @@
 
             <div class="analysis-page">
 
-                <img class="analysis-background"
+                <img id="analysisCharacterImage"
+                     class="analysis-background mode-character-image"
                      th:src="@{/img/saju-character.png}"
                      src="/img/saju-character.png"
-                     alt="분석 중인 관상선생">
+                     onerror="this.onerror=null; this.src='/img/saju-character.png';"
+                     alt="분석 중인 사주 상담 캐릭터">
 
                 <div class="analysis-shade">
                 </div>
 
                 <div class="analysis-content">
 
-                    <span class="pill">
+                    <span id="analysisModeBadge"
+                          class="pill">
                         AI 만세력 분석
                     </span>
 
@@ -878,7 +920,7 @@
 
                     </div>
 
-                    <h1>
+                    <h1 id="analysisModeTitle">
                         당신의 사주 이야기를 만들고 있습니다
                     </h1>
 
@@ -959,11 +1001,11 @@
 
                             <div>
 
-                                <strong>
+                                <strong id="analysisThirdStepTitle">
                                     십성·신살·대운 분석
                                 </strong>
 
-                                <small>
+                                <small id="analysisThirdStepDescription">
                                     관계와 운의 흐름을 분석합니다.
                                 </small>
 
@@ -980,11 +1022,11 @@
 
                             <div>
 
-                                <strong>
+                                <strong id="analysisFourthStepTitle">
                                     웹툰 이야기 구성
                                 </strong>
 
-                                <small>
+                                <small id="analysisFourthStepDescription">
                                     계산값을 이해하기 쉬운 장면으로 바꿉니다.
                                 </small>
 
@@ -1059,6 +1101,206 @@
 
         </section>
 
+        <!-- MZ 천명도령 정통 종합사주 결과 -->
+        <section class="screen mz-doryeong-result-screen"
+                 data-screen="mz-result">
+
+            <div class="mz-result-hero">
+
+                <img id="mzResultCharacterImage"
+                     th:src="@{/img/mz-doryeong-result.png}"
+                     src="/img/mz-doryeong-result.png"
+                     onerror="this.onerror=null; this.src='/img/saju-character.png';"
+                     alt="MZ 천명도령">
+
+                <div class="mz-result-hero-overlay">
+                </div>
+
+                <div class="mz-result-sticker mz-result-sticker-top">
+                    핵심만 바로 간다
+                </div>
+
+                <div class="mz-result-hero-copy">
+
+                    <span class="mz-result-eyebrow">
+                        MZ CHEONMYEONG REPORT
+                    </span>
+
+                    <h1 id="mzResultTitle">
+                        당신의 사주, 한 번에 정리했습니다
+                    </h1>
+
+                    <p id="mzResultLead">
+                    </p>
+
+                    <div class="mz-result-quote">
+
+                        <span>도령 한마디</span>
+
+                        <strong id="mzResultOneLiner">
+                            지금 필요한 건 운을 기다리는 게 아니라, 방향을 잡는 겁니다.
+                        </strong>
+
+                    </div>
+
+                    <div class="mz-result-pillars">
+
+                        <strong id="mzFullSajuChinese">
+                        </strong>
+
+                        <span id="mzFullSajuKorean">
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="mz-result-page">
+
+                <section class="mz-quick-section">
+
+                    <div class="mz-section-heading">
+
+                        <div>
+
+                            <span>QUICK CHECK</span>
+
+                            <h2>
+                                10초 핵심 요약
+                            </h2>
+
+                        </div>
+
+                        <small>
+                            원국 · 용신 · 대운 · 세운
+                        </small>
+
+                    </div>
+
+                    <div id="mzQuickSummary"
+                         class="mz-quick-grid">
+                    </div>
+
+                </section>
+
+                <section class="mz-signal-section">
+
+                    <div class="mz-section-heading">
+
+                        <div>
+
+                            <span>THIS YEAR SIGNAL</span>
+
+                            <h2 id="mzYearSignalTitle">
+                                올해의 신호
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+                    <div class="mz-signal-card">
+
+                        <div class="mz-signal-score">
+
+                            <strong id="mzCombinedScore">
+                                -
+                            </strong>
+
+                            <span>점</span>
+
+                        </div>
+
+                        <div>
+
+                            <span id="mzCombinedLevel"
+                                  class="mz-signal-level">
+                                분석 중
+                            </span>
+
+                            <p id="mzCombinedMessage">
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <section class="mz-report-section">
+
+                    <div class="mz-section-heading">
+
+                        <div>
+
+                            <span>DEEP REPORT</span>
+
+                            <h2>
+                                13개 분야 정밀 해석
+                            </h2>
+
+                        </div>
+
+                        <small id="mzReportCount">
+                        </small>
+
+                    </div>
+
+                    <nav id="mzReportNavigation"
+                         class="mz-report-navigation"
+                         aria-label="사주 보고서 바로가기">
+                    </nav>
+
+                    <div id="mzReportList"
+                         class="mz-report-list"
+                         aria-live="polite">
+                    </div>
+
+                </section>
+
+                <section class="mz-final-message">
+
+                    <img th:src="@{/img/mz-doryeong-intro.png}"
+                         src="/img/mz-doryeong-intro.png"
+                         onerror="this.onerror=null; this.src='/img/saju-character.png';"
+                         alt="MZ 천명도령의 마지막 조언">
+
+                    <div>
+
+                        <span>마지막 한마디</span>
+
+                        <strong>
+                            운은 핑계가 아니라 타이밍을 잡는 도구입니다.
+                        </strong>
+
+                        <p>
+                            유리한 시기에는 실행하고, 부담이 큰 시기에는 기록과 자금 관리를 더 단단히 하세요.
+                        </p>
+
+                    </div>
+
+                </section>
+
+                <section class="ending-actions mz-ending-actions">
+
+                    <p id="mzResultDisclaimer">
+                        본 결과는 명리 계산을 기반으로 제공하는 참고 정보입니다.
+                    </p>
+
+                    <button type="button"
+                            class="secondary-button"
+                            data-go="home">
+                        홈으로 돌아가기
+                    </button>
+
+                </section>
+
+            </div>
+
+        </section>
+
     </main>
 
     <!-- 하단 내비게이션 -->
@@ -1076,6 +1318,7 @@
 
         <button type="button"
                 class="navigation-item"
+                data-consultation-mode="WEBTOON"
                 data-go="intro">
 
             <span>四</span>
