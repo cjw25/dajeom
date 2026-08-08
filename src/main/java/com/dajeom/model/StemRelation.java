@@ -3,34 +3,49 @@ package com.dajeom.model;
 import com.dajeom.type.FiveElement;
 import com.dajeom.type.HeavenlyStem;
 import com.dajeom.type.PillarPosition;
-import com.dajeom.type.RelationType;
+import com.dajeom.type.StemRelationType;
 
 import java.util.Objects;
 
 /**
- * 원국 천간 두 개 사이의 관계를 나타낸다.
+ * 원국 천간 사이에서 발견된 관계.
+ *
+ * combinationElement는
+ * 전통적인 천간합의 합화 오행 후보를 의미한다.
+ *
+ * 실제 합화가 성립했다는 의미는 아니다.
  */
 public record StemRelation(
-        RelationType relationType,
+
+        StemRelationType type,
+
         PillarPosition firstPosition,
-        HeavenlyStem firstStem,
+
         PillarPosition secondPosition,
+
+        HeavenlyStem firstStem,
+
         HeavenlyStem secondStem,
-        FiveElement transformationElement,
-        boolean transformationCandidate,
-        boolean transformationEstablished,
-        String description
+
+        FiveElement combinationElement
+
 ) {
 
     public StemRelation {
+
         Objects.requireNonNull(
-                relationType,
-                "천간 관계 유형은 필수입니다."
+                type,
+                "천간 관계 종류는 필수입니다."
         );
 
         Objects.requireNonNull(
                 firstPosition,
-                "첫 번째 천간 위치는 필수입니다."
+                "첫 번째 기둥 위치는 필수입니다."
+        );
+
+        Objects.requireNonNull(
+                secondPosition,
+                "두 번째 기둥 위치는 필수입니다."
         );
 
         Objects.requireNonNull(
@@ -39,18 +54,34 @@ public record StemRelation(
         );
 
         Objects.requireNonNull(
-                secondPosition,
-                "두 번째 천간 위치는 필수입니다."
-        );
-
-        Objects.requireNonNull(
                 secondStem,
                 "두 번째 천간은 필수입니다."
         );
 
         Objects.requireNonNull(
-                description,
-                "천간 관계 설명은 필수입니다."
+                combinationElement,
+                "천간합 오행 후보는 필수입니다."
         );
+
+        if (
+                firstPosition == secondPosition
+        ) {
+
+            throw new IllegalArgumentException(
+                    "천간 관계의 두 위치는 같을 수 없습니다."
+            );
+        }
+    }
+
+    public String firstStemName() {
+
+        return firstStem
+                .getChineseCharacter();
+    }
+
+    public String secondStemName() {
+
+        return secondStem
+                .getChineseCharacter();
     }
 }

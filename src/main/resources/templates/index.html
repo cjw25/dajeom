@@ -18,6 +18,239 @@
           th:href="@{/css/index.css}"
           href="/css/index.css">
 
+    <style>
+        /* MZ 천명도령 추천 카드 이미지 모션 */
+        .mz-doryeong-card {
+            isolation: isolate;
+        }
+
+        .mz-doryeong-card .mz-doryeong-motion-frame {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            border-radius: inherit;
+            pointer-events: none;
+        }
+
+        .mz-doryeong-card .mz-doryeong-moving-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: 50% 23%;
+            transform-origin: 50% 42%;
+            will-change: transform, filter;
+            animation: mzDoryeongIdle 4.8s ease-in-out infinite;
+        }
+
+        .mz-doryeong-card .mz-doryeong-aura {
+            position: absolute;
+            top: 18%;
+            left: 50%;
+            width: 122px;
+            height: 122px;
+            border-radius: 50%;
+
+            background:
+                    radial-gradient(
+                            circle,
+                            rgba(217, 255, 85, 0.30) 0%,
+                            rgba(176, 116, 236, 0.16) 42%,
+                            transparent 72%
+                    );
+
+            filter: blur(8px);
+
+            transform:
+                    translateX(-50%);
+
+            animation:
+                    mzDoryeongAura
+                    3.2s
+                    ease-in-out
+                    infinite;
+        }
+
+        .mz-doryeong-card .mz-doryeong-spark {
+            position: absolute;
+            z-index: 2;
+
+            color: #e0ff69;
+
+            font-size: 12px;
+
+            text-shadow:
+                    0
+                    0
+                    12px
+                    rgba(217, 255, 85, 0.78);
+
+            opacity: 0;
+
+            animation:
+                    mzDoryeongSpark
+                    3.6s
+                    ease-in-out
+                    infinite;
+        }
+
+        .mz-doryeong-card .mz-doryeong-spark.spark-one {
+            top: 22%;
+            right: 17%;
+
+            animation-delay: 0.15s;
+        }
+
+        .mz-doryeong-card .mz-doryeong-spark.spark-two {
+            top: 42%;
+            left: 14%;
+
+            font-size: 9px;
+
+            animation-delay: 1.25s;
+        }
+
+        .mz-doryeong-card .mz-doryeong-spark.spark-three {
+            top: 16%;
+            left: 28%;
+
+            font-size: 7px;
+
+            animation-delay: 2.1s;
+        }
+
+        .mz-doryeong-card:active .mz-doryeong-moving-image {
+            animation-play-state: paused;
+
+            transform:
+                    scale(1.08)
+                    translateY(-2px);
+        }
+
+        @keyframes mzDoryeongIdle {
+
+            0%,
+            100% {
+                transform:
+                        scale(1.045)
+                        translate3d(
+                                0,
+                                0,
+                                0
+                        )
+                        rotate(0deg);
+
+                filter:
+                        brightness(0.90)
+                        saturate(1.10)
+                        contrast(1.06);
+            }
+
+            25% {
+                transform:
+                        scale(1.072)
+                        translate3d(
+                                -2px,
+                                -3px,
+                                0
+                        )
+                        rotate(-0.35deg);
+            }
+
+            50% {
+                transform:
+                        scale(1.085)
+                        translate3d(
+                                1px,
+                                -5px,
+                                0
+                        )
+                        rotate(0.2deg);
+
+                filter:
+                        brightness(0.98)
+                        saturate(1.16)
+                        contrast(1.07);
+            }
+
+            75% {
+                transform:
+                        scale(1.068)
+                        translate3d(
+                                2px,
+                                -2px,
+                                0
+                        )
+                        rotate(0.35deg);
+            }
+        }
+
+        @keyframes mzDoryeongAura {
+
+            0%,
+            100% {
+                opacity: 0.42;
+
+                transform:
+                        translateX(-50%)
+                        scale(0.86);
+            }
+
+            50% {
+                opacity: 0.86;
+
+                transform:
+                        translateX(-50%)
+                        scale(1.12);
+            }
+        }
+
+        @keyframes mzDoryeongSpark {
+
+            0%,
+            100% {
+                opacity: 0;
+
+                transform:
+                        translateY(6px)
+                        scale(0.75)
+                        rotate(0deg);
+            }
+
+            28% {
+                opacity: 0.95;
+            }
+
+            55% {
+                opacity: 0.48;
+
+                transform:
+                        translateY(-5px)
+                        scale(1.15)
+                        rotate(18deg);
+            }
+
+            76% {
+                opacity: 0;
+
+                transform:
+                        translateY(-11px)
+                        scale(0.82)
+                        rotate(34deg);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .mz-doryeong-card .mz-doryeong-moving-image,
+            .mz-doryeong-card .mz-doryeong-aura,
+            .mz-doryeong-card .mz-doryeong-spark {
+                animation: none !important;
+            }
+        }
+    </style>
+
 </head>
 
 <body>
@@ -87,7 +320,10 @@
                             data-message="무료 운세">
 
                         <span>✦</span>
-                        <small>무료</small>
+
+                        <small>
+                            무료
+                        </small>
 
                     </button>
 
@@ -95,7 +331,10 @@
                             data-message="연애운">
 
                         <span>♥</span>
-                        <small>연애</small>
+
+                        <small>
+                            연애
+                        </small>
 
                     </button>
 
@@ -103,7 +342,10 @@
                             data-message="재회운">
 
                         <span>↺</span>
-                        <small>재회</small>
+
+                        <small>
+                            재회
+                        </small>
 
                     </button>
 
@@ -111,7 +353,10 @@
                             data-message="결혼운">
 
                         <span>♡</span>
-                        <small>결혼</small>
+
+                        <small>
+                            결혼
+                        </small>
 
                     </button>
 
@@ -119,7 +364,10 @@
                             data-message="재물운">
 
                         <span>₩</span>
-                        <small>재물</small>
+
+                        <small>
+                            재물
+                        </small>
 
                     </button>
 
@@ -127,7 +375,10 @@
                             data-message="궁합">
 
                         <span>∞</span>
-                        <small>궁합</small>
+
+                        <small>
+                            궁합
+                        </small>
 
                     </button>
 
@@ -135,7 +386,10 @@
                             data-message="가정운">
 
                         <span>⌂</span>
-                        <small>가정</small>
+
+                        <small>
+                            가정
+                        </small>
 
                     </button>
 
@@ -143,7 +397,10 @@
                             data-message="종합운">
 
                         <span>◆</span>
-                        <small>종합</small>
+
+                        <small>
+                            종합
+                        </small>
 
                     </button>
 
@@ -151,7 +408,10 @@
                             data-message="기타 운세">
 
                         <span>◈</span>
-                        <small>기타</small>
+
+                        <small>
+                            기타
+                        </small>
 
                     </button>
 
@@ -159,7 +419,10 @@
                             data-message="AI 채팅">
 
                         <span>▣</span>
-                        <small>채팅</small>
+
+                        <small>
+                            채팅
+                        </small>
 
                     </button>
 
@@ -254,9 +517,17 @@
 
                             <div class="tarot-symbols">
 
-                                <span>☾</span>
-                                <span>✦</span>
-                                <span>☼</span>
+                                <span>
+                                    ☾
+                                </span>
+
+                                <span>
+                                    ✦
+                                </span>
+
+                                <span>
+                                    ☼
+                                </span>
 
                             </div>
 
@@ -277,7 +548,7 @@
 
                         </button>
 
-                        <!-- 영상형 사주 추가 -->
+                        <!-- 영상형 사주 -->
                         <button type="button"
                                 class="recommend-card cinematic-card"
                                 onclick="window.location.href='/saju-cinematic'">
@@ -306,13 +577,33 @@
                         <!-- MZ 천명도령 정통 종합사주 -->
                         <button type="button"
                                 class="recommend-card mz-doryeong-card"
-                                data-consultation-mode="MZ_DORYEONG"
-                                data-go="intro">
+                                onclick="window.location.href='/mz-doryeong'">
 
-                            <img th:src="@{/img/mz-doryeong-card.png}"
-                                 src="/img/mz-doryeong-card.png"
-                                 onerror="this.onerror=null; this.src='/img/saju-character.png';"
-                                 alt="MZ 천명도령">
+                            <div class="mz-doryeong-motion-frame"
+                                 aria-hidden="true">
+
+                                <span class="mz-doryeong-aura">
+                                </span>
+
+                                <img class="mz-doryeong-moving-image"
+                                     th:src="@{/img/mz-doryeong-card.png}"
+                                     src="/img/mz-doryeong-card.png"
+                                     onerror="this.onerror=null; this.src='/img/saju-character.png';"
+                                     alt="">
+
+                                <span class="mz-doryeong-spark spark-one">
+                                    ✦
+                                </span>
+
+                                <span class="mz-doryeong-spark spark-two">
+                                    ✧
+                                </span>
+
+                                <span class="mz-doryeong-spark spark-three">
+                                    ✦
+                                </span>
+
+                            </div>
 
                             <div class="recommend-shade mz-doryeong-shade">
                             </div>
@@ -326,7 +617,7 @@
                             </strong>
 
                             <small>
-                                핵심부터 꽂아주는 13개 분야 정통 사주
+                                핵심부터 꽂아주는 11개 분야 정통 사주
                             </small>
 
                         </button>
@@ -391,7 +682,9 @@
 
                     <div>
 
-                        <strong>1</strong>
+                        <strong>
+                            1
+                        </strong>
 
                         <span>
                             상담에서 사용할 이름 입력
@@ -401,7 +694,9 @@
 
                     <div>
 
-                        <strong>2</strong>
+                        <strong>
+                            2
+                        </strong>
 
                         <span>
                             생년월일·성별·출생시간 입력
@@ -411,7 +706,9 @@
 
                     <div>
 
-                        <strong>3</strong>
+                        <strong>
+                            3
+                        </strong>
 
                         <span id="introResultStepText">
                             분석 후 웹툰형 사주 결과 확인
@@ -630,7 +927,9 @@
 
                             <label>
 
-                                <span>연도</span>
+                                <span>
+                                    연도
+                                </span>
 
                                 <input id="birthYear"
                                        class="text-input numeric-input"
@@ -643,7 +942,9 @@
 
                             <label>
 
-                                <span>월</span>
+                                <span>
+                                    월
+                                </span>
 
                                 <input id="birthMonth"
                                        class="text-input numeric-input"
@@ -656,7 +957,9 @@
 
                             <label>
 
-                                <span>일</span>
+                                <span>
+                                    일
+                                </span>
 
                                 <input id="birthDay"
                                        class="text-input numeric-input"
@@ -697,7 +1000,9 @@
 
                             <label>
 
-                                <span>시</span>
+                                <span>
+                                    시
+                                </span>
 
                                 <input id="birthHour"
                                        class="text-input numeric-input"
@@ -708,11 +1013,15 @@
 
                             </label>
 
-                            <strong>:</strong>
+                            <strong>
+                                :
+                            </strong>
 
                             <label>
 
-                                <span>분</span>
+                                <span>
+                                    분
+                                </span>
 
                                 <input id="birthMinute"
                                        class="text-input numeric-input"
@@ -770,7 +1079,9 @@
 
                     <div>
 
-                        <span>이름</span>
+                        <span>
+                            이름
+                        </span>
 
                         <strong id="reviewName">
                         </strong>
@@ -779,7 +1090,9 @@
 
                     <div>
 
-                        <span>성별</span>
+                        <span>
+                            성별
+                        </span>
 
                         <strong id="reviewGender">
                         </strong>
@@ -788,7 +1101,9 @@
 
                     <div>
 
-                        <span>달력</span>
+                        <span>
+                            달력
+                        </span>
 
                         <strong id="reviewCalendar">
                         </strong>
@@ -798,7 +1113,9 @@
                     <div id="reviewLunarLeapRow"
                          class="hidden">
 
-                        <span>윤달 여부</span>
+                        <span>
+                            윤달 여부
+                        </span>
 
                         <strong id="reviewLunarLeap">
                         </strong>
@@ -807,7 +1124,9 @@
 
                     <div>
 
-                        <span>생년월일</span>
+                        <span>
+                            생년월일
+                        </span>
 
                         <strong id="reviewBirthDate">
                         </strong>
@@ -816,7 +1135,9 @@
 
                     <div>
 
-                        <span>태어난 시간</span>
+                        <span>
+                            태어난 시간
+                        </span>
 
                         <strong id="reviewBirthTime">
                         </strong>
@@ -1101,206 +1422,6 @@
 
         </section>
 
-        <!-- MZ 천명도령 정통 종합사주 결과 -->
-        <section class="screen mz-doryeong-result-screen"
-                 data-screen="mz-result">
-
-            <div class="mz-result-hero">
-
-                <img id="mzResultCharacterImage"
-                     th:src="@{/img/mz-doryeong-result.png}"
-                     src="/img/mz-doryeong-result.png"
-                     onerror="this.onerror=null; this.src='/img/saju-character.png';"
-                     alt="MZ 천명도령">
-
-                <div class="mz-result-hero-overlay">
-                </div>
-
-                <div class="mz-result-sticker mz-result-sticker-top">
-                    핵심만 바로 간다
-                </div>
-
-                <div class="mz-result-hero-copy">
-
-                    <span class="mz-result-eyebrow">
-                        MZ CHEONMYEONG REPORT
-                    </span>
-
-                    <h1 id="mzResultTitle">
-                        당신의 사주, 한 번에 정리했습니다
-                    </h1>
-
-                    <p id="mzResultLead">
-                    </p>
-
-                    <div class="mz-result-quote">
-
-                        <span>도령 한마디</span>
-
-                        <strong id="mzResultOneLiner">
-                            지금 필요한 건 운을 기다리는 게 아니라, 방향을 잡는 겁니다.
-                        </strong>
-
-                    </div>
-
-                    <div class="mz-result-pillars">
-
-                        <strong id="mzFullSajuChinese">
-                        </strong>
-
-                        <span id="mzFullSajuKorean">
-                        </span>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="mz-result-page">
-
-                <section class="mz-quick-section">
-
-                    <div class="mz-section-heading">
-
-                        <div>
-
-                            <span>QUICK CHECK</span>
-
-                            <h2>
-                                10초 핵심 요약
-                            </h2>
-
-                        </div>
-
-                        <small>
-                            원국 · 용신 · 대운 · 세운
-                        </small>
-
-                    </div>
-
-                    <div id="mzQuickSummary"
-                         class="mz-quick-grid">
-                    </div>
-
-                </section>
-
-                <section class="mz-signal-section">
-
-                    <div class="mz-section-heading">
-
-                        <div>
-
-                            <span>THIS YEAR SIGNAL</span>
-
-                            <h2 id="mzYearSignalTitle">
-                                올해의 신호
-                            </h2>
-
-                        </div>
-
-                    </div>
-
-                    <div class="mz-signal-card">
-
-                        <div class="mz-signal-score">
-
-                            <strong id="mzCombinedScore">
-                                -
-                            </strong>
-
-                            <span>점</span>
-
-                        </div>
-
-                        <div>
-
-                            <span id="mzCombinedLevel"
-                                  class="mz-signal-level">
-                                분석 중
-                            </span>
-
-                            <p id="mzCombinedMessage">
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                </section>
-
-                <section class="mz-report-section">
-
-                    <div class="mz-section-heading">
-
-                        <div>
-
-                            <span>DEEP REPORT</span>
-
-                            <h2>
-                                13개 분야 정밀 해석
-                            </h2>
-
-                        </div>
-
-                        <small id="mzReportCount">
-                        </small>
-
-                    </div>
-
-                    <nav id="mzReportNavigation"
-                         class="mz-report-navigation"
-                         aria-label="사주 보고서 바로가기">
-                    </nav>
-
-                    <div id="mzReportList"
-                         class="mz-report-list"
-                         aria-live="polite">
-                    </div>
-
-                </section>
-
-                <section class="mz-final-message">
-
-                    <img th:src="@{/img/mz-doryeong-intro.png}"
-                         src="/img/mz-doryeong-intro.png"
-                         onerror="this.onerror=null; this.src='/img/saju-character.png';"
-                         alt="MZ 천명도령의 마지막 조언">
-
-                    <div>
-
-                        <span>마지막 한마디</span>
-
-                        <strong>
-                            운은 핑계가 아니라 타이밍을 잡는 도구입니다.
-                        </strong>
-
-                        <p>
-                            유리한 시기에는 실행하고, 부담이 큰 시기에는 기록과 자금 관리를 더 단단히 하세요.
-                        </p>
-
-                    </div>
-
-                </section>
-
-                <section class="ending-actions mz-ending-actions">
-
-                    <p id="mzResultDisclaimer">
-                        본 결과는 명리 계산을 기반으로 제공하는 참고 정보입니다.
-                    </p>
-
-                    <button type="button"
-                            class="secondary-button"
-                            data-go="home">
-                        홈으로 돌아가기
-                    </button>
-
-                </section>
-
-            </div>
-
-        </section>
-
     </main>
 
     <!-- 하단 내비게이션 -->
@@ -1311,8 +1432,13 @@
                 class="navigation-item is-active"
                 data-go="home">
 
-            <span>⌂</span>
-            <small>홈</small>
+            <span>
+                ⌂
+            </span>
+
+            <small>
+                홈
+            </small>
 
         </button>
 
@@ -1321,8 +1447,13 @@
                 data-consultation-mode="WEBTOON"
                 data-go="intro">
 
-            <span>四</span>
-            <small>AI사주</small>
+            <span>
+                四
+            </span>
+
+            <small>
+                AI사주
+            </small>
 
         </button>
 
@@ -1330,8 +1461,13 @@
                 class="navigation-item"
                 onclick="window.location.href='/tarot'">
 
-            <span>▣</span>
-            <small>AI타로</small>
+            <span>
+                ▣
+            </span>
+
+            <small>
+                AI타로
+            </small>
 
         </button>
 
@@ -1339,8 +1475,13 @@
                 class="navigation-item"
                 data-message="즐겨찾기">
 
-            <span>☆</span>
-            <small>즐겨찾기</small>
+            <span>
+                ☆
+            </span>
+
+            <small>
+                즐겨찾기
+            </small>
 
         </button>
 
@@ -1348,8 +1489,13 @@
                 class="navigation-item"
                 data-message="마이페이지">
 
-            <span>○</span>
-            <small>마이</small>
+            <span>
+                ○
+            </span>
+
+            <small>
+                마이
+            </small>
 
         </button>
 
@@ -1368,4 +1514,5 @@
 </script>
 
 </body>
+
 </html>

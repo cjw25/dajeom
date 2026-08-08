@@ -1,174 +1,307 @@
 package com.dajeom.constant;
 
+import com.dajeom.model.HiddenStem;
 import com.dajeom.type.EarthlyBranch;
 import com.dajeom.type.HeavenlyStem;
 import com.dajeom.type.HiddenStemRole;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
- * 십이지지별 지장간 고정표다.
+ * 지장간 기본 테이블.
  *
- * 표 안에서는 본기, 중기, 여기 순서로 관리한다.
+ * V1에서는 한국 명리에서 널리 사용되는
+ * 여기 / 중기 / 정기 구성을 기준으로 한다.
+ *
+ * 지장간의 실제 강도나 점수는
+ * 이 테이블에서 결정하지 않는다.
+ *
+ * 강도 평가는 추후 Analyzer / Rule에서
+ * 별도로 수행한다.
  */
 public final class HiddenStemTable {
 
     private static final Map<
             EarthlyBranch,
-            List<HiddenStemDefinition>
-            > TABLE = Map.ofEntries(
+            List<HiddenStem>
+            > TABLE =
+            Map.ofEntries(
 
-            Map.entry(
-                    EarthlyBranch.JA,
-                    List.of(
-                            main(HeavenlyStem.GYE)
-                    )
-            ),
+                    Map.entry(
+                            EarthlyBranch.ZI,
+                            List.of(
+                                    hidden(
+                                            HeavenlyStem.REN,
+                                            HiddenStemRole.RESIDUAL
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.GUI,
+                                            HiddenStemRole.MAIN
+                                    )
+                            )
+                    ),
 
-            Map.entry(
-                    EarthlyBranch.CHUK,
-                    List.of(
-                            main(HeavenlyStem.GI),
-                            middle(HeavenlyStem.SIN),
-                            residual(HeavenlyStem.GYE)
-                    )
-            ),
+                    Map.entry(
+                            EarthlyBranch.CHOU,
+                            List.of(
+                                    hidden(
+                                            HeavenlyStem.GUI,
+                                            HiddenStemRole.RESIDUAL
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.XIN,
+                                            HiddenStemRole.MIDDLE
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.JI,
+                                            HiddenStemRole.MAIN
+                                    )
+                            )
+                    ),
 
-            Map.entry(
-                    EarthlyBranch.IN,
-                    List.of(
-                            main(HeavenlyStem.GAP),
-                            middle(HeavenlyStem.BYEONG),
-                            residual(HeavenlyStem.MU)
-                    )
-            ),
+                    Map.entry(
+                            EarthlyBranch.YIN,
+                            List.of(
+                                    hidden(
+                                            HeavenlyStem.WU,
+                                            HiddenStemRole.RESIDUAL
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.BING,
+                                            HiddenStemRole.MIDDLE
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.JIA,
+                                            HiddenStemRole.MAIN
+                                    )
+                            )
+                    ),
 
-            Map.entry(
-                    EarthlyBranch.MYO,
-                    List.of(
-                            main(HeavenlyStem.EUL)
-                    )
-            ),
+                    Map.entry(
+                            EarthlyBranch.MAO,
+                            List.of(
+                                    hidden(
+                                            HeavenlyStem.JIA,
+                                            HiddenStemRole.RESIDUAL
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.YI,
+                                            HiddenStemRole.MAIN
+                                    )
+                            )
+                    ),
 
-            Map.entry(
-                    EarthlyBranch.JIN,
-                    List.of(
-                            main(HeavenlyStem.MU),
-                            middle(HeavenlyStem.GYE),
-                            residual(HeavenlyStem.EUL)
-                    )
-            ),
+                    Map.entry(
+                            EarthlyBranch.CHEN,
+                            List.of(
+                                    hidden(
+                                            HeavenlyStem.YI,
+                                            HiddenStemRole.RESIDUAL
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.GUI,
+                                            HiddenStemRole.MIDDLE
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.WU,
+                                            HiddenStemRole.MAIN
+                                    )
+                            )
+                    ),
 
-            Map.entry(
-                    EarthlyBranch.SA,
-                    List.of(
-                            main(HeavenlyStem.BYEONG),
-                            middle(HeavenlyStem.GYEONG),
-                            residual(HeavenlyStem.MU)
-                    )
-            ),
+                    Map.entry(
+                            EarthlyBranch.SI,
+                            List.of(
+                                    hidden(
+                                            HeavenlyStem.WU,
+                                            HiddenStemRole.RESIDUAL
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.GENG,
+                                            HiddenStemRole.MIDDLE
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.BING,
+                                            HiddenStemRole.MAIN
+                                    )
+                            )
+                    ),
 
-            Map.entry(
-                    EarthlyBranch.O,
-                    List.of(
-                            main(HeavenlyStem.JEONG),
-                            residual(HeavenlyStem.GI)
-                    )
-            ),
+                    Map.entry(
+                            EarthlyBranch.WU,
+                            List.of(
+                                    hidden(
+                                            HeavenlyStem.BING,
+                                            HiddenStemRole.RESIDUAL
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.JI,
+                                            HiddenStemRole.MIDDLE
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.DING,
+                                            HiddenStemRole.MAIN
+                                    )
+                            )
+                    ),
 
-            Map.entry(
-                    EarthlyBranch.MI,
-                    List.of(
-                            main(HeavenlyStem.GI),
-                            middle(HeavenlyStem.EUL),
-                            residual(HeavenlyStem.JEONG)
-                    )
-            ),
+                    Map.entry(
+                            EarthlyBranch.WEI,
+                            List.of(
+                                    hidden(
+                                            HeavenlyStem.DING,
+                                            HiddenStemRole.RESIDUAL
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.YI,
+                                            HiddenStemRole.MIDDLE
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.JI,
+                                            HiddenStemRole.MAIN
+                                    )
+                            )
+                    ),
 
-            Map.entry(
-                    EarthlyBranch.SIN,
-                    List.of(
-                            main(HeavenlyStem.GYEONG),
-                            middle(HeavenlyStem.IM),
-                            residual(HeavenlyStem.MU)
-                    )
-            ),
+                    Map.entry(
+                            EarthlyBranch.SHEN,
+                            List.of(
+                                    hidden(
+                                            HeavenlyStem.WU,
+                                            HiddenStemRole.RESIDUAL
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.REN,
+                                            HiddenStemRole.MIDDLE
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.GENG,
+                                            HiddenStemRole.MAIN
+                                    )
+                            )
+                    ),
 
-            Map.entry(
-                    EarthlyBranch.YU,
-                    List.of(
-                            main(HeavenlyStem.SIN)
-                    )
-            ),
+                    Map.entry(
+                            EarthlyBranch.YOU,
+                            List.of(
+                                    hidden(
+                                            HeavenlyStem.GENG,
+                                            HiddenStemRole.RESIDUAL
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.XIN,
+                                            HiddenStemRole.MAIN
+                                    )
+                            )
+                    ),
 
-            Map.entry(
-                    EarthlyBranch.SUL,
-                    List.of(
-                            main(HeavenlyStem.MU),
-                            middle(HeavenlyStem.JEONG),
-                            residual(HeavenlyStem.SIN)
-                    )
-            ),
+                    Map.entry(
+                            EarthlyBranch.XU,
+                            List.of(
+                                    hidden(
+                                            HeavenlyStem.XIN,
+                                            HiddenStemRole.RESIDUAL
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.DING,
+                                            HiddenStemRole.MIDDLE
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.WU,
+                                            HiddenStemRole.MAIN
+                                    )
+                            )
+                    ),
 
-            Map.entry(
-                    EarthlyBranch.HAE,
-                    List.of(
-                            main(HeavenlyStem.IM),
-                            middle(HeavenlyStem.GAP)
+                    Map.entry(
+                            EarthlyBranch.HAI,
+                            List.of(
+                                    hidden(
+                                            HeavenlyStem.WU,
+                                            HiddenStemRole.RESIDUAL
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.JIA,
+                                            HiddenStemRole.MIDDLE
+                                    ),
+                                    hidden(
+                                            HeavenlyStem.REN,
+                                            HiddenStemRole.MAIN
+                                    )
+                            )
                     )
-            )
-    );
+            );
 
     private HiddenStemTable() {
+
+        throw new IllegalStateException(
+                "HiddenStemTable은 생성할 수 없습니다."
+        );
     }
 
-    public static List<HiddenStemDefinition> get(
+    /**
+     * 특정 지지의 모든 지장간.
+     */
+    public static List<HiddenStem> get(
             EarthlyBranch branch
     ) {
-        List<HiddenStemDefinition> definitions =
+
+        Objects.requireNonNull(
+                branch,
+                "지지는 필수입니다."
+        );
+
+        List<HiddenStem> hiddenStems =
                 TABLE.get(branch);
 
-        if (definitions == null) {
+        if (hiddenStems == null) {
+
             throw new IllegalArgumentException(
-                    "등록되지 않은 지지입니다: "
+                    "지장간 정보가 없습니다: "
                             + branch
             );
         }
 
-        return definitions;
+        return hiddenStems;
     }
 
-    private static HiddenStemDefinition main(
-            HeavenlyStem stem
+    /**
+     * 특정 지지의 정기(본기)를 반환한다.
+     */
+    public static HeavenlyStem getMainStem(
+            EarthlyBranch branch
     ) {
-        return new HiddenStemDefinition(
-                stem,
-                HiddenStemRole.MAIN
-        );
+
+        return get(branch)
+                .stream()
+                .filter(
+                        hiddenStem ->
+                                hiddenStem.role()
+                                        == HiddenStemRole.MAIN
+                )
+                .map(
+                        HiddenStem::stem
+                )
+                .findFirst()
+                .orElseThrow(
+                        () ->
+                                new IllegalStateException(
+                                        "정기 지장간이 없습니다: "
+                                                + branch
+                                )
+                );
     }
 
-    private static HiddenStemDefinition middle(
-            HeavenlyStem stem
-    ) {
-        return new HiddenStemDefinition(
-                stem,
-                HiddenStemRole.MIDDLE
-        );
-    }
-
-    private static HiddenStemDefinition residual(
-            HeavenlyStem stem
-    ) {
-        return new HiddenStemDefinition(
-                stem,
-                HiddenStemRole.RESIDUAL
-        );
-    }
-
-    public record HiddenStemDefinition(
+    private static HiddenStem hidden(
             HeavenlyStem stem,
             HiddenStemRole role
     ) {
+
+        return new HiddenStem(
+                stem,
+                role
+        );
     }
 }

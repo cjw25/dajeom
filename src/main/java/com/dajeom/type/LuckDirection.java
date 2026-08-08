@@ -1,29 +1,36 @@
 package com.dajeom.type;
 
 /**
- * 대운이 월주에서 어느 방향으로 진행되는지를 나타낸다.
+ * 대운 진행 방향.
  */
 public enum LuckDirection {
 
-    FORWARD("순행", 1),
-    REVERSE("역행", -1);
+    FORWARD(
+            1,
+            "순행"
+    ),
 
-    private final String koreanName;
+    REVERSE(
+            -1,
+            "역행"
+    );
+
     private final int step;
+    private final String koreanName;
 
     LuckDirection(
-            String koreanName,
-            int step
+            int step,
+            String koreanName
     ) {
-        this.koreanName = koreanName;
         this.step = step;
-    }
-
-    public String getKoreanName() {
-        return koreanName;
+        this.koreanName = koreanName;
     }
 
     public int getStep() {
         return step;
+    }
+
+    public String getKoreanName() {
+        return koreanName;
     }
 }

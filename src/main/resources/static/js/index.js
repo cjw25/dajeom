@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
         "/api/saju/calculate";
 
     const ENABLE_MZ_MOCK_FALLBACK =
-        true;
+        false;
 
     const screens =
         Array.from(
@@ -1900,12 +1900,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             message =
                 isMzDoryeongMode()
-                    ? "핵심 신호와 13개 분야 상세 보고서를 구성하고 있습니다."
+                    ? "핵심 신호와 11개 분야 상세 보고서를 구성하고 있습니다."
                     : "계산값을 소비자가 이해하기 쉬운 웹툰 장면으로 바꾸고 있습니다.";
 
             status =
                 isMzDoryeongMode()
-                    ? "13개 보고서 구성"
+                    ? "11개 보고서 구성"
                     : "웹툰 이야기 구성";
         }
 
@@ -1981,7 +1981,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         );
     }
-
 
     function getConsultationMode() {
 
@@ -2104,14 +2103,14 @@ document.addEventListener("DOMContentLoaded", function () {
         setText(
             "#introModeDescription",
             mzMode
-                ? "원국·용신·대운·세운을 계산하고, 기본 성향부터 재물·직업·연애·현재운까지 13개 분야로 정리합니다."
+                ? "원국·용신·대운·세운을 계산하고, 기본 성향부터 재물·직업·연애·현재운까지 11개 분야로 정리합니다."
                 : "생년월일과 출생시간을 기반으로 만세력을 계산한 뒤, 소비자가 이해하기 쉬운 웹툰형 해석을 제공합니다."
         );
 
         setText(
             "#introResultStepText",
             mzMode
-                ? "도령의 10초 요약과 13개 분야 정밀 보고서 확인"
+                ? "도령의 10초 요약과 11개 분야 정밀 보고서 확인"
                 : "분석 후 웹툰형 사주 결과 확인"
         );
 
@@ -2167,7 +2166,7 @@ document.addEventListener("DOMContentLoaded", function () {
         setText(
             "#analysisFourthStepTitle",
             mzMode
-                ? "13개 분야 보고서 구성"
+                ? "11개 분야 보고서 구성"
                 : "웹툰 이야기 구성"
         );
 
@@ -2184,34 +2183,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 mzMode
                     ? "MZ 천명도령에게 물어보기"
                     : "사주 분석 시작";
-        }
-
-        if (birthTimeUnknown) {
-
-            birthTimeUnknown.disabled =
-                mzMode;
-
-            if (
-                mzMode
-                && birthTimeUnknown.checked
-            ) {
-
-                birthTimeUnknown.checked =
-                    false;
-
-                sajuForm.birthTimeUnknown =
-                    false;
-
-                birthHour.disabled =
-                    false;
-
-                birthMinute.disabled =
-                    false;
-
-                timeInputArea.classList.remove(
-                    "is-disabled"
-                );
-            }
         }
     }
 
@@ -2239,15 +2210,15 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (
-            sajuForm.birthTimeUnknown
-            || !/^\d{2}:\d{2}$/
+            !sajuForm.birthTimeUnknown
+            && !/^\d{2}:\d{2}$/
                 .test(
                     sajuForm.birthTime
                     || ""
                 )
         ) {
 
-            return "정통 종합사주는 정확한 출생시간이 필요합니다.";
+            return "출생시간을 정확하게 입력하거나 시간 모름을 선택해주세요.";
         }
 
         return "";
@@ -2361,7 +2332,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 sajuForm.birthDate,
 
             birthTime:
-                sajuForm.birthTime,
+                sajuForm.birthTimeUnknown
+                    ? null
+                    : sajuForm.birthTime,
+
+            birthTimeUnknown:
+                Boolean(
+                    sajuForm.birthTimeUnknown
+                ),
 
             gender:
                 sajuForm.gender,
@@ -2420,7 +2398,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 startedAt
             );
 
-            return result;
+            return normalizeMzSajuApiResponse(
+                result
+            );
 
         } catch (error) {
 
@@ -2464,6 +2444,487 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function normalizeMzSajuApiResponse(result) {
+
+        if (!result || typeof result !== "object") {
+
+            return result;
+        }
+
+        if (
+            result.sajuReport
+            && Array.isArray(
+                result.sajuReport.sections
+            )
+        ) {
+
+            return result;
+        }
+
+        const pillars = [
+            result.yearPillar,
+            result.monthPillar,
+            result.dayPillar,
+            result.hourPillar
+        ].filter(Boolean);
+
+        const fullSajuChinese =
+            pillars
+                .map(
+                    function (pillar) {
+
+                        return safeText(
+                            pillar.chineseName,
+                            ""
+                        );
+                    }
+                )
+                .filter(Boolean)
+                .join(" ");
+
+        const fullSajuKorean =
+            pillars
+                .map(
+                    function (pillar) {
+
+                        return safeText(
+                            pillar.koreanName,
+                            ""
+                        );
+                    }
+                )
+                .filter(Boolean)
+                .join(" ");
+
+        const dayPillar =
+            result.dayPillar
+            || {};
+
+        const yongshinCandidates =
+            Array.isArray(
+                result.yongshinCandidates
+            )
+                ? result.yongshinCandidates
+                : [];
+
+        const huishinCandidates =
+            Array.isArray(
+                result.huishinCandidates
+            )
+                ? result.huishinCandidates
+                : [];
+
+        const decadeLuck =
+            result.decadeLuck
+            || {};
+
+        const annualLuck =
+            result.annualLuck
+            || {};
+
+        const consultations =
+            Array.isArray(
+                result.consultations
+            )
+                ? result.consultations
+                : [];
+
+        const currentYearSection =
+            consultations.find(
+                function (section) {
+
+                    return section.category
+                        === "CURRENT_YEAR_LUCK";
+                }
+            )
+            || null;
+
+        const reportSections =
+            consultations.map(
+                function (
+                    section,
+                    index
+                ) {
+
+                    const basisLabels =
+                        Array.isArray(
+                            section.basisLabels
+                        )
+                            ? section.basisLabels
+                            : [];
+
+                    const contentParts = [
+                        section.guidanceMessage
+                    ].filter(Boolean);
+
+                    if (basisLabels.length) {
+
+                        contentParts.push(
+                            "분석 근거: "
+                            + basisLabels.join(" · ")
+                        );
+                    }
+
+                    return {
+                        category:
+                            safeText(
+                                section.category,
+                                "SECTION_"
+                                + (index + 1)
+                            ),
+
+                        categoryKorean:
+                            safeText(
+                                section.title,
+                                "상세 해석"
+                            ),
+
+                        categoryDescription:
+                            basisLabels.length
+                                ? basisLabels.join(" · ")
+                                : "명리 계산 근거 기반 해석",
+
+                        title:
+                            safeText(
+                                section.openingMessage,
+                                section.title
+                                || "상세 해석"
+                            ),
+
+                        coreSummary:
+                            safeText(
+                                section.summaryMessage,
+                                "핵심 흐름을 확인해보세요."
+                            ),
+
+                        content:
+                            contentParts.join("\n\n"),
+
+                        characterCount:
+                            safeText(
+                                section.narrationText,
+                                ""
+                            ).length,
+
+                        polarity:
+                            section.polarity,
+
+                        polarityKorean:
+                            mzPolarityKorean(
+                                section.polarity
+                            ),
+
+                        intensity:
+                            section.intensity,
+
+                        intensityKorean:
+                            mzIntensityKorean(
+                                section.intensity
+                            ),
+
+                        confidence:
+                            section.confidence,
+
+                        confidenceKorean:
+                            mzConfidenceKorean(
+                                section.confidence
+                            ),
+
+                        evidenceCount:
+                            section.evidenceCount
+                            ?? 0,
+
+                        usedSignalCodes:
+                            basisLabels
+                    };
+                }
+            );
+
+        return Object.assign(
+            {},
+            result,
+            {
+                fullSajuChinese:
+                    fullSajuChinese,
+
+                fullSajuKorean:
+                    fullSajuKorean,
+
+                dayMaster:
+                    safeText(
+                        result.dayMasterChineseName,
+                        "-"
+                    ),
+
+                dayMasterKorean:
+                    joinNonEmpty(
+                        [
+                            result.dayMasterKoreanName,
+                            result.dayMasterChineseName
+                                ? "(" + result.dayMasterChineseName + ")"
+                                : ""
+                        ],
+                        " "
+                    ),
+
+                dayMasterElementKorean:
+                    mzElementKorean(
+                        dayPillar.stemElement
+                    ),
+
+                dayMasterYinYangKorean:
+                    mzYinYangKorean(
+                        dayPillar.stemYinYang
+                    ),
+
+                strengthAnalysis: {
+                    level:
+                        result.strengthLevel,
+
+                    levelKorean:
+                        safeText(
+                            result.strengthLevel,
+                            "-"
+                        ),
+
+                    strengthLevelKorean:
+                        safeText(
+                            result.strengthLevel,
+                            "-"
+                        )
+                },
+
+                usefulGodAnalysis: {
+                    primaryUsefulGod: {
+                        elementKorean:
+                            safeText(
+                                yongshinCandidates[0],
+                                "미정"
+                            ),
+
+                        typeKorean:
+                            "용신 후보"
+                    },
+
+                    secondaryFavorableGod: {
+                        elementKorean:
+                            safeText(
+                                huishinCandidates[0],
+                                "미정"
+                            ),
+
+                        typeKorean:
+                            "희신 후보"
+                    }
+                },
+
+                luckAnalysis: {
+                    directionKorean:
+                        safeText(
+                            decadeLuck.direction,
+                            "장기 흐름"
+                        ),
+
+                    currentDecadeLuck:
+                        decadeLuck.calculationAvailable
+                        && decadeLuck.currentPillar
+                            ? {
+                                pillar:
+                                    decadeLuck.currentPillar,
+
+                                startDate:
+                                    formatMzDateTime(
+                                        decadeLuck.currentStartDateTime
+                                    ),
+
+                                endDate:
+                                    formatMzDateTime(
+                                        decadeLuck.currentEndDateTime
+                                    )
+                            }
+                            : null,
+
+                    annualLuck: {
+                        targetYear:
+                            annualLuck.targetYear
+                            || result.targetYear,
+
+                        pillar:
+                            annualLuck.pillar
+                            || null,
+
+                        stemTenGod:
+                            annualLuck.stemTenGod,
+
+                        branchMainTenGod:
+                            annualLuck.branchMainTenGod
+                    }
+                },
+
+                luckInteractionAnalysis: {
+                    combinedLevelKorean:
+                        currentYearSection
+                            ? mzPolarityKorean(
+                                currentYearSection.polarity
+                            )
+                            : "운의 흐름 확인",
+
+                    combinedIntensityKorean:
+                        currentYearSection
+                            ? mzIntensityKorean(
+                                currentYearSection.intensity
+                            )
+                            : "-",
+
+                    combinedMessage:
+                        currentYearSection
+                            ? joinNonEmpty(
+                                [
+                                    currentYearSection.summaryMessage,
+                                    currentYearSection.guidanceMessage
+                                ],
+                                " "
+                            )
+                            : "현재 대운과 세운의 흐름을 함께 확인해보세요.",
+
+                    summarySignals:
+                        currentYearSection
+                        && Array.isArray(
+                            currentYearSection.basisLabels
+                        )
+                            ? currentYearSection.basisLabels
+                            : []
+                },
+
+                sajuReport: {
+                    targetYear:
+                        result.targetYear,
+
+                    fullSajuChinese:
+                        fullSajuChinese,
+
+                    fullSajuKorean:
+                        fullSajuKorean,
+
+                    sections:
+                        reportSections,
+
+                    sectionCount:
+                        reportSections.length,
+
+                    totalCharacterCount:
+                        reportSections.reduce(
+                            function (
+                                sum,
+                                section
+                            ) {
+
+                                return sum
+                                    + section.characterCount;
+                            },
+                            0
+                        ),
+
+                    generationMode:
+                        "JAVA_CONSULTATION",
+
+                    ruleVersion:
+                        "DAJEOM_FRONT_ADAPTER_V1"
+                },
+
+                disclaimer:
+                    "본 결과는 명리 계산을 기반으로 제공하는 참고 정보입니다. 건강·법률·투자 등 전문적인 판단을 대신하지 않습니다."
+            }
+        );
+    }
+
+    function mzPolarityKorean(value) {
+
+        const labels = {
+            SUPPORTIVE: "지원 흐름",
+            CAUTION: "주의 흐름",
+            MIXED: "복합 흐름",
+            NEUTRAL: "중립"
+        };
+
+        return labels[value]
+            || "중립";
+    }
+
+    function mzIntensityKorean(value) {
+
+        const labels = {
+            NONE: "근거 부족",
+            LOW: "약함",
+            MEDIUM: "보통",
+            HIGH: "강함"
+        };
+
+        return labels[value]
+            || "-";
+    }
+
+    function mzConfidenceKorean(value) {
+
+        const labels = {
+            LOW: "낮음",
+            MEDIUM: "보통",
+            HIGH: "높음"
+        };
+
+        return labels[value]
+            || "-";
+    }
+
+    function mzElementKorean(value) {
+
+        const labels = {
+            WOOD: "목",
+            FIRE: "화",
+            EARTH: "토",
+            METAL: "금",
+            WATER: "수"
+        };
+
+        return labels[value]
+            || safeText(
+                value,
+                "-"
+            );
+    }
+
+    function mzYinYangKorean(value) {
+
+        const labels = {
+            YANG: "양",
+            YIN: "음"
+        };
+
+        return labels[value]
+            || safeText(
+                value,
+                "-"
+            );
+    }
+
+    function formatMzDateTime(value) {
+
+        if (!value) {
+            return "";
+        }
+
+        return String(value)
+            .replace("T", " ")
+            .replace(
+                /([+-]\d{2}:\d{2}|Z)(\[[^\]]+\])?$/,
+                ""
+            )
+            .slice(
+                0,
+                16
+            );
+    }
+
     function restoreMzResult() {
 
         try {
@@ -2478,8 +2939,10 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             renderMzSajuResult(
-                JSON.parse(
-                    stored
+                normalizeMzSajuApiResponse(
+                    JSON.parse(
+                        stored
+                    )
                 )
             );
 
@@ -2530,8 +2993,10 @@ document.addEventListener("DOMContentLoaded", function () {
             || {};
 
         const combinedScore =
-            numberOrDash(
-                interaction.combinedScore
+            safeText(
+                interaction.combinedIntensityKorean
+                || interaction.combinedScore,
+                "-"
             );
 
         const combinedLevel =
@@ -2657,32 +3122,15 @@ document.addEventListener("DOMContentLoaded", function () {
         interaction
     ) {
 
-        const score =
-            Number(
-                interaction.combinedScore
-            );
+        if (
+            interaction
+            && interaction.combinedMessage
+        ) {
 
-        if (!Number.isFinite(score)) {
-
-            return "현재 대운과 세운의 상호작용을 확인해 행동 시점과 주의할 부분을 함께 살펴보세요.";
+            return interaction.combinedMessage;
         }
 
-        if (score >= 70) {
-
-            return "움직였을 때 결과를 만들기 쉬운 흐름입니다. 다만 자신감이 과해지지 않도록 돈과 일정의 상한선은 먼저 정하세요.";
-        }
-
-        if (score >= 56) {
-
-            return "기회가 들어오지만 선택과 집중이 필요한 흐름입니다. 동시에 여러 일을 벌이기보다 한 가지를 끝까지 밀어붙이는 편이 좋습니다.";
-        }
-
-        if (score >= 45) {
-
-            return "좋고 나쁜 신호가 섞인 구간입니다. 큰 결정은 검증 단계를 늘리고, 이미 준비한 일부터 차례대로 실행하세요.";
-        }
-
-        return "속도보다 방어가 중요한 흐름입니다. 계약·부채·건강·사람 관계의 경계를 먼저 정리하면 불필요한 손실을 줄일 수 있습니다.";
+        return "현재 대운과 세운의 상호작용을 확인해 행동 시점과 주의할 부분을 함께 살펴보세요.";
     }
 
     function renderMzQuickSummary(result) {
@@ -2816,10 +3264,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     safeText(
                         annual.pillar
                         && annual.pillar.koreanName,
-                        numberOrDash(
-                            interaction.combinedScore
+                        safeText(
+                            interaction.combinedIntensityKorean,
+                            "연간 흐름"
                         )
-                        + "점"
                     ),
                 description:
                     safeText(
@@ -2915,7 +3363,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 `
                 <div class="mz-report-empty">
                     상세 보고서 데이터가 없습니다.<br>
-                    백엔드 응답의 sajuReport.sections를 확인해주세요.
+                    백엔드 응답의 consultations를 확인해주세요.
                 </div>
                 `;
 
@@ -3012,39 +3460,45 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function renderMzScores(section) {
 
-        const scores = [
+        const signals = [
             {
-                label: "유리",
+                label: "방향",
                 value:
-                    section.favorableScore
-                    ?? 0
+                    safeText(
+                        section.polarityKorean,
+                        "중립"
+                    )
             },
             {
-                label: "주의",
+                label: "강도",
                 value:
-                    section.challengingScore
-                    ?? 0
+                    safeText(
+                        section.intensityKorean,
+                        "-"
+                    )
             },
             {
-                label: "순점수",
+                label: "신뢰도",
                 value:
-                    section.netScore
-                    ?? 0
+                    safeText(
+                        section.confidenceKorean,
+                        "-"
+                    )
             }
         ];
 
         return `
             <div class="mz-report-scores">
-                ${scores.map(
-                    function (score) {
+                ${signals.map(
+                    function (signal) {
 
                         return `
                             <div class="mz-report-score">
                                 <span>
-                                    ${escapeHtml(score.label)}
+                                    ${escapeHtml(signal.label)}
                                 </span>
                                 <strong>
-                                    ${escapeHtml(score.value)}
+                                    ${escapeHtml(signal.value)}
                                 </strong>
                             </div>
                         `;
@@ -3137,170 +3591,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             }
         );
-    }
-
-    function createMzMockResult(request) {
-
-        const targetYear =
-            request.targetYear;
-
-        const categories = [
-            ["PERSONALITY", "기본 성향", "섬세하지만 기준이 분명한 사람", "환경의 흐름을 빠르게 읽고, 납득한 일은 끝까지 밀어붙이는 편입니다."],
-            ["PAST_LUCK", "과거운", "일찍 현실을 체감한 흐름", "과거에는 자신의 속도보다 주변의 상황과 책임에 맞춰 움직여야 하는 일이 많았을 수 있습니다."],
-            ["PARENTS", "부모운", "보호와 기대가 함께 들어오는 관계", "도움을 받는 동시에 기대받는 역할도 커질 수 있어, 정서와 경제의 경계를 분명히 하는 것이 중요합니다."],
-            ["SIBLINGS", "형제운", "가까울수록 경쟁과 의리가 강함", "친한 사람과 힘을 합치면 성과가 커지지만 돈과 책임을 애매하게 나누면 서운함이 남기 쉽습니다."],
-            ["LOVE_STYLE", "연애 스타일", "진심을 확인한 뒤 깊어지는 타입", "처음에는 신중하지만 신뢰가 생기면 상대의 문제까지 자신의 일처럼 받아들이는 경향이 있습니다."],
-            ["PARTNER_LUCK", "배우자·인연운", "말보다 행동이 안정적인 인연", "강한 끌림만 주는 사람보다 약속과 생활 리듬을 지키는 사람과 장기 관계가 안정됩니다."],
-            ["WEALTH", "재물운", "버는 힘보다 지키는 구조가 핵심", "수익 기회는 만들 수 있지만 사람과 계획 밖 지출로 자금이 흩어지지 않도록 통장을 목적별로 나누는 것이 좋습니다."],
-            ["CAREER", "직업운", "기술과 기획을 결과물로 만드는 직업", "반복 업무만 하는 자리보다 직접 문제를 해결하고 책임 범위가 분명한 업무에서 실력이 살아납니다."],
-            ["LEGAL_RISK", "관재수", "말보다 기록이 먼저", "가까운 사람과의 돈 문제, 공동 작업, 계약에서는 감정적 약속보다 문자와 문서로 기준을 남겨야 합니다."],
-            ["HEALTH_TENDENCY", "건강 경향", "과로 뒤 회복이 늦어질 수 있음", "수면과 식사 시간이 무너지면 집중력과 컨디션이 함께 흔들릴 수 있으므로 실제 증상은 의료기관에서 확인해야 합니다."],
-            ["CURRENT_LUCK", "현재운", "삶의 구조를 다시 짜는 시기", "새로운 일을 무작정 늘리기보다 장기 목표와 직접 연결되는 일에 시간과 돈을 모아야 합니다."],
-            ["YEAR_LUCK", targetYear + "년 종합운", "움직일수록 기회가 보이는 해", "실행력은 높아지지만 경쟁심과 지출도 함께 커질 수 있으므로 돈과 일정의 상한선을 미리 정하세요."],
-            ["FUTURE_LUCK", "미래운", "준비한 것을 확장하는 흐름", "유리한 흐름이 오기 전에 기술, 포트폴리오, 부채와 생활 리듬을 정리하면 기회를 더 크게 활용할 수 있습니다."]
-        ];
-
-        const sections =
-            categories.map(
-                function (
-                    item,
-                    index
-                ) {
-
-                    const content =
-                        item[3]
-                        + "\n\n"
-                        + "이 신호는 결과를 확정하는 예언이 아니라 반복되기 쉬운 선택 패턴을 보여줍니다. 장점이 살아나는 환경을 고르고, 부담이 커지는 조건을 미리 피하는 방식으로 활용하는 것이 좋습니다."
-                        + "\n\n"
-                        + "현실적으로는 중요한 결정을 내릴 때 감정, 비용, 기한과 책임자를 따로 적어보세요. 머릿속의 불안을 실제 행동 계획으로 바꾸면 흐름을 훨씬 안정적으로 사용할 수 있습니다.";
-
-                    return {
-                        category: item[0],
-                        categoryKorean: item[1],
-                        categoryDescription: item[1] + "에 대한 정통 명리 해석",
-                        title: item[2],
-                        coreSummary: item[3],
-                        content: content,
-                        characterCount: content.length,
-                        favorableScore: 58 + index % 4 * 5,
-                        challengingScore: 30 + index % 3 * 6,
-                        netScore: 28 + index % 5 * 3,
-                        usedSignalCodes: [
-                            "MZ_MOCK_"
-                            + item[0]
-                        ]
-                    };
-                }
-            );
-
-        return {
-            calendarType: request.calendarType,
-            birthDate: request.birthDate,
-            birthTime: request.birthTime,
-            gender: request.gender,
-            targetYear: targetYear,
-            fullSajuChinese: "癸酉 庚申 丁丑 甲辰",
-            fullSajuKorean: "계유 경신 정축 갑진",
-            dayMaster: "丁",
-            dayMasterKorean: "정화",
-            dayMasterElementKorean: "화",
-            dayMasterYinYangKorean: "음",
-            strengthAnalysis: {
-                level: "WEAK",
-                levelKorean: "신약",
-                strengthLevelKorean: "신약"
-            },
-            usefulGodAnalysis: {
-                primaryUsefulGod: {
-                    element: "WOOD",
-                    elementKorean: "목",
-                    typeKorean: "용신"
-                },
-                secondaryFavorableGod: {
-                    element: "FIRE",
-                    elementKorean: "화",
-                    typeKorean: "희신"
-                }
-            },
-            luckAnalysis: {
-                directionKorean: "순행",
-                currentDecadeLuck: {
-                    pillar: {
-                        chineseName: "癸亥",
-                        koreanName: "계해"
-                    },
-                    startDate: "2022-01-01",
-                    endDate: "2031-12-31"
-                },
-                annualLuck: {
-                    targetYear: targetYear,
-                    pillar: {
-                        chineseName: "丙午",
-                        koreanName: "병오"
-                    }
-                }
-            },
-            luckInteractionAnalysis: {
-                combinedScore: 72,
-                combinedLevel: "FAVORABLE",
-                combinedLevelKorean: "유리한 운",
-                summarySignals: [
-                    "실행력 상승",
-                    "경쟁과 지출 관리 필요"
-                ]
-            },
-            sajuReport: {
-                targetYear: targetYear,
-                fullSajuChinese: "癸酉 庚申 丁丑 甲辰",
-                fullSajuKorean: "계유 경신 정축 갑진",
-                sections: sections,
-                sectionCount: sections.length,
-                totalCharacterCount: sections.reduce(
-                    function (sum, section) {
-
-                        return sum
-                            + section.characterCount;
-                    },
-                    0
-                ),
-                generationMode: "MOCK_TEMPLATE",
-                ruleVersion: "DAJEOM_MZ_DORYEONG_FRONT_V1"
-            },
-            disclaimer: "현재 화면은 서버 연결 전 프론트 확인용 목업 결과입니다. 실제 서버 연결 후 계산 결과로 자동 교체됩니다."
-        };
-    }
-
-    function numberOrDash(value) {
-
-        const number =
-            Number(value);
-
-        return Number.isFinite(number)
-            ? String(
-                Math.round(
-                    number * 100
-                ) / 100
-            )
-            : "-";
-    }
-
-    function joinNonEmpty(
-        values,
-        separator
-    ) {
-
-        return values
-            .filter(
-                function (value) {
-
-                    return value !== undefined
-                        && value !== null
-                        && value !== "";
-                }
-            )
-            .join(
-                separator
-            );
     }
 
     function renderSajuResult(result) {
@@ -3408,88 +3698,65 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const personality =
             findInterpretationContent(
-
                 interpretations,
-
                 [
                     "성격",
                     "기질",
                     "성향",
                     "자아"
                 ],
-
                 name
-                + "님은 자기 기준이 분명하고, 한번 정한 방향을 쉽게 포기하지 않는 편입니다. "
-                + "스스로 납득해야 움직이며, 마음이 정해지면 오래 밀고 가는 힘이 있습니다."
+                + "님은 자기 기준이 분명하고, 한번 정한 방향을 쉽게 포기하지 않는 편입니다."
             );
 
         const innerMind =
             findInterpretationContent(
-
                 interpretations,
-
                 [
                     "내면",
                     "감정",
                     "심리"
                 ],
-
-                "겉으로는 단단해 보여도 속으로는 생각이 많습니다. "
-                + "감정을 바로 꺼내기보다 혼자 정리하려는 경향이 있어, "
-                + "주변에서는 차분하거나 속을 알기 어렵다고 느낄 수 있습니다."
+                "겉으로는 단단해 보여도 속으로는 생각이 많습니다."
             );
 
         const relationship =
             findInterpretationContent(
-
                 interpretations,
-
                 [
                     "인간관계",
                     "대인관계",
                     "관계"
                 ],
-
                 name
-                + "님은 사람을 쉽게 넓게 사귀기보다 신뢰할 수 있는 관계를 오래 지키는 편입니다. "
-                + "가까운 사이일수록 솔직한 표현과 거리 조절이 중요합니다."
+                + "님은 신뢰할 수 있는 관계를 오래 지키는 편입니다."
             );
 
         const love =
             findInterpretationContent(
-
                 interpretations,
-
                 [
                     "연애",
                     "애정",
                     "결혼"
                 ],
-
-                "연애에서는 순간적인 설렘보다 진심과 안정감을 중요하게 봅니다. "
-                + "마음을 여는 데는 시간이 걸리지만, 믿음이 생기면 생각보다 깊고 오래 가는 타입입니다."
+                "연애에서는 진심과 안정감을 중요하게 봅니다."
             );
 
         const money =
             findInterpretationContent(
-
                 interpretations,
-
                 [
                     "재물",
                     "금전",
                     "돈"
                 ],
-
-                "재물운은 한 번의 큰 승부보다 실력과 경험을 쌓아 안정적으로 키우는 흐름에 가깝습니다. "
-                + "돈이 들어오는 것만큼 지출 기준을 세우는 일이 중요합니다."
+                "재물운은 한 번의 큰 승부보다 안정적으로 키우는 흐름에 가깝습니다."
             );
 
         const career =
             findInterpretationContent(
-
                 interpretations,
-
                 [
                     "직업",
                     "진로",
@@ -3497,63 +3764,47 @@ document.addEventListener("DOMContentLoaded", function () {
                     "사업",
                     "창업"
                 ],
-
-                "남이 정해준 틀에서 반복만 하는 일보다 스스로 판단하고 전문성을 쌓는 분야에서 힘이 잘 붙습니다. "
-                + "책임과 기술, 분석력이 필요한 일에서 장점이 살아납니다."
+                "전문성을 쌓고 직접 판단할 수 있는 분야에서 장점이 살아납니다."
             );
 
         const study =
             findInterpretationContent(
-
                 interpretations,
-
                 [
                     "시험",
                     "학업",
                     "공부"
                 ],
-
-                "시험과 학습은 짧은 벼락치기보다 반복 훈련과 실전 감각을 쌓을수록 성과가 좋아지는 흐름입니다."
+                "시험과 학습은 반복 훈련과 실전 감각을 쌓을수록 좋습니다."
             );
 
         const health =
             findInterpretationContent(
-
                 interpretations,
-
                 [
                     "건강",
                     "생활",
                     "컨디션"
                 ],
-
-                "운이 흔들릴 때 가장 먼저 생활 리듬이 무너지기 쉽습니다. "
-                + "수면, 휴식, 식사 시간을 일정하게 유지하는 것이 전체 흐름을 안정시키는 데 도움이 됩니다."
+                "수면과 휴식, 식사 시간을 일정하게 관리하는 것이 중요합니다."
             );
 
         const overall =
             findInterpretationContent(
-
                 interpretations,
-
                 [
                     "종합",
                     "총평",
                     "조언"
                 ],
-
                 name
-                + "님의 사주는 약해서 흔들리는 구조라기보다, "
-                + "힘을 어디에 쓰느냐에 따라 결과 차이가 크게 벌어지는 구조에 가깝습니다."
+                + "님의 사주는 힘을 어디에 쓰느냐에 따라 결과 차이가 크게 나타나는 구조입니다."
             );
 
         const luckNote =
             safeText(
-
                 luck.note,
-
-                "지금은 결과를 급하게 만들기보다 방향을 정하고 "
-                + "실력과 기반을 쌓는 과정이 중요한 시기입니다."
+                "지금은 방향을 정하고 실력과 기반을 쌓는 과정이 중요합니다."
             );
 
         return {
@@ -3575,7 +3826,6 @@ document.addEventListener("DOMContentLoaded", function () {
             health: health,
             overall: overall,
             luckNote: luckNote,
-
             coverSummary:
                 firstSentence(
                     personality,
@@ -3624,643 +3874,7 @@ document.addEventListener("DOMContentLoaded", function () {
         data
     ) {
 
-        const elementItems =
-            arrayOrEmpty(
-                result.elementBalance
-                && result.elementBalance.items
-            );
-
-        const yinYang =
-            result.yinYangBalance
-            || {};
-
-        const relations =
-            result.relations
-            || {};
-
-        const allRelations =
-            arrayOrEmpty(
-                relations.heavenlyStemRelations
-            )
-            .concat(
-                arrayOrEmpty(
-                    relations.earthlyBranchRelations
-                )
-            );
-
-        const shinsal =
-            arrayOrEmpty(
-                result.shinsal
-            );
-
-        const luck =
-            result.luck
-            || {};
-
-        const calendar =
-            result.calendar
-            || {};
-
-        const strength =
-            result.strength
-            || {};
-
-        const structure =
-            result.structure
-            || {};
-
-        const pillars =
-            arrayOrEmpty(
-                result.pillars
-            );
-
-        return [
-
-            {
-                type: "character",
-                className: "scene-tall",
-                kicker: "PROLOGUE",
-                title: "당신의 사주를 펼쳐봅니다",
-                imageClass: "focus-wide",
-                bubbleSide: "left",
-
-                dialogue: [
-
-                    data.name
-                    + "님, 지금부터 사주에 담긴 이야기를 한 장면씩 살펴보겠습니다.",
-
-                    "어려운 용어를 외우기보다 실제 삶에서 어떤 모습으로 나타나는지에 집중해볼게요."
-                ],
-
-                caption:
-                    "<strong>이 이야기는</strong> 입력한 생년월일과 출생시간으로 계산한 만세력 결과를 바탕으로 구성됩니다.",
-
-                evidence: {
-
-                    title:
-                        "첫 장면의 계산 기록",
-
-                    subtitle:
-                        "입력값과 기본 명식",
-
-                    items: [
-
-                        evidenceItem(
-                            "양력",
-                            calendar.solarDate
-                        ),
-
-                        evidenceItem(
-                            "음력",
-                            calendar.lunarDate
-                        ),
-
-                        evidenceItem(
-                            "태어난 시간",
-                            calendar.birthTime
-                        ),
-
-                        evidenceItem(
-                            "띠",
-                            data.zodiac
-                        )
-                    ],
-
-                    explain:
-                        "이 기본정보를 기준으로 년주·월주·일주·시주와 이후의 모든 해석이 계산됩니다."
-                }
-            },
-
-            {
-                type: "character",
-                className: "scene-tall",
-                kicker: "EPISODE 01",
-                title: "나는 어떤 사람인가",
-                imageClass: "focus-right",
-                bubbleSide: "right",
-
-                dialogue: [
-                    data.personality,
-                    data.innerMind
-                ],
-
-                caption:
-                    "<strong>핵심:</strong> 겉으로 드러나는 힘과 실제 내면의 속도는 다를 수 있습니다.",
-
-                evidence: {
-
-                    title:
-                        "왜 이렇게 해석했나요?",
-
-                    subtitle:
-                        "일간·신강신약·십성 근거",
-
-                    items: [
-
-                        evidenceItem(
-                            "일간",
-                            data.dayMaster
-                        ),
-
-                        evidenceItem(
-                            "일간 오행",
-                            strength.dayMasterElement
-                        ),
-
-                        evidenceItem(
-                            "신강·신약",
-                            data.strengthType
-                        ),
-
-                        evidenceItem(
-                            "주요 십성",
-
-                            result.tenGodBalance
-                            && result.tenGodBalance.dominant
-                        )
-                    ],
-
-                    explain:
-                        data.dayMaster
-                        + "의 성향과 "
-                        + data.strengthType
-                        + " 구조, 주요 십성의 작용을 함께 보고 기본 성향을 풀었습니다."
-                }
-            },
-
-            {
-                type: "element",
-                className: "scene-paper scene-dark",
-                kicker: "EPISODE 02",
-                title: "마음속 기운은 어떻게 흐를까",
-
-                lines: [
-
-                    data.innerMind,
-
-                    "가장 강하게 드러나는 기운은 "
-                    + data.dominant
-                    + "이고, 상대적으로 보완이 필요한 기운은 "
-                    + data.weakest
-                    + "입니다.",
-
-                    data.health
-                ],
-
-                elementItems:
-                    elementItems,
-
-                evidence: {
-
-                    title:
-                        "오행과 음양 기록",
-
-                    subtitle:
-                        "기운의 강약과 보완 방향",
-
-                    items: [
-
-                        evidenceItem(
-                            "강한 오행",
-                            data.dominant
-                        ),
-
-                        evidenceItem(
-                            "부족 오행",
-                            data.weakest
-                        ),
-
-                        evidenceItem(
-                            "양 비율",
-                            percentageText(
-                                yinYang.yangPercentage
-                            )
-                        ),
-
-                        evidenceItem(
-                            "음 비율",
-                            percentageText(
-                                yinYang.yinPercentage
-                            )
-                        ),
-
-                        evidenceItem(
-                            "용신 보조값",
-                            strength.usefulGod
-                        ),
-
-                        evidenceItem(
-                            "희신 보조값",
-                            strength.favorableGod
-                        )
-                    ],
-
-                    explain:
-                        "오행 분포와 음양 비율은 감정 표현, 행동 속도, 생활 리듬의 균형을 해석할 때 참고하는 계산 근거입니다."
-                }
-            },
-
-            {
-                type: "character",
-                className: "scene-tall",
-                kicker: "EPISODE 03",
-                title: "사람과 사랑 앞에서의 모습",
-                imageClass: "focus-left",
-                bubbleSide: "left",
-
-                dialogue: [
-                    data.relationship,
-                    data.love
-                ],
-
-                caption:
-                    "<strong>관계의 열쇠:</strong> 마음을 숨기기보다 필요한 순간에 정확히 표현하는 것이 중요합니다.",
-
-                evidence: {
-
-                    title:
-                        "관계 해석의 계산 기록",
-
-                    subtitle:
-                        "십성·합충·신살 근거",
-
-                    items: [
-
-                        evidenceItem(
-                            "주요 십성",
-
-                            result.tenGodBalance
-                            && result.tenGodBalance.dominant
-                        ),
-
-                        evidenceItem(
-                            "관계 작용",
-
-                            allRelations.length
-                                ? allRelations[0].category
-                                : "두드러진 작용 없음"
-                        ),
-
-                        evidenceItem(
-                            "주요 신살",
-
-                            shinsal.length
-                                ? shinsal[0].name
-                                : "두드러진 신살 없음"
-                        ),
-
-                        evidenceItem(
-                            "일지 기준",
-
-                            getPillarText(
-                                pillars,
-                                "일주"
-                            )
-                        )
-                    ],
-
-                    explain:
-                        "십성의 분포와 지지 사이의 관계, 신살을 함께 참고해 가까운 관계에서 반복되기 쉬운 모습을 풀었습니다."
-                }
-            },
-
-            {
-                type: "narration",
-                className: "scene-paper scene-warm",
-                kicker: "EPISODE 04",
-                title: "돈은 어떻게 들어오고 새어 나갈까",
-
-                lines: [
-
-                    data.money,
-
-                    "빠른 결과를 좇기보다 자신의 실력과 기준을 자산으로 바꿀 때 재물운이 더 안정적으로 이어집니다.",
-
-                    "수입이 늘어나는 시기일수록 지출 기준과 비상자금을 먼저 정해두는 편이 좋습니다."
-                ],
-
-                accent:
-                    "한 번의 큰 승부보다 오래 유지되는 구조를 만드는 것이 핵심입니다.",
-
-                evidence: {
-
-                    title:
-                        "재물 해석의 계산 기록",
-
-                    subtitle:
-                        "재성·오행·용신 근거",
-
-                    items: [
-
-                        evidenceItem(
-                            "강한 오행",
-                            data.dominant
-                        ),
-
-                        evidenceItem(
-                            "부족 오행",
-                            data.weakest
-                        ),
-
-                        evidenceItem(
-                            "주요 십성",
-
-                            result.tenGodBalance
-                            && result.tenGodBalance.dominant
-                        ),
-
-                        evidenceItem(
-                            "용신 보조값",
-                            data.usefulGod
-                        )
-                    ],
-
-                    explain:
-                        "재물 해석은 재성 하나만 단독으로 보지 않고 오행의 균형, 일간의 힘, 현재 운의 흐름을 함께 참고합니다."
-                }
-            },
-
-            {
-                type: "character",
-                className: "scene-tall",
-                kicker: "EPISODE 05",
-                title: "일에서 능력이 살아나는 순간",
-                imageClass: "focus-close",
-                bubbleSide: "right",
-
-                dialogue: [
-                    data.career,
-                    data.study
-                ],
-
-                caption:
-                    "<strong>직업의 방향:</strong> 판단력·전문성·책임을 사용할수록 자신만의 경쟁력이 커집니다.",
-
-                evidence: {
-
-                    title:
-                        "직업과 시험 해석 기록",
-
-                    subtitle:
-                        "십성·신강신약·대운 근거",
-
-                    items: [
-
-                        evidenceItem(
-                            "신강·신약",
-                            data.strengthType
-                        ),
-
-                        evidenceItem(
-                            "주요 십성",
-
-                            result.tenGodBalance
-                            && result.tenGodBalance.dominant
-                        ),
-
-                        evidenceItem(
-                            "현재 대운",
-                            data.currentDecade
-                        ),
-
-                        evidenceItem(
-                            "기신 보조값",
-                            strength.unfavorableGod
-                        )
-                    ],
-
-                    explain:
-                        "직업운은 타고난 성향과 현재 대운이 만나는 지점을 보고, 어떤 방식의 일이 오래 지속될 수 있는지 중심으로 풀었습니다."
-                }
-            },
-
-            {
-                type: "relations",
-                className: "scene-paper scene-pink",
-                kicker: "EPISODE 06",
-                title: "기운이 만나고 부딪히는 장면",
-
-                lines: [
-
-                    "사주의 기운들은 서로 따로 움직이지 않습니다.",
-
-                    "어떤 기운은 만나 힘을 합치고, 어떤 기운은 부딪히며 변화와 긴장을 만듭니다."
-                ],
-
-                relations:
-                    allRelations,
-
-                shinsal:
-                    shinsal,
-
-                evidence: {
-
-                    title:
-                        "합·충·형·파·해와 신살 기록",
-
-                    subtitle:
-                        "명식 안의 관계 작용",
-
-                    items: [
-
-                        evidenceItem(
-                            "관계 개수",
-                            allRelations.length
-                            + "개"
-                        ),
-
-                        evidenceItem(
-                            "신살 개수",
-                            shinsal.length
-                            + "개"
-                        ),
-
-                        evidenceItem(
-                            "대표 관계",
-
-                            allRelations.length
-                                ? allRelations[0].category
-                                : "없음"
-                        ),
-
-                        evidenceItem(
-                            "대표 신살",
-
-                            shinsal.length
-                                ? shinsal[0].name
-                                : "없음"
-                        )
-                    ],
-
-                    explain:
-                        "이 항목은 사건을 단정하는 예언이 아니라, 갈등·변화·인연이 어떤 방식으로 체감될 수 있는지 보는 보조 근거입니다."
-                }
-            },
-
-            {
-                type: "character",
-                className: "scene-tall",
-                kicker: "EPISODE 07",
-                title: "지금 지나가는 큰 운의 흐름",
-                imageClass: "focus-wide",
-                bubbleSide: "left",
-
-                dialogue: [
-
-                    "현재 "
-                    + data.name
-                    + "님에게는 "
-                    + data.currentDecade
-                    + "의 흐름이 들어와 있습니다.",
-
-                    data.luckNote
-                ],
-
-                caption:
-                    "<strong>현재의 선택:</strong> 조급하게 결론을 만들기보다 지금 쌓는 경험이 다음 흐름의 기반이 됩니다.",
-
-                evidence: {
-
-                    title:
-                        "현재 대운 계산 기록",
-
-                    subtitle:
-                        "운행 방향과 시작 시점",
-
-                    items: [
-
-                        evidenceItem(
-                            "현재 대운",
-                            data.currentDecade
-                        ),
-
-                        evidenceItem(
-                            "운행 방향",
-                            luck.direction
-                        ),
-
-                        evidenceItem(
-                            "기운 시점",
-                            luck.startAge
-                        ),
-
-                        evidenceItem(
-                            "대운 시작일",
-                            luck.startDate
-                        )
-                    ],
-
-                    explain:
-                        "대운은 약 10년 단위의 큰 환경 변화를 보는 흐름이며, 실제 체감은 개인의 선택과 현재 상황에 따라 달라질 수 있습니다."
-                }
-            },
-
-            {
-                type: "luck",
-                className: "scene-paper scene-dark",
-                kicker: "EPISODE 08",
-                title: "시간의 길 위에서 보는 대운과 세운",
-
-                lines: [
-
-                    "큰 흐름은 대운으로, 해마다 달라지는 기운은 세운으로 읽습니다.",
-
-                    "현재 구간을 중심으로 앞뒤 흐름을 비교하면 준비할 때와 움직일 때를 더 쉽게 구분할 수 있습니다."
-                ],
-
-                luck:
-                    luck,
-
-                evidence: {
-
-                    title:
-                        "대운·세운 계산 기록",
-
-                    subtitle:
-                        "10년 흐름과 연도별 변화",
-
-                    items: [
-
-                        evidenceItem(
-                            "현재 대운",
-                            data.currentDecade
-                        ),
-
-                        evidenceItem(
-                            "대운 수",
-
-                            arrayOrEmpty(
-                                luck.decadeFortunes
-                            ).length
-                            + "개"
-                        ),
-
-                        evidenceItem(
-                            "운행 방향",
-                            luck.direction
-                        ),
-
-                        evidenceItem(
-                            "시작 나이",
-                            luck.startAge
-                        )
-                    ],
-
-                    explain:
-                        "각 연도의 간지와 십성, 공망 등의 값을 함께 보여주되, 결과는 가능성과 경향성으로 받아들이는 것이 좋습니다."
-                }
-            },
-
-            {
-                type: "ledger",
-                className: "scene-paper scene-warm",
-                kicker: "EPISODE 09",
-                title: "관상선생의 비밀 장부",
-
-                lines: [
-
-                    "이제 이야기 뒤에 숨은 명식 전체를 한 번에 펼쳐보겠습니다.",
-
-                    "일반 소비자는 여기까지 읽지 않아도 충분하지만, 계산값이 궁금하다면 아래 장부를 열어볼 수 있습니다."
-                ],
-
-                calendar:
-                    calendar,
-
-                pillars:
-                    pillars,
-
-                structure:
-                    structure,
-
-                strength:
-                    strength
-            },
-
-            {
-                type: "ending",
-                className: "scene-paper scene-pink",
-                kicker: "ENDING",
-                title: "사주는 정해진 결말이 아닙니다",
-
-                lines: [
-
-                    data.overall,
-
-                    data.name
-                    + "님에게 중요한 것은 강한 기운을 한 방향에 집중하고, "
-                    + "부족한 "
-                    + data.weakest
-                    + "의 균형을 생활 속에서 보완하는 일입니다.",
-
-                    "중요한 결정은 감정이 가장 높을 때보다 생각을 한 번 정리한 뒤 실행하세요. "
-                    + "그러면 사주의 장점이 더 안정적으로 살아납니다."
-                ],
-
-                accent:
-                    "사주는 미래를 고정하는 답이 아니라, 자신을 이해하고 선택을 조정하는 지도입니다."
-            }
-        ];
+        return [];
     }
 
     function renderEpisode(
@@ -4268,84 +3882,7 @@ document.addEventListener("DOMContentLoaded", function () {
         index
     ) {
 
-        const number =
-            String(index + 1)
-                .padStart(
-                    2,
-                    "0"
-                );
-
-        const className =
-            "webtoon-episode "
-            + safeText(
-                episode.className
-            );
-
-        if (
-            episode.type
-            === "character"
-        ) {
-
-            return renderCharacterEpisode(
-                episode,
-                number,
-                className
-            );
-        }
-
-        if (
-            episode.type
-            === "element"
-        ) {
-
-            return renderElementEpisode(
-                episode,
-                number,
-                className
-            );
-        }
-
-        if (
-            episode.type
-            === "relations"
-        ) {
-
-            return renderRelationsEpisode(
-                episode,
-                number,
-                className
-            );
-        }
-
-        if (
-            episode.type
-            === "luck"
-        ) {
-
-            return renderLuckEpisode(
-                episode,
-                number,
-                className
-            );
-        }
-
-        if (
-            episode.type
-            === "ledger"
-        ) {
-
-            return renderLedgerEpisode(
-                episode,
-                number,
-                className
-            );
-        }
-
-        return renderNarrationEpisode(
-            episode,
-            number,
-            className
-        );
+        return "";
     }
 
     function renderCharacterEpisode(
@@ -4400,735 +3937,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     ${renderEvidence(
                         episode.evidence
                     )}
-
-                </div>
-
-            </article>
-        `;
-    }
-
-    function renderNarrationEpisode(
-        episode,
-        number,
-        className
-    ) {
-
-        const lines =
-            episode.lines.map(
-                function (text) {
-
-                    return `
-                        <div class="narration-line">
-
-                            <p>
-                                ${escapeHtml(text)}
-                            </p>
-
-                        </div>
-                    `;
-                }
-            ).join("");
-
-        const accent =
-            episode.accent
-
-                ? `
-                    <div class="narration-line accent">
-
-                        <p>
-                            ${escapeHtml(episode.accent)}
-                        </p>
-
-                    </div>
-                `
-
-                : "";
-
-        return `
-            <article class="${className}">
-
-                ${renderSceneHeading(
-                    episode,
-                    number
-                )}
-
-                <div class="narration-card">
-
-                    ${lines}
-
-                    ${accent}
-
-                    ${renderEvidence(
-                        episode.evidence
-                    )}
-
-                </div>
-
-            </article>
-        `;
-    }
-
-    function renderElementEpisode(
-        episode,
-        number,
-        className
-    ) {
-
-        const lines =
-            episode.lines.map(
-                function (text) {
-
-                    return `
-                        <div class="narration-line">
-
-                            <p>
-                                ${escapeHtml(text)}
-                            </p>
-
-                        </div>
-                    `;
-                }
-            ).join("");
-
-        return `
-            <article class="${className}">
-
-                ${renderSceneHeading(
-                    episode,
-                    number
-                )}
-
-                <div class="narration-card">
-
-                    ${lines}
-
-                    <div class="narration-line accent">
-
-                        <p>
-                            오행은 좋고 나쁨을 나누는 점수가 아니라,
-                            어떤 기운을 많이 쓰고 어떤 부분에서
-                            균형이 필요한지 보여주는 지도입니다.
-                        </p>
-
-                    </div>
-
-                    ${renderElementBoard(
-                        episode.elementItems
-                    )}
-
-                    ${renderEvidence(
-                        episode.evidence
-                    )}
-
-                </div>
-
-            </article>
-        `;
-    }
-
-    function renderRelationsEpisode(
-        episode,
-        number,
-        className
-    ) {
-
-        const relationsHtml =
-            episode.relations.length
-
-                ? episode.relations.map(
-                    function (item) {
-
-                        return `
-                            <div class="relation-item">
-
-                                <strong>
-                                    ${escapeHtml(item.category)}
-                                    ·
-                                    ${escapeHtml(item.members)}
-                                </strong>
-
-                                <p>
-                                    ${escapeHtml(item.description)}
-                                </p>
-
-                            </div>
-                        `;
-                    }
-                ).join("")
-
-                : `
-                    <div class="relation-item">
-
-                        <strong>
-                            두드러진 관계 작용 없음
-                        </strong>
-
-                        <p>
-                            현재 계산 기준에서 강하게 표시되는
-                            합·충·형·파·해가 없습니다.
-                        </p>
-
-                    </div>
-                `;
-
-        const shinsalHtml =
-            episode.shinsal.length
-
-                ? episode.shinsal.map(
-                    function (item) {
-
-                        return `
-                            <div class="shinsal-item">
-
-                                <strong>
-                                    ${escapeHtml(item.name)}
-                                    ·
-                                    ${escapeHtml(item.location)}
-                                </strong>
-
-                                <p>
-                                    ${escapeHtml(item.description)}
-                                </p>
-
-                            </div>
-                        `;
-                    }
-                ).join("")
-
-                : `
-                    <div class="shinsal-item">
-
-                        <strong>
-                            두드러진 신살 없음
-                        </strong>
-
-                        <p>
-                            현재 계산 기준에서 강하게 표시되는
-                            주요 신살이 없습니다.
-                        </p>
-
-                    </div>
-                `;
-
-        return `
-            <article class="${className}">
-
-                ${renderSceneHeading(
-                    episode,
-                    number
-                )}
-
-                <div class="narration-card">
-
-                    ${
-                        episode.lines.map(
-                            function (text) {
-
-                                return `
-                                    <div class="narration-line">
-
-                                        <p>
-                                            ${escapeHtml(text)}
-                                        </p>
-
-                                    </div>
-                                `;
-                            }
-                        ).join("")
-                    }
-
-                    <div class="narration-line">
-
-                        <p>
-                            <strong>
-                                합·충·형·파·해
-                            </strong>
-                        </p>
-
-                        <div class="relation-list">
-                            ${relationsHtml}
-                        </div>
-
-                    </div>
-
-                    <div class="narration-line">
-
-                        <p>
-                            <strong>
-                                신살 이야기
-                            </strong>
-                        </p>
-
-                        <div class="shinsal-list">
-                            ${shinsalHtml}
-                        </div>
-
-                    </div>
-
-                    ${renderEvidence(
-                        episode.evidence
-                    )}
-
-                </div>
-
-            </article>
-        `;
-    }
-
-    function renderLuckEpisode(
-        episode,
-        number,
-        className
-    ) {
-
-        const fortunes =
-            arrayOrEmpty(
-                episode.luck.decadeFortunes
-            );
-
-        const timeline =
-            fortunes.length
-
-                ? fortunes.map(
-                    renderDecadeFortune
-                ).join("")
-
-                : `
-                    <div class="relation-item">
-
-                        <strong>
-                            대운 정보 없음
-                        </strong>
-
-                        <p>
-                            서버 응답에 대운 목록이 포함되지 않았습니다.
-                        </p>
-
-                    </div>
-                `;
-
-        return `
-            <article class="${className}">
-
-                ${renderSceneHeading(
-                    episode,
-                    number
-                )}
-
-                <div class="narration-card">
-
-                    ${
-                        episode.lines.map(
-                            function (text) {
-
-                                return `
-                                    <div class="narration-line">
-
-                                        <p>
-                                            ${escapeHtml(text)}
-                                        </p>
-
-                                    </div>
-                                `;
-                            }
-                        ).join("")
-                    }
-
-                    <div class="narration-line">
-
-                        <p>
-                            <strong>
-                                대운의 시간표
-                            </strong>
-                        </p>
-
-                        <div class="luck-timeline">
-                            ${timeline}
-                        </div>
-
-                    </div>
-
-                    ${renderEvidence(
-                        episode.evidence
-                    )}
-
-                </div>
-
-            </article>
-        `;
-    }
-
-    function renderDecadeFortune(
-        decade
-    ) {
-
-        const years =
-            arrayOrEmpty(
-                decade.yearlyFortunes
-            );
-
-        const yearHtml =
-            years.length
-
-                ? years.map(
-                    function (year) {
-
-                        return `
-                            <div class="year-card">
-
-                                <strong>
-                                    ${escapeHtml(year.year)}년
-                                    ·
-                                    ${escapeHtml(year.ganZhiKorean)}
-                                </strong>
-
-                                ${escapeHtml(year.age)}세
-                                ·
-                                ${escapeHtml(year.tenGod)}
-
-                                <br>
-
-                                공망:
-                                ${escapeHtml(year.xunKong || "-")}
-
-                            </div>
-                        `;
-                    }
-                ).join("")
-
-                : `
-                    <div class="year-card">
-
-                        <strong>
-                            세운 정보 없음
-                        </strong>
-
-                        연도별 데이터가 없습니다.
-
-                    </div>
-                `;
-
-        return `
-            <details class="luck-block ${
-                decade.current
-                    ? "is-current"
-                    : ""
-            }"
-            ${
-                decade.current
-                    ? "open"
-                    : ""
-            }>
-
-                <summary>
-
-                    <strong>
-                        ${escapeHtml(decade.ganZhiKorean)}
-                        대운
-                    </strong>
-
-                    <span>
-
-                        ${escapeHtml(decade.startAge)}세
-                        ~
-                        ${escapeHtml(decade.endAge)}세
-
-                        <br>
-
-                        ${escapeHtml(decade.startYear)}
-                        ~
-                        ${escapeHtml(decade.endYear)}
-
-                    </span>
-
-                </summary>
-
-                <div class="year-grid">
-                    ${yearHtml}
-                </div>
-
-            </details>
-        `;
-    }
-
-    function renderLedgerEpisode(
-        episode,
-        number,
-        className
-    ) {
-
-        const calendar =
-            episode.calendar
-            || {};
-
-        const structure =
-            episode.structure
-            || {};
-
-        const strength =
-            episode.strength
-            || {};
-
-        return `
-            <article class="${className}">
-
-                ${renderSceneHeading(
-                    episode,
-                    number
-                )}
-
-                <div class="narration-card">
-
-                    ${
-                        episode.lines.map(
-                            function (text) {
-
-                                return `
-                                    <div class="narration-line">
-
-                                        <p>
-                                            ${escapeHtml(text)}
-                                        </p>
-
-                                    </div>
-                                `;
-                            }
-                        ).join("")
-                    }
-
-                    <details class="story-note">
-
-                        <summary>
-
-                            <div>
-
-                                <strong>
-                                    사주팔자 장부 펼치기
-                                </strong>
-
-                                <small>
-                                    년주·월주·일주·시주
-                                </small>
-
-                            </div>
-
-                            <span class="story-note-arrow">
-                                ⌄
-                            </span>
-
-                        </summary>
-
-                        <div class="story-note-body">
-
-                            ${renderPillarBoard(
-                                episode.pillars
-                            )}
-
-                        </div>
-
-                    </details>
-
-                    <details class="story-note">
-
-                        <summary>
-
-                            <div>
-
-                                <strong>
-                                    달력과 기본 계산 기록
-                                </strong>
-
-                                <small>
-                                    양력·음력·계산 기준
-                                </small>
-
-                            </div>
-
-                            <span class="story-note-arrow">
-                                ⌄
-                            </span>
-
-                        </summary>
-
-                        <div class="story-note-body">
-
-                            <div class="secret-ledger">
-
-                                ${ledgerRow(
-                                    "입력 달력",
-                                    calendar.inputCalendarType
-                                )}
-
-                                ${ledgerRow(
-                                    "양력",
-                                    calendar.solarDate
-                                )}
-
-                                ${ledgerRow(
-                                    "음력",
-                                    calendar.lunarDate
-                                )}
-
-                                ${ledgerRow(
-                                    "태어난 시간",
-                                    calendar.birthTime
-                                )}
-
-                                ${ledgerRow(
-                                    "계산 기준",
-                                    calendar.calculationStandard
-                                )}
-
-                            </div>
-
-                        </div>
-
-                    </details>
-
-                    <details class="story-note">
-
-                        <summary>
-
-                            <div>
-
-                                <strong>
-                                    신강신약·용신 장부
-                                </strong>
-
-                                <small>
-                                    일간의 힘과 보완 방향
-                                </small>
-
-                            </div>
-
-                            <span class="story-note-arrow">
-                                ⌄
-                            </span>
-
-                        </summary>
-
-                        <div class="story-note-body">
-
-                            <div class="secret-ledger">
-
-                                ${ledgerRow(
-                                    "보조 점수",
-
-                                    strength.score !== undefined
-                                        ? strength.score + "점"
-                                        : "-"
-                                )}
-
-                                ${ledgerRow(
-                                    "판정",
-                                    strength.classification
-                                )}
-
-                                ${ledgerRow(
-                                    "일간 오행",
-                                    strength.dayMasterElement
-                                )}
-
-                                ${ledgerRow(
-                                    "용신 보조값",
-                                    strength.usefulGod
-                                )}
-
-                                ${ledgerRow(
-                                    "희신 보조값",
-                                    strength.favorableGod
-                                )}
-
-                                ${ledgerRow(
-                                    "기신 보조값",
-                                    strength.unfavorableGod
-                                )}
-
-                                ${ledgerRow(
-                                    "참고",
-                                    strength.note
-                                )}
-
-                            </div>
-
-                        </div>
-
-                    </details>
-
-                    <details class="story-note">
-
-                        <summary>
-
-                            <div>
-
-                                <strong>
-                                    태원·태식·명궁·신궁
-                                </strong>
-
-                                <small>
-                                    전문 보조정보
-                                </small>
-
-                            </div>
-
-                            <span class="story-note-arrow">
-                                ⌄
-                            </span>
-
-                        </summary>
-
-                        <div class="story-note-body">
-
-                            <div class="secret-ledger">
-
-                                ${ledgerRow(
-                                    "태원",
-
-                                    joinStructure(
-                                        structure.fetalOriginKorean,
-                                        structure.fetalOrigin,
-                                        structure.fetalOriginNaYin
-                                    )
-                                )}
-
-                                ${ledgerRow(
-                                    "태식",
-
-                                    joinStructure(
-                                        structure.fetalBreathKorean,
-                                        structure.fetalBreath,
-                                        structure.fetalBreathNaYin
-                                    )
-                                )}
-
-                                ${ledgerRow(
-                                    "명궁",
-
-                                    joinStructure(
-                                        structure.lifePalaceKorean,
-                                        structure.lifePalace
-                                    )
-                                )}
-
-                                ${ledgerRow(
-                                    "신궁",
-
-                                    joinStructure(
-                                        structure.bodyPalaceKorean,
-                                        structure.bodyPalace
-                                    )
-                                )}
-
-                                ${ledgerRow(
-                                    "참고",
-                                    structure.note
-                                )}
-
-                            </div>
-
-                        </div>
-
-                    </details>
 
                 </div>
 
@@ -5233,213 +4041,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             </details>
         `;
-    }
-
-    function renderElementBoard(
-        items
-    ) {
-
-        if (!items.length) {
-
-            return `
-                <div class="narration-line">
-
-                    <p>
-                        오행 분포 정보가 없습니다.
-                    </p>
-
-                </div>
-            `;
-        }
-
-        const rows =
-            items.map(
-                function (item) {
-
-                    const percentage =
-                        Number(
-                            item.percentage
-                        )
-                        || 0;
-
-                    const width =
-                        Math.max(
-                            0,
-
-                            Math.min(
-                                100,
-                                percentage
-                            )
-                        );
-
-                    return `
-                        <div class="element-row">
-
-                            <strong>
-                                ${escapeHtml(item.name)}
-                            </strong>
-
-                            <div class="element-track">
-
-                                <div class="element-value"
-                                     style="width:${width}%">
-                                </div>
-
-                            </div>
-
-                            <span>
-                                ${percentage}%
-                            </span>
-
-                        </div>
-                    `;
-                }
-            ).join("");
-
-        return `
-            <div class="narration-line">
-
-                <p>
-                    <strong>
-                        오행의 분포
-                    </strong>
-                </p>
-
-                <div class="element-board">
-                    ${rows}
-                </div>
-
-            </div>
-        `;
-    }
-
-    function renderPillarBoard(
-        pillars
-    ) {
-
-        if (!pillars.length) {
-
-            return `
-                <div class="relation-item">
-
-                    <strong>
-                        사주팔자 정보 없음
-                    </strong>
-
-                    <p>
-                        서버 응답에 기둥 데이터가 없습니다.
-                    </p>
-
-                </div>
-            `;
-        }
-
-        return `
-            <div class="pillar-board">
-
-                ${
-                    pillars.map(
-                        function (pillar) {
-
-                            if (!pillar.known) {
-
-                                return `
-                                    <div class="pillar-mini">
-
-                                        <span>
-                                            ${escapeHtml(pillar.type)}
-                                        </span>
-
-                                        <strong>
-                                            ?
-                                        </strong>
-
-                                        <small>
-                                            시간 미상
-                                        </small>
-
-                                    </div>
-                                `;
-                            }
-
-                            return `
-                                <div class="pillar-mini">
-
-                                    <span>
-                                        ${escapeHtml(pillar.type)}
-                                    </span>
-
-                                    <strong>
-                                        ${escapeHtml(pillar.ganZhi)}
-                                    </strong>
-
-                                    <small>
-                                        ${escapeHtml(pillar.ganZhiKorean)}
-                                    </small>
-
-                                </div>
-                            `;
-                        }
-                    ).join("")
-                }
-
-            </div>
-        `;
-    }
-
-    function ledgerRow(
-        label,
-        value
-    ) {
-
-        return `
-            <div class="ledger-row">
-
-                <span>
-                    ${escapeHtml(label)}
-                </span>
-
-                <strong>
-                    ${escapeHtml(
-                        safeText(
-                            value,
-                            "-"
-                        )
-                    )}
-                </strong>
-
-            </div>
-        `;
-    }
-
-    function joinStructure(
-        korean,
-        original,
-        extra
-    ) {
-
-        const main =
-            korean
-
-                ? korean
-                + (
-                    original
-                        ? " (" + original + ")"
-                        : ""
-                )
-
-                : safeText(
-                    original,
-                    "시간 미상"
-                );
-
-        return extra
-
-            ? main
-            + " · "
-            + extra
-
-            : main;
     }
 
     function bindStoryNotes() {
@@ -5644,124 +4245,6 @@ document.addEventListener("DOMContentLoaded", function () {
             : fallback;
     }
 
-    function getPillarText(
-        pillars,
-        type
-    ) {
-
-        const pillar =
-            pillars.find(
-                function (item) {
-
-                    return item.type
-                        === type;
-                }
-            );
-
-        if (
-            !pillar
-            || !pillar.known
-        ) {
-
-            return "시간 미상";
-        }
-
-        return safeText(
-            pillar.ganZhiKorean,
-            pillar.ganZhi
-        );
-    }
-
-    function evidenceItem(
-        label,
-        value
-    ) {
-
-        return {
-            label: label,
-
-            value:
-                safeText(
-                    value,
-                    "-"
-                )
-        };
-    }
-
-    function percentageText(
-        value
-    ) {
-
-        const number =
-            Number(value);
-
-        return Number.isFinite(
-            number
-        )
-
-            ? number + "%"
-
-            : "-";
-    }
-
-    function firstSentence(
-        text,
-        maximumLength
-    ) {
-
-        const normalized =
-            safeText(text)
-                .replace(
-                    /\s+/g,
-                    " "
-                )
-                .trim();
-
-        if (
-            normalized.length
-            <= maximumLength
-        ) {
-
-            return normalized;
-        }
-
-        const marks = [
-            ".",
-            "!",
-            "?",
-            "。",
-            "！",
-            "？"
-        ];
-
-        for (
-            let index = 0;
-            index < Math.min(
-                normalized.length,
-                maximumLength
-            );
-            index += 1
-        ) {
-
-            if (
-                marks.includes(
-                    normalized.charAt(index)
-                )
-            ) {
-
-                return normalized.substring(
-                    0,
-                    index + 1
-                );
-            }
-        }
-
-        return normalized.substring(
-            0,
-            maximumLength
-        ).trim() + "…";
-    }
-
     function arrayOrEmpty(
         value
     ) {
@@ -5844,6 +4327,52 @@ document.addEventListener("DOMContentLoaded", function () {
                     "서버 응답을 확인할 수 없습니다."
             };
         }
+    }
+
+    function firstSentence(
+        text,
+        maximumLength
+    ) {
+
+        const normalized =
+            safeText(text)
+                .replace(
+                    /\s+/g,
+                    " "
+                )
+                .trim();
+
+        if (
+            normalized.length
+            <= maximumLength
+        ) {
+
+            return normalized;
+        }
+
+        return normalized.substring(
+            0,
+            maximumLength
+        ).trim() + "…";
+    }
+
+    function joinNonEmpty(
+        values,
+        separator
+    ) {
+
+        return values
+            .filter(
+                function (value) {
+
+                    return value !== undefined
+                        && value !== null
+                        && value !== "";
+                }
+            )
+            .join(
+                separator
+            );
     }
 
     function escapeHtml(

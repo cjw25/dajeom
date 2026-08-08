@@ -1,7 +1,7 @@
 package com.dajeom.controller;
 
 import com.dajeom.dto.SajuAnalysisRequest;
-import com.dajeom.dto.TraditionalSajuAnalysisResponse;
+import com.dajeom.dto.SajuAnalysisResponse;
 import com.dajeom.service.SajuAnalysisService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -11,10 +11,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 새로운 정통 종합사주 계산 API Controller다.
+ * 사주 분석 API Controller.
  *
- * /api/saju/calculate
- * 요청을 받아 새로운 명리 계산 엔진을 실행한다.
+ * Controller 역할:
+ *
+ * - Request 수신
+ * - Validation
+ * - Service 호출
+ * - Response 반환
+ *
+ * 명리 계산 로직은
+ * Controller에 작성하지 않는다.
  */
 @RestController
 @RequestMapping("/api/saju")
@@ -26,36 +33,30 @@ public class SajuController {
     public SajuController(
             SajuAnalysisService sajuAnalysisService
     ) {
+
         this.sajuAnalysisService =
                 sajuAnalysisService;
     }
 
     /**
-     * 정통 종합사주 전체 분석
+     * 사주 전체 분석.
      *
-     * 원국
-     * 오행
-     * 십성
-     * 신강·신약
-     * 구조
-     * 용신
-     * 대운
-     * 세운
-     * 운 상호작용
-     * 13개 분야 해석 신호
-     * 최종 종합 보고서
+     * POST
+     * /api/saju/calculate
      */
     @PostMapping("/calculate")
-    public ResponseEntity<TraditionalSajuAnalysisResponse> calculate(
+    public ResponseEntity<SajuAnalysisResponse>
+    calculate(
             @Valid
             @RequestBody
             SajuAnalysisRequest request
     ) {
 
-        TraditionalSajuAnalysisResponse response =
-                sajuAnalysisService.analyze(
-                        request
-                );
+        SajuAnalysisResponse response =
+                sajuAnalysisService
+                        .analyze(
+                                request
+                        );
 
         return ResponseEntity.ok(
                 response

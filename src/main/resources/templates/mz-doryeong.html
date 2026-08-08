@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color"
+          content="#201627">
+
+    <title>MZ 천명도령 - 다점</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/mz-doryeong.css}"
+          href="/css/mz-doryeong.css">
+
+</head>
+
+<body>
+
+<div class="mz-app">
+
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+    <header class="mz-header">
+
+        <button type="button"
+                id="backButton"
+                class="header-button"
+                aria-label="이전">
+            ‹
+        </button>
+
+        <div class="header-copy">
+
+            <strong>
+                MZ 천명도령
+            </strong>
+
+            <span id="headerStep">
+                정통 종합사주
+            </span>
+
+        </div>
+
+        <button type="button"
+                id="homeButton"
+                class="header-button"
+                aria-label="홈">
+            ⌂
+        </button>
+
+    </header>
+
+
+    <main>
+
+        <!-- =====================================================
+             INTRO
+             ===================================================== -->
+        <section class="mz-screen is-active"
+                 data-screen="intro">
+
+            <div class="intro-page">
+
+                <div class="character-visual">
+
+                    <div class="character-aura">
+                    </div>
+
+                    <img class="character-image character-idle"
+                         th:src="@{/img/saju-character.png}"
+                         src="/img/saju-character.png"
+                         onerror="this.onerror=null; this.src='/img/saju-character.png';"
+                         alt="MZ 천명도령">
+
+                    <span class="character-spark spark-one">
+                        ✦
+                    </span>
+
+                    <span class="character-spark spark-two">
+                        ✧
+                    </span>
+
+                    <span class="character-spark spark-three">
+                        ✦
+                    </span>
+
+                </div>
+
+
+                <div class="intro-content">
+
+                    <span class="eyebrow">
+                        MZ CHEONMYEONG
+                    </span>
+
+                    <h1>
+                        복잡한 사주,<br>
+                        내가 쉽게 풀어줄게요
+                    </h1>
+
+                    <p>
+                        원국과 대운·세운을 계산한 뒤
+                        지금의 삶에서 어떤 흐름으로 나타나는지
+                        차례대로 이야기해드립니다.
+                    </p>
+
+
+                    <div class="intro-bubble">
+
+                        <strong>
+                            MZ 천명도령
+                        </strong>
+
+                        <p>
+                            기본 성향부터 시작해서 지나온 흐름,
+                            인간관계, 연애, 재물, 직업 그리고
+                            올해와 앞으로의 흐름까지 순서대로 볼게요.
+                        </p>
+
+                    </div>
+
+
+                    <button type="button"
+                            class="primary-button"
+                            data-go="input">
+                        내 사주 보기
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             INPUT
+             ===================================================== -->
+        <section class="mz-screen"
+                 data-screen="input">
+
+            <div class="content-page">
+
+                <div class="page-heading">
+
+                    <span class="eyebrow dark">
+                        STEP 01
+                    </span>
+
+                    <h1>
+                        출생정보를 입력해 주세요
+                    </h1>
+
+                    <p>
+                        입력한 시간을 임의로 보정하지 않고 그대로 사용합니다.
+                    </p>
+
+                </div>
+
+
+                <form id="sajuInputForm"
+                      novalidate>
+
+                    <div class="form-card">
+
+                        <!-- 이름 -->
+                        <div class="field-group">
+
+                            <label class="field-label"
+                                   for="nameInput">
+                                상담에서 사용할 이름
+                            </label>
+
+                            <input id="nameInput"
+                                   class="text-input"
+                                   type="text"
+                                   maxlength="20"
+                                   autocomplete="name"
+                                   placeholder="이름 또는 닉네임">
+
+                        </div>
+
+
+                        <!-- 양력 / 음력 -->
+                        <fieldset class="field-group">
+
+                            <legend class="field-label">
+                                달력 구분
+                            </legend>
+
+                            <div class="segment-control">
+
+                                <button type="button"
+                                        class="segment-button is-active"
+                                        data-calendar="SOLAR">
+                                    양력
+                                </button>
+
+                                <button type="button"
+                                        class="segment-button"
+                                        data-calendar="LUNAR">
+                                    음력
+                                </button>
+
+                            </div>
+
+                        </fieldset>
+
+
+                        <!-- 윤달 -->
+                        <div id="lunarLeapWrap"
+                             class="lunar-option is-hidden">
+
+                            <label>
+
+                                <input id="lunarLeapMonth"
+                                       type="checkbox">
+
+                                <span>
+                                    윤달입니다
+                                </span>
+
+                            </label>
+
+                            <small>
+                                음력 생일이 윤달인 경우에만 체크하세요.
+                            </small>
+
+                        </div>
+
+
+                        <!-- 성별 -->
+                        <fieldset class="field-group">
+
+                            <legend class="field-label">
+                                성별
+                            </legend>
+
+                            <div class="segment-control">
+
+                                <button type="button"
+                                        class="segment-button"
+                                        data-gender="MALE">
+                                    남성
+                                </button>
+
+                                <button type="button"
+                                        class="segment-button"
+                                        data-gender="FEMALE">
+                                    여성
+                                </button>
+
+                            </div>
+
+                        </fieldset>
+
+
+                        <!-- 생년월일 -->
+                        <fieldset class="field-group">
+
+                            <legend class="field-label">
+                                생년월일
+                            </legend>
+
+                            <div class="date-grid">
+
+                                <label>
+
+                                    <span>
+                                        연도
+                                    </span>
+
+                                    <input id="birthYear"
+                                           class="text-input numeric-input"
+                                           type="text"
+                                           inputmode="numeric"
+                                           maxlength="4"
+                                           placeholder="1993">
+
+                                </label>
+
+
+                                <label>
+
+                                    <span>
+                                        월
+                                    </span>
+
+                                    <input id="birthMonth"
+                                           class="text-input numeric-input"
+                                           type="text"
+                                           inputmode="numeric"
+                                           maxlength="2"
+                                           placeholder="08">
+
+                                </label>
+
+
+                                <label>
+
+                                    <span>
+                                        일
+                                    </span>
+
+                                    <input id="birthDay"
+                                           class="text-input numeric-input"
+                                           type="text"
+                                           inputmode="numeric"
+                                           maxlength="2"
+                                           placeholder="24">
+
+                                </label>
+
+                            </div>
+
+                        </fieldset>
+
+
+                        <!-- 출생시간 -->
+                        <fieldset class="field-group">
+
+                            <div class="field-title-row">
+
+                                <legend class="field-label">
+                                    출생시간
+                                </legend>
+
+                                <label class="unknown-time-label">
+
+                                    <input id="birthTimeUnknown"
+                                           type="checkbox">
+
+                                    <span>
+                                        시간 모름
+                                    </span>
+
+                                </label>
+
+                            </div>
+
+
+                            <div id="timeInputWrap"
+                                 class="time-grid">
+
+                                <label>
+
+                                    <span>
+                                        시
+                                    </span>
+
+                                    <input id="birthHour"
+                                           class="text-input numeric-input"
+                                           type="text"
+                                           inputmode="numeric"
+                                           maxlength="2"
+                                           placeholder="07">
+
+                                </label>
+
+                                <strong>
+                                    :
+                                </strong>
+
+                                <label>
+
+                                    <span>
+                                        분
+                                    </span>
+
+                                    <input id="birthMinute"
+                                           class="text-input numeric-input"
+                                           type="text"
+                                           inputmode="numeric"
+                                           maxlength="2"
+                                           placeholder="33">
+
+                                </label>
+
+                            </div>
+
+
+                            <small class="field-help">
+                                24시간 기준입니다.
+                                시간을 모르면 시주를 임의로 생성하지 않습니다.
+                            </small>
+
+                        </fieldset>
+
+                    </div>
+
+
+                    <p id="inputError"
+                       class="error-message">
+                    </p>
+
+
+                    <button type="submit"
+                            class="primary-button">
+                        입력정보 확인
+                    </button>
+
+                </form>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             REVIEW
+             ===================================================== -->
+        <section class="mz-screen"
+                 data-screen="review">
+
+            <div class="content-page">
+
+                <div class="page-heading">
+
+                    <span class="eyebrow dark">
+                        STEP 02
+                    </span>
+
+                    <h1>
+                        이 정보가 맞나요?
+                    </h1>
+
+                    <p>
+                        확인하면 바로 사주 분석을 시작합니다.
+                    </p>
+
+                </div>
+
+
+                <div class="review-card">
+
+                    <div>
+                        <span>이름</span>
+                        <strong id="reviewName">-</strong>
+                    </div>
+
+                    <div>
+                        <span>성별</span>
+                        <strong id="reviewGender">-</strong>
+                    </div>
+
+                    <div>
+                        <span>달력</span>
+                        <strong id="reviewCalendar">-</strong>
+                    </div>
+
+                    <div id="reviewLeapRow"
+                         class="is-hidden">
+
+                        <span>음력 구분</span>
+                        <strong id="reviewLeap">평달</strong>
+
+                    </div>
+
+                    <div>
+                        <span>생년월일</span>
+                        <strong id="reviewBirthDate">-</strong>
+                    </div>
+
+                    <div>
+                        <span>출생시간</span>
+                        <strong id="reviewBirthTime">-</strong>
+                    </div>
+
+                    <div>
+                        <span>올해 운세</span>
+                        <strong id="reviewCurrentYear">-</strong>
+                    </div>
+
+                </div>
+
+
+                <div class="button-stack">
+
+                    <button type="button"
+                            class="secondary-button"
+                            data-go="input">
+                        수정하기
+                    </button>
+
+                    <button type="button"
+                            id="analyzeButton"
+                            class="primary-button">
+                        MZ 천명도령에게 물어보기
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             LOADING
+             ===================================================== -->
+        <section class="mz-screen"
+                 data-screen="loading">
+
+            <div class="loading-page">
+
+                <div class="loading-character">
+
+                    <div class="character-aura">
+                    </div>
+
+                    <img class="character-image character-analyzing"
+                         th:src="@{/img/mz-doryeong-card.png}"
+                         src="/img/mz-doryeong-card.png"
+                         onerror="this.onerror=null; this.src='/img/saju-character.png';"
+                         alt="분석 중인 MZ 천명도령">
+
+                </div>
+
+
+                <div class="loading-content">
+
+                    <span class="eyebrow dark">
+                        ANALYZING
+                    </span>
+
+                    <h1>
+                        사주를 보고 있습니다
+                    </h1>
+
+                    <p id="loadingMessage">
+                        출생정보를 확인하고 있습니다.
+                    </p>
+
+
+                    <div class="progress-track">
+
+                        <div id="progressBar"
+                             class="progress-bar">
+                        </div>
+
+                    </div>
+
+
+                    <div class="progress-meta">
+
+                        <span id="progressLabel">
+                            출생정보 확인
+                        </span>
+
+                        <strong id="progressPercent">
+                            0%
+                        </strong>
+
+                    </div>
+
+
+                    <div class="loading-steps">
+
+                        <div class="loading-step is-active"
+                             data-loading-step="0">
+
+                            <strong>1</strong>
+                            <span>출생정보 확인</span>
+
+                        </div>
+
+                        <div class="loading-step"
+                             data-loading-step="1">
+
+                            <strong>2</strong>
+                            <span>사주팔자 계산</span>
+
+                        </div>
+
+                        <div class="loading-step"
+                             data-loading-step="2">
+
+                            <strong>3</strong>
+                            <span>대운·세운 분석</span>
+
+                        </div>
+
+                        <div class="loading-step"
+                             data-loading-step="3">
+
+                            <strong>4</strong>
+                            <span>11개 상담 정리</span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             RESULT
+             보고서 제거.
+             캐릭터가 11개 상담을 순서대로 직접 말한다.
+             ===================================================== -->
+        <section class="mz-screen"
+                 data-screen="result">
+
+            <div class="consultation-stage">
+
+                <!-- 현재 상담 진행 -->
+                <div class="consultation-progress-header">
+
+                    <div>
+
+                        <span id="currentConsultationNumber">
+                            01
+                        </span>
+
+                        <div>
+
+                            <small>
+                                NOW TALKING
+                            </small>
+
+                            <strong id="currentConsultationTitle">
+                                나의 기본 성향
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                    <span id="consultationProgressText">
+                        1 / 11
+                    </span>
+
+                </div>
+
+
+                <!-- 11단계 진행바 -->
+                <div class="consultation-progress-track">
+
+                    <div id="consultationProgressBar"
+                         class="consultation-progress-value">
+                    </div>
+
+                </div>
+
+
+                <!-- 캐릭터 -->
+                <div id="resultCharacterWrap"
+                     class="result-character-wrap">
+
+                    <div class="character-aura result-aura">
+                    </div>
+
+                    <img id="resultCharacterImage"
+                         class="result-character-image"
+                         th:src="@{/img/mz-doryeong-card.png}"
+                         src="/img/mz-doryeong-card.png"
+                         onerror="this.onerror=null; this.src='/img/saju-character.png';"
+                         alt="말하고 있는 MZ 천명도령">
+
+                    <span class="character-spark spark-one">
+                        ✦
+                    </span>
+
+                    <span class="character-spark spark-two">
+                        ✧
+                    </span>
+
+                </div>
+
+
+                <!-- 말풍선 -->
+                <div class="character-dialogue">
+
+                    <div class="speaker-row">
+
+                        <span class="speaker-name">
+                            MZ 천명도령
+                        </span>
+
+                        <span id="speechStatus"
+                              class="speech-status">
+                            자동 재생 준비
+                        </span>
+
+                    </div>
+
+                    <p id="characterSpeech">
+                        잠시만 기다려주세요.
+                    </p>
+
+                </div>
+
+
+                <!-- 컨트롤 -->
+                <div class="voice-controls">
+
+                    <button type="button"
+                            id="pauseVoiceButton"
+                            class="control-button">
+                        일시정지
+                    </button>
+
+                    <button type="button"
+                            id="replayVoiceButton"
+                            class="control-button">
+                        현재 운세 다시 듣기
+                    </button>
+
+                </div>
+
+
+                <!-- 카테고리 순서 -->
+                <div id="consultationSequence"
+                     class="consultation-sequence">
+
+                    <button type="button"
+                            data-category="PERSONALITY">
+                        성향
+                    </button>
+
+                    <button type="button"
+                            data-category="PAST_LUCK">
+                        과거운
+                    </button>
+
+                    <button type="button"
+                            data-category="SOCIAL_RELATIONSHIP">
+                        대인관계
+                    </button>
+
+                    <button type="button"
+                            data-category="LOVE_STYLE">
+                        연애
+                    </button>
+
+                    <button type="button"
+                            data-category="PARTNER_LUCK">
+                        배우자
+                    </button>
+
+                    <button type="button"
+                            data-category="WEALTH">
+                        재물
+                    </button>
+
+                    <button type="button"
+                            data-category="CAREER">
+                        직업
+                    </button>
+
+                    <button type="button"
+                            data-category="LEGAL_RISK">
+                        분쟁
+                    </button>
+
+                    <button type="button"
+                            data-category="HEALTH_TENDENCY">
+                        건강
+                    </button>
+
+                    <button type="button"
+                            data-category="CURRENT_YEAR_LUCK">
+                        올해운
+                    </button>
+
+                    <button type="button"
+                            data-category="FUTURE_LUCK">
+                        미래운
+                    </button>
+
+                </div>
+
+
+                <!-- 모두 끝났을 때 -->
+                <div id="consultationComplete"
+                     class="consultation-complete is-hidden">
+
+                    <span>
+                        상담 완료
+                    </span>
+
+                    <strong>
+                        11개 운세 상담을 모두 들었습니다.
+                    </strong>
+
+                    <button type="button"
+                            id="restartConsultationButton"
+                            class="restart-button">
+                        처음부터 다시 듣기
+                    </button>
+
+                </div>
+
+
+                <div class="result-bottom-actions">
+
+                    <button type="button"
+                            id="retryButton"
+                            class="result-secondary-button">
+                        출생정보 수정
+                    </button>
+
+                    <button type="button"
+                            id="resultHomeButton"
+                            class="result-primary-button">
+                        메인으로
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <div id="toast"
+         class="toast"
+         role="status"
+         aria-live="polite">
+    </div>
+
+</div>
+
+
+<script th:src="@{/js/mz-doryeong.js}"
+        src="/js/mz-doryeong.js">
+</script>
+
+</body>
+</html>

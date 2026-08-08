@@ -1,5 +1,8 @@
 package com.dajeom.type;
 
+/**
+ * 음양.
+ */
 public enum YinYang {
 
     YANG("양", "陽"),

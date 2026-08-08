@@ -1,219 +1,160 @@
 package com.dajeom.engine;
 
-import com.dajeom.analyzer.BranchRelationAnalyzer;
-import com.dajeom.analyzer.DayMasterStrengthAnalyzer;
 import com.dajeom.analyzer.ElementStrengthAnalyzer;
-import com.dajeom.analyzer.RelationImpactAnalyzer;
-import com.dajeom.analyzer.StemRelationAnalyzer;
-import com.dajeom.analyzer.StructureAnalyzer;
-import com.dajeom.analyzer.UsefulGodAnalyzer;
-import com.dajeom.calculator.ElementDistributionCalculator;
-import com.dajeom.calculator.HiddenStemCalculator;
-import com.dajeom.calculator.TenGodCalculator;
-import com.dajeom.model.BranchRelation;
-import com.dajeom.model.ElementDistribution;
+import com.dajeom.analyzer.RelationAnalyzer;
+import com.dajeom.analyzer.StrengthAnalyzer;
 import com.dajeom.model.ElementStrength;
 import com.dajeom.model.FourPillars;
-import com.dajeom.model.HiddenStem;
 import com.dajeom.model.NatalChartAnalysis;
+import com.dajeom.model.NatalChartBaseAnalysis;
 import com.dajeom.model.RelationAnalysis;
-import com.dajeom.model.RelationImpactResult;
-import com.dajeom.model.StemRelation;
 import com.dajeom.model.StrengthAnalysis;
-import com.dajeom.model.StructureAnalysis;
-import com.dajeom.model.TenGodAssignment;
-import com.dajeom.model.UsefulGodAnalysis;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.util.Objects;
 
 /**
- * 사주 원국 분석을 통합 실행한다.
+ * 사주 원국의 통합 분석 Engine.
+ *
+ * FourPillars를 받아 지금까지 만든
+ * 원국 분석 계층을 순서대로 실행한다.
+ *
+ * 처리 흐름:
+ *
+ * FourPillars
+ *      ↓
+ * NatalChartBaseAnalysisEngine
+ *      ↓
+ * NatalChartBaseAnalysis
+ *      ↓
+ * ElementStrengthAnalyzer
+ *      ↓
+ * ElementStrength
+ *      ↓
+ * StrengthAnalyzer
+ *      ↓
+ * StrengthAnalysis
+ *
+ * 동시에:
+ *
+ * FourPillars
+ *      ↓
+ * RelationAnalyzer
+ *      ↓
+ * RelationAnalysis
+ *
+ * 최종:
+ *
+ * NatalChartAnalysis
+ *
+ * 이 Engine은 분석 결과를 조립하지만
+ * 직접적인 명리 공식이나 Rule을 구현하지 않는다.
  */
 @Component
 public class NatalChartAnalysisEngine {
 
-    private final HiddenStemCalculator
-            hiddenStemCalculator;
-
-    private final TenGodCalculator
-            tenGodCalculator;
-
-    private final ElementDistributionCalculator
-            elementDistributionCalculator;
+    private final NatalChartBaseAnalysisEngine
+            natalChartBaseAnalysisEngine;
 
     private final ElementStrengthAnalyzer
             elementStrengthAnalyzer;
 
-    private final StemRelationAnalyzer
-            stemRelationAnalyzer;
+    private final StrengthAnalyzer
+            strengthAnalyzer;
 
-    private final BranchRelationAnalyzer
-            branchRelationAnalyzer;
-
-    private final RelationImpactAnalyzer
-            relationImpactAnalyzer;
-
-    private final DayMasterStrengthAnalyzer
-            dayMasterStrengthAnalyzer;
-
-    private final StructureAnalyzer
-            structureAnalyzer;
-
-    private final UsefulGodAnalyzer
-            usefulGodAnalyzer;
+    private final RelationAnalyzer
+            relationAnalyzer;
 
     public NatalChartAnalysisEngine(
-            HiddenStemCalculator
-                    hiddenStemCalculator,
-
-            TenGodCalculator
-                    tenGodCalculator,
-
-            ElementDistributionCalculator
-                    elementDistributionCalculator,
-
+            NatalChartBaseAnalysisEngine
+                    natalChartBaseAnalysisEngine,
             ElementStrengthAnalyzer
                     elementStrengthAnalyzer,
-
-            StemRelationAnalyzer
-                    stemRelationAnalyzer,
-
-            BranchRelationAnalyzer
-                    branchRelationAnalyzer,
-
-            RelationImpactAnalyzer
-                    relationImpactAnalyzer,
-
-            DayMasterStrengthAnalyzer
-                    dayMasterStrengthAnalyzer,
-
-            StructureAnalyzer
-                    structureAnalyzer,
-
-            UsefulGodAnalyzer
-                    usefulGodAnalyzer
+            StrengthAnalyzer
+                    strengthAnalyzer,
+            RelationAnalyzer
+                    relationAnalyzer
     ) {
-        this.hiddenStemCalculator =
-                hiddenStemCalculator;
 
-        this.tenGodCalculator =
-                tenGodCalculator;
-
-        this.elementDistributionCalculator =
-                elementDistributionCalculator;
+        this.natalChartBaseAnalysisEngine =
+                natalChartBaseAnalysisEngine;
 
         this.elementStrengthAnalyzer =
                 elementStrengthAnalyzer;
 
-        this.stemRelationAnalyzer =
-                stemRelationAnalyzer;
+        this.strengthAnalyzer =
+                strengthAnalyzer;
 
-        this.branchRelationAnalyzer =
-                branchRelationAnalyzer;
-
-        this.relationImpactAnalyzer =
-                relationImpactAnalyzer;
-
-        this.dayMasterStrengthAnalyzer =
-                dayMasterStrengthAnalyzer;
-
-        this.structureAnalyzer =
-                structureAnalyzer;
-
-        this.usefulGodAnalyzer =
-                usefulGodAnalyzer;
+        this.relationAnalyzer =
+                relationAnalyzer;
     }
 
+    /**
+     * 계산된 사주팔자를 받아
+     * 원국 전체 분석을 수행한다.
+     */
     public NatalChartAnalysis analyze(
             FourPillars fourPillars
     ) {
-        List<HiddenStem> hiddenStems =
-                hiddenStemCalculator.calculate(
-                        fourPillars
-                );
 
-        List<TenGodAssignment>
-                tenGodAssignments =
-                tenGodCalculator.calculate(
-                        fourPillars,
-                        hiddenStems
-                );
+        Objects.requireNonNull(
+                fourPillars,
+                "사주 원국은 필수입니다."
+        );
 
-        ElementDistribution
-                elementDistribution =
-                elementDistributionCalculator.calculate(
-                        fourPillars,
-                        hiddenStems
-                );
+        /*
+         * 1.
+         * 십성 / 지장간 / 기본 오행 분석.
+         */
+        NatalChartBaseAnalysis baseAnalysis =
+                natalChartBaseAnalysisEngine
+                        .analyze(
+                                fourPillars
+                        );
 
+        /*
+         * 2.
+         * 실제 분석용 가중 오행 세력 계산.
+         */
         ElementStrength elementStrength =
-                elementStrengthAnalyzer.analyze(
-                        fourPillars,
-                        hiddenStems
-                );
+                elementStrengthAnalyzer
+                        .analyze(
+                                baseAnalysis
+                        );
 
-        List<StemRelation> stemRelations =
-                stemRelationAnalyzer.analyze(
-                        fourPillars
-                );
-
-        List<BranchRelation> branchRelations =
-                branchRelationAnalyzer.analyze(
-                        fourPillars
-                );
-
-        RelationAnalysis relationAnalysis =
-                new RelationAnalysis(
-                        stemRelations,
-                        branchRelations
-                );
-
-        RelationImpactResult relationImpact =
-                relationImpactAnalyzer.analyze(
-                        fourPillars
-                                .dayPillar()
-                                .stem()
-                                .getElement(),
-
-                        hiddenStems,
-
-                        relationAnalysis
-                );
-
+        /*
+         * 3.
+         * 계산된 오행 세력을 그대로 사용해서
+         * 일간 강약을 분석한다.
+         *
+         * ElementStrength를 다시 계산하지 않는다.
+         */
         StrengthAnalysis strengthAnalysis =
-                dayMasterStrengthAnalyzer.analyze(
-                        fourPillars,
-                        hiddenStems,
-                        elementStrength,
-                        relationImpact
-                );
+                strengthAnalyzer
+                        .analyze(
+                                baseAnalysis,
+                                elementStrength
+                        );
 
-        StructureAnalysis structureAnalysis =
-                structureAnalyzer.analyze(
-                        fourPillars,
-                        hiddenStems,
-                        tenGodAssignments,
-                        elementStrength,
-                        strengthAnalysis
-                );
+        /*
+         * 4.
+         * 천간/지지 관계 분석.
+         */
+        RelationAnalysis relationAnalysis =
+                relationAnalyzer
+                        .analyze(
+                                fourPillars
+                        );
 
-        UsefulGodAnalysis usefulGodAnalysis =
-                usefulGodAnalyzer.analyze(
-                        fourPillars,
-                        elementStrength,
-                        strengthAnalysis
-                );
-
+        /*
+         * 5.
+         * 원국 전체 결과를 하나로 통합.
+         */
         return new NatalChartAnalysis(
-                hiddenStems,
-                tenGodAssignments,
-                elementDistribution,
+                baseAnalysis,
                 elementStrength,
-                relationAnalysis,
                 strengthAnalysis,
-                structureAnalysis,
-                usefulGodAnalysis
+                relationAnalysis
         );
     }
 }

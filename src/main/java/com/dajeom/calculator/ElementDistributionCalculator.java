@@ -2,108 +2,132 @@ package com.dajeom.calculator;
 
 import com.dajeom.model.ElementDistribution;
 import com.dajeom.model.FourPillars;
-import com.dajeom.model.HiddenStem;
 import com.dajeom.model.Pillar;
 import com.dajeom.type.FiveElement;
 import org.springframework.stereotype.Component;
 
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
- * 사주 원국의 오행 원시 개수를 계산한다.
+ * 원국의 기본 오행 분포 계산기.
  *
- * 이 계산은 단순 분포 계산이다.
- * 월령, 통근, 투간, 계절 가중치는 적용하지 않는다.
+ * 현재 단계에서는:
+ *
+ * 천간의 오행
+ * +
+ * 지지의 대표 오행
+ *
+ * 만 집계한다.
+ *
+ * 지장간 가중치,
+ * 월령,
+ * 통근,
+ * 생조극설,
+ * 계절 세력 등은 포함하지 않는다.
+ *
+ * 따라서 이 결과를 그대로
+ * 신강·신약 판정에 사용하면 안 된다.
  */
 @Component
 public class ElementDistributionCalculator {
 
     public ElementDistribution calculate(
-            FourPillars fourPillars,
-            List<HiddenStem> hiddenStems
+            FourPillars fourPillars
     ) {
-        Map<FiveElement, Integer> visibleStemCounts =
-                createEmptyCounts();
 
-        Map<FiveElement, Integer> branchMainCounts =
-                createEmptyCounts();
-
-        Map<FiveElement, Integer> hiddenStemCounts =
-                createEmptyCounts();
-
-        List<Pillar> pillars = List.of(
-                fourPillars.yearPillar(),
-                fourPillars.monthPillar(),
-                fourPillars.dayPillar(),
-                fourPillars.hourPillar()
+        Objects.requireNonNull(
+                fourPillars,
+                "사주 원국은 필수입니다."
         );
 
-        for (Pillar pillar : pillars) {
-            increment(
-                    visibleStemCounts,
-                    pillar.stem().getElement()
-            );
+        EnumMap<
+                FiveElement,
+                Integer
+                > counts =
+                new EnumMap<>(
+                        FiveElement.class
+                );
 
-            increment(
-                    branchMainCounts,
-                    pillar.branch().getElement()
-            );
-        }
+        for (
+                FiveElement element
+                : FiveElement.values()
+        ) {
 
-        for (HiddenStem hiddenStem : hiddenStems) {
-            increment(
-                    hiddenStemCounts,
-                    hiddenStem.stem().getElement()
-            );
-        }
-
-        Map<FiveElement, Integer> eightCharacterCounts =
-                createEmptyCounts();
-
-        for (FiveElement element : FiveElement.values()) {
-            int visibleCount =
-                    visibleStemCounts.get(element);
-
-            int branchCount =
-                    branchMainCounts.get(element);
-
-            eightCharacterCounts.put(
+            counts.put(
                     element,
-                    visibleCount + branchCount
+                    0
+            );
+        }
+
+        countPillar(
+                counts,
+                fourPillars.yearPillar()
+        );
+
+        countPillar(
+                counts,
+                fourPillars.monthPillar()
+        );
+
+        countPillar(
+                counts,
+                fourPillars.dayPillar()
+        );
+
+        if (
+                fourPillars.hasHourPillar()
+        ) {
+
+            countPillar(
+                    counts,
+                    fourPillars.hourPillar()
             );
         }
 
         return new ElementDistribution(
-                visibleStemCounts,
-                branchMainCounts,
-                eightCharacterCounts,
-                hiddenStemCounts
+                counts
         );
     }
 
-    private Map<FiveElement, Integer> createEmptyCounts() {
-        EnumMap<FiveElement, Integer> counts =
-                new EnumMap<>(FiveElement.class);
+    /**
+     * 하나의 기둥에서:
+     *
+     * 천간 1개
+     * 지지 1개
+     *
+     * 두 오행을 집계한다.
+     */
+    private void countPillar(
+            Map<FiveElement, Integer> counts,
+            Pillar pillar
+    ) {
 
-        for (FiveElement element : FiveElement.values()) {
-            counts.put(element, 0);
-        }
+        increment(
+                counts,
+                pillar
+                        .stem()
+                        .getElement()
+        );
 
-        return counts;
+        increment(
+                counts,
+                pillar
+                        .branch()
+                        .getElement()
+        );
     }
 
     private void increment(
             Map<FiveElement, Integer> counts,
             FiveElement element
     ) {
-        counts.compute(
+
+        counts.merge(
                 element,
-                (key, currentValue) ->
-                        currentValue == null
-                                ? 1
-                                : currentValue + 1
+                1,
+                Integer::sum
         );
     }
 }

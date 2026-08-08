@@ -1,26 +1,43 @@
 package com.dajeom.type;
 
 /**
- * 사주 원국에서 천간 또는 지지가 위치하는 자리를 나타낸다.
+ * 사주 네 기둥의 위치.
  */
 public enum PillarPosition {
 
-    YEAR_STEM("년간"),
-    YEAR_BRANCH("년지"),
+    YEAR(
+            1,
+            "년주"
+    ),
 
-    MONTH_STEM("월간"),
-    MONTH_BRANCH("월지"),
+    MONTH(
+            2,
+            "월주"
+    ),
 
-    DAY_STEM("일간"),
-    DAY_BRANCH("일지"),
+    DAY(
+            3,
+            "일주"
+    ),
 
-    HOUR_STEM("시간"),
-    HOUR_BRANCH("시지");
+    HOUR(
+            4,
+            "시주"
+    );
 
+    private final int order;
     private final String koreanName;
 
-    PillarPosition(String koreanName) {
+    PillarPosition(
+            int order,
+            String koreanName
+    ) {
+        this.order = order;
         this.koreanName = koreanName;
+    }
+
+    public int getOrder() {
+        return order;
     }
 
     public String getKoreanName() {

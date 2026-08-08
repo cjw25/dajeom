@@ -1,54 +1,42 @@
 package com.dajeom.dto;
 
-import com.dajeom.model.DecadeLuck;
+import java.time.ZonedDateTime;
 
-import java.time.LocalDate;
-
+/**
+ * 대운 API 출력값.
+ *
+ * 출생시간 미상 등으로
+ * 정확한 대운 시작 계산이 불가능한 경우:
+ *
+ * calculationAvailable = false
+ *
+ * 이며 나머지 계산값은 null일 수 있다.
+ */
 public record DecadeLuckResponse(
-        int sequence,
-        PillarResponse pillar,
-        LocalDate startDate,
-        LocalDate endDate,
-        int startAge,
-        int endAge,
-        String stemTenGod,
-        String stemTenGodKorean,
-        String branchMainTenGod,
-        String branchMainTenGodKorean,
-        boolean current
+
+        String direction,
+
+        boolean calculationAvailable,
+
+        String startAge,
+
+        ZonedDateTime startDateTime,
+
+        Integer currentOrder,
+
+        PillarResponse currentPillar,
+
+        String currentStartAge,
+
+        String currentEndAge,
+
+        ZonedDateTime currentStartDateTime,
+
+        ZonedDateTime currentEndDateTime,
+
+        boolean beforeFirstDecadeLuck,
+
+        String unavailableReason
+
 ) {
-
-    public static DecadeLuckResponse from(
-            DecadeLuck luck
-    ) {
-        return new DecadeLuckResponse(
-                luck.sequence(),
-
-                PillarResponse.from(
-                        luck.pillar()
-                ),
-
-                luck.startDate(),
-
-                luck.endDate(),
-
-                luck.startAge(),
-
-                luck.endAge(),
-
-                luck.stemTenGod().name(),
-
-                luck
-                        .stemTenGod()
-                        .getKoreanName(),
-
-                luck.branchMainTenGod().name(),
-
-                luck
-                        .branchMainTenGod()
-                        .getKoreanName(),
-
-                luck.current()
-        );
-    }
 }

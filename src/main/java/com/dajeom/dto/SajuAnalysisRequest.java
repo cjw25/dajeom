@@ -2,52 +2,60 @@ package com.dajeom.dto;
 
 import com.dajeom.type.CalendarType;
 import com.dajeom.type.Gender;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Pattern;
 
-import java.time.LocalDate;
 import java.time.LocalTime;
 
 /**
- * 사주 계산 요청 객체다.
+ * 사주 분석 API 입력값.
+ *
+ * birthDate는 양력/음력을 모두 표현할 수 있도록
+ * 문자열 yyyy-MM-dd 형식으로 받는다.
+ *
+ * 실제 날짜 검증은 달력 종류에 따라
+ * SajuAnalysisService에서 수행한다.
  */
 public record SajuAnalysisRequest(
 
         @NotNull(
-                message = "양력 또는 음력을 선택해 주세요."
+                message = "양력/음력 구분은 필수입니다."
         )
         CalendarType calendarType,
 
-        @NotNull(
-                message = "생년월일을 입력해 주세요."
+        @NotBlank(
+                message = "생년월일은 필수입니다."
         )
-        @PastOrPresent(
-                message = "생년월일은 미래일 수 없습니다."
+        @Pattern(
+                regexp = "^\\d{4}-\\d{2}-\\d{2}$",
+                message = "생년월일은 yyyy-MM-dd 형식이어야 합니다."
         )
-        LocalDate birthDate,
+        String birthDate,
 
-        @NotNull(
-                message = "출생시간을 입력해 주세요."
-        )
         LocalTime birthTime,
 
+        boolean birthTimeUnknown,
+
         @NotNull(
-                message = "성별을 선택해 주세요."
+                message = "성별은 필수입니다."
         )
         Gender gender,
 
-        Boolean leapMonth,
+        /**
+         * calendarType = LUNAR일 때:
+         *
+         * false = 평달
+         * true = 윤달
+         *
+         * SOLAR에서는 반드시 false.
+         */
+        boolean leapMonth,
 
-        @Min(
-                value = 1900,
-                message = "대상 연도는 1900년 이상이어야 합니다."
-        )
-        @Max(
-                value = 2099,
-                message = "대상 연도는 2099년 이하여야 합니다."
+        @NotNull(
+                message = "분석 대상 연도는 필수입니다."
         )
         Integer targetYear
+
 ) {
 }

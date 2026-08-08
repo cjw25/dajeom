@@ -1,42 +1,32 @@
 package com.dajeom.dto;
 
-import com.dajeom.model.Pillar;
+import com.dajeom.type.FiveElement;
+import com.dajeom.type.YinYang;
 
 /**
- * 사주의 한 기둥을 프론트에 반환하는 객체다.
+ * 하나의 간지 출력값.
  */
 public record PillarResponse(
-        String stem,
-        String stemKorean,
-        String branch,
-        String branchKorean,
+
+        String koreanName,
+
         String chineseName,
-        String koreanName
+
+        String stemKoreanName,
+
+        String stemChineseName,
+
+        FiveElement stemElement,
+
+        YinYang stemYinYang,
+
+        String branchKoreanName,
+
+        String branchChineseName,
+
+        FiveElement branchElement,
+
+        YinYang branchYinYang
+
 ) {
-
-    public static PillarResponse from(
-            Pillar pillar
-    ) {
-        return new PillarResponse(
-                pillar
-                        .stem()
-                        .getChineseCharacter(),
-
-                pillar
-                        .stem()
-                        .getKoreanName(),
-
-                pillar
-                        .branch()
-                        .getChineseCharacter(),
-
-                pillar
-                        .branch()
-                        .getKoreanName(),
-
-                pillar.chineseName(),
-
-                pillar.koreanName()
-        );
-    }
 }

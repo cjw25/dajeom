@@ -9,8 +9,20 @@ import com.dajeom.model.NormalizedBirthData;
 import com.dajeom.model.Pillar;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 /**
- * 년주, 월주, 일주, 시주 계산기를 통합 실행한다.
+ * 사주 네 기둥을 조립하는 계산 엔진.
+ *
+ * 각 기둥의 실제 계산은 Calculator가 담당하고,
+ * 이 Engine은 계산 순서와 조합만 담당한다.
+ *
+ * 출생시간을 모르는 경우:
+ *
+ * 년주 = 계산
+ * 월주 = 계산
+ * 일주 = 계산
+ * 시주 = null
  */
 @Component
 public class FourPillarsCalculationEngine {
@@ -33,6 +45,7 @@ public class FourPillarsCalculationEngine {
             DayPillarCalculator dayPillarCalculator,
             HourPillarCalculator hourPillarCalculator
     ) {
+
         this.yearPillarCalculator =
                 yearPillarCalculator;
 
@@ -46,9 +59,19 @@ public class FourPillarsCalculationEngine {
                 hourPillarCalculator;
     }
 
+    /**
+     * 정규화된 출생정보를 이용해
+     * 사주 원국을 계산한다.
+     */
     public FourPillars calculate(
             NormalizedBirthData birthData
     ) {
+
+        Objects.requireNonNull(
+                birthData,
+                "출생정보는 필수입니다."
+        );
+
         Pillar yearPillar =
                 yearPillarCalculator.calculate(
                         birthData
@@ -56,7 +79,8 @@ public class FourPillarsCalculationEngine {
 
         Pillar monthPillar =
                 monthPillarCalculator.calculate(
-                        birthData
+                        birthData,
+                        yearPillar
                 );
 
         Pillar dayPillar =
@@ -65,10 +89,12 @@ public class FourPillarsCalculationEngine {
                 );
 
         Pillar hourPillar =
-                hourPillarCalculator.calculate(
-                        birthData,
-                        dayPillar
-                );
+                hourPillarCalculator
+                        .calculate(
+                                birthData,
+                                dayPillar
+                        )
+                        .orElse(null);
 
         return new FourPillars(
                 yearPillar,

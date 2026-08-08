@@ -1,152 +1,139 @@
 package com.dajeom.type;
 
-import java.util.Arrays;
-
+/**
+ * 십이지지.
+ *
+ * index는 자(子)를 0으로 시작한다.
+ */
 public enum EarthlyBranch {
 
-    JA(
+    ZI(
             0,
-            "子",
             "자",
+            "子",
             FiveElement.WATER,
             YinYang.YANG
     ),
 
-    CHUK(
+    CHOU(
             1,
-            "丑",
             "축",
+            "丑",
             FiveElement.EARTH,
             YinYang.YIN
     ),
 
-    IN(
+    YIN(
             2,
-            "寅",
             "인",
+            "寅",
             FiveElement.WOOD,
             YinYang.YANG
     ),
 
-    MYO(
+    MAO(
             3,
-            "卯",
             "묘",
+            "卯",
             FiveElement.WOOD,
             YinYang.YIN
     ),
 
-    JIN(
+    CHEN(
             4,
-            "辰",
             "진",
+            "辰",
             FiveElement.EARTH,
             YinYang.YANG
     ),
 
-    SA(
+    SI(
             5,
-            "巳",
             "사",
+            "巳",
             FiveElement.FIRE,
             YinYang.YIN
     ),
 
-    O(
+    WU(
             6,
-            "午",
             "오",
+            "午",
             FiveElement.FIRE,
             YinYang.YANG
     ),
 
-    MI(
+    WEI(
             7,
-            "未",
             "미",
+            "未",
             FiveElement.EARTH,
             YinYang.YIN
     ),
 
-    SIN(
+    SHEN(
             8,
-            "申",
             "신",
+            "申",
             FiveElement.METAL,
             YinYang.YANG
     ),
 
-    YU(
+    YOU(
             9,
-            "酉",
             "유",
+            "酉",
             FiveElement.METAL,
             YinYang.YIN
     ),
 
-    SUL(
+    XU(
             10,
-            "戌",
             "술",
+            "戌",
             FiveElement.EARTH,
             YinYang.YANG
     ),
 
-    HAE(
+    HAI(
             11,
-            "亥",
             "해",
+            "亥",
             FiveElement.WATER,
             YinYang.YIN
     );
 
     private final int index;
-    private final String chineseCharacter;
     private final String koreanName;
+    private final String chineseCharacter;
     private final FiveElement element;
     private final YinYang yinYang;
 
     EarthlyBranch(
             int index,
-            String chineseCharacter,
             String koreanName,
+            String chineseCharacter,
             FiveElement element,
             YinYang yinYang
     ) {
         this.index = index;
-        this.chineseCharacter = chineseCharacter;
         this.koreanName = koreanName;
+        this.chineseCharacter =
+                chineseCharacter;
         this.element = element;
         this.yinYang = yinYang;
-    }
-
-    public static EarthlyBranch fromIndex(int index) {
-        int normalizedIndex =
-                Math.floorMod(index, values().length);
-
-        return Arrays.stream(values())
-                .filter(branch ->
-                        branch.index == normalizedIndex
-                )
-                .findFirst()
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "유효하지 않은 지지 인덱스입니다: "
-                                        + index
-                        )
-                );
     }
 
     public int getIndex() {
         return index;
     }
 
-    public String getChineseCharacter() {
-        return chineseCharacter;
-    }
-
     public String getKoreanName() {
         return koreanName;
+    }
+
+    public String getChineseCharacter() {
+        return chineseCharacter;
     }
 
     public FiveElement getElement() {
@@ -155,5 +142,18 @@ public enum EarthlyBranch {
 
     public YinYang getYinYang() {
         return yinYang;
+    }
+
+    public static EarthlyBranch fromIndex(
+            int index
+    ) {
+
+        int normalizedIndex =
+                Math.floorMod(
+                        index,
+                        values().length
+                );
+
+        return values()[normalizedIndex];
     }
 }

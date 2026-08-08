@@ -1,30 +1,45 @@
 package com.dajeom.type;
 
 /**
- * 지장간에서 해당 천간이 차지하는 역할을 나타낸다.
+ * 지장간의 역할.
  *
- * MAIN:
- * 해당 지지의 중심 기운인 본기
- *
- * MIDDLE:
- * 본기 다음으로 작용하는 중기
- *
- * RESIDUAL:
- * 남아 있는 이전 계절의 기운인 여기
+ * 여기(餘氣)
+ * 중기(中氣)
+ * 정기(正氣)
  */
 public enum HiddenStemRole {
 
-    MAIN("본기"),
-    MIDDLE("중기"),
-    RESIDUAL("여기");
+    RESIDUAL(
+            "여기",
+            "餘氣"
+    ),
+
+    MIDDLE(
+            "중기",
+            "中氣"
+    ),
+
+    MAIN(
+            "정기",
+            "正氣"
+    );
 
     private final String koreanName;
+    private final String chineseName;
 
-    HiddenStemRole(String koreanName) {
+    HiddenStemRole(
+            String koreanName,
+            String chineseName
+    ) {
         this.koreanName = koreanName;
+        this.chineseName = chineseName;
     }
 
     public String getKoreanName() {
         return koreanName;
+    }
+
+    public String getChineseName() {
+        return chineseName;
     }
 }

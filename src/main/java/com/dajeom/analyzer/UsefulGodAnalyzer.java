@@ -1,367 +1,272 @@
 package com.dajeom.analyzer;
 
-import com.dajeom.model.ClimateAnalysis;
-import com.dajeom.model.ElementStrength;
-import com.dajeom.model.FourPillars;
-import com.dajeom.model.StrengthAnalysis;
+import com.dajeom.model.CombinationTransformationAnalysis;
+import com.dajeom.model.MediationAnalysis;
+import com.dajeom.model.MediationCase;
+import com.dajeom.model.NatalChartAnalysis;
+import com.dajeom.model.StructureAnalysis;
+import com.dajeom.model.TemperatureAnalysis;
 import com.dajeom.model.UsefulGodAnalysis;
-import com.dajeom.model.UsefulGodCandidate;
-import com.dajeom.type.ConfidenceLevel;
+import com.dajeom.rule.UsefulGodRule;
+import com.dajeom.type.AnalysisConfidence;
 import com.dajeom.type.FiveElement;
+import com.dajeom.type.StrengthLevel;
 import com.dajeom.type.UsefulGodMethod;
-import com.dajeom.type.UsefulGodType;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
 /**
- * 조후·억부·통관·병약 결과를 통합해
- * 용신·희신·기신 후보를 산출한다.
+ * 용신/희신/기신 후보 분석기.
+ *
+ * 현재 고려:
+ *
+ * - 억부
+ * - 조후
+ * - 통관
+ * - 격국
+ * - 합화 가능성
+ *
+ * 서로 다른 방법이 다른 오행을 요구하더라도
+ * 하나를 임의로 삭제하지 않는다.
  */
 @Component
 public class UsefulGodAnalyzer {
 
-    public static final String RULE_VERSION =
-            "DAJEOM_USEFUL_GOD_V1";
-
-    private final ClimateAnalyzer
-            climateAnalyzer;
-
-    private final BalancingUsefulGodAnalyzer
-            balancingUsefulGodAnalyzer;
-
-    private final MediationUsefulGodAnalyzer
-            mediationUsefulGodAnalyzer;
-
-    private final DiseaseRemedyAnalyzer
-            diseaseRemedyAnalyzer;
-
-    public UsefulGodAnalyzer(
-            ClimateAnalyzer climateAnalyzer,
-            BalancingUsefulGodAnalyzer
-                    balancingUsefulGodAnalyzer,
-            MediationUsefulGodAnalyzer
-                    mediationUsefulGodAnalyzer,
-            DiseaseRemedyAnalyzer
-                    diseaseRemedyAnalyzer
-    ) {
-        this.climateAnalyzer =
-                climateAnalyzer;
-
-        this.balancingUsefulGodAnalyzer =
-                balancingUsefulGodAnalyzer;
-
-        this.mediationUsefulGodAnalyzer =
-                mediationUsefulGodAnalyzer;
-
-        this.diseaseRemedyAnalyzer =
-                diseaseRemedyAnalyzer;
-    }
-
     public UsefulGodAnalysis analyze(
-            FourPillars fourPillars,
-            ElementStrength elementStrength,
-            StrengthAnalysis strengthAnalysis
+            NatalChartAnalysis natalChart,
+            StructureAnalysis structureAnalysis,
+            TemperatureAnalysis temperatureAnalysis,
+            CombinationTransformationAnalysis
+                    combinationAnalysis,
+            MediationAnalysis mediationAnalysis
     ) {
-        ClimateAnalysis climateAnalysis =
-                climateAnalyzer.analyze(
-                        fourPillars,
-                        elementStrength
-                );
 
-        Map<FiveElement, Double>
-                balancingScores =
-                balancingUsefulGodAnalyzer.analyze(
-                        strengthAnalysis
-                );
-
-        Map<FiveElement, Double>
-                mediationScores =
-                mediationUsefulGodAnalyzer.analyze(
-                        elementStrength
-                );
-
-        Map<FiveElement, Double>
-                diseaseRemedyScores =
-                diseaseRemedyAnalyzer.analyze(
-                        elementStrength
-                );
-
-        EnumMap<FiveElement, CandidateBuilder>
-                builders =
-                createBuilders();
-
-        applyClimateScores(
-                climateAnalysis,
-                builders
+        Objects.requireNonNull(
+                natalChart,
+                "원국 분석 결과는 필수입니다."
         );
 
-        applyMethodScores(
-                balancingScores,
-                UsefulGodMethod.BALANCING,
-                "BALANCING_SCORE",
-                "신강·신약 조절 관점에서 산출된 점수",
-                builders
+        Objects.requireNonNull(
+                structureAnalysis,
+                "격국 분석 결과는 필수입니다."
         );
 
-        applyMethodScores(
-                mediationScores,
-                UsefulGodMethod.MEDIATION,
-                "MEDIATION_SCORE",
-                "강한 오행 충돌을 연결하는 통관 점수",
-                builders
+        Objects.requireNonNull(
+                temperatureAnalysis,
+                "조후 분석 결과는 필수입니다."
         );
 
-        applyMethodScores(
-                diseaseRemedyScores,
-                UsefulGodMethod.DISEASE_REMEDY,
-                "DISEASE_REMEDY_SCORE",
-                "과다 오행을 조절하는 병약 점수",
-                builders
+        Objects.requireNonNull(
+                combinationAnalysis,
+                "합화 분석 결과는 필수입니다."
         );
 
-        List<UsefulGodCandidate> candidates =
-                builders.values()
-                        .stream()
-                        .map(CandidateBuilder::build)
-                        .sorted(
-                                Comparator.comparingDouble(
-                                        UsefulGodCandidate::score
-                                ).reversed()
-                        )
-                        .toList();
+        Objects.requireNonNull(
+                mediationAnalysis,
+                "통관 분석 결과는 필수입니다."
+        );
 
-        List<UsefulGodCandidate> usefulCandidates =
-                candidates.stream()
-                        .filter(candidate ->
-                                candidate.type()
-                                        == UsefulGodType.USEFUL_GOD
-                                        || candidate.type()
-                                        == UsefulGodType.FAVORABLE_GOD
-                        )
-                        .toList();
+        FiveElement dayMasterElement =
+                natalChart
+                        .dayMaster()
+                        .getElement();
 
-        List<UsefulGodCandidate>
-                unfavorableCandidates =
-                candidates.stream()
-                        .filter(candidate ->
-                                candidate.type()
-                                        == UsefulGodType.UNFAVORABLE_GOD
-                                        || candidate.type()
-                                        == UsefulGodType.ENEMY_GOD
-                        )
-                        .toList();
+        StrengthLevel strengthLevel =
+                natalChart
+                        .strengthAnalysis()
+                        .level();
 
-        UsefulGodCandidate primary =
-                usefulCandidates.stream()
-                        .findFirst()
-                        .orElseGet(() ->
-                                candidates.get(0)
-                        );
+        UsefulGodRule.CandidateSet candidateSet =
+                UsefulGodRule.createCandidates(
+                        dayMasterElement,
+                        strengthLevel
+                );
 
-        UsefulGodCandidate secondary =
-                usefulCandidates.stream()
-                        .skip(1)
-                        .findFirst()
-                        .orElse(null);
+        List<FiveElement> temperatureCandidates =
+                temperatureAnalysis
+                        .balancingCandidates();
+
+        List<FiveElement> mediationCandidates =
+                extractMediationCandidates(
+                        mediationAnalysis
+                );
+
+        boolean methodAgreement =
+                hasAgreement(
+                        candidateSet
+                                .yongshinCandidates(),
+                        temperatureCandidates
+                );
+
+        boolean mediationAgreement =
+                hasAgreement(
+                        candidateSet
+                                .yongshinCandidates(),
+                        mediationCandidates
+                );
+
+        boolean relationAdjustmentRequired =
+                combinationAnalysis
+                        .requiresElementAdjustment();
+
+        boolean temperatureAdjustmentRequired =
+                temperatureAnalysis
+                        .adjustmentRequired();
+
+        boolean mediationAdjustmentRequired =
+                mediationAnalysis
+                        .hasConflict();
+
+        AnalysisConfidence confidence =
+                determineConfidence(
+                        natalChart,
+                        structureAnalysis,
+                        temperatureAnalysis,
+                        strengthLevel,
+                        relationAdjustmentRequired,
+                        methodAgreement,
+                        mediationAgreement
+                );
+
+        /*
+         * 아직 대운/세운과
+         * 일부 고급 원국 판정이 남아 있으므로
+         * 최종 확정하지 않는다.
+         */
+        boolean finalized =
+                false;
 
         return new UsefulGodAnalysis(
-                climateAnalysis,
-                primary,
-                secondary,
-                usefulCandidates,
-                unfavorableCandidates,
-                candidates,
-                RULE_VERSION
+                UsefulGodMethod.SUPPRESSION_SUPPORT,
+                strengthLevel,
+                candidateSet.yongshinCandidates(),
+                candidateSet.huishinCandidates(),
+                candidateSet.gishinCandidates(),
+                temperatureCandidates,
+                mediationCandidates,
+                methodAgreement,
+                mediationAgreement,
+                confidence,
+                relationAdjustmentRequired,
+                temperatureAdjustmentRequired,
+                mediationAdjustmentRequired,
+                finalized,
+                UsefulGodRule.RULE_VERSION
         );
     }
 
-    private void applyClimateScores(
-            ClimateAnalysis climateAnalysis,
-            Map<FiveElement, CandidateBuilder> builders
+    /**
+     * 통관 후보는 충돌 구조가 존재하는 경우
+     * 그 사이를 연결하는 오행으로 본다.
+     *
+     * 현재 원국에 충분히 있든 부족하든
+     * 통관 관점의 의미가 있으므로 후보로 보관한다.
+     */
+    private List<FiveElement>
+    extractMediationCandidates(
+            MediationAnalysis mediationAnalysis
     ) {
-        for (FiveElement element
-                : climateAnalysis.requiredElements()) {
 
-            CandidateBuilder builder =
-                    builders.get(element);
-
-            builder.addScore(35.0);
-
-            builder.addMethod(
-                    UsefulGodMethod.CLIMATE
-            );
-
-            builder.addEvidence(
-                    "CLIMATE_REQUIRED_"
-                            + element.name(),
-
-                    "한난조습 조절에 "
-                            + element.getKoreanName()
-                            + " 오행이 필요함"
-            );
-        }
+        return mediationAnalysis
+                .cases()
+                .stream()
+                .map(
+                        MediationCase::mediatorElement
+                )
+                .distinct()
+                .toList();
     }
 
-    private void applyMethodScores(
-            Map<FiveElement, Double> scores,
-            UsefulGodMethod method,
-            String codePrefix,
-            String description,
-            Map<FiveElement, CandidateBuilder> builders
+    private boolean hasAgreement(
+            List<FiveElement> first,
+            List<FiveElement> second
     ) {
-        for (Map.Entry<FiveElement, Double>
-                entry : scores.entrySet()) {
 
-            double score =
-                    entry.getValue();
+        if (
+                first.isEmpty()
+                        || second.isEmpty()
+        ) {
 
-            if (score == 0.0) {
-                continue;
-            }
-
-            CandidateBuilder builder =
-                    builders.get(entry.getKey());
-
-            builder.addScore(score);
-
-            builder.addMethod(method);
-
-            builder.addEvidence(
-                    codePrefix
-                            + "_"
-                            + entry.getKey().name(),
-
-                    description
-                            + ": "
-                            + score
-            );
+            return false;
         }
+
+        return first
+                .stream()
+                .anyMatch(
+                        second::contains
+                );
     }
 
-    private EnumMap<FiveElement, CandidateBuilder>
-    createBuilders() {
-        EnumMap<FiveElement, CandidateBuilder>
-                builders =
-                new EnumMap<>(FiveElement.class);
+    private AnalysisConfidence
+    determineConfidence(
+            NatalChartAnalysis natalChart,
+            StructureAnalysis structureAnalysis,
+            TemperatureAnalysis temperatureAnalysis,
+            StrengthLevel strengthLevel,
+            boolean relationAdjustmentRequired,
+            boolean methodAgreement,
+            boolean mediationAgreement
+    ) {
 
-        for (FiveElement element
-                : FiveElement.values()) {
-
-            builders.put(
-                    element,
-                    new CandidateBuilder(element)
-            );
-        }
-
-        return builders;
-    }
-
-    private static class CandidateBuilder {
-
-        private final FiveElement element;
-
-        private double rawScore = 50.0;
-
-        private final List<UsefulGodMethod>
-                methods =
-                new ArrayList<>();
-
-        private final List<String>
-                evidenceCodes =
-                new ArrayList<>();
-
-        private final List<String>
-                evidenceDescriptions =
-                new ArrayList<>();
-
-        private CandidateBuilder(
-                FiveElement element
+        if (
+                !natalChart.hasHourPillar()
         ) {
-            this.element = element;
+
+            return AnalysisConfidence.LOW;
         }
 
-        private void addScore(double score) {
-            rawScore += score;
-        }
-
-        private void addMethod(
-                UsefulGodMethod method
+        if (
+                relationAdjustmentRequired
         ) {
-            if (!methods.contains(method)) {
-                methods.add(method);
-            }
+
+            /*
+             * 합화에 의해 실제 오행 구조가
+             * 변할 가능성이 있는데 아직
+             * 점수 자체를 재계산하지 않았기 때문에
+             * 보수적으로 LOW.
+             */
+            return AnalysisConfidence.LOW;
         }
 
-        private void addEvidence(
-                String code,
-                String description
+        if (
+                strengthLevel
+                        == StrengthLevel.BALANCED
         ) {
-            evidenceCodes.add(code);
-            evidenceDescriptions.add(description);
+
+            return AnalysisConfidence.LOW;
         }
 
-        private UsefulGodCandidate build() {
-            double normalized =
-                    normalize(rawScore);
-
-            UsefulGodType type =
-                    determineType(normalized);
-
-            return new UsefulGodCandidate(
-                    element,
-                    type,
-                    normalized,
-                    ConfidenceLevel.fromScore(
-                            normalized
-                    ),
-                    methods.isEmpty()
-                            ? List.of(
-                            UsefulGodMethod.INTEGRATED
-                    )
-                            : methods,
-                    evidenceCodes,
-                    evidenceDescriptions
-            );
-        }
-
-        private UsefulGodType determineType(
-                double score
+        if (
+                structureAnalysis.confidence()
+                        == AnalysisConfidence.LOW
         ) {
-            if (score >= 80.0) {
-                return UsefulGodType.USEFUL_GOD;
-            }
 
-            if (score >= 60.0) {
-                return UsefulGodType.FAVORABLE_GOD;
-            }
-
-            if (score >= 40.0) {
-                return UsefulGodType.NEUTRAL_GOD;
-            }
-
-            if (score >= 20.0) {
-                return UsefulGodType.UNFAVORABLE_GOD;
-            }
-
-            return UsefulGodType.ENEMY_GOD;
+            return AnalysisConfidence.LOW;
         }
 
-        private double normalize(
-                double value
+        if (
+                temperatureAnalysis.confidence()
+                        == AnalysisConfidence.LOW
         ) {
-            double clamped =
-                    Math.max(
-                            0.0,
-                            Math.min(100.0, value)
-                    );
 
-            return Math.round(clamped * 100.0)
-                    / 100.0;
+            return AnalysisConfidence.LOW;
         }
+
+        /*
+         * 억부와 조후 또는 억부와 통관이
+         * 같은 오행 방향을 가리킨다면
+         * 현재 후보의 근거가 강해진다.
+         */
+        if (
+                methodAgreement
+                        || mediationAgreement
+        ) {
+
+            return AnalysisConfidence.HIGH;
+        }
+
+        return AnalysisConfidence.MEDIUM;
     }
 }

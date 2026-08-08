@@ -8,77 +8,225 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 원국의 오행 원시 분포를 나타낸다.
+ * 사주 원국의 기본 오행 분포.
  *
- * visibleStemCounts:
- * 년간·월간·일간·시간의 오행 분포
+ * 이 모델은 단순 오행 개수와 비율을 나타낸다.
  *
- * branchMainCounts:
- * 년지·월지·일지·시지 자체의 대표 오행 분포
+ * 신강·신약 판단이나 월령 가중치,
+ * 지장간 가중치 등은 포함하지 않는다.
  *
- * eightCharacterCounts:
- * 표면에 나타난 팔자 8글자의 오행 분포
- *
- * hiddenStemCounts:
- * 모든 지장간의 오행 분포
- *
- * 현재 단계에서는 계절과 월령 가중치를 적용하지 않는다.
- * 신강·신약 계산용 가중치는 다음 단계에서 별도로 처리한다.
+ * 해당 평가는 추후 Analyzer에서 수행한다.
  */
 public record ElementDistribution(
-        Map<FiveElement, Integer> visibleStemCounts,
-        Map<FiveElement, Integer> branchMainCounts,
-        Map<FiveElement, Integer> eightCharacterCounts,
-        Map<FiveElement, Integer> hiddenStemCounts
+
+        Map<FiveElement, Integer> counts
+
 ) {
 
     public ElementDistribution {
-        Objects.requireNonNull(
-                visibleStemCounts,
-                "천간 오행 분포는 필수입니다."
-        );
 
         Objects.requireNonNull(
-                branchMainCounts,
-                "지지 대표 오행 분포는 필수입니다."
+                counts,
+                "오행 분포는 필수입니다."
         );
 
-        Objects.requireNonNull(
-                eightCharacterCounts,
-                "팔자 오행 분포는 필수입니다."
-        );
+        EnumMap<
+                FiveElement,
+                Integer
+                > normalized =
+                new EnumMap<>(
+                        FiveElement.class
+                );
 
-        Objects.requireNonNull(
-                hiddenStemCounts,
-                "지장간 오행 분포는 필수입니다."
-        );
+        /*
+         * 모든 오행을 기본 0으로 초기화한다.
+         */
+        for (
+                FiveElement element
+                : FiveElement.values()
+        ) {
 
-        visibleStemCounts =
-                immutableCopy(visibleStemCounts);
-
-        branchMainCounts =
-                immutableCopy(branchMainCounts);
-
-        eightCharacterCounts =
-                immutableCopy(eightCharacterCounts);
-
-        hiddenStemCounts =
-                immutableCopy(hiddenStemCounts);
-    }
-
-    private static Map<FiveElement, Integer> immutableCopy(
-            Map<FiveElement, Integer> source
-    ) {
-        EnumMap<FiveElement, Integer> copy =
-                new EnumMap<>(FiveElement.class);
-
-        for (FiveElement element : FiveElement.values()) {
-            copy.put(
+            normalized.put(
                     element,
-                    source.getOrDefault(element, 0)
+                    0
             );
         }
 
-        return Collections.unmodifiableMap(copy);
+        /*
+         * 전달받은 값을 복사한다.
+         */
+        counts.forEach(
+                (element, count) -> {
+
+                    Objects.requireNonNull(
+                            element,
+                            "오행은 null일 수 없습니다."
+                    );
+
+                    Objects.requireNonNull(
+                            count,
+                            "오행 개수는 null일 수 없습니다."
+                    );
+
+                    if (count < 0) {
+
+                        throw new IllegalArgumentException(
+                                "오행 개수는 음수일 수 없습니다."
+                        );
+                    }
+
+                    normalized.put(
+                            element,
+                            count
+                    );
+                }
+        );
+
+        counts =
+                Collections.unmodifiableMap(
+                        normalized
+                );
+    }
+
+    /**
+     * 특정 오행의 개수.
+     */
+    public int countOf(
+            FiveElement element
+    ) {
+
+        Objects.requireNonNull(
+                element,
+                "오행은 필수입니다."
+        );
+
+        return counts.getOrDefault(
+                element,
+                0
+        );
+    }
+
+    /**
+     * 전체 집계 개수.
+     *
+     * 출생시간을 알고 있다면
+     * 기본적으로 8.
+     *
+     * 출생시간을 모르면
+     * 기본적으로 6.
+     */
+    public int total() {
+
+        return counts
+                .values()
+                .stream()
+                .mapToInt(
+                        Integer::intValue
+                )
+                .sum();
+    }
+
+    /**
+     * 특정 오행의 비율.
+     *
+     * 0 ~ 100.
+     */
+    public double percentageOf(
+            FiveElement element
+    ) {
+
+        int total =
+                total();
+
+        if (total == 0) {
+
+            return 0.0;
+        }
+
+        return (
+                countOf(element)
+                        * 100.0
+        )
+                / total;
+    }
+
+    /**
+     * 기본 개수 기준으로
+     * 가장 많은 오행.
+     *
+     * 동률이면 enum 선언 순서상
+     * 먼저 등장한 오행을 반환한다.
+     */
+    public FiveElement strongestElement() {
+
+        FiveElement strongest =
+                FiveElement.values()[0];
+
+        int highest =
+                countOf(
+                        strongest
+                );
+
+        for (
+                FiveElement element
+                : FiveElement.values()
+        ) {
+
+            int count =
+                    countOf(
+                            element
+                    );
+
+            if (count > highest) {
+
+                strongest =
+                        element;
+
+                highest =
+                        count;
+            }
+        }
+
+        return strongest;
+    }
+
+    /**
+     * 기본 개수 기준으로
+     * 가장 적은 오행.
+     *
+     * 동률이면 enum 선언 순서상
+     * 먼저 등장한 오행을 반환한다.
+     */
+    public FiveElement weakestElement() {
+
+        FiveElement weakest =
+                FiveElement.values()[0];
+
+        int lowest =
+                countOf(
+                        weakest
+                );
+
+        for (
+                FiveElement element
+                : FiveElement.values()
+        ) {
+
+            int count =
+                    countOf(
+                            element
+                    );
+
+            if (count < lowest) {
+
+                weakest =
+                        element;
+
+                lowest =
+                        count;
+            }
+        }
+
+        return weakest;
     }
 }

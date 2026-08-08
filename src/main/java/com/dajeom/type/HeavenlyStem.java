@@ -1,136 +1,123 @@
 package com.dajeom.type;
 
-import java.util.Arrays;
-
+/**
+ * 십천간.
+ *
+ * index는 갑(甲)을 0으로 시작한다.
+ */
 public enum HeavenlyStem {
 
-    GAP(
+    JIA(
             0,
-            "甲",
             "갑",
+            "甲",
             FiveElement.WOOD,
             YinYang.YANG
     ),
 
-    EUL(
+    YI(
             1,
-            "乙",
             "을",
+            "乙",
             FiveElement.WOOD,
             YinYang.YIN
     ),
 
-    BYEONG(
+    BING(
             2,
-            "丙",
             "병",
+            "丙",
             FiveElement.FIRE,
             YinYang.YANG
     ),
 
-    JEONG(
+    DING(
             3,
-            "丁",
             "정",
+            "丁",
             FiveElement.FIRE,
             YinYang.YIN
     ),
 
-    MU(
+    WU(
             4,
-            "戊",
             "무",
+            "戊",
             FiveElement.EARTH,
             YinYang.YANG
     ),
 
-    GI(
+    JI(
             5,
-            "己",
             "기",
+            "己",
             FiveElement.EARTH,
             YinYang.YIN
     ),
 
-    GYEONG(
+    GENG(
             6,
-            "庚",
             "경",
+            "庚",
             FiveElement.METAL,
             YinYang.YANG
     ),
 
-    SIN(
+    XIN(
             7,
-            "辛",
             "신",
+            "辛",
             FiveElement.METAL,
             YinYang.YIN
     ),
 
-    IM(
+    REN(
             8,
-            "壬",
             "임",
+            "壬",
             FiveElement.WATER,
             YinYang.YANG
     ),
 
-    GYE(
+    GUI(
             9,
-            "癸",
             "계",
+            "癸",
             FiveElement.WATER,
             YinYang.YIN
     );
 
     private final int index;
-    private final String chineseCharacter;
     private final String koreanName;
+    private final String chineseCharacter;
     private final FiveElement element;
     private final YinYang yinYang;
 
     HeavenlyStem(
             int index,
-            String chineseCharacter,
             String koreanName,
+            String chineseCharacter,
             FiveElement element,
             YinYang yinYang
     ) {
         this.index = index;
-        this.chineseCharacter = chineseCharacter;
         this.koreanName = koreanName;
+        this.chineseCharacter =
+                chineseCharacter;
         this.element = element;
         this.yinYang = yinYang;
-    }
-
-    public static HeavenlyStem fromIndex(int index) {
-        int normalizedIndex =
-                Math.floorMod(index, values().length);
-
-        return Arrays.stream(values())
-                .filter(stem ->
-                        stem.index == normalizedIndex
-                )
-                .findFirst()
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "유효하지 않은 천간 인덱스입니다: "
-                                        + index
-                        )
-                );
     }
 
     public int getIndex() {
         return index;
     }
 
-    public String getChineseCharacter() {
-        return chineseCharacter;
-    }
-
     public String getKoreanName() {
         return koreanName;
+    }
+
+    public String getChineseCharacter() {
+        return chineseCharacter;
     }
 
     public FiveElement getElement() {
@@ -139,5 +126,18 @@ public enum HeavenlyStem {
 
     public YinYang getYinYang() {
         return yinYang;
+    }
+
+    public static HeavenlyStem fromIndex(
+            int index
+    ) {
+
+        int normalizedIndex =
+                Math.floorMod(
+                        index,
+                        values().length
+                );
+
+        return values()[normalizedIndex];
     }
 }

@@ -1,68 +1,78 @@
 package com.dajeom.calculator;
 
 import com.dajeom.constant.HiddenStemTable;
-import com.dajeom.model.FourPillars;
 import com.dajeom.model.HiddenStem;
+import com.dajeom.model.Pillar;
 import com.dajeom.type.EarthlyBranch;
-import com.dajeom.type.PillarPosition;
+import com.dajeom.type.HeavenlyStem;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * 사주 네 지지의 지장간을 계산한다.
+ * 지장간 계산기.
+ *
+ * 지지에 포함되어 있는
+ * 여기 / 중기 / 정기 천간을 조회한다.
+ *
+ * 지장간의 강도나 영향력 평가는
+ * 여기서 하지 않는다.
+ *
+ * 해당 평가는 이후 Analyzer / Rule에서 수행한다.
  */
 @Component
 public class HiddenStemCalculator {
 
+    /**
+     * 지지를 기준으로 지장간을 구한다.
+     */
     public List<HiddenStem> calculate(
-            FourPillars fourPillars
-    ) {
-        List<HiddenStem> result =
-                new ArrayList<>();
-
-        addHiddenStems(
-                result,
-                PillarPosition.YEAR_BRANCH,
-                fourPillars.yearPillar().branch()
-        );
-
-        addHiddenStems(
-                result,
-                PillarPosition.MONTH_BRANCH,
-                fourPillars.monthPillar().branch()
-        );
-
-        addHiddenStems(
-                result,
-                PillarPosition.DAY_BRANCH,
-                fourPillars.dayPillar().branch()
-        );
-
-        addHiddenStems(
-                result,
-                PillarPosition.HOUR_BRANCH,
-                fourPillars.hourPillar().branch()
-        );
-
-        return List.copyOf(result);
-    }
-
-    private void addHiddenStems(
-            List<HiddenStem> destination,
-            PillarPosition position,
             EarthlyBranch branch
     ) {
-        HiddenStemTable.get(branch)
-                .forEach(definition ->
-                        destination.add(
-                                new HiddenStem(
-                                        position,
-                                        definition.stem(),
-                                        definition.role()
-                                )
-                        )
-                );
+
+        Objects.requireNonNull(
+                branch,
+                "지지는 필수입니다."
+        );
+
+        return HiddenStemTable.get(
+                branch
+        );
+    }
+
+    /**
+     * Pillar의 지지를 기준으로
+     * 지장간을 구한다.
+     */
+    public List<HiddenStem> calculate(
+            Pillar pillar
+    ) {
+
+        Objects.requireNonNull(
+                pillar,
+                "기둥은 필수입니다."
+        );
+
+        return calculate(
+                pillar.branch()
+        );
+    }
+
+    /**
+     * 정기(본기) 천간만 반환한다.
+     */
+    public HeavenlyStem calculateMainStem(
+            EarthlyBranch branch
+    ) {
+
+        Objects.requireNonNull(
+                branch,
+                "지지는 필수입니다."
+        );
+
+        return HiddenStemTable.getMainStem(
+                branch
+        );
     }
 }

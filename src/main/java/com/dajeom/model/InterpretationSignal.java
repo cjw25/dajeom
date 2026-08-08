@@ -1,158 +1,112 @@
 package com.dajeom.model;
 
-import com.dajeom.type.SajuReportCategory;
-import com.dajeom.type.SignalPolarity;
-import com.dajeom.type.SignalStrength;
+import com.dajeom.type.ConsultationCategory;
+import com.dajeom.type.InterpretationIntensity;
+import com.dajeom.type.InterpretationPolarity;
 
 import java.util.List;
 import java.util.Objects;
 
 /**
- * 카테고리 보고서 문장을 만들기 위한
- * 해석 신호 하나다.
+ * 하나의 상담 분야에 대한
+ * 통합 해석 신호.
  *
- * 보고서 생성기는 signalCode를 기준으로
- * 문장 템플릿을 찾고,
- * title, summary, evidence를 사용해
- * 개인화된 해석을 작성한다.
+ * 아직 사용자 상담문은 아니다.
+ *
+ * 여러 명리 근거를 하나의 분야로 묶어서
+ * 다음 단계의 ConsultationEngine이
+ * 사용할 수 있도록 만든 데이터다.
  */
 public record InterpretationSignal(
 
-        String signalCode,
+        ConsultationCategory category,
 
-        SajuReportCategory category,
+        double supportScore,
 
-        String title,
+        double cautionScore,
 
-        String summary,
+        InterpretationPolarity polarity,
 
-        SignalPolarity polarity,
+        InterpretationIntensity intensity,
 
-        SignalStrength strength,
+        List<InterpretationEvidence> evidences
 
-        double score,
-
-        List<String> evidenceCodes,
-
-        List<String> evidenceDescriptions
 ) {
 
     public InterpretationSignal {
 
         Objects.requireNonNull(
-                signalCode,
-                "해석 신호 코드는 필수입니다."
-        );
-
-        Objects.requireNonNull(
                 category,
-                "해석 카테고리는 필수입니다."
-        );
-
-        Objects.requireNonNull(
-                title,
-                "해석 신호 제목은 필수입니다."
-        );
-
-        Objects.requireNonNull(
-                summary,
-                "해석 신호 요약은 필수입니다."
+                "상담 분야는 필수입니다."
         );
 
         Objects.requireNonNull(
                 polarity,
-                "해석 신호 방향은 필수입니다."
+                "해석 방향은 필수입니다."
         );
 
         Objects.requireNonNull(
-                strength,
-                "해석 신호 강도는 필수입니다."
+                intensity,
+                "해석 강도는 필수입니다."
         );
 
         Objects.requireNonNull(
-                evidenceCodes,
-                "해석 근거 코드는 필수입니다."
+                evidences,
+                "해석 근거 목록은 필수입니다."
         );
 
-        Objects.requireNonNull(
-                evidenceDescriptions,
-                "해석 근거 설명은 필수입니다."
-        );
+        if (
+                supportScore < 0.0
+                        || cautionScore < 0.0
+        ) {
 
-        score =
-                normalizeScore(
-                        score
-                );
+            throw new IllegalArgumentException(
+                    "해석 점수는 음수일 수 없습니다."
+            );
+        }
 
-        evidenceCodes =
+        evidences =
                 List.copyOf(
-                        evidenceCodes
+                        evidences
                 );
 
-        evidenceDescriptions =
-                List.copyOf(
-                        evidenceDescriptions
-                );
+        boolean invalidCategory =
+                evidences
+                        .stream()
+                        .anyMatch(
+                                evidence ->
+                                        evidence.category()
+                                                != category
+                        );
+
+        if (invalidCategory) {
+
+            throw new IllegalArgumentException(
+                    "다른 상담 분야의 근거가 포함되어 있습니다."
+            );
+        }
     }
 
-    public static InterpretationSignal of(
+    public boolean hasEvidence() {
 
-            String signalCode,
-
-            SajuReportCategory category,
-
-            String title,
-
-            String summary,
-
-            SignalPolarity polarity,
-
-            double score,
-
-            List<String> evidenceCodes,
-
-            List<String> evidenceDescriptions
-    ) {
-
-        return new InterpretationSignal(
-
-                signalCode,
-
-                category,
-
-                title,
-
-                summary,
-
-                polarity,
-
-                SignalStrength.fromScore(
-                        score
-                ),
-
-                score,
-
-                evidenceCodes,
-
-                evidenceDescriptions
-        );
+        return !evidences.isEmpty();
     }
 
-    private static double normalizeScore(
-            double score
-    ) {
+    public boolean isSupportive() {
 
-        double clamped =
-                Math.max(
-                        -100.0,
-                        Math.min(
-                                100.0,
-                                score
-                        )
-                );
+        return polarity
+                == InterpretationPolarity.SUPPORTIVE;
+    }
 
-        return Math.round(
-                clamped * 100.0
-        ) / 100.0;
+    public boolean isCaution() {
+
+        return polarity
+                == InterpretationPolarity.CAUTION;
+    }
+
+    public boolean isMixed() {
+
+        return polarity
+                == InterpretationPolarity.MIXED;
     }
 }

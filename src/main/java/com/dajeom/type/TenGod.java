@@ -1,24 +1,62 @@
 package com.dajeom.type;
 
 /**
- * 일간을 기준으로 계산되는 십성을 나타낸다.
+ * 십성.
+ *
+ * 실제 십성 판정은 TenGodCalculator에서 수행한다.
+ * 이 enum은 십성의 종류와 표시명만 관리한다.
  */
 public enum TenGod {
 
-    FRIEND("비견", "比肩"),
-    ROB_WEALTH("겁재", "劫財"),
+    BI_GYEON(
+            "비견",
+            "比肩"
+    ),
 
-    EATING_GOD("식신", "食神"),
-    HURTING_OFFICER("상관", "傷官"),
+    GEOP_JAE(
+            "겁재",
+            "劫財"
+    ),
 
-    INDIRECT_WEALTH("편재", "偏財"),
-    DIRECT_WEALTH("정재", "正財"),
+    SIK_SIN(
+            "식신",
+            "食神"
+    ),
 
-    SEVEN_KILLINGS("편관", "偏官"),
-    DIRECT_OFFICER("정관", "正官"),
+    SANG_GWAN(
+            "상관",
+            "傷官"
+    ),
 
-    INDIRECT_RESOURCE("편인", "偏印"),
-    DIRECT_RESOURCE("정인", "正印");
+    PYEON_JAE(
+            "편재",
+            "偏財"
+    ),
+
+    JEONG_JAE(
+            "정재",
+            "正財"
+    ),
+
+    PYEON_GWAN(
+            "편관",
+            "偏官"
+    ),
+
+    JEONG_GWAN(
+            "정관",
+            "正官"
+    ),
+
+    PYEON_IN(
+            "편인",
+            "偏印"
+    ),
+
+    JEONG_IN(
+            "정인",
+            "正印"
+    );
 
     private final String koreanName;
     private final String chineseCharacter;
@@ -28,7 +66,8 @@ public enum TenGod {
             String chineseCharacter
     ) {
         this.koreanName = koreanName;
-        this.chineseCharacter = chineseCharacter;
+        this.chineseCharacter =
+                chineseCharacter;
     }
 
     public String getKoreanName() {

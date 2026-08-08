@@ -1,76 +1,190 @@
 package com.dajeom.exception;
 
-import com.dajeom.dto.ErrorResponse;
+import com.dajeom.dto.ApiErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.ZonedDateTime;
+import java.util.List;
+
+/**
+ * API 공통 예외 처리.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(
-            MethodArgumentNotValidException exception
+    /**
+     * @Valid 검증 실패.
+     */
+    @ExceptionHandler(
+            MethodArgumentNotValidException.class
+    )
+    public ResponseEntity<ApiErrorResponse>
+    handleValidation(
+            MethodArgumentNotValidException exception,
+            HttpServletRequest request
     ) {
-        FieldError fieldError =
-                exception.getBindingResult()
+
+        List<String> details =
+                exception
+                        .getBindingResult()
                         .getFieldErrors()
                         .stream()
-                        .findFirst()
-                        .orElse(null);
+                        .map(
+                                fieldError ->
+                                        fieldError.getField()
+                                                + ": "
+                                                + fieldError
+                                                .getDefaultMessage()
+                        )
+                        .toList();
 
-        String message =
-                fieldError == null
-                        ? "입력값을 확인해주세요."
-                        : fieldError.getDefaultMessage();
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(message));
+        return createResponse(
+                HttpStatus.BAD_REQUEST,
+                "요청값을 확인해 주세요.",
+                request,
+                details
+        );
     }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleUnreadableRequest(
-            HttpMessageNotReadableException exception
+    /**
+     * JSON 형식이나 enum,
+     * LocalTime 등이 잘못된 경우.
+     */
+    @ExceptionHandler(
+            HttpMessageNotReadableException.class
+    )
+    public ResponseEntity<ApiErrorResponse>
+    handleUnreadableMessage(
+            HttpMessageNotReadableException exception,
+            HttpServletRequest request
     ) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(
-                        ErrorResponse.of(
-                                "요청 형식이 올바르지 않습니다."
-                        )
+
+        return createResponse(
+                HttpStatus.BAD_REQUEST,
+                "요청 데이터 형식이 올바르지 않습니다.",
+                request,
+                List.of(
+                        "생년월일은 yyyy-MM-dd, "
+                                + "시간은 HH:mm 형식을 사용하고 "
+                                + "enum 값도 확인해 주세요."
+                )
+        );
+    }
+
+    /**
+     * 절입 경계일인데
+     * 출생시간을 몰라 정확한
+     * 년주/월주를 확정할 수 없는 경우.
+     */
+    @ExceptionHandler(
+            BirthTimeRequiredException.class
+    )
+    public ResponseEntity<ApiErrorResponse>
+    handleBirthTimeRequired(
+            BirthTimeRequiredException exception,
+            HttpServletRequest request
+    ) {
+
+        return createResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request,
+                List.of()
+        );
+    }
+
+    /**
+     * 잘못된 음력 날짜 또는 윤달.
+     */
+    @ExceptionHandler(
+            InvalidLunarDateException.class
+    )
+    public ResponseEntity<ApiErrorResponse>
+    handleInvalidLunarDate(
+            InvalidLunarDateException exception,
+            HttpServletRequest request
+    ) {
+
+        return createResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request,
+                List.of(
+                        "음력 날짜와 평달/윤달 여부를 확인해 주세요."
+                )
+        );
+    }
+
+    /**
+     * Domain validation 실패.
+     */
+    @ExceptionHandler(
+            IllegalArgumentException.class
+    )
+    public ResponseEntity<ApiErrorResponse>
+    handleIllegalArgument(
+            IllegalArgumentException exception,
+            HttpServletRequest request
+    ) {
+
+        return createResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request,
+                List.of()
+        );
+    }
+
+    /**
+     * 예상하지 못한 서버 오류.
+     */
+    @ExceptionHandler(
+            Exception.class
+    )
+    public ResponseEntity<ApiErrorResponse>
+    handleUnexpected(
+            Exception exception,
+            HttpServletRequest request
+    ) {
+
+        return createResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "사주 분석 중 서버 오류가 발생했습니다.",
+                request,
+                List.of()
+        );
+    }
+
+    private ResponseEntity<ApiErrorResponse>
+    createResponse(
+            HttpStatus status,
+            String message,
+            HttpServletRequest request,
+            List<String> details
+    ) {
+
+        ApiErrorResponse response =
+                new ApiErrorResponse(
+                        ZonedDateTime.now(),
+                        status.value(),
+                        status.getReasonPhrase(),
+                        message,
+                        request.getRequestURI(),
+                        details
                 );
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
-            IllegalArgumentException exception
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(
-                        ErrorResponse.of(
-                                exception.getMessage()
-                        )
-                );
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleException(
-            Exception exception
-    ) {
-        exception.printStackTrace();
 
         return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .status(
+                        status
+                )
                 .body(
-                        ErrorResponse.of(
-                                "서버 처리 중 오류가 발생했습니다."
-                        )
+                        response
                 );
     }
 }
