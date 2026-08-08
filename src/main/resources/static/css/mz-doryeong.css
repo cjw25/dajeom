@@ -20,6 +20,10 @@
 }
 
 
+/* =====================================================
+   RESET
+   ===================================================== */
+
 * {
     box-sizing: border-box;
 }
@@ -77,6 +81,10 @@ fieldset {
 }
 
 
+/* =====================================================
+   APP
+   ===================================================== */
+
 .mz-app {
     width: 100%;
 
@@ -129,6 +137,12 @@ fieldset {
 
 
 .header-button {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
     width: 38px;
 
     height: 38px;
@@ -145,6 +159,18 @@ fieldset {
     color: #ffffff;
 
     font-size: 22px;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.header-button:active {
+    transform: scale(0.96);
+
+    background:
+        rgba(255, 255, 255, 0.12);
 }
 
 
@@ -155,12 +181,20 @@ fieldset {
 
     align-items: center;
 
+    justify-content: center;
+
     gap: 2px;
+
+    min-width: 0;
 }
 
 
 .header-copy strong {
+    color: #ffffff;
+
     font-size: 13px;
+
+    font-weight: 900;
 }
 
 
@@ -225,7 +259,14 @@ fieldset {
 
     border-radius: 14px;
 
+    font-size: 11px;
+
     font-weight: 900;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        filter 0.2s ease;
 }
 
 
@@ -242,6 +283,11 @@ fieldset {
     box-shadow:
         0 12px 26px
         rgba(90, 44, 118, 0.22);
+}
+
+
+.primary-button:active {
+    transform: scale(0.985);
 }
 
 
@@ -304,6 +350,8 @@ fieldset {
     object-fit: cover;
 
     object-position: 50% 22%;
+
+    will-change: transform;
 }
 
 
@@ -322,6 +370,8 @@ fieldset {
     top: 70px;
 
     left: 50%;
+
+    z-index: 1;
 
     width: 260px;
 
@@ -360,6 +410,8 @@ fieldset {
     text-shadow:
         0 0 15px
         rgba(217, 255, 85, 0.8);
+
+    pointer-events: none;
 
     animation:
         sparkle
@@ -421,9 +473,13 @@ fieldset {
         10px
         0;
 
+    color: var(--text);
+
     font-size: 26px;
 
     line-height: 1.28;
+
+    letter-spacing: -0.04em;
 }
 
 
@@ -438,6 +494,8 @@ fieldset {
     font-size: 11px;
 
     line-height: 1.75;
+
+    word-break: keep-all;
 }
 
 
@@ -453,6 +511,10 @@ fieldset {
     border-radius: 17px;
 
     background: #ffffff;
+
+    box-shadow:
+        0 8px 20px
+        rgba(56, 33, 65, 0.05);
 }
 
 
@@ -469,9 +531,13 @@ fieldset {
         0
         0;
 
+    color: var(--text);
+
     font-size: 11px;
 
     line-height: 1.7;
+
+    word-break: keep-all;
 }
 
 
@@ -480,6 +546,11 @@ fieldset {
    ===================================================== */
 
 .content-page {
+    min-height:
+        calc(
+            100vh - 58px
+        );
+
     padding:
         38px
         15px
@@ -505,7 +576,13 @@ fieldset {
         9px
         0;
 
+    color: var(--text);
+
     font-size: 23px;
+
+    line-height: 1.35;
+
+    letter-spacing: -0.04em;
 }
 
 
@@ -515,6 +592,8 @@ fieldset {
     color: var(--sub);
 
     font-size: 10px;
+
+    line-height: 1.6;
 }
 
 
@@ -545,6 +624,8 @@ fieldset {
 
     margin-bottom: 8px;
 
+    color: var(--text);
+
     font-size: 10px;
 
     font-weight: 900;
@@ -557,7 +638,8 @@ fieldset {
     min-height: 50px;
 
     padding:
-        0 13px;
+        0
+        13px;
 
     border:
         1px solid
@@ -570,6 +652,17 @@ fieldset {
     color: var(--text);
 
     outline: none;
+
+    font-size: 11px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.text-input::placeholder {
+    color: var(--muted);
 }
 
 
@@ -617,6 +710,11 @@ fieldset {
     font-size: 11px;
 
     font-weight: 900;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 
@@ -658,9 +756,21 @@ fieldset {
 
     gap: 8px;
 
+    color: var(--text);
+
     font-size: 10px;
 
     font-weight: 800;
+}
+
+
+.lunar-option input,
+.unknown-time-label input {
+    width: 16px;
+
+    height: 16px;
+
+    accent-color: var(--primary);
 }
 
 
@@ -695,6 +805,8 @@ fieldset {
 .time-grid label {
     display: flex;
 
+    min-width: 0;
+
     flex-direction: column;
 
     gap: 6px;
@@ -715,6 +827,13 @@ fieldset {
     align-items: center;
 
     justify-content: space-between;
+
+    margin-bottom: 8px;
+}
+
+
+.field-title-row .field-label {
+    margin-bottom: 0;
 }
 
 
@@ -724,6 +843,8 @@ fieldset {
     align-items: center;
 
     gap: 6px;
+
+    color: var(--text);
 
     font-size: 9px;
 
@@ -742,11 +863,16 @@ fieldset {
     align-items: end;
 
     gap: 8px;
+
+    transition:
+        opacity 0.2s ease;
 }
 
 
 .time-grid > strong {
     padding-bottom: 15px;
+
+    color: var(--text);
 
     text-align: center;
 }
@@ -754,6 +880,8 @@ fieldset {
 
 .time-grid.is-disabled {
     opacity: 0.4;
+
+    pointer-events: none;
 }
 
 
@@ -780,6 +908,8 @@ fieldset {
     color: var(--danger);
 
     font-size: 9px;
+
+    line-height: 1.5;
 }
 
 
@@ -799,6 +929,10 @@ fieldset {
     border-radius: 18px;
 
     background: #ffffff;
+
+    box-shadow:
+        0 10px 25px
+        rgba(56, 33, 65, 0.05);
 }
 
 
@@ -812,7 +946,10 @@ fieldset {
     min-height: 56px;
 
     padding:
-        0 15px;
+        0
+        15px;
+
+    gap: 15px;
 
     border-bottom:
         1px solid
@@ -826,6 +963,8 @@ fieldset {
 
 
 .review-card span {
+    flex: 0 0 auto;
+
     color: var(--sub);
 
     font-size: 9px;
@@ -833,7 +972,15 @@ fieldset {
 
 
 .review-card strong {
+    min-width: 0;
+
+    color: var(--text);
+
     font-size: 11px;
+
+    text-align: right;
+
+    word-break: break-word;
 }
 
 
@@ -866,6 +1013,27 @@ fieldset {
     overflow: hidden;
 
     background: #170f20;
+}
+
+
+.loading-character::after {
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 3;
+
+    background:
+        linear-gradient(
+            to bottom,
+            transparent 48%,
+            rgba(23, 15, 32, 0.12) 65%,
+            #f7f2fa 100%
+        );
+
+    content: "";
+
+    pointer-events: none;
 }
 
 
@@ -904,13 +1072,24 @@ fieldset {
     margin:
         9px
         0;
+
+    color: var(--text);
+
+    font-size: 22px;
 }
 
 
 .loading-content > p {
+    min-height: 18px;
+
+    margin:
+        0;
+
     color: var(--sub);
 
     font-size: 10px;
+
+    line-height: 1.6;
 }
 
 
@@ -932,6 +1111,8 @@ fieldset {
 
     height: 100%;
 
+    border-radius: inherit;
+
     background:
         linear-gradient(
             90deg,
@@ -947,6 +1128,8 @@ fieldset {
 .progress-meta {
     display: flex;
 
+    align-items: center;
+
     justify-content: space-between;
 
     margin-top: 7px;
@@ -954,6 +1137,11 @@ fieldset {
     color: var(--sub);
 
     font-size: 9px;
+}
+
+
+.progress-meta strong {
+    color: var(--primary);
 }
 
 
@@ -988,6 +1176,11 @@ fieldset {
     border-radius: 12px;
 
     opacity: 0.45;
+
+    transition:
+        opacity 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease;
 }
 
 
@@ -998,6 +1191,10 @@ fieldset {
     background: #ffffff;
 
     opacity: 1;
+
+    box-shadow:
+        0 7px 18px
+        rgba(56, 33, 65, 0.05);
 }
 
 
@@ -1027,7 +1224,16 @@ fieldset {
 }
 
 
+.loading-step.is-complete strong {
+    background: var(--accent);
+
+    color: #151906;
+}
+
+
 .loading-step span {
+    color: var(--text);
+
     font-size: 10px;
 
     font-weight: 800;
@@ -1068,7 +1274,7 @@ fieldset {
 
 
 /* =====================================================
-   상담 진행 표시
+   RESULT - 진행 헤더
    ===================================================== */
 
 .consultation-progress-header {
@@ -1082,15 +1288,21 @@ fieldset {
 
     justify-content: space-between;
 
+    min-height: 67px;
+
     padding:
-        16px
+        13px
         17px
-        10px;
+        9px;
+
+    gap: 12px;
 }
 
 
 .consultation-progress-header > div {
     display: flex;
+
+    min-width: 0;
 
     align-items: center;
 
@@ -1100,6 +1312,8 @@ fieldset {
 
 .consultation-progress-header > div > span {
     display: flex;
+
+    flex: 0 0 auto;
 
     align-items: center;
 
@@ -1122,11 +1336,17 @@ fieldset {
     font-size: 11px;
 
     font-weight: 1000;
+
+    box-shadow:
+        0 5px 14px
+        rgba(217, 255, 85, 0.14);
 }
 
 
 .consultation-progress-header > div > div {
     display: flex;
+
+    min-width: 0;
 
     flex-direction: column;
 
@@ -1147,13 +1367,25 @@ fieldset {
 
 
 .consultation-progress-header strong {
+    display: block;
+
+    max-width: 250px;
+
+    overflow: hidden;
+
     color: #ffffff;
 
     font-size: 13px;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
 }
 
 
 #consultationProgressText {
+    flex: 0 0 auto;
+
     color:
         rgba(255, 255, 255, 0.6);
 
@@ -1197,6 +1429,10 @@ fieldset {
             var(--accent)
         );
 
+    box-shadow:
+        0 0 10px
+        rgba(217, 255, 85, 0.28);
+
     transition:
         width
         0.4s
@@ -1205,7 +1441,7 @@ fieldset {
 
 
 /* =====================================================
-   캐릭터
+   RESULT - 캐릭터
    ===================================================== */
 
 .result-character-wrap {
@@ -1283,8 +1519,13 @@ fieldset {
 }
 
 
+.result-aura {
+    z-index: 1;
+}
+
+
 /* =====================================================
-   말풍선
+   RESULT - 말풍선
    ===================================================== */
 
 .character-dialogue {
@@ -1313,6 +1554,8 @@ fieldset {
         rgba(0, 0, 0, 0.32);
 
     backdrop-filter: blur(17px);
+
+    -webkit-backdrop-filter: blur(17px);
 }
 
 
@@ -1337,6 +1580,8 @@ fieldset {
 
 
 .speech-status {
+    flex: 0 0 auto;
+
     padding:
         4px
         7px;
@@ -1375,11 +1620,35 @@ fieldset {
     line-height: 1.82;
 
     word-break: keep-all;
+
+    scrollbar-width: thin;
+
+    scrollbar-color:
+        rgba(255, 255, 255, 0.3)
+        transparent;
+}
+
+
+.character-dialogue p::-webkit-scrollbar {
+    width: 4px;
+}
+
+
+.character-dialogue p::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+.character-dialogue p::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+
+    background:
+        rgba(255, 255, 255, 0.28);
 }
 
 
 /* =====================================================
-   컨트롤
+   RESULT - 음성 컨트롤
    ===================================================== */
 
 .voice-controls {
@@ -1388,7 +1657,7 @@ fieldset {
     grid-template-columns:
         repeat(
             2,
-            1fr
+            minmax(0, 1fr)
         );
 
     gap: 8px;
@@ -1401,7 +1670,13 @@ fieldset {
 
 
 .control-button {
+    min-width: 0;
+
     min-height: 43px;
+
+    padding:
+        0
+        8px;
 
     border:
         1px solid
@@ -1418,66 +1693,114 @@ fieldset {
     font-size: 9px;
 
     font-weight: 800;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.control-button:active {
+    background:
+        rgba(255, 255, 255, 0.12);
+
+    transform: scale(0.985);
 }
 
 
 /* =====================================================
-   11개 상담 순서
+   RESULT - 11개 상담 카테고리
+   가로 스크롤 제거
+   3열 그리드
    ===================================================== */
 
 .consultation-sequence {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+
+    gap: 7px;
+
+    width: 100%;
+
+    margin-top: 14px;
+
+    padding:
+        0
+        16px;
+
+    overflow: visible;
+}
+
+
+/*
+ * 중요:
+ * 기존 flex + overflow-x:auto 방식 제거.
+ *
+ * 이제 11개 항목을 화면 안에서
+ * 3열로 전부 보여준다.
+ */
+.consultation-sequence button {
+    position: relative;
+
     display: flex;
 
-    gap: 6px;
+    align-items: center;
 
-    margin-top: 13px;
+    justify-content: center;
 
-    padding:
-        0
-        16px
-        7px;
+    width: 100%;
 
-    overflow-x: auto;
+    min-width: 0;
 
-    scrollbar-width: none;
-}
-
-
-.consultation-sequence::-webkit-scrollbar {
-    display: none;
-}
-
-
-.consultation-sequence button {
-    flex: 0 0 auto;
-
-    min-height: 30px;
+    min-height: 38px;
 
     padding:
         0
-        10px;
+        5px;
+
+    overflow: hidden;
 
     border:
         1px solid
         rgba(255, 255, 255, 0.1);
 
-    border-radius: 999px;
+    border-radius: 11px;
 
     background:
         rgba(255, 255, 255, 0.05);
 
     color:
-        rgba(255, 255, 255, 0.48);
+        rgba(255, 255, 255, 0.52);
 
     font-size: 8px;
 
     font-weight: 900;
 
+    line-height: 1.2;
+
+    text-align: center;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
     transition:
-        0.2s ease;
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 
+/*
+ * 현재 말하고 있는 항목.
+ */
 .consultation-sequence button.is-active {
     border-color: var(--accent);
 
@@ -1485,25 +1808,76 @@ fieldset {
 
     color: #141806;
 
+    box-shadow:
+        0 5px 15px
+        rgba(217, 255, 85, 0.18);
+
     transform:
         translateY(-1px);
 }
 
 
+/*
+ * 이미 상담이 끝난 항목.
+ */
 .consultation-sequence button.is-complete {
     border-color:
-        rgba(217, 255, 85, 0.18);
+        rgba(217, 255, 85, 0.22);
 
     background:
         rgba(217, 255, 85, 0.08);
 
     color:
-        rgba(217, 255, 85, 0.68);
+        rgba(217, 255, 85, 0.76);
+}
+
+
+.consultation-sequence button.is-complete::before {
+    flex: 0 0 auto;
+
+    margin-right: 3px;
+
+    content: "✓";
+
+    color: var(--accent);
+
+    font-size: 8px;
+
+    font-weight: 1000;
+}
+
+
+/*
+ * 현재 항목은 완료 체크보다 우선.
+ *
+ * is-complete와 is-active가 동시에 붙는 상황에 대비.
+ */
+.consultation-sequence button.is-active::before {
+    display: none;
+}
+
+
+/*
+ * 마지막 2개:
+ *
+ * 올해운 / 미래운이 마지막 줄에서
+ * 너무 어색하게 한쪽에 몰리지 않도록 배치.
+ *
+ * 10번째 버튼 → 첫 번째 칸
+ * 11번째 버튼 → 두 번째, 세 번째 영역 활용
+ */
+.consultation-sequence button:nth-child(10) {
+    grid-column: 1 / 2;
+}
+
+
+.consultation-sequence button:nth-child(11) {
+    grid-column: 2 / 4;
 }
 
 
 /* =====================================================
-   상담 완료
+   RESULT - 상담 완료
    ===================================================== */
 
 .consultation-complete {
@@ -1546,7 +1920,11 @@ fieldset {
         0
         13px;
 
+    color: #ffffff;
+
     font-size: 11px;
+
+    line-height: 1.5;
 }
 
 
@@ -1566,19 +1944,29 @@ fieldset {
     font-size: 9px;
 
     font-weight: 900;
+
+    transition:
+        transform 0.2s ease;
+}
+
+
+.restart-button:active {
+    transform: scale(0.98);
 }
 
 
 /* =====================================================
-   하단
+   RESULT - 하단 버튼
    ===================================================== */
 
 .result-bottom-actions {
     display: grid;
 
     grid-template-columns:
-        1fr
-        1fr;
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
 
     gap: 8px;
 
@@ -1591,13 +1979,23 @@ fieldset {
 
 .result-secondary-button,
 .result-primary-button {
+    min-width: 0;
+
     min-height: 45px;
+
+    padding:
+        0
+        8px;
 
     border-radius: 13px;
 
     font-size: 9px;
 
     font-weight: 900;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
 }
 
 
@@ -1621,6 +2019,12 @@ fieldset {
 }
 
 
+.result-secondary-button:active,
+.result-primary-button:active {
+    transform: scale(0.985);
+}
+
+
 /* =====================================================
    TOAST
    ===================================================== */
@@ -1634,6 +2038,8 @@ fieldset {
 
     z-index: 300;
 
+    width: max-content;
+
     max-width:
         calc(
             100% - 40px
@@ -1643,13 +2049,23 @@ fieldset {
         11px
         15px;
 
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.08);
+
     border-radius: 12px;
 
     background: #211629;
 
     color: #ffffff;
 
+    box-shadow:
+        0 12px 28px
+        rgba(0, 0, 0, 0.25);
+
     font-size: 9px;
+
+    line-height: 1.5;
 
     opacity: 0;
 
@@ -1661,7 +2077,9 @@ fieldset {
             10px
         );
 
-    transition: 0.2s ease;
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
 }
 
 
@@ -1814,10 +2232,143 @@ fieldset {
 }
 
 
-@media (
-    prefers-reduced-motion:
-    reduce
-) {
+/* =====================================================
+   작은 화면
+   ===================================================== */
+
+@media (max-width: 370px) {
+
+    .character-visual {
+        height: 395px;
+    }
+
+
+    .loading-character {
+        height: 355px;
+    }
+
+
+    .result-character-wrap {
+        height: 375px;
+    }
+
+
+    .consultation-progress-header {
+        padding-left: 14px;
+
+        padding-right: 14px;
+    }
+
+
+    .consultation-progress-track {
+        margin-left: 14px;
+
+        margin-right: 14px;
+    }
+
+
+    .character-dialogue {
+        margin-left: 13px;
+
+        margin-right: 13px;
+    }
+
+
+    .voice-controls {
+        margin-left: 13px;
+
+        margin-right: 13px;
+    }
+
+
+    .consultation-sequence {
+        gap: 6px;
+
+        padding-left: 13px;
+
+        padding-right: 13px;
+    }
+
+
+    .consultation-sequence button {
+        min-height: 36px;
+
+        padding:
+            0
+            3px;
+
+        font-size: 7.5px;
+    }
+
+
+    .result-bottom-actions {
+        margin-left: 13px;
+
+        margin-right: 13px;
+    }
+}
+
+
+/* =====================================================
+   아주 작은 화면
+   ===================================================== */
+
+@media (max-width: 330px) {
+
+    .consultation-sequence {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+
+
+    /*
+     * 2열이 되는 경우에는
+     * 마지막 항목 강제 배치를 해제한다.
+     */
+    .consultation-sequence button:nth-child(10),
+    .consultation-sequence button:nth-child(11) {
+        grid-column: auto;
+    }
+
+
+    .consultation-sequence button:nth-child(11) {
+        grid-column: 1 / 3;
+    }
+
+
+    .date-grid {
+        grid-template-columns:
+            1.25fr
+            1fr
+            1fr;
+    }
+}
+
+
+/* =====================================================
+   접근성 - 모션 감소
+   ===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+
+        animation-duration:
+            0.01ms !important;
+
+        animation-iteration-count:
+            1 !important;
+
+        transition-duration:
+            0.01ms !important;
+    }
+
 
     .character-image,
     .result-character-image,
