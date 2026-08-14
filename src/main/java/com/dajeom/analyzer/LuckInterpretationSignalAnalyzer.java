@@ -27,6 +27,24 @@ import java.util.Set;
  * 상담용 해석 근거로 변환한다.
  *
  * 아직 사용자 문장을 생성하지 않는다.
+ *
+ * =================================================
+ *
+ * 현재 정밀화 구조에서는
+ * UsefulGodAnalysis 전체를 하나의
+ * confidence 값으로 축약하지 않는다.
+ *
+ * 용신 선택 상태는:
+ *
+ * - PRIMARY 존재 여부
+ * - 복수 PRIMARY
+ * - DEFERRED 후보
+ * - 추가 검토 필요
+ *
+ * 등의 구조적 Evidence로 보존된다.
+ *
+ * 따라서 이 Analyzer에서는
+ * 구형 UsefulGodAnalysis.confidence()를 사용하지 않는다.
  */
 @Component
 public class LuckInterpretationSignalAnalyzer {
@@ -60,7 +78,6 @@ public class LuckInterpretationSignalAnalyzer {
         );
 
         addUsefulElementEvidence(
-                natalChart,
                 luckInteraction,
                 result
         );
@@ -397,7 +414,9 @@ public class LuckInterpretationSignalAnalyzer {
                                                 .DECADE_LUCK
                         );
 
-        if (annualIncluded) {
+        if (
+                annualIncluded
+        ) {
 
             result.add(
                     ConsultationCategory
@@ -405,7 +424,9 @@ public class LuckInterpretationSignalAnalyzer {
             );
         }
 
-        if (decadeIncluded) {
+        if (
+                decadeIncluded
+        ) {
 
             result.add(
                     ConsultationCategory
@@ -418,16 +439,39 @@ public class LuckInterpretationSignalAnalyzer {
         );
     }
 
+    /**
+     * 대운/세운 유입 오행과
+     * 현재 용신 체계의 관계를
+     * InterpretationEvidence로 변환한다.
+     *
+     * =================================================
+     *
+     * 현재 7차 정밀화 구조에서는
+     * UsefulGodAnalysis 전체에 대한
+     * 단일 confidence 값을 만들지 않는다.
+     *
+     * 따라서:
+     *
+     * UsefulGodAnalysis.confidence()
+     *
+     * 같은 구형 API를 사용하지 않는다.
+     *
+     * 이 단계의 Evidence Confidence는
+     * 다른 운 상호작용 Evidence와 동일하게
+     * MEDIUM으로 유지한다.
+     *
+     * 용신 자체의 불확실성은
+     * UsefulGodSelectionAnalysis /
+     * UsefulGodRelationAnalysis에
+     * 구조적으로 보존되어 있다.
+     */
     private void addUsefulElementEvidence(
-            NatalChartAdvancedAnalysis natalChart,
             LuckInteractionAnalysis luckInteraction,
             List<InterpretationEvidence> result
     ) {
 
         AnalysisConfidence confidence =
-                natalChart
-                        .usefulGodAnalysis()
-                        .confidence();
+                AnalysisConfidence.MEDIUM;
 
         for (
                 ElementCandidateMatch match
@@ -497,22 +541,30 @@ public class LuckInterpretationSignalAnalyzer {
         double score =
                 0.0;
 
-        if (match.yongshinCandidate()) {
+        if (
+                match.yongshinCandidate()
+        ) {
 
             score += 1.0;
         }
 
-        if (match.huishinCandidate()) {
+        if (
+                match.huishinCandidate()
+        ) {
 
             score += 0.7;
         }
 
-        if (match.temperatureCandidate()) {
+        if (
+                match.temperatureCandidate()
+        ) {
 
             score += 0.6;
         }
 
-        if (match.mediationCandidate()) {
+        if (
+                match.mediationCandidate()
+        ) {
 
             score += 0.6;
         }

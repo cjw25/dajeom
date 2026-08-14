@@ -1,20 +1,24 @@
 package com.dajeom.model;
 
+import com.dajeom.type.HeavenlyStem;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * 사주 원국의 네 기둥.
+ * 사주의 네 기둥을 표현한다.
  *
- * 출생시간을 아는 경우:
- * 년주 + 월주 + 일주 + 시주
+ * 년주 / 월주 / 일주는 반드시 존재한다.
  *
- * 출생시간을 모르는 경우:
- * 년주 + 월주 + 일주
- * 시주는 null 상태로 유지한다.
+ * 시주는 출생시간을 모르는 경우
+ * 존재하지 않을 수 있다.
  *
- * 출생시간을 모른다고 임의의 시간을
- * 만들어 시주를 계산하지 않는다.
+ * 중요:
+ *
+ * 시주가 없다고 해서
+ * 임의의 시주를 생성하지 않는다.
  */
 public record FourPillars(
 
@@ -32,28 +36,42 @@ public record FourPillars(
 
         Objects.requireNonNull(
                 yearPillar,
-                "년주는 필수입니다."
+                "년주가 필요합니다."
         );
 
         Objects.requireNonNull(
                 monthPillar,
-                "월주는 필수입니다."
+                "월주가 필요합니다."
         );
 
         Objects.requireNonNull(
                 dayPillar,
-                "일주는 필수입니다."
+                "일주가 필요합니다."
         );
 
         /*
-         * hourPillar는 출생시간을 모르는 경우
-         * null이 될 수 있으므로
-         * Objects.requireNonNull을 사용하지 않는다.
+         * hourPillar는 의도적으로 null을 허용한다.
+         *
+         * 출생시간 미상인 경우
+         * 시주를 가짜로 생성하지 않기 때문이다.
          */
     }
 
     /**
-     * 시주 계산 여부.
+     * 일간.
+     *
+     * 사주에서 일간은 일주의 천간이다.
+     *
+     * 여러 분석 계층에서 반복적으로 사용하므로
+     * FourPillars의 공식 편의 API로 제공한다.
+     */
+    public HeavenlyStem dayMaster() {
+
+        return dayPillar.stem();
+    }
+
+    /**
+     * 시주 존재 여부.
      */
     public boolean hasHourPillar() {
 
@@ -61,9 +79,9 @@ public record FourPillars(
     }
 
     /**
-     * 시주를 Optional 형태로 조회한다.
+     * 시주를 Optional 형태로 반환한다.
      */
-    public Optional<Pillar> optionalHourPillar() {
+    public Optional<Pillar> hourPillarOptional() {
 
         return Optional.ofNullable(
                 hourPillar
@@ -71,90 +89,68 @@ public record FourPillars(
     }
 
     /**
-     * 전체 사주 한자 표현.
+     * 현재 확정된 기둥 개수.
      *
-     * 시간 있음:
-     * 癸酉 庚申 丁丑 甲辰
-     *
-     * 시간 모름:
-     * 癸酉 庚申 丁丑
+     * 출생시간 있음  -> 4
+     * 출생시간 미상 -> 3
      */
-    public String fullChineseName() {
+    public int knownPillarCount() {
 
-        StringBuilder builder =
-                new StringBuilder();
-
-        builder
-                .append(
-                        yearPillar.chineseName()
-                )
-                .append(" ")
-                .append(
-                        monthPillar.chineseName()
-                )
-                .append(" ")
-                .append(
-                        dayPillar.chineseName()
-                );
-
-        if (hourPillar != null) {
-
-            builder
-                    .append(" ")
-                    .append(
-                            hourPillar.chineseName()
-                    );
-        }
-
-        return builder.toString();
+        return hasHourPillar()
+                ? 4
+                : 3;
     }
 
     /**
-     * 전체 사주 한글 표현.
+     * 확정 가능한 기둥만 순서대로 반환한다.
      *
-     * 시간 있음:
-     * 계유 경신 정축 갑진
-     *
-     * 시간 모름:
-     * 계유 경신 정축
+     * 년주
+     * 월주
+     * 일주
+     * 시주(존재할 경우)
      */
-    public String fullKoreanName() {
+    public List<Pillar> knownPillars() {
 
-        StringBuilder builder =
-                new StringBuilder();
+        List<Pillar> result =
+                new ArrayList<>();
 
-        builder
-                .append(
-                        yearPillar.koreanName()
-                )
-                .append(" ")
-                .append(
-                        monthPillar.koreanName()
-                )
-                .append(" ")
-                .append(
-                        dayPillar.koreanName()
-                );
+        result.add(
+                yearPillar
+        );
 
-        if (hourPillar != null) {
+        result.add(
+                monthPillar
+        );
 
-            builder
-                    .append(" ")
-                    .append(
-                            hourPillar.koreanName()
-                    );
+        result.add(
+                dayPillar
+        );
+
+        if (
+                hourPillar != null
+        ) {
+
+            result.add(
+                    hourPillar
+            );
         }
 
-        return builder.toString();
+        return List.copyOf(
+                result
+        );
     }
 
     /**
-     * 일간.
+     * 완전한 사주팔자인지 여부.
      *
-     * 명리 분석의 중심이 되는 천간이다.
+     * true:
+     * 4주 8자
+     *
+     * false:
+     * 출생시간 미상으로 3주 6자
      */
-    public com.dajeom.type.HeavenlyStem dayMaster() {
+    public boolean complete() {
 
-        return dayPillar.stem();
+        return hasHourPillar();
     }
 }

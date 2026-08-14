@@ -62,7 +62,7 @@ public record NatalChartAnalysis(
         StrengthAnalysis strengthAnalysis,
 
         /**
-         * 천간 및 지지의 관계 분석.
+         * 정밀화 8차 천간 및 지지 관계 분석.
          */
         RelationAnalysis relationAnalysis
 
@@ -125,32 +125,32 @@ public record NatalChartAnalysis(
     }
 
     /**
+     * 정밀화 8차 기준으로
      * 천간 관계가 하나라도 존재하는지 확인한다.
      */
     public boolean hasStemRelations() {
 
-        return !relationAnalysis
-                .stemRelations()
-                .isEmpty();
+        return relationAnalysis
+                .hasAnyHeavenlyStemRelation();
     }
 
     /**
+     * 정밀화 8차 기준으로
      * 지지 관계가 하나라도 존재하는지 확인한다.
      */
     public boolean hasBranchRelations() {
 
-        return !relationAnalysis
-                .branchRelations()
-                .isEmpty();
+        return relationAnalysis
+                .hasAnyEarthlyBranchRelation();
     }
 
     /**
-     * 원국에 천간/지지 관계가
+     * 원국에 천간 또는 지지 관계가
      * 하나라도 존재하는지 확인한다.
      */
     public boolean hasRelations() {
 
-        return hasStemRelations()
-                || hasBranchRelations();
+        return relationAnalysis
+                .hasAnyRelation();
     }
 }

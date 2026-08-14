@@ -1,30 +1,51 @@
 package com.dajeom.exception;
 
+import java.time.LocalDate;
+
 /**
- * 존재하지 않는 음력 날짜,
- * 잘못된 윤달,
- * 변환 지원 범위를 벗어난 날짜 등에 사용한다.
+ * 존재하지 않거나 변환할 수 없는
+ * 한국 음력 날짜가 입력된 경우 발생한다.
  */
 public class InvalidLunarDateException
-        extends IllegalArgumentException {
+        extends RuntimeException {
 
     public InvalidLunarDateException(
             String message
     ) {
-
         super(
                 message
         );
     }
 
     public InvalidLunarDateException(
-            String message,
-            Throwable cause
+            LocalDate lunarDate,
+            boolean leapMonth
+    ) {
+        super(
+                createMessage(
+                        lunarDate,
+                        leapMonth
+                )
+        );
+    }
+
+    private static String createMessage(
+            LocalDate lunarDate,
+            boolean leapMonth
     ) {
 
-        super(
-                message,
-                cause
+        if (
+                lunarDate == null
+        ) {
+            return "유효한 음력 생년월일이 필요합니다.";
+        }
+
+        return "변환할 수 없는 음력 날짜입니다: "
+                + lunarDate
+                + (
+                leapMonth
+                        ? " (윤달)"
+                        : " (평달)"
         );
     }
 }

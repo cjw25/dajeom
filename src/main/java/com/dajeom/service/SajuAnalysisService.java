@@ -1,9 +1,17 @@
 package com.dajeom.service;
 
+import com.dajeom.adapter.ConsultationStoryGenerator;
+import com.dajeom.analyzer.ConsultationCategoryEvidenceAnalyzer;
+import com.dajeom.analyzer.ConsultationGroundingAnalyzer;
+import com.dajeom.analyzer.ConsultationGroundingPolicyAnalyzer;
+import com.dajeom.analyzer.ConsultationInterpretationPromptContextAnalyzer;
+import com.dajeom.analyzer.ConsultationRequestEvidenceAnalyzer;
+import com.dajeom.analyzer.ConsultationRequestScopeAnalyzer;
 import com.dajeom.calculator.KoreanLunarCalendarCalculator;
 import com.dajeom.constant.SajuConstants;
 import com.dajeom.dto.AnnualLuckResponse;
 import com.dajeom.dto.ConsultationSectionResponse;
+import com.dajeom.dto.DecadeLuckPeriodResponse;
 import com.dajeom.dto.DecadeLuckResponse;
 import com.dajeom.dto.PillarResponse;
 import com.dajeom.dto.SajuAnalysisRequest;
@@ -13,58 +21,144 @@ import com.dajeom.engine.ConsultationAnalysisEngine;
 import com.dajeom.engine.DecadeLuckAnalysisEngine;
 import com.dajeom.engine.FourPillarsCalculationEngine;
 import com.dajeom.engine.InterpretationSignalAnalysisEngine;
+import com.dajeom.engine.LifeDomainAnalysisEngine;
+import com.dajeom.engine.LuckIntegratedAnalysisEngine;
 import com.dajeom.engine.LuckInteractionAnalysisEngine;
 import com.dajeom.engine.NatalChartAdvancedAnalysisEngine;
 import com.dajeom.engine.NatalChartAnalysisEngine;
+import com.dajeom.engine.PalaceAnalysisEngine;
+import com.dajeom.engine.ShinsalAnalysisEngine;
+import com.dajeom.engine.TenGodCompositeAnalysisEngine;
+import com.dajeom.engine.TwelveLifeStageAnalysisEngine;
 import com.dajeom.model.AnnualLuckAnalysis;
+import com.dajeom.model.AnnualLuckTenGodEvidence;
 import com.dajeom.model.BirthDateValue;
+import com.dajeom.model.BirthTimeContext;
 import com.dajeom.model.ConsultationAnalysis;
+import com.dajeom.model.ConsultationCategoryEvidenceAnalysis;
+import com.dajeom.model.ConsultationGroundingAnalysis;
+import com.dajeom.model.ConsultationGroundingPolicyAnalysis;
+import com.dajeom.model.ConsultationInterpretationPromptContext;
+import com.dajeom.model.ConsultationInterpretationPromptSection;
+import com.dajeom.model.ConsultationRequestEvidenceAnalysis;
+import com.dajeom.model.ConsultationRequestScopeAnalysis;
 import com.dajeom.model.ConsultationSection;
+import com.dajeom.model.ConsultationStoryGeneration;
 import com.dajeom.model.DecadeLuckAnalysis;
 import com.dajeom.model.DecadeLuckPeriod;
 import com.dajeom.model.FourPillars;
 import com.dajeom.model.InterpretationSignalAnalysis;
+import com.dajeom.model.LifeDomainAnalysis;
+import com.dajeom.model.LifeDomainEvidenceResolution;
+import com.dajeom.model.LuckIntegratedAnalysis;
 import com.dajeom.model.LuckInteractionAnalysis;
-import com.dajeom.model.LuckStart;
+import com.dajeom.model.LuckReferenceContext;
 import com.dajeom.model.NatalChartAdvancedAnalysis;
 import com.dajeom.model.NatalChartAnalysis;
 import com.dajeom.model.NormalizedBirthData;
+import com.dajeom.model.PalaceAnalysis;
+import com.dajeom.model.PalaceCrossContext;
 import com.dajeom.model.Pillar;
+import com.dajeom.model.SexagenaryPillar;
+import com.dajeom.model.ShinsalAnalysis;
+import com.dajeom.model.TenGodCompositeAnalysis;
+import com.dajeom.model.TwelveLifeStageAnalysis;
+import com.dajeom.resolver.AnnualDecadeLuckCrossResolver;
+import com.dajeom.resolver.AnnualDecadeLuckCrossResolverFactory;
+import com.dajeom.resolver.AnnualLuckContextResolver;
+import com.dajeom.resolver.AnnualLuckContextResolverFactory;
+import com.dajeom.resolver.AnnualLuckNatalCrossResolver;
+import com.dajeom.resolver.AnnualLuckNatalCrossResolverFactory;
+import com.dajeom.resolver.AnnualLuckTenGodSourceResolver;
+import com.dajeom.resolver.DecadeLuckContextResolver;
+import com.dajeom.resolver.DecadeLuckContextResolverFactory;
+import com.dajeom.resolver.DecadeLuckNatalCrossResolver;
+import com.dajeom.resolver.DecadeLuckNatalCrossResolverFactory;
+import com.dajeom.resolver.DecadeLuckTenGodSourceResolver;
+import com.dajeom.resolver.LifeDomainDecadeContextSourceResolver;
+import com.dajeom.resolver.LifeDomainEvidenceResolver;
+import com.dajeom.resolver.LifeDomainNatalEvidenceSourceResolver;
+import com.dajeom.resolver.LifeDomainNatalEvidenceSourceResolverFactory;
+import com.dajeom.resolver.LuckIntegratedLayerAnalysisResolver;
+import com.dajeom.resolver.LuckIntegratedLayerAnalysisResolverFactory;
+import com.dajeom.resolver.PalaceCrossContextAdapter;
+import com.dajeom.resolver.PalaceTenGodSourceResolver;
+import com.dajeom.resolver.ShinsalNatalPointSourceResolver;
 import com.dajeom.type.CalendarType;
+import com.dajeom.type.ConsultationCategory;
 import com.dajeom.type.FiveElement;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * 사주 전체 분석 Application Service.
  *
- * 처리 흐름:
+ * =================================================
  *
- * Request
- *      ↓
- * 양력/음력 정규화
- *      ↓
- * NormalizedBirthData
- *      ↓
- * FourPillars
- *      ↓
- * 원국 분석
- *      ↓
- * 대운
- *      ↓
- * 세운
- *      ↓
- * 운 상호작용
- *      ↓
- * Interpretation
- *      ↓
- * Consultation
- *      ↓
- * Response
+ * deterministic 실행선:
+ *
+ * 1 ~ 12차 원국
+ *
+ * ↓
+ *
+ * 13차 대운
+ *
+ * ↓
+ *
+ * luckReferenceDate 존재 시
+ *
+ * 16차
+ * 원국 + 대운 + 세운 + 월운 통합 Timeline
+ *
+ * ↓
+ *
+ * 17차
+ * 신살 보조 Evidence
+ *
+ * ↓
+ *
+ * 18차
+ * LifeDomain Evidence / Rule Match
+ *
+ * ↓
+ *
+ * 19차
+ * ConsultationCategory / Request Evidence Routing
+ *
+ * ↓
+ *
+ * 20차
+ * AI Grounding
+ * +
+ * Grounding Policy
+ * +
+ * Interpretation Prompt Context
+ *
+ * =================================================
+ *
+ * 정밀화 20차 결과인
+ * ConsultationInterpretationPromptContext가
+ * 외부 LLM Adapter의 공식 deterministic 입력 Anchor다.
+ *
+ * =================================================
+ *
+ * 이 Service는 이제:
+ *
+ * - 20차 Prompt Context가 존재할 때 외부 LLM Story Adapter를 호출한다.
+ * - LLM 결과는 storyText에만 연결한다.
+ * - 20차 결과를 Legacy InterpretationSignal에 섞지 않는다.
+ * - 외부 LLM 실패가 deterministic 분석 전체를 실패시키지 않도록 한다.
+ *
+ * 기존 targetYear 기반 14차와
+ * Legacy Consultation 경로는
+ * 기존 SajuAnalysisResponse 호환을 위해 유지한다.
  */
 @Service
 public class SajuAnalysisService {
@@ -81,11 +175,110 @@ public class SajuAnalysisService {
     private final NatalChartAdvancedAnalysisEngine
             natalChartAdvancedAnalysisEngine;
 
+    private final TenGodCompositeAnalysisEngine
+            tenGodCompositeAnalysisEngine;
+
+    private final TwelveLifeStageAnalysisEngine
+            twelveLifeStageAnalysisEngine;
+
+    private final PalaceAnalysisEngine
+            palaceAnalysisEngine;
+
+    private final PalaceCrossContextAdapter
+            palaceCrossContextAdapter;
+
     private final DecadeLuckAnalysisEngine
             decadeLuckAnalysisEngine;
 
     private final AnnualLuckAnalysisEngine
             annualLuckAnalysisEngine;
+
+    /*
+     * =================================================
+     * 16차
+     * =================================================
+     */
+
+    private final LuckIntegratedAnalysisEngine
+            luckIntegratedAnalysisEngine;
+
+    private final LuckIntegratedLayerAnalysisResolverFactory
+            luckIntegratedLayerAnalysisResolverFactory;
+
+    /*
+     * =================================================
+     * 17차
+     * =================================================
+     */
+
+    private final ShinsalAnalysisEngine
+            shinsalAnalysisEngine;
+
+    private final ShinsalNatalPointSourceResolver
+            shinsalNatalPointSourceResolver;
+
+    /*
+     * =================================================
+     * 18차
+     * =================================================
+     */
+
+    private final LifeDomainEvidenceResolver
+            lifeDomainEvidenceResolver;
+
+    private final LifeDomainAnalysisEngine
+            lifeDomainAnalysisEngine;
+
+    private final LifeDomainNatalEvidenceSourceResolverFactory
+            lifeDomainNatalEvidenceSourceResolverFactory;
+
+    private final LifeDomainDecadeContextSourceResolver
+            lifeDomainDecadeContextSourceResolver;
+
+    /*
+     * =================================================
+     * 19차
+     * =================================================
+     */
+
+    private final ConsultationRequestScopeAnalyzer
+            consultationRequestScopeAnalyzer;
+
+    private final ConsultationCategoryEvidenceAnalyzer
+            consultationCategoryEvidenceAnalyzer;
+
+    private final ConsultationRequestEvidenceAnalyzer
+            consultationRequestEvidenceAnalyzer;
+
+    /*
+     * =================================================
+     * 20차
+     * =================================================
+     */
+
+    private final ConsultationGroundingAnalyzer
+            consultationGroundingAnalyzer;
+
+    private final ConsultationGroundingPolicyAnalyzer
+            consultationGroundingPolicyAnalyzer;
+
+    private final ConsultationInterpretationPromptContextAnalyzer
+            consultationInterpretationPromptContextAnalyzer;
+
+    /*
+     * =================================================
+     * 외부 LLM 문장화 경계
+     * =================================================
+     */
+
+    private final ConsultationStoryGenerator
+            consultationStoryGenerator;
+
+    /*
+     * =================================================
+     * Legacy Interpretation Path
+     * =================================================
+     */
 
     private final LuckInteractionAnalysisEngine
             luckInteractionAnalysisEngine;
@@ -96,53 +289,321 @@ public class SajuAnalysisService {
     private final ConsultationAnalysisEngine
             consultationAnalysisEngine;
 
+    private final PalaceTenGodSourceResolver
+            palaceTenGodSourceResolver;
+
+    private final DecadeLuckTenGodSourceResolver
+            decadeLuckTenGodSourceResolver;
+
+    private final DecadeLuckNatalCrossResolverFactory
+            decadeLuckNatalCrossResolverFactory;
+
+    private final DecadeLuckContextResolverFactory
+            decadeLuckContextResolverFactory;
+
+    private final AnnualLuckTenGodSourceResolver
+            annualLuckTenGodSourceResolver;
+
+    private final AnnualLuckNatalCrossResolverFactory
+            annualLuckNatalCrossResolverFactory;
+
+    private final AnnualDecadeLuckCrossResolverFactory
+            annualDecadeLuckCrossResolverFactory;
+
+    private final AnnualLuckContextResolverFactory
+            annualLuckContextResolverFactory;
+
     public SajuAnalysisService(
+
             KoreanLunarCalendarCalculator
                     koreanLunarCalendarCalculator,
+
             FourPillarsCalculationEngine
                     fourPillarsCalculationEngine,
+
             NatalChartAnalysisEngine
                     natalChartAnalysisEngine,
+
             NatalChartAdvancedAnalysisEngine
                     natalChartAdvancedAnalysisEngine,
+
+            TenGodCompositeAnalysisEngine
+                    tenGodCompositeAnalysisEngine,
+
+            TwelveLifeStageAnalysisEngine
+                    twelveLifeStageAnalysisEngine,
+
+            PalaceAnalysisEngine
+                    palaceAnalysisEngine,
+
+            PalaceCrossContextAdapter
+                    palaceCrossContextAdapter,
+
             DecadeLuckAnalysisEngine
                     decadeLuckAnalysisEngine,
+
             AnnualLuckAnalysisEngine
                     annualLuckAnalysisEngine,
+
+            LuckIntegratedAnalysisEngine
+                    luckIntegratedAnalysisEngine,
+
+            LuckIntegratedLayerAnalysisResolverFactory
+                    luckIntegratedLayerAnalysisResolverFactory,
+
+            ShinsalAnalysisEngine
+                    shinsalAnalysisEngine,
+
+            ShinsalNatalPointSourceResolver
+                    shinsalNatalPointSourceResolver,
+
+            LifeDomainEvidenceResolver
+                    lifeDomainEvidenceResolver,
+
+            LifeDomainAnalysisEngine
+                    lifeDomainAnalysisEngine,
+
+            LifeDomainNatalEvidenceSourceResolverFactory
+                    lifeDomainNatalEvidenceSourceResolverFactory,
+
+            LifeDomainDecadeContextSourceResolver
+                    lifeDomainDecadeContextSourceResolver,
+
+            ConsultationRequestScopeAnalyzer
+                    consultationRequestScopeAnalyzer,
+
+            ConsultationCategoryEvidenceAnalyzer
+                    consultationCategoryEvidenceAnalyzer,
+
+            ConsultationRequestEvidenceAnalyzer
+                    consultationRequestEvidenceAnalyzer,
+
+            ConsultationGroundingAnalyzer
+                    consultationGroundingAnalyzer,
+
+            ConsultationGroundingPolicyAnalyzer
+                    consultationGroundingPolicyAnalyzer,
+
+            ConsultationInterpretationPromptContextAnalyzer
+                    consultationInterpretationPromptContextAnalyzer,
+
+            ConsultationStoryGenerator
+                    consultationStoryGenerator,
+
             LuckInteractionAnalysisEngine
                     luckInteractionAnalysisEngine,
+
             InterpretationSignalAnalysisEngine
                     interpretationSignalAnalysisEngine,
+
             ConsultationAnalysisEngine
-                    consultationAnalysisEngine
+                    consultationAnalysisEngine,
+
+            PalaceTenGodSourceResolver
+                    palaceTenGodSourceResolver,
+
+            DecadeLuckTenGodSourceResolver
+                    decadeLuckTenGodSourceResolver,
+
+            DecadeLuckNatalCrossResolverFactory
+                    decadeLuckNatalCrossResolverFactory,
+
+            DecadeLuckContextResolverFactory
+                    decadeLuckContextResolverFactory,
+
+            AnnualLuckTenGodSourceResolver
+                    annualLuckTenGodSourceResolver,
+
+            AnnualLuckNatalCrossResolverFactory
+                    annualLuckNatalCrossResolverFactory,
+
+            AnnualDecadeLuckCrossResolverFactory
+                    annualDecadeLuckCrossResolverFactory,
+
+            AnnualLuckContextResolverFactory
+                    annualLuckContextResolverFactory
+
     ) {
 
         this.koreanLunarCalendarCalculator =
-                koreanLunarCalendarCalculator;
+                Objects.requireNonNull(
+                        koreanLunarCalendarCalculator
+                );
 
         this.fourPillarsCalculationEngine =
-                fourPillarsCalculationEngine;
+                Objects.requireNonNull(
+                        fourPillarsCalculationEngine
+                );
 
         this.natalChartAnalysisEngine =
-                natalChartAnalysisEngine;
+                Objects.requireNonNull(
+                        natalChartAnalysisEngine
+                );
 
         this.natalChartAdvancedAnalysisEngine =
-                natalChartAdvancedAnalysisEngine;
+                Objects.requireNonNull(
+                        natalChartAdvancedAnalysisEngine
+                );
+
+        this.tenGodCompositeAnalysisEngine =
+                Objects.requireNonNull(
+                        tenGodCompositeAnalysisEngine
+                );
+
+        this.twelveLifeStageAnalysisEngine =
+                Objects.requireNonNull(
+                        twelveLifeStageAnalysisEngine
+                );
+
+        this.palaceAnalysisEngine =
+                Objects.requireNonNull(
+                        palaceAnalysisEngine
+                );
+
+        this.palaceCrossContextAdapter =
+                Objects.requireNonNull(
+                        palaceCrossContextAdapter
+                );
 
         this.decadeLuckAnalysisEngine =
-                decadeLuckAnalysisEngine;
+                Objects.requireNonNull(
+                        decadeLuckAnalysisEngine
+                );
 
         this.annualLuckAnalysisEngine =
-                annualLuckAnalysisEngine;
+                Objects.requireNonNull(
+                        annualLuckAnalysisEngine
+                );
+
+        this.luckIntegratedAnalysisEngine =
+                Objects.requireNonNull(
+                        luckIntegratedAnalysisEngine
+                );
+
+        this.luckIntegratedLayerAnalysisResolverFactory =
+                Objects.requireNonNull(
+                        luckIntegratedLayerAnalysisResolverFactory
+                );
+
+        this.shinsalAnalysisEngine =
+                Objects.requireNonNull(
+                        shinsalAnalysisEngine
+                );
+
+        this.shinsalNatalPointSourceResolver =
+                Objects.requireNonNull(
+                        shinsalNatalPointSourceResolver
+                );
+
+        this.lifeDomainEvidenceResolver =
+                Objects.requireNonNull(
+                        lifeDomainEvidenceResolver
+                );
+
+        this.lifeDomainAnalysisEngine =
+                Objects.requireNonNull(
+                        lifeDomainAnalysisEngine
+                );
+
+        this.lifeDomainNatalEvidenceSourceResolverFactory =
+                Objects.requireNonNull(
+                        lifeDomainNatalEvidenceSourceResolverFactory
+                );
+
+        this.lifeDomainDecadeContextSourceResolver =
+                Objects.requireNonNull(
+                        lifeDomainDecadeContextSourceResolver
+                );
+
+        this.consultationRequestScopeAnalyzer =
+                Objects.requireNonNull(
+                        consultationRequestScopeAnalyzer
+                );
+
+        this.consultationCategoryEvidenceAnalyzer =
+                Objects.requireNonNull(
+                        consultationCategoryEvidenceAnalyzer
+                );
+
+        this.consultationRequestEvidenceAnalyzer =
+                Objects.requireNonNull(
+                        consultationRequestEvidenceAnalyzer
+                );
+
+        this.consultationGroundingAnalyzer =
+                Objects.requireNonNull(
+                        consultationGroundingAnalyzer
+                );
+
+        this.consultationGroundingPolicyAnalyzer =
+                Objects.requireNonNull(
+                        consultationGroundingPolicyAnalyzer
+                );
+
+        this.consultationInterpretationPromptContextAnalyzer =
+                Objects.requireNonNull(
+                        consultationInterpretationPromptContextAnalyzer
+                );
+
+        this.consultationStoryGenerator =
+                Objects.requireNonNull(
+                        consultationStoryGenerator
+                );
 
         this.luckInteractionAnalysisEngine =
-                luckInteractionAnalysisEngine;
+                Objects.requireNonNull(
+                        luckInteractionAnalysisEngine
+                );
 
         this.interpretationSignalAnalysisEngine =
-                interpretationSignalAnalysisEngine;
+                Objects.requireNonNull(
+                        interpretationSignalAnalysisEngine
+                );
 
         this.consultationAnalysisEngine =
-                consultationAnalysisEngine;
+                Objects.requireNonNull(
+                        consultationAnalysisEngine
+                );
+
+        this.palaceTenGodSourceResolver =
+                Objects.requireNonNull(
+                        palaceTenGodSourceResolver
+                );
+
+        this.decadeLuckTenGodSourceResolver =
+                Objects.requireNonNull(
+                        decadeLuckTenGodSourceResolver
+                );
+
+        this.decadeLuckNatalCrossResolverFactory =
+                Objects.requireNonNull(
+                        decadeLuckNatalCrossResolverFactory
+                );
+
+        this.decadeLuckContextResolverFactory =
+                Objects.requireNonNull(
+                        decadeLuckContextResolverFactory
+                );
+
+        this.annualLuckTenGodSourceResolver =
+                Objects.requireNonNull(
+                        annualLuckTenGodSourceResolver
+                );
+
+        this.annualLuckNatalCrossResolverFactory =
+                Objects.requireNonNull(
+                        annualLuckNatalCrossResolverFactory
+                );
+
+        this.annualDecadeLuckCrossResolverFactory =
+                Objects.requireNonNull(
+                        annualDecadeLuckCrossResolverFactory
+                );
+
+        this.annualLuckContextResolverFactory =
+                Objects.requireNonNull(
+                        annualLuckContextResolverFactory
+                );
     }
 
     public SajuAnalysisResponse analyze(
@@ -154,86 +615,269 @@ public class SajuAnalysisService {
                 "사주 분석 요청은 필수입니다."
         );
 
-        /*
-         * 1.
-         * 양력/음력을 실제 계산용 양력 날짜로
-         * 정규화한다.
-         */
         NormalizedBirthData birthData =
                 normalizeBirthData(
                         request
                 );
 
-        /*
-         * 2.
-         * 사주 네 기둥.
-         */
+        BirthTimeContext birthTimeContext =
+                createBirthTimeContext(
+                        birthData
+                );
+
         FourPillars fourPillars =
                 fourPillarsCalculationEngine
                         .calculate(
-                                birthData
+                                birthTimeContext
                         );
 
-        /*
-         * 3.
-         * 원국 기본 분석.
-         */
         NatalChartAnalysis natalChart =
                 natalChartAnalysisEngine
                         .analyze(
                                 fourPillars
                         );
 
-        /*
-         * 4.
-         * 격국 / 조후 / 합화 / 통관 /
-         * 용신 후보 분석.
-         */
-        NatalChartAdvancedAnalysis
-                advancedAnalysis =
+        NatalChartAdvancedAnalysis advancedAnalysis =
                 natalChartAdvancedAnalysisEngine
                         .analyze(
                                 natalChart
                         );
 
-        /*
-         * 현재 대운 조회 기준시각.
-         */
-        ZonedDateTime targetDateTime =
-                ZonedDateTime.now(
-                        birthData.zoneId()
-                );
-
-        /*
-         * 5.
-         * 대운.
-         */
-        DecadeLuckAnalysis decadeLuckAnalysis =
-                decadeLuckAnalysisEngine
-                        .analyze(
-                                birthData,
+        TenGodCompositeAnalysis tenGodCompositeAnalysis =
+                tenGodCompositeAnalysisEngine
+                        .analyzeConservatively(
                                 fourPillars,
-                                targetDateTime
+                                advancedAnalysis
+                                        .elementStrengthAnalysis(),
+                                advancedAnalysis
+                                        .dayMasterStrengthAnalysis(),
+                                advancedAnalysis
+                                        .structureAnalysis(),
+                                advancedAnalysis
+                                        .usefulGodAnalysis(),
+                                advancedAnalysis
+                                        .combinationTransformationAnalysis()
                         );
 
-        /*
-         * 6.
-         * 세운.
-         */
+        TwelveLifeStageAnalysis twelveLifeStageAnalysis =
+                twelveLifeStageAnalysisEngine
+                        .analyze(
+                                fourPillars
+                        );
+
+        PalaceCrossContext palaceCrossContext =
+                palaceCrossContextAdapter
+                        .resolve(
+                                advancedAnalysis
+                                        .relationAnalysis(),
+
+                                advancedAnalysis
+                                        .combinationTransformationAnalysis()
+                        );
+
+        PalaceAnalysis palaceAnalysis =
+                palaceAnalysisEngine
+                        .analyze(
+                                fourPillars,
+                                twelveLifeStageAnalysis,
+                                palaceTenGodSourceResolver,
+                                palaceCrossContext
+                        );
+
+        DecadeLuckNatalCrossResolver
+                decadeLuckNatalCrossResolver =
+                decadeLuckNatalCrossResolverFactory
+                        .create(
+                                advancedAnalysis,
+                                palaceAnalysis
+                        );
+
+        DecadeLuckContextResolver
+                decadeLuckContextResolver =
+                decadeLuckContextResolverFactory
+                        .create(
+                                advancedAnalysis,
+                                tenGodCompositeAnalysis,
+                                palaceAnalysis
+                        );
+
+        DecadeLuckAnalysis decadeLuckAnalysis;
+
+        if (
+                birthTimeContext
+                        .hasKnownBirthTime()
+        ) {
+
+            decadeLuckAnalysis =
+                    decadeLuckAnalysisEngine
+                            .analyze(
+                                    birthData.gender(),
+                                    fourPillars,
+                                    birthTimeContext
+                                            .requireBirthDateTime(),
+                                    birthData.zoneId(),
+                                    palaceAnalysis,
+                                    decadeLuckTenGodSourceResolver,
+                                    decadeLuckNatalCrossResolver,
+                                    decadeLuckContextResolver
+                            );
+
+        } else {
+
+            decadeLuckAnalysis =
+                    decadeLuckAnalysisEngine
+                            .analyzeUnknownTime(
+                                    birthData.gender(),
+                                    fourPillars,
+                                    birthData.solarBirthDate(),
+                                    birthData.zoneId(),
+                                    palaceAnalysis,
+                                    decadeLuckTenGodSourceResolver,
+                                    decadeLuckNatalCrossResolver,
+                                    decadeLuckContextResolver
+                            );
+        }
+
+        Optional<LuckIntegratedAnalysis>
+                luckIntegratedAnalysis =
+                analyzeIntegratedLuckIfRequested(
+                        request,
+                        birthData,
+                        advancedAnalysis,
+                        tenGodCompositeAnalysis,
+                        palaceAnalysis,
+                        decadeLuckAnalysis
+                );
+
+        Optional<ShinsalAnalysis>
+                shinsalAnalysis =
+                analyzeShinsalIfIntegrated(
+                        luckIntegratedAnalysis
+                );
+
+        if (
+                luckIntegratedAnalysis.isPresent()
+                        != shinsalAnalysis.isPresent()
+        ) {
+
+            throw new IllegalStateException(
+                    "16차 LuckIntegratedAnalysis와 17차 ShinsalAnalysis 생성 상태가 일치하지 않습니다."
+            );
+        }
+
+        Optional<LifeDomainAnalysis>
+                lifeDomainAnalysis =
+                analyzeLifeDomainIfIntegrated(
+                        luckIntegratedAnalysis,
+                        shinsalAnalysis,
+                        advancedAnalysis,
+                        tenGodCompositeAnalysis,
+                        palaceAnalysis
+                );
+
+        if (
+                luckIntegratedAnalysis.isPresent()
+                        != lifeDomainAnalysis.isPresent()
+        ) {
+
+            throw new IllegalStateException(
+                    "16차 LuckIntegratedAnalysis와 18차 LifeDomainAnalysis 생성 상태가 일치하지 않습니다."
+            );
+        }
+
+        if (
+                shinsalAnalysis.isPresent()
+                        != lifeDomainAnalysis.isPresent()
+        ) {
+
+            throw new IllegalStateException(
+                    "17차 ShinsalAnalysis와 18차 LifeDomainAnalysis 생성 상태가 일치하지 않습니다."
+            );
+        }
+
+        Optional<ConsultationRequestEvidenceAnalysis>
+                consultationRequestEvidenceAnalysis =
+                analyzeConsultationRequestEvidenceIfAvailable(
+                        request,
+                        lifeDomainAnalysis
+                );
+
+        if (
+                lifeDomainAnalysis.isPresent()
+                        != consultationRequestEvidenceAnalysis.isPresent()
+        ) {
+
+            throw new IllegalStateException(
+                    "18차 LifeDomainAnalysis와 19차 ConsultationRequestEvidenceAnalysis 생성 상태가 일치하지 않습니다."
+            );
+        }
+
+        Optional<ConsultationInterpretationPromptContext>
+                interpretationPromptContext =
+                analyzeInterpretationPromptContextIfAvailable(
+                        consultationRequestEvidenceAnalysis
+                );
+
+        if (
+                consultationRequestEvidenceAnalysis.isPresent()
+                        != interpretationPromptContext.isPresent()
+        ) {
+
+            throw new IllegalStateException(
+                    "19차 ConsultationRequestEvidenceAnalysis와 20차 ConsultationInterpretationPromptContext 생성 상태가 일치하지 않습니다."
+            );
+        }
+
+        Optional<ConsultationStoryGeneration>
+                consultationStoryGeneration =
+                generateConsultationStoriesIfAvailable(
+                        interpretationPromptContext
+                );
+
+        AnnualLuckNatalCrossResolver
+                annualLuckNatalCrossResolver =
+                annualLuckNatalCrossResolverFactory
+                        .create(
+                                advancedAnalysis,
+                                palaceAnalysis
+                        );
+
+        AnnualDecadeLuckCrossResolver
+                annualDecadeLuckCrossResolver =
+                annualDecadeLuckCrossResolverFactory
+                        .create(
+                                advancedAnalysis
+                        );
+
+        AnnualLuckContextResolver
+                annualLuckContextResolver =
+                annualLuckContextResolverFactory
+                        .create(
+                                advancedAnalysis,
+                                tenGodCompositeAnalysis,
+                                palaceAnalysis
+                        );
+
         AnnualLuckAnalysis annualLuckAnalysis =
                 annualLuckAnalysisEngine
                         .analyze(
-                                birthData,
-                                fourPillars,
-                                request.targetYear()
+                                request.targetYear(),
+                                birthData.zoneId(),
+                                palaceAnalysis,
+                                decadeLuckAnalysis,
+                                annualLuckTenGodSourceResolver,
+                                annualLuckNatalCrossResolver,
+                                annualDecadeLuckCrossResolver,
+                                annualLuckContextResolver
                         );
 
-        /*
-         * 7.
-         * 원국 ↔ 대운 ↔ 세운.
-         */
-        LuckInteractionAnalysis
-                luckInteractionAnalysis =
+        ZonedDateTime targetDateTime =
+                resolveLegacyDecadeReferenceDateTime(
+                        birthData,
+                        luckIntegratedAnalysis
+                );
+
+        LuckInteractionAnalysis luckInteractionAnalysis =
                 luckInteractionAnalysisEngine
                         .analyze(
                                 advancedAnalysis,
@@ -241,34 +885,20 @@ public class SajuAnalysisService {
                                 annualLuckAnalysis
                         );
 
-        /*
-         * 8.
-         * 11개 분야 해석 Signal.
-         */
-        InterpretationSignalAnalysis
-                signalAnalysis =
+        InterpretationSignalAnalysis signalAnalysis =
                 interpretationSignalAnalysisEngine
                         .analyze(
                                 advancedAnalysis,
                                 luckInteractionAnalysis
                         );
 
-        /*
-         * 9.
-         * 사용자용 기본 상담 구조.
-         */
-        ConsultationAnalysis
-                consultationAnalysis =
+        ConsultationAnalysis consultationAnalysis =
                 consultationAnalysisEngine
                         .analyze(
                                 signalAnalysis,
                                 luckInteractionAnalysis
                         );
 
-        /*
-         * 10.
-         * API Response.
-         */
         return createResponse(
                 birthData,
                 fourPillars,
@@ -276,14 +906,642 @@ public class SajuAnalysisService {
                 decadeLuckAnalysis,
                 annualLuckAnalysis,
                 consultationAnalysis,
-                request.targetYear()
+                interpretationPromptContext,
+                consultationStoryGeneration,
+                request.targetYear(),
+                targetDateTime
         );
     }
 
-    /**
-     * API 입력값을 실제 계산 가능한
-     * NormalizedBirthData로 변환한다.
-     */
+    private Optional<ConsultationStoryGeneration>
+    generateConsultationStoriesIfAvailable(
+
+            Optional<ConsultationInterpretationPromptContext>
+                    interpretationPromptContext
+
+    ) {
+
+        Objects.requireNonNull(
+                interpretationPromptContext,
+                "외부 LLM 문장화에는 ConsultationInterpretationPromptContext Optional이 필요합니다."
+        );
+
+        if (
+                interpretationPromptContext.isEmpty()
+        ) {
+
+            return Optional.empty();
+        }
+
+        ConsultationInterpretationPromptContext promptContext =
+                interpretationPromptContext
+                        .orElseThrow();
+
+        if (
+                promptContext.categoryResolutionRequired()
+                        || !promptContext.hasSections()
+        ) {
+
+            return Optional.empty();
+        }
+
+        Optional<ConsultationStoryGeneration> generated =
+                consultationStoryGenerator
+                        .generate(
+                                promptContext
+                        );
+
+        if (
+                generated.isPresent()
+                        && generated
+                        .orElseThrow()
+                        .promptContext()
+                        != promptContext
+        ) {
+
+            throw new IllegalStateException(
+                    "외부 LLM Story Generation이 현재 ConsultationInterpretationPromptContext Identity를 보존하지 않았습니다."
+            );
+        }
+
+        return generated;
+    }
+
+    private Optional<ConsultationInterpretationPromptContext>
+    analyzeInterpretationPromptContextIfAvailable(
+
+            Optional<ConsultationRequestEvidenceAnalysis>
+                    requestEvidenceAnalysis
+
+    ) {
+
+        Objects.requireNonNull(
+                requestEvidenceAnalysis,
+                "20차에는 ConsultationRequestEvidenceAnalysis Optional이 필요합니다."
+        );
+
+        if (
+                requestEvidenceAnalysis.isEmpty()
+        ) {
+
+            return Optional.empty();
+        }
+
+        ConsultationRequestEvidenceAnalysis
+                resolvedRequestEvidence =
+                requestEvidenceAnalysis
+                        .orElseThrow();
+
+        ConsultationGroundingAnalysis
+                groundingAnalysis =
+                Objects.requireNonNull(
+                        consultationGroundingAnalyzer
+                                .analyze(
+                                        resolvedRequestEvidence
+                                ),
+                        "ConsultationGroundingAnalyzer가 null을 반환했습니다."
+                );
+
+        ConsultationGroundingPolicyAnalysis
+                policyAnalysis =
+                Objects.requireNonNull(
+                        consultationGroundingPolicyAnalyzer
+                                .analyze(
+                                        groundingAnalysis
+                                ),
+                        "ConsultationGroundingPolicyAnalyzer가 null을 반환했습니다."
+                );
+
+        if (
+                policyAnalysis
+                        .groundingAnalysis()
+                        != groundingAnalysis
+        ) {
+
+            throw new IllegalStateException(
+                    "20차 ConsultationGroundingPolicyAnalysis가 현재 ConsultationGroundingAnalysis Identity를 보존하지 않았습니다."
+            );
+        }
+
+        ConsultationInterpretationPromptContext
+                promptContext =
+                Objects.requireNonNull(
+                        consultationInterpretationPromptContextAnalyzer
+                                .analyze(
+                                        policyAnalysis
+                                ),
+                        "ConsultationInterpretationPromptContextAnalyzer가 null을 반환했습니다."
+                );
+
+        return Optional.of(
+                promptContext
+        );
+    }
+
+    private Optional<ConsultationRequestEvidenceAnalysis>
+    analyzeConsultationRequestEvidenceIfAvailable(
+
+            SajuAnalysisRequest request,
+
+            Optional<LifeDomainAnalysis>
+                    lifeDomainAnalysis
+
+    ) {
+
+        Objects.requireNonNull(
+                request,
+                "19차에는 SajuAnalysisRequest가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                lifeDomainAnalysis,
+                "19차에는 LifeDomainAnalysis Optional이 필요합니다."
+        );
+
+        if (
+                lifeDomainAnalysis.isEmpty()
+        ) {
+
+            return Optional.empty();
+        }
+
+        LifeDomainAnalysis resolvedLifeDomainAnalysis =
+                lifeDomainAnalysis
+                        .orElseThrow();
+
+        ConsultationRequestScopeAnalysis
+                requestScope =
+                Objects.requireNonNull(
+                        consultationRequestScopeAnalyzer
+                                .analyze(
+                                        request
+                                ),
+                        "ConsultationRequestScopeAnalyzer가 null을 반환했습니다."
+                );
+
+        ConsultationCategoryEvidenceAnalysis
+                categoryEvidenceAnalysis =
+                Objects.requireNonNull(
+                        consultationCategoryEvidenceAnalyzer
+                                .analyze(
+                                        resolvedLifeDomainAnalysis
+                                ),
+                        "ConsultationCategoryEvidenceAnalyzer가 null을 반환했습니다."
+                );
+
+        ConsultationRequestEvidenceAnalysis
+                requestEvidenceAnalysis =
+                Objects.requireNonNull(
+                        consultationRequestEvidenceAnalyzer
+                                .analyze(
+                                        requestScope,
+                                        categoryEvidenceAnalysis
+                                ),
+                        "ConsultationRequestEvidenceAnalyzer가 null을 반환했습니다."
+                );
+
+        return Optional.of(
+                requestEvidenceAnalysis
+        );
+    }
+
+    private Optional<LifeDomainAnalysis>
+    analyzeLifeDomainIfIntegrated(
+
+            Optional<LuckIntegratedAnalysis>
+                    luckIntegratedAnalysis,
+
+            Optional<ShinsalAnalysis>
+                    shinsalAnalysis,
+
+            NatalChartAdvancedAnalysis advancedAnalysis,
+
+            TenGodCompositeAnalysis tenGodCompositeAnalysis,
+
+            PalaceAnalysis palaceAnalysis
+
+    ) {
+
+        Objects.requireNonNull(
+                luckIntegratedAnalysis,
+                "18차에는 LuckIntegratedAnalysis Optional이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                shinsalAnalysis,
+                "18차에는 ShinsalAnalysis Optional이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                advancedAnalysis,
+                "18차에는 NatalChartAdvancedAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                tenGodCompositeAnalysis,
+                "18차에는 TenGodCompositeAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                palaceAnalysis,
+                "18차에는 PalaceAnalysis가 필요합니다."
+        );
+
+        if (
+                luckIntegratedAnalysis.isEmpty()
+                        && shinsalAnalysis.isEmpty()
+        ) {
+
+            return Optional.empty();
+        }
+
+        if (
+                luckIntegratedAnalysis.isEmpty()
+                        || shinsalAnalysis.isEmpty()
+        ) {
+
+            throw new IllegalStateException(
+                    "18차 분석에는 16차 LuckIntegratedAnalysis와 17차 ShinsalAnalysis가 모두 필요합니다."
+            );
+        }
+
+        LuckIntegratedAnalysis integratedAnalysis =
+                luckIntegratedAnalysis
+                        .orElseThrow();
+
+        ShinsalAnalysis resolvedShinsalAnalysis =
+                shinsalAnalysis
+                        .orElseThrow();
+
+        if (
+                resolvedShinsalAnalysis
+                        .luckIntegratedAnalysis()
+                        != integratedAnalysis
+        ) {
+
+            throw new IllegalArgumentException(
+                    "18차 입력의 LuckIntegratedAnalysis와 ShinsalAnalysis Anchor가 일치하지 않습니다."
+            );
+        }
+
+        if (
+                integratedAnalysis
+                        .natalAnalysis()
+                        != palaceAnalysis
+        ) {
+
+            throw new IllegalArgumentException(
+                    "18차 입력 LuckIntegratedAnalysis가 현재 PalaceAnalysis를 참조하지 않습니다."
+            );
+        }
+
+        LifeDomainNatalEvidenceSourceResolver
+                natalEvidenceSourceResolver =
+                lifeDomainNatalEvidenceSourceResolverFactory
+                        .create(
+                                advancedAnalysis,
+                                tenGodCompositeAnalysis,
+                                palaceAnalysis
+                        );
+
+        LifeDomainEvidenceResolution evidenceResolution =
+                lifeDomainEvidenceResolver
+                        .resolve(
+                                integratedAnalysis,
+                                resolvedShinsalAnalysis,
+                                natalEvidenceSourceResolver,
+                                lifeDomainDecadeContextSourceResolver
+                        );
+
+        if (
+                evidenceResolution
+                        .luckIntegratedAnalysis()
+                        != integratedAnalysis
+        ) {
+
+            throw new IllegalStateException(
+                    "18차 LifeDomainEvidenceResolution이 현재 LuckIntegratedAnalysis를 보존하지 않았습니다."
+            );
+        }
+
+        if (
+                evidenceResolution
+                        .shinsalAnalysis()
+                        != resolvedShinsalAnalysis
+        ) {
+
+            throw new IllegalStateException(
+                    "18차 LifeDomainEvidenceResolution이 현재 ShinsalAnalysis를 보존하지 않았습니다."
+            );
+        }
+
+        LifeDomainAnalysis analysis =
+                Objects.requireNonNull(
+                        lifeDomainAnalysisEngine
+                                .analyze(
+                                        evidenceResolution
+                                ),
+                        "LifeDomainAnalysisEngine이 null을 반환했습니다."
+                );
+
+        if (
+                analysis
+                        .evidenceResolution()
+                        != evidenceResolution
+        ) {
+
+            throw new IllegalStateException(
+                    "18차 LifeDomainAnalysis가 현재 LifeDomainEvidenceResolution Identity를 보존하지 않았습니다."
+            );
+        }
+
+        return Optional.of(
+                analysis
+        );
+    }
+
+    private Optional<ShinsalAnalysis>
+    analyzeShinsalIfIntegrated(
+
+            Optional<LuckIntegratedAnalysis>
+                    luckIntegratedAnalysis
+
+    ) {
+
+        Objects.requireNonNull(
+                luckIntegratedAnalysis,
+                "17차에는 LuckIntegratedAnalysis Optional이 필요합니다."
+        );
+
+        if (
+                luckIntegratedAnalysis.isEmpty()
+        ) {
+
+            return Optional.empty();
+        }
+
+        LuckIntegratedAnalysis integratedAnalysis =
+                luckIntegratedAnalysis
+                        .orElseThrow();
+
+        ShinsalAnalysis analysis =
+                Objects.requireNonNull(
+                        shinsalAnalysisEngine
+                                .analyze(
+                                        integratedAnalysis,
+                                        shinsalNatalPointSourceResolver
+                                ),
+                        "ShinsalAnalysisEngine이 null을 반환했습니다."
+                );
+
+        if (
+                analysis
+                        .luckIntegratedAnalysis()
+                        != integratedAnalysis
+        ) {
+
+            throw new IllegalStateException(
+                    "17차 ShinsalAnalysis가 현재 16차 LuckIntegratedAnalysis Anchor를 보존하지 않았습니다."
+            );
+        }
+
+        return Optional.of(
+                analysis
+        );
+    }
+
+    private Optional<LuckIntegratedAnalysis>
+    analyzeIntegratedLuckIfRequested(
+
+            SajuAnalysisRequest request,
+
+            NormalizedBirthData birthData,
+
+            NatalChartAdvancedAnalysis advancedAnalysis,
+
+            TenGodCompositeAnalysis tenGodCompositeAnalysis,
+
+            PalaceAnalysis palaceAnalysis,
+
+            DecadeLuckAnalysis decadeLuckAnalysis
+
+    ) {
+
+        Objects.requireNonNull(
+                request,
+                "16차 분석에는 SajuAnalysisRequest가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                birthData,
+                "16차 분석에는 NormalizedBirthData가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                advancedAnalysis,
+                "16차 분석에는 NatalChartAdvancedAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                tenGodCompositeAnalysis,
+                "16차 분석에는 TenGodCompositeAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                palaceAnalysis,
+                "16차 분석에는 PalaceAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                decadeLuckAnalysis,
+                "16차 분석에는 DecadeLuckAnalysis가 필요합니다."
+        );
+
+        if (
+                !request.hasLuckReferenceDate()
+        ) {
+
+            return Optional.empty();
+        }
+
+        LuckReferenceContext referenceContext =
+                createLuckReferenceContext(
+                        request,
+                        birthData
+                );
+
+        LuckIntegratedLayerAnalysisResolver
+                layerAnalysisResolver =
+                luckIntegratedLayerAnalysisResolverFactory
+                        .create(
+                                advancedAnalysis,
+                                tenGodCompositeAnalysis,
+                                palaceAnalysis
+                        );
+
+        LuckIntegratedAnalysis analysis =
+                luckIntegratedAnalysisEngine
+                        .analyze(
+                                palaceAnalysis,
+                                decadeLuckAnalysis,
+                                referenceContext,
+                                layerAnalysisResolver
+                        );
+
+        if (
+                analysis.natalAnalysis()
+                        != palaceAnalysis
+        ) {
+
+            throw new IllegalStateException(
+                    "16차 LuckIntegratedAnalysis가 현재 PalaceAnalysis를 보존하지 않았습니다."
+            );
+        }
+
+        if (
+                analysis.decadeLuckAnalysis()
+                        != decadeLuckAnalysis
+        ) {
+
+            throw new IllegalStateException(
+                    "16차 LuckIntegratedAnalysis가 현재 DecadeLuckAnalysis를 보존하지 않았습니다."
+            );
+        }
+
+        if (
+                analysis.referenceContext()
+                        != referenceContext
+        ) {
+
+            throw new IllegalStateException(
+                    "16차 LuckIntegratedAnalysis가 현재 LuckReferenceContext Identity를 보존하지 않았습니다."
+            );
+        }
+
+        return Optional.of(
+                analysis
+        );
+    }
+
+    private LuckReferenceContext
+    createLuckReferenceContext(
+
+            SajuAnalysisRequest request,
+
+            NormalizedBirthData birthData
+
+    ) {
+
+        LocalDate referenceDate =
+                request
+                        .luckReferenceDateOptional()
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "16차 운 분석 기준날짜가 필요합니다."
+                                        )
+                        );
+
+        if (
+                request.exactLuckReferenceRequested()
+        ) {
+
+            ZonedDateTime exactDateTime =
+                    ZonedDateTime.of(
+                            referenceDate,
+                            request
+                                    .luckReferenceTimeOptional()
+                                    .orElseThrow(),
+                            birthData.zoneId()
+                    );
+
+            return LuckReferenceContext
+                    .exact(
+                            exactDateTime,
+                            birthData.zoneId()
+                    );
+        }
+
+        if (
+                request.dateOnlyLuckReferenceRequested()
+        ) {
+
+            return LuckReferenceContext
+                    .dateOnly(
+                            referenceDate,
+                            birthData.zoneId()
+                    );
+        }
+
+        throw new IllegalStateException(
+                "luckReferenceDate는 존재하지만 운 분석 기준 Precision을 결정할 수 없습니다."
+        );
+    }
+
+    private ZonedDateTime
+    resolveLegacyDecadeReferenceDateTime(
+
+            NormalizedBirthData birthData,
+
+            Optional<LuckIntegratedAnalysis>
+                    luckIntegratedAnalysis
+
+    ) {
+
+        Objects.requireNonNull(
+                birthData,
+                "대운 응답 기준에는 NormalizedBirthData가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                luckIntegratedAnalysis,
+                "LuckIntegratedAnalysis Optional이 필요합니다."
+        );
+
+        if (
+                luckIntegratedAnalysis.isPresent()
+        ) {
+
+            LuckReferenceContext referenceContext =
+                    luckIntegratedAnalysis
+                            .orElseThrow()
+                            .referenceContext();
+
+            if (
+                    referenceContext.exact()
+            ) {
+
+                return referenceContext
+                        .requireExactDateTime();
+            }
+        }
+
+        return ZonedDateTime.now(
+                birthData.zoneId()
+        );
+    }
+
+    private BirthTimeContext createBirthTimeContext(
+            NormalizedBirthData birthData
+    ) {
+
+        if (
+                birthData.hasKnownBirthTime()
+        ) {
+
+            return BirthTimeContext.known(
+                    birthData.solarBirthDate(),
+                    birthData.birthTime(),
+                    birthData.zoneId()
+            );
+        }
+
+        return BirthTimeContext.unknown(
+                birthData.solarBirthDate(),
+                birthData.zoneId()
+        );
+    }
+
     private NormalizedBirthData normalizeBirthData(
             SajuAnalysisRequest request
     ) {
@@ -308,12 +1566,6 @@ public class SajuAnalysisService {
                 "분석 대상 연도는 필수입니다."
         );
 
-        /*
-         * 원본 날짜 문자열 파싱.
-         *
-         * 여기에서는 Gregorian 규칙으로
-         * 날짜를 확정하지 않는다.
-         */
         BirthDateValue originalBirthDate =
                 BirthDateValue.parse(
                         request.birthDate()
@@ -346,45 +1598,29 @@ public class SajuAnalysisService {
                         == CalendarType.SOLAR
         ) {
 
-            if (request.leapMonth()) {
+            if (
+                    request.leapMonth()
+            ) {
 
                 throw new IllegalArgumentException(
                         "양력 입력에는 윤달을 사용할 수 없습니다."
                 );
             }
 
-            /*
-             * 양력은 Gregorian 규칙으로
-             * 그대로 검증한다.
-             */
             solarBirthDate =
                     originalBirthDate
                             .toGregorianDate();
 
         } else {
 
-            /*
-             * 음력은 한국 음양력 데이터로
-             * 실제 양력 날짜를 얻는다.
-             *
-             * leapMonth:
-             *
-             * false = 평달
-             * true  = 윤달
-             */
             solarBirthDate =
                     koreanLunarCalendarCalculator
-                            .toSolarDate(
+                            .toSolar(
                                     originalBirthDate,
                                     request.leapMonth()
                             );
         }
 
-        /*
-         * 미래 출생일 방지.
-         *
-         * 반드시 변환 완료된 실제 양력일을 기준으로 한다.
-         */
         LocalDate today =
                 LocalDate.now(
                         SajuConstants.DEFAULT_ZONE_ID
@@ -414,13 +1650,29 @@ public class SajuAnalysisService {
     }
 
     private SajuAnalysisResponse createResponse(
+
             NormalizedBirthData birthData,
+
             FourPillars fourPillars,
+
             NatalChartAdvancedAnalysis advancedAnalysis,
+
             DecadeLuckAnalysis decadeLuckAnalysis,
+
             AnnualLuckAnalysis annualLuckAnalysis,
+
             ConsultationAnalysis consultationAnalysis,
-            int targetYear
+
+            Optional<ConsultationInterpretationPromptContext>
+                    interpretationPromptContext,
+
+            Optional<ConsultationStoryGeneration>
+                    consultationStoryGeneration,
+
+            int targetYear,
+
+            ZonedDateTime targetDateTime
+
     ) {
 
         return new SajuAnalysisResponse(
@@ -476,41 +1728,44 @@ public class SajuAnalysisService {
 
                 advancedAnalysis
                         .structureAnalysis()
-                        .type()
-                        .getKoreanName(),
+                        .primaryNameKorean(),
 
                 toElementNames(
                         advancedAnalysis
                                 .usefulGodAnalysis()
-                                .yongshinCandidates()
+                                .relationAnalysis()
+                                .usefulGodElements()
                 ),
 
                 toElementNames(
                         advancedAnalysis
                                 .usefulGodAnalysis()
-                                .huishinCandidates()
+                                .relationAnalysis()
+                                .favorableGodElements()
                 ),
 
                 toElementNames(
                         advancedAnalysis
                                 .usefulGodAnalysis()
-                                .gishinCandidates()
+                                .relationAnalysis()
+                                .unfavorableGodElements()
                 ),
 
                 toElementNames(
-                        advancedAnalysis
-                                .usefulGodAnalysis()
-                                .temperatureCandidates()
+                        selectedClimateElements(
+                                advancedAnalysis
+                        )
                 ),
 
                 toElementNames(
-                        advancedAnalysis
-                                .usefulGodAnalysis()
-                                .mediationCandidates()
+                        selectedPassageElements(
+                                advancedAnalysis
+                        )
                 ),
 
                 toDecadeLuckResponse(
-                        decadeLuckAnalysis
+                        decadeLuckAnalysis,
+                        targetDateTime
                 ),
 
                 toAnnualLuckResponse(
@@ -521,13 +1776,74 @@ public class SajuAnalysisService {
                         .sections()
                         .stream()
                         .map(
-                                this::toConsultationResponse
+                                section ->
+                                        toConsultationResponse(
+                                                section,
+                                                interpretationPromptContext,
+                                                consultationStoryGeneration
+                                        )
                         )
                         .toList(),
 
                 consultationAnalysis
                         .fullNarrationText()
         );
+    }
+
+    private List<FiveElement> selectedClimateElements(
+            NatalChartAdvancedAnalysis advancedAnalysis
+    ) {
+
+        return Arrays
+                .stream(
+                        FiveElement.values()
+                )
+                .filter(
+                        element ->
+                                advancedAnalysis
+                                        .usefulGodAnalysis()
+                                        .selectionAnalysis()
+                                        .climateAnalysis()
+                                        .candidateOf(
+                                                element
+                                        )
+                                        .map(
+                                                candidate ->
+                                                        candidate.selected()
+                                        )
+                                        .orElse(
+                                                false
+                                        )
+                )
+                .toList();
+    }
+
+    private List<FiveElement> selectedPassageElements(
+            NatalChartAdvancedAnalysis advancedAnalysis
+    ) {
+
+        return Arrays
+                .stream(
+                        FiveElement.values()
+                )
+                .filter(
+                        element ->
+                                advancedAnalysis
+                                        .usefulGodAnalysis()
+                                        .selectionAnalysis()
+                                        .passageAnalysis()
+                                        .candidateOf(
+                                                element
+                                        )
+                                        .map(
+                                                candidate ->
+                                                        candidate.selected()
+                                        )
+                                        .orElse(
+                                                false
+                                        )
+                )
+                .toList();
     }
 
     private PillarResponse toPillarResponse(
@@ -577,116 +1893,286 @@ public class SajuAnalysisService {
         );
     }
 
-    private DecadeLuckResponse
-    toDecadeLuckResponse(
-            DecadeLuckAnalysis analysis
+    private PillarResponse toPillarResponse(
+            SexagenaryPillar pillar
     ) {
 
-        LuckStart luckStart =
-                analysis
-                        .optionalLuckStart()
-                        .orElse(null);
+        Objects.requireNonNull(
+                pillar,
+                "육십갑자 간지는 필수입니다."
+        );
 
-        DecadeLuckPeriod current =
+        return toPillarResponse(
+                new Pillar(
+                        pillar.stem(),
+                        pillar.branch()
+                )
+        );
+    }
+
+    private DecadeLuckResponse toDecadeLuckResponse(
+
+            DecadeLuckAnalysis analysis,
+
+            ZonedDateTime referenceDateTime
+
+    ) {
+
+        Objects.requireNonNull(
+                analysis,
+                "대운 분석 결과가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                referenceDateTime,
+                "대운 조회 기준시각이 필요합니다."
+        );
+
+        List<DecadeLuckPeriodResponse> periodResponses =
                 analysis
-                        .optionalCurrentPeriod()
-                        .orElse(null);
+                        .periods()
+                        .stream()
+                        .map(
+                                this::toDecadeLuckPeriodResponse
+                        )
+                        .toList();
+
+        DecadeLuckPeriodResponse exactCurrentPeriod =
+                analysis
+                        .exactPeriodAt(
+                                referenceDateTime
+                        )
+                        .map(
+                                this::toDecadeLuckPeriodResponse
+                        )
+                        .orElse(
+                                null
+                        );
+
+        DecadeLuckPeriodResponse definiteCurrentPeriod =
+                analysis
+                        .definitePeriodAt(
+                                referenceDateTime
+                        )
+                        .map(
+                                this::toDecadeLuckPeriodResponse
+                        )
+                        .orElse(
+                                null
+                        );
+
+        List<DecadeLuckPeriodResponse> possibleCurrentPeriods =
+                analysis
+                        .possiblePeriodsAt(
+                                referenceDateTime
+                        )
+                        .stream()
+                        .map(
+                                this::toDecadeLuckPeriodResponse
+                        )
+                        .toList();
+
+        DecadeLuckPeriod firstPeriod =
+                analysis
+                        .periods()
+                        .isEmpty()
+                        ? null
+                        : analysis
+                        .periods()
+                        .get(
+                                0
+                        );
+
+        boolean definitelyBeforeFirst =
+                firstPeriod != null
+                        && referenceDateTime
+                        .isBefore(
+                                firstPeriod
+                                        .earliestStartDateTime()
+                        );
+
+        boolean possiblyBeforeFirst =
+                firstPeriod != null
+                        && referenceDateTime
+                        .isBefore(
+                                firstPeriod
+                                        .latestStartDateTime()
+                        );
 
         return new DecadeLuckResponse(
                 analysis
                         .direction()
-                        .getKoreanName(),
+                        .koreanName(),
+
+                analysis.sequenceAvailable(),
+
+                analysis.analysisAvailable(),
+
+                analysis.exactTiming(),
+
+                analysis.birthTimeUnknown(),
 
                 analysis
-                        .calculationAvailable(),
-
-                luckStart == null
-                        ? null
-                        : luckStart
-                        .startAge()
+                        .minimumStartAge()
                         .displayName(),
-
-                luckStart == null
-                        ? null
-                        : luckStart
-                        .startDateTime(),
-
-                current == null
-                        ? null
-                        : current.order(),
-
-                current == null
-                        ? null
-                        : toPillarResponse(
-                        current.pillar()
-                ),
-
-                current == null
-                        ? null
-                        : current
-                        .startAge()
-                        .displayName(),
-
-                current == null
-                        ? null
-                        : current
-                        .endAge()
-                        .displayName(),
-
-                current == null
-                        ? null
-                        : current.startDateTime(),
-
-                current == null
-                        ? null
-                        : current.endDateTime(),
 
                 analysis
-                        .isBeforeFirstDecadeLuck(),
+                        .maximumStartAge()
+                        .displayName(),
+
+                analysis.startAgeRange(),
+
+                analysis.solarTermBoundaryUncertain(),
+
+                periodResponses,
+
+                exactCurrentPeriod,
+
+                definiteCurrentPeriod,
+
+                possibleCurrentPeriods,
+
+                definitelyBeforeFirst,
+
+                possiblyBeforeFirst,
 
                 analysis
                         .unavailableReason()
+                        .orElse(
+                                null
+                        )
         );
     }
 
-    private AnnualLuckResponse
-    toAnnualLuckResponse(
+    private DecadeLuckPeriodResponse
+    toDecadeLuckPeriodResponse(
+            DecadeLuckPeriod period
+    ) {
+
+        Objects.requireNonNull(
+                period,
+                "대운 Period가 필요합니다."
+        );
+
+        return new DecadeLuckPeriodResponse(
+                period.sequenceNumber(),
+
+                toPillarResponse(
+                        period.pillar()
+                ),
+
+                period
+                        .minimumStartAge()
+                        .displayName(),
+
+                period
+                        .maximumStartAge()
+                        .displayName(),
+
+                period.earliestStartDateTime(),
+
+                period.latestStartDateTime(),
+
+                period.earliestEndDateTimeExclusive(),
+
+                period.latestEndDateTimeExclusive(),
+
+                period.exactTiming()
+        );
+    }
+
+    private AnnualLuckResponse toAnnualLuckResponse(
             AnnualLuckAnalysis analysis
     ) {
+
+        Objects.requireNonNull(
+                analysis,
+                "세운 분석 결과가 필요합니다."
+        );
+
+        AnnualLuckTenGodEvidence visibleEvidence =
+                analysis
+                        .visibleTenGodEvidence()
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "세운 천간 십성 Evidence가 없습니다."
+                                        )
+                        );
+
+        AnnualLuckTenGodEvidence mainHiddenEvidence =
+                analysis
+                        .branchMainTenGodEvidence()
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "세운 지지 본기 십성 Evidence가 없습니다."
+                                        )
+                        );
 
         return new AnnualLuckResponse(
                 analysis.targetYear(),
 
                 toPillarResponse(
-                        analysis.pillar()
+                        analysis.annualPillar()
                 ),
 
-                analysis.startDateTime(),
+                analysis.startDateTimeInclusive(),
 
-                analysis.endDateTime(),
+                analysis.endDateTimeExclusive(),
 
-                analysis
-                        .stemTenGod()
+                visibleEvidence
+                        .tenGodType()
+                        .koreanName(),
+
+                mainHiddenEvidence
+                        .sourceStem()
                         .getKoreanName(),
 
-                analysis
-                        .branchMainStem()
-                        .getKoreanName(),
-
-                analysis
-                        .branchMainStem()
+                mainHiddenEvidence
+                        .sourceStem()
                         .getChineseCharacter(),
 
-                analysis
-                        .branchMainTenGod()
-                        .getKoreanName()
+                mainHiddenEvidence
+                        .tenGodType()
+                        .koreanName()
         );
     }
 
     private ConsultationSectionResponse
     toConsultationResponse(
-            ConsultationSection section
+
+            ConsultationSection section,
+
+            Optional<ConsultationInterpretationPromptContext>
+                    interpretationPromptContext,
+
+            Optional<ConsultationStoryGeneration>
+                    consultationStoryGeneration
+
     ) {
+
+        Objects.requireNonNull(
+                section,
+                "ConsultationSection은 필수입니다."
+        );
+
+        Objects.requireNonNull(
+                interpretationPromptContext,
+                "ConsultationInterpretationPromptContext Optional은 필수입니다."
+        );
+
+        Objects.requireNonNull(
+                consultationStoryGeneration,
+                "ConsultationStoryGeneration Optional은 필수입니다."
+        );
+
+        String storyText =
+                resolveStoryText(
+                        section,
+                        interpretationPromptContext,
+                        consultationStoryGeneration
+                );
 
         return new ConsultationSectionResponse(
                 section.order(),
@@ -699,14 +2185,87 @@ public class SajuAnalysisService {
                 section.summaryMessage(),
                 section.guidanceMessage(),
                 section.narrationText(),
+                storyText,
                 section.basisLabels(),
                 section.evidenceCount()
         );
     }
 
-    private List<String> toElementNames(
-            List<FiveElement> elements
+    private String resolveStoryText(
+
+            ConsultationSection section,
+
+            Optional<ConsultationInterpretationPromptContext>
+                    interpretationPromptContext,
+
+            Optional<ConsultationStoryGeneration>
+                    consultationStoryGeneration
+
     ) {
+
+        ConsultationCategory category =
+                section.category();
+
+        if (
+                interpretationPromptContext.isEmpty()
+        ) {
+
+            return section.narrationText();
+        }
+
+        ConsultationInterpretationPromptContext promptContext =
+                interpretationPromptContext
+                        .orElseThrow();
+
+        Optional<ConsultationInterpretationPromptSection> promptSection =
+                promptContext
+                        .findSection(
+                                category
+                        );
+
+        if (
+                promptSection.isEmpty()
+        ) {
+
+            return "";
+        }
+
+        if (
+                promptSection
+                        .orElseThrow()
+                        .unavailable()
+        ) {
+
+            return "현재 계산 근거만으로는 이 분야의 독립적인 해석을 확정하지 않습니다. "
+                    + "근거가 없는 내용을 추정해서 채우지 않았습니다.";
+        }
+
+        Optional<String> generatedStory =
+                consultationStoryGeneration
+                        .flatMap(
+                                generation ->
+                                        generation.storyTextOf(
+                                                category
+                                        )
+                        );
+
+        return generatedStory
+                .orElse(
+                        section.narrationText()
+                );
+    }
+
+    private List<String> toElementNames(
+            Collection<FiveElement> elements
+    ) {
+
+        if (
+                elements == null
+                        || elements.isEmpty()
+        ) {
+
+            return List.of();
+        }
 
         return elements
                 .stream()

@@ -1,123 +1,139 @@
 package com.dajeom.model;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Objects;
 
 /**
- * 하나의 세운 기간.
+ * 정밀화 14차-2.
  *
- * 세운은 양력 1월 1일이 아니라
- * 입춘을 기준으로 변경한다.
+ * 하나의 세운 Period.
  *
- * 예:
+ * =================================================
  *
- * 2026년 세운
+ * 포함:
  *
- * 시작:
- * 2026년 입춘
+ * - 명리 연도
+ * - 세운 간지
+ * - 시작 입춘
+ * - 다음 입춘
  *
- * 종료:
- * 2027년 입춘
+ * =================================================
  *
- * 기간은:
+ * 아직 포함하지 않는 것:
  *
- * [startDateTime, endDateTime)
+ * - 십성
+ * - 원국 관계
+ * - 대운 관계
+ * - 용신 Context
+ * - 격국 Context
  *
- * 형태로 관리한다.
+ * 위 내용은 14-3 이후에서 결합한다.
  */
 public record AnnualLuckPeriod(
 
-        /**
-         * 사주 기준 연도.
-         *
-         * 예:
-         * 2026
-         */
-        int sajuYear,
+        AnnualLuckBoundaryAnalysis boundaryAnalysis,
 
-        /**
-         * 해당 연도의 세운 간지.
-         *
-         * 예:
-         * 2026 = 丙午
-         */
-        Pillar pillar,
-
-        /**
-         * 해당 세운이 시작되는
-         * 실제 입춘 시각.
-         */
-        ZonedDateTime startDateTime,
-
-        /**
-         * 다음 해 입춘 시각.
-         */
-        ZonedDateTime endDateTime
+        SexagenaryPillar pillar
 
 ) {
 
     public AnnualLuckPeriod {
 
         Objects.requireNonNull(
+                boundaryAnalysis,
+                "세운 Period에는 14-1 BoundaryAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
                 pillar,
-                "세운 간지는 필수입니다."
+                "세운 Period에는 세운 간지가 필요합니다."
         );
-
-        Objects.requireNonNull(
-                startDateTime,
-                "세운 시작 시각은 필수입니다."
-        );
-
-        Objects.requireNonNull(
-                endDateTime,
-                "세운 종료 시각은 필수입니다."
-        );
-
-        if (
-                !endDateTime.isAfter(
-                        startDateTime
-                )
-        ) {
-
-            throw new IllegalArgumentException(
-                    "세운 종료 시각은 시작 시각보다 뒤여야 합니다."
-            );
-        }
     }
 
     /**
-     * 특정 시각이 이 세운 기간에
-     * 포함되는지 확인한다.
+     * =================================================
+     * 기본 연도
+     * =================================================
+     */
+
+    public int targetYear() {
+
+        return boundaryAnalysis
+                .targetYear();
+    }
+
+    public ZoneId zoneId() {
+
+        return boundaryAnalysis
+                .zoneId();
+    }
+
+    /**
+     * =================================================
+     * 육십갑자
+     * =================================================
+     */
+
+    public int cycleIndex() {
+
+        return pillar
+                .cycleIndex();
+    }
+
+    public com.dajeom.type.HeavenlyStem stem() {
+
+        return pillar
+                .stem();
+    }
+
+    public com.dajeom.type.EarthlyBranch branch() {
+
+        return pillar
+                .branch();
+    }
+
+    /**
+     * =================================================
+     * 세운 시간 범위
+     * =================================================
+     */
+
+    public ZonedDateTime startDateTimeInclusive() {
+
+        return boundaryAnalysis
+                .startDateTimeInclusive();
+    }
+
+    public ZonedDateTime endDateTimeExclusive() {
+
+        return boundaryAnalysis
+                .endDateTimeExclusive();
+    }
+
+    /**
+     * 특정 시각이 현재 세운 Period에 속하는가.
      */
     public boolean contains(
             ZonedDateTime dateTime
     ) {
 
-        Objects.requireNonNull(
-                dateTime,
-                "조회 시각은 필수입니다."
-        );
-
-        ZonedDateTime normalized =
-                dateTime.withZoneSameInstant(
-                        startDateTime.getZone()
+        return boundaryAnalysis
+                .contains(
+                        dateTime
                 );
-
-        return !normalized.isBefore(
-                startDateTime
-        )
-                && normalized.isBefore(
-                endDateTime
-        );
     }
 
-    public String chineseName() {
+    /**
+     * 정확한 입춘 시작 순간인가.
+     */
+    public boolean startsAt(
+            ZonedDateTime dateTime
+    ) {
 
-        return pillar.chineseName();
-    }
-
-    public String koreanName() {
-
-        return pillar.koreanName();
+        return boundaryAnalysis
+                .startsAt(
+                        dateTime
+                );
     }
 }

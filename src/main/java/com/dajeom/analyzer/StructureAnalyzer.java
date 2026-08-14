@@ -1,182 +1,402 @@
 package com.dajeom.analyzer;
 
-import com.dajeom.model.HiddenStemAnalysis;
-import com.dajeom.model.NatalChartAnalysis;
-import com.dajeom.model.NatalChartBaseAnalysis;
-import com.dajeom.model.PillarAnalysis;
+import com.dajeom.model.DayMasterStrengthAnalysis;
+import com.dajeom.model.MonthStructureCandidateAnalysis;
+import com.dajeom.model.SpecialStructureAnalysis;
 import com.dajeom.model.StructureAnalysis;
+import com.dajeom.model.StructureBalanceAnalysis;
+import com.dajeom.model.StructureBalanceEvidence;
+import com.dajeom.model.StructureCandidateEstablishmentAnalysis;
+import com.dajeom.model.StructureDamageAnalysis;
+import com.dajeom.model.StructureDamageEvidence;
+import com.dajeom.model.StructureEstablishmentEvidence;
+import com.dajeom.model.StructureExposurePriorityAnalysis;
+import com.dajeom.model.StructureFormationSupportAnalysis;
+import com.dajeom.model.StructureFormationSupportEvidence;
+import com.dajeom.model.StructurePurityAnalysis;
+import com.dajeom.model.StructurePurityEvidence;
+import com.dajeom.model.StructureSelectionAnalysis;
+import com.dajeom.model.StructureSelectionCandidate;
+import com.dajeom.model.StructureStatusEvidence;
 import com.dajeom.rule.StructureRule;
-import com.dajeom.type.AnalysisConfidence;
-import com.dajeom.type.HeavenlyStem;
-import com.dajeom.type.HiddenStemRole;
-import com.dajeom.type.PillarPosition;
-import com.dajeom.type.StructureType;
+import com.dajeom.type.StructureStatus;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Objects;
 
 /**
- * 원국의 기본 격국/구조를 분석한다.
+ * 정밀화 5차-10.
  *
- * V1 기준:
+ * 이미 계산된 5-1 ~ 5-9 결과를
+ * 최종 StructureAnalysis로 통합한다.
  *
- * 1. 월지 확인
- * 2. 월지 정기 확인
- * 3. 정기의 십성 확인
- * 4. 기본 8격 후보 분류
- * 5. 정기의 천간 투출 여부 확인
+ * 이 Analyzer는:
  *
- * 특수격이나 종격 등은
- * 현재 단계에서 확정하지 않는다.
+ * - 월령을 다시 계산하지 않는다.
+ * - 투간을 다시 계산하지 않는다.
+ * - 격 성립도를 다시 계산하지 않는다.
+ * - 주격을 다시 결정하지 않는다.
+ *
+ * 오직 5-9에서 선택된 PRIMARY를 기준으로
+ * 최종 StructureStatus를 결정한다.
  */
 @Component
 public class StructureAnalyzer {
 
+    private final StructureRule
+            structureRule;
+
+    public StructureAnalyzer(
+            StructureRule structureRule
+    ) {
+
+        this.structureRule =
+                Objects.requireNonNull(
+                        structureRule,
+                        "StructureRule이 필요합니다."
+                );
+    }
+
     public StructureAnalysis analyze(
-            NatalChartAnalysis natalChart
+
+            DayMasterStrengthAnalysis strength,
+
+            MonthStructureCandidateAnalysis candidates,
+
+            StructureExposurePriorityAnalysis exposure,
+
+            StructureCandidateEstablishmentAnalysis establishment,
+
+            StructureBalanceAnalysis balance,
+
+            StructureFormationSupportAnalysis support,
+
+            StructureDamageAnalysis damage,
+
+            StructurePurityAnalysis purity,
+
+            SpecialStructureAnalysis special,
+
+            StructureSelectionAnalysis selection
+
     ) {
 
         Objects.requireNonNull(
-                natalChart,
-                "원국 분석 결과는 필수입니다."
+                strength,
+                "신강·신약 분석이 필요합니다."
         );
 
-        NatalChartBaseAnalysis baseAnalysis =
-                natalChart.baseAnalysis();
+        Objects.requireNonNull(
+                candidates,
+                "월령 격 후보 분석이 필요합니다."
+        );
 
-        PillarAnalysis monthAnalysis =
-                baseAnalysis
-                        .findPillar(
-                                PillarPosition.MONTH
-                        )
-                        .orElseThrow(
-                                () ->
-                                        new IllegalStateException(
-                                                "월주 분석 결과가 없습니다."
-                                        )
-                        );
+        Objects.requireNonNull(
+                exposure,
+                "투출 우선순위 분석이 필요합니다."
+        );
 
-        HiddenStemAnalysis mainHiddenStem =
-                monthAnalysis
-                        .hiddenStems()
-                        .stream()
-                        .filter(
-                                hiddenStem ->
-                                        hiddenStem
-                                                .hiddenStem()
-                                                .role()
-                                                == HiddenStemRole.MAIN
-                        )
-                        .findFirst()
-                        .orElseThrow(
-                                () ->
-                                        new IllegalStateException(
-                                                "월지 정기를 찾을 수 없습니다."
-                                        )
-                        );
+        Objects.requireNonNull(
+                establishment,
+                "격 성립도 분석이 필요합니다."
+        );
 
-        HeavenlyStem monthMainStem =
-                mainHiddenStem
-                        .hiddenStem()
-                        .stem();
+        Objects.requireNonNull(
+                balance,
+                "격국 강약 분석이 필요합니다."
+        );
 
-        StructureType structureType =
-                StructureRule.classify(
-                        mainHiddenStem.tenGod()
-                );
+        Objects.requireNonNull(
+                support,
+                "성격 분석이 필요합니다."
+        );
 
-        List<PillarPosition> exposedPositions =
-                findExposedPositions(
-                        baseAnalysis,
-                        monthMainStem
-                );
+        Objects.requireNonNull(
+                damage,
+                "파격 분석이 필요합니다."
+        );
 
-        AnalysisConfidence confidence =
-                determineConfidence(
-                        structureType,
-                        exposedPositions,
-                        baseAnalysis.hasHourPillar()
-                );
+        Objects.requireNonNull(
+                purity,
+                "순도 분석이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                special,
+                "특수격 분석이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                selection,
+                "주격·보조격 분석이 필요합니다."
+        );
+
+        validateConsistency(
+                strength,
+                candidates,
+                exposure,
+                establishment,
+                balance,
+                support,
+                damage,
+                purity,
+                special,
+                selection
+        );
+
+        StructureSelectionCandidate primary =
+                selection.primaryCandidate();
+
+        StructureStatusEvidence statusEvidence;
+
+        if (
+                primary.special()
+        ) {
+
+            statusEvidence =
+                    createSpecialStatusEvidence(
+                            primary,
+                            selection
+                    );
+
+        } else {
+
+            statusEvidence =
+                    createStandardStatusEvidence(
+                            primary,
+                            selection
+                    );
+        }
 
         return new StructureAnalysis(
-                structureType,
-                monthAnalysis
-                        .pillar()
-                        .branch(),
-                monthMainStem,
-                mainHiddenStem.tenGod(),
-                exposedPositions,
-                confidence,
-                StructureRule.RULE_VERSION
+                strength,
+                candidates,
+                exposure,
+                establishment,
+                balance,
+                support,
+                damage,
+                purity,
+                special,
+                selection,
+                statusEvidence
         );
     }
 
-    /**
-     * 월지 정기가 어느 천간에 투출되어 있는지 확인한다.
-     *
-     * 일간 자체는 투간 판정에서 제외한다.
-     */
-    private List<PillarPosition>
-    findExposedPositions(
-            NatalChartBaseAnalysis baseAnalysis,
-            HeavenlyStem targetStem
+    private StructureStatusEvidence
+    createSpecialStatusEvidence(
+
+            StructureSelectionCandidate primary,
+
+            StructureSelectionAnalysis selection
+
     ) {
 
-        return baseAnalysis
-                .pillars()
-                .stream()
-                .filter(
-                        pillar ->
-                                pillar.position()
-                                        != PillarPosition.DAY
-                )
-                .filter(
-                        pillar ->
-                                pillar
-                                        .pillar()
-                                        .stem()
-                                        == targetStem
-                )
-                .map(
-                        PillarAnalysis::position
-                )
-                .toList();
+        StructureStatus status =
+                structureRule
+                        .determineSpecialStatus();
+
+        return new StructureStatusEvidence(
+                primary,
+                status,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                selection.secondaryCount(),
+                selection.deferredCount()
+        );
     }
 
-    private AnalysisConfidence
-    determineConfidence(
-            StructureType structureType,
-            List<PillarPosition> exposedPositions,
-            boolean hourPillarKnown
+    private StructureStatusEvidence
+    createStandardStatusEvidence(
+
+            StructureSelectionCandidate primary,
+
+            StructureSelectionAnalysis selection
+
+    ) {
+
+        StructurePurityEvidence purityEvidence =
+                Objects.requireNonNull(
+                        primary.standardEvidence(),
+                        "일반격 PRIMARY에는 StructurePurityEvidence가 필요합니다."
+                );
+
+        StructureDamageEvidence damageEvidence =
+                purityEvidence
+                        .damageEvidence();
+
+        StructureFormationSupportEvidence supportEvidence =
+                damageEvidence
+                        .supportEvidence();
+
+        StructureBalanceEvidence balanceEvidence =
+                supportEvidence
+                        .balanceEvidence();
+
+        StructureEstablishmentEvidence establishmentEvidence =
+                balanceEvidence
+                        .establishmentEvidence();
+
+        StructureStatus status =
+                structureRule
+                        .determineStandardStatus(
+                                establishmentEvidence.level(),
+                                balanceEvidence.balanceLevel(),
+                                supportEvidence.strongestSupportLevel(),
+                                damageEvidence.strongestDamageLevel(),
+                                purityEvidence.purityLevel()
+                        );
+
+        boolean meaningfulEstablishment =
+                establishmentEvidence
+                        .meaningfulCandidate();
+
+        boolean strongEstablishment =
+                establishmentEvidence
+                        .established();
+
+        boolean balanceAcceptable =
+                balanceEvidence
+                        .acceptable();
+
+        boolean balanceBurdened =
+                balanceEvidence
+                        .burdened();
+
+        boolean meaningfulFormationSupport =
+                supportEvidence
+                        .hasMeaningfulSupport();
+
+        boolean strongFormationSupport =
+                supportEvidence
+                        .hasStrongSupport();
+
+        boolean meaningfulDamage =
+                damageEvidence
+                        .hasMeaningfulDamage();
+
+        boolean strongDamage =
+                damageEvidence
+                        .hasStrongDamage();
+
+        boolean relativelyPure =
+                purityEvidence
+                        .relativelyPure();
+
+        boolean highlyMixed =
+                purityEvidence
+                        .highlyMixed();
+
+        return new StructureStatusEvidence(
+                primary,
+                status,
+                meaningfulEstablishment,
+                strongEstablishment,
+                balanceAcceptable,
+                balanceBurdened,
+                meaningfulFormationSupport,
+                strongFormationSupport,
+                meaningfulDamage,
+                strongDamage,
+                relativelyPure,
+                highlyMixed,
+                selection.secondaryCount(),
+                selection.deferredCount()
+        );
+    }
+
+    private void validateConsistency(
+
+            DayMasterStrengthAnalysis strength,
+
+            MonthStructureCandidateAnalysis candidates,
+
+            StructureExposurePriorityAnalysis exposure,
+
+            StructureCandidateEstablishmentAnalysis establishment,
+
+            StructureBalanceAnalysis balance,
+
+            StructureFormationSupportAnalysis support,
+
+            StructureDamageAnalysis damage,
+
+            StructurePurityAnalysis purity,
+
+            SpecialStructureAnalysis special,
+
+            StructureSelectionAnalysis selection
+
     ) {
 
         if (
-                structureType
-                        == StructureType.UNDETERMINED
+                strength.dayMaster()
+                        != candidates.dayMaster()
+
+                        || strength.dayMaster()
+                        != exposure.dayMaster()
+
+                        || strength.dayMaster()
+                        != establishment.dayMaster()
+
+                        || strength.dayMaster()
+                        != balance.dayMaster()
+
+                        || strength.dayMaster()
+                        != support.dayMaster()
+
+                        || strength.dayMaster()
+                        != damage.dayMaster()
+
+                        || strength.dayMaster()
+                        != purity.dayMaster()
+
+                        || strength.dayMaster()
+                        != special.dayMaster()
+
+                        || strength.dayMaster()
+                        != selection.dayMaster()
         ) {
 
-            return AnalysisConfidence.LOW;
+            throw new IllegalArgumentException(
+                    "5차 분석 결과들의 일간이 서로 일치하지 않습니다."
+            );
         }
 
         if (
-                !exposedPositions.isEmpty()
+                candidates.monthBranch()
+                        != exposure.monthBranch()
+
+                        || candidates.monthBranch()
+                        != establishment.monthBranch()
+
+                        || candidates.monthBranch()
+                        != support.monthBranch()
+
+                        || candidates.monthBranch()
+                        != damage.monthBranch()
+
+                        || candidates.monthBranch()
+                        != purity.monthBranch()
+
+                        || candidates.monthBranch()
+                        != special.monthBranch()
+
+                        || candidates.monthBranch()
+                        != selection.monthBranch()
         ) {
 
-            return AnalysisConfidence.HIGH;
+            throw new IllegalArgumentException(
+                    "5차 분석 결과들의 월지가 서로 일치하지 않습니다."
+            );
         }
-
-        /*
-         * 시주를 모르면 시천간에서
-         * 정기가 투출될 가능성을 확인할 수 없다.
-         */
-        if (
-                !hourPillarKnown
-        ) {
-
-            return AnalysisConfidence.LOW;
-        }
-
-        return AnalysisConfidence.MEDIUM;
     }
 }

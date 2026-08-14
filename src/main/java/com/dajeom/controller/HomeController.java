@@ -34,27 +34,9 @@ public class HomeController {
         return "tarot";
     }
 
-    /**
-     * 영상형 사주 페이지.
-     *
-     * templates/saju-cinematic.html
-     */
-    @GetMapping("/saju-cinematic")
-    public String sajuCinematic() {
+    @GetMapping("/saju")
+    public String saju() {
 
-        return "saju-cinematic";
-    }
-
-    /**
-     * MZ 천명도령 정통 종합사주 페이지.
-     *
-     * 메인 화면 네 번째 카드에서 이동한다.
-     *
-     * templates/mz-doryeong.html
-     */
-    @GetMapping("/mz-doryeong")
-    public String mzDoryeong() {
-
-        return "mz-doryeong";
+        return "saju";
     }
 }

@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color"
+          content="#1b1018">
+
+    <link rel="icon"
+          href="data:,">
+
+    <title>천명 사주상담</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/saju.css}"
+          href="/css/saju.css">
+
+</head>
+
+<body>
+
+<div class="saju-app">
+
+
+    <!-- =================================================
+         HEADER
+         ================================================= -->
+
+    <header class="saju-header">
+
+        <button type="button"
+                id="backButton"
+                class="header-button"
+                aria-label="뒤로가기">
+
+            ‹
+
+        </button>
+
+
+        <div class="header-title">
+
+            <strong>
+                AI 사주
+            </strong>
+
+            <span id="headerSubtitle">
+                천명 사주상담
+            </span>
+
+        </div>
+
+
+        <button type="button"
+                id="homeButton"
+                class="header-button"
+                aria-label="홈으로">
+
+            ⌂
+
+        </button>
+
+    </header>
+
+
+    <main>
+
+
+        <!-- =================================================
+             INTRO
+             ================================================= -->
+
+        <section class="screen is-active"
+                 data-screen="intro">
+
+            <div class="intro-visual">
+
+                <div class="intro-background"></div>
+
+                <div class="intro-overlay"></div>
+
+
+                <div class="intro-symbol-stage"
+                     aria-hidden="true">
+
+                    <span class="intro-orbit orbit-one"></span>
+
+                    <span class="intro-orbit orbit-two"></span>
+
+                    <span class="intro-orbit orbit-three"></span>
+
+                    <strong>
+                        命
+                    </strong>
+
+                </div>
+
+
+                <div class="intro-copy">
+
+                    <span class="eyebrow">
+                        AI SAJU CONSULTATION
+                    </span>
+
+                    <h1>
+                        태어난 순간부터<br>
+                        지금의 흐름까지
+                    </h1>
+
+                    <p>
+                        계산된 명식과 운의 흐름을
+                        하나씩 살펴봅니다.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="intro-content">
+
+                <span class="section-badge">
+                    천명 사주상담
+                </span>
+
+
+                <h2>
+                    계산된 사실부터 확인하고<br>
+                    마지막에 이야기로 연결합니다
+                </h2>
+
+
+                <p>
+                    사주 원국, 용신, 관계, 대운과 세운의 흐름을
+                    Java 명리엔진에서 계산합니다.
+                    분석 과정에서는 분야별 계산 근거를 먼저 보여드리고,
+                    마지막 결과에서 11개 분야의 이야기를 이어서 보여드립니다.
+                </p>
+
+
+                <div class="intro-step-grid">
+
+                    <article>
+
+                        <strong>
+                            01
+                        </strong>
+
+                        <span>
+                            출생정보
+                        </span>
+
+                    </article>
+
+
+                    <article>
+
+                        <strong>
+                            02
+                        </strong>
+
+                        <span>
+                            명리 분석
+                        </span>
+
+                    </article>
+
+
+                    <article>
+
+                        <strong>
+                            03
+                        </strong>
+
+                        <span>
+                            11개 이야기
+                        </span>
+
+                    </article>
+
+                </div>
+
+
+                <button type="button"
+                        class="primary-button"
+                        data-go="name">
+
+                    상담 시작
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             NAME
+             ================================================= -->
+
+        <section class="screen"
+                 data-screen="name">
+
+            <div class="form-screen">
+
+
+                <div class="form-visual mini-visual">
+
+                    <div class="mini-symbol"
+                         aria-hidden="true">
+
+                        <span></span>
+
+                        <strong>
+                            名
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-content">
+
+                    <span class="step-label">
+                        STEP 01
+                    </span>
+
+                    <h1>
+                        이름을 알려주세요
+                    </h1>
+
+                    <p class="description">
+                        결과 화면에서 불러드릴 이름입니다.
+                    </p>
+
+
+                    <form id="nameForm"
+                          novalidate>
+
+
+                        <label class="field-label"
+                               for="nameInput">
+
+                            이름
+
+                        </label>
+
+
+                        <input type="text"
+                               id="nameInput"
+                               class="text-input"
+                               maxlength="20"
+                               autocomplete="name"
+                               placeholder="이름을 입력해주세요">
+
+
+                        <p id="nameError"
+                           class="error-message">
+                        </p>
+
+
+                        <button type="submit"
+                                id="nameNextButton"
+                                class="primary-button"
+                                disabled>
+
+                            다음
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             BIRTH
+             ================================================= -->
+
+        <section class="screen"
+                 data-screen="birth">
+
+            <div class="form-screen">
+
+
+                <div class="form-visual birth-visual">
+
+                    <div class="birth-visual-copy"
+                         aria-hidden="true">
+
+                        <span>
+                            出生情報
+                        </span>
+
+                        <strong>
+                            生
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-content">
+
+                    <span class="step-label">
+                        STEP 02
+                    </span>
+
+                    <h1>
+                        태어난 정보를 알려주세요
+                    </h1>
+
+                    <p class="description">
+                        입력값은 만세력 계산에 직접 사용됩니다.
+                    </p>
+
+
+                    <form id="birthForm"
+                          novalidate>
+
+
+                        <!-- ==========================
+                             CALENDAR
+                             ========================== -->
+
+                        <fieldset>
+
+                            <legend>
+                                달력
+                            </legend>
+
+
+                            <div class="segment-control">
+
+                                <button type="button"
+                                        class="segment-button is-active"
+                                        data-calendar="SOLAR">
+
+                                    양력
+
+                                </button>
+
+
+                                <button type="button"
+                                        class="segment-button"
+                                        data-calendar="LUNAR">
+
+                                    음력
+
+                                </button>
+
+                            </div>
+
+                        </fieldset>
+
+
+                        <div id="lunarLeapArea"
+                             class="option-box hidden">
+
+                            <label>
+
+                                <input type="checkbox"
+                                       id="lunarLeapMonth">
+
+                                <span>
+                                    윤달입니다
+                                </span>
+
+                            </label>
+
+                        </div>
+
+
+                        <!-- ==========================
+                             GENDER
+                             ========================== -->
+
+                        <fieldset>
+
+                            <legend>
+                                성별
+                            </legend>
+
+
+                            <div class="segment-control">
+
+                                <button type="button"
+                                        class="segment-button"
+                                        data-gender="MALE">
+
+                                    남성
+
+                                </button>
+
+
+                                <button type="button"
+                                        class="segment-button"
+                                        data-gender="FEMALE">
+
+                                    여성
+
+                                </button>
+
+                            </div>
+
+                        </fieldset>
+
+
+                        <!-- ==========================
+                             DATE
+                             ========================== -->
+
+                        <fieldset>
+
+                            <legend>
+                                생년월일
+                            </legend>
+
+
+                            <div class="date-input-grid">
+
+                                <label>
+
+                                    <span>
+                                        년
+                                    </span>
+
+                                    <input type="text"
+                                           id="birthYear"
+                                           class="text-input numeric-input"
+                                           inputmode="numeric"
+                                           maxlength="4"
+                                           placeholder="1990">
+
+                                </label>
+
+
+                                <label>
+
+                                    <span>
+                                        월
+                                    </span>
+
+                                    <input type="text"
+                                           id="birthMonth"
+                                           class="text-input numeric-input"
+                                           inputmode="numeric"
+                                           maxlength="2"
+                                           placeholder="01">
+
+                                </label>
+
+
+                                <label>
+
+                                    <span>
+                                        일
+                                    </span>
+
+                                    <input type="text"
+                                           id="birthDay"
+                                           class="text-input numeric-input"
+                                           inputmode="numeric"
+                                           maxlength="2"
+                                           placeholder="01">
+
+                                </label>
+
+                            </div>
+
+                        </fieldset>
+
+
+                        <!-- ==========================
+                             TIME
+                             ========================== -->
+
+                        <fieldset>
+
+
+                            <div class="legend-row">
+
+                                <legend>
+                                    태어난 시간
+                                </legend>
+
+
+                                <label class="unknown-label">
+
+                                    <input type="checkbox"
+                                           id="birthTimeUnknown">
+
+                                    <span>
+                                        시간 모름
+                                    </span>
+
+                                </label>
+
+                            </div>
+
+
+                            <div id="timeInputArea"
+                                 class="time-input-grid">
+
+                                <label>
+
+                                    <span>
+                                        시
+                                    </span>
+
+                                    <input type="text"
+                                           id="birthHour"
+                                           class="text-input numeric-input"
+                                           inputmode="numeric"
+                                           maxlength="2"
+                                           placeholder="13">
+
+                                </label>
+
+
+                                <strong>
+                                    :
+                                </strong>
+
+
+                                <label>
+
+                                    <span>
+                                        분
+                                    </span>
+
+                                    <input type="text"
+                                           id="birthMinute"
+                                           class="text-input numeric-input"
+                                           inputmode="numeric"
+                                           maxlength="2"
+                                           placeholder="30">
+
+                                </label>
+
+                            </div>
+
+                        </fieldset>
+
+
+                        <p id="birthError"
+                           class="error-message">
+                        </p>
+
+
+                        <button type="submit"
+                                id="birthNextButton"
+                                class="primary-button"
+                                disabled>
+
+                            입력정보 확인
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             REVIEW
+             ================================================= -->
+
+        <section class="screen"
+                 data-screen="review">
+
+            <div class="review-page">
+
+                <span class="step-label">
+                    STEP 03
+                </span>
+
+
+                <h1>
+                    입력정보를 확인해주세요
+                </h1>
+
+
+                <p class="description">
+                    잘못된 정보가 있다면 분석 전에 수정해주세요.
+                </p>
+
+
+                <div class="review-card">
+
+
+                    <div>
+
+                        <span>
+                            이름
+                        </span>
+
+                        <strong id="reviewName"></strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            성별
+                        </span>
+
+                        <strong id="reviewGender"></strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            달력
+                        </span>
+
+                        <strong id="reviewCalendar"></strong>
+
+                    </div>
+
+
+                    <div id="reviewLeapRow"
+                         class="hidden">
+
+                        <span>
+                            음력 구분
+                        </span>
+
+                        <strong id="reviewLeap"></strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            생년월일
+                        </span>
+
+                        <strong id="reviewBirthDate"></strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            태어난 시간
+                        </span>
+
+                        <strong id="reviewBirthTime"></strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="button-stack">
+
+                    <button type="button"
+                            class="secondary-button"
+                            data-go="birth">
+
+                        수정하기
+
+                    </button>
+
+
+                    <button type="button"
+                            id="reviewCompleteButton"
+                            class="primary-button">
+
+                        이 정보로 계속
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             COMPLETE
+             ================================================= -->
+
+        <section class="screen"
+                 data-screen="complete">
+
+            <div class="complete-page">
+
+                <div class="complete-background"></div>
+
+
+                <div class="complete-content">
+
+
+                    <div class="complete-emblem"
+                         aria-hidden="true">
+
+                        <span></span>
+
+                        <span></span>
+
+                        <strong>
+                            命
+                        </strong>
+
+                    </div>
+
+
+                    <span class="eyebrow">
+                        READY
+                    </span>
+
+
+                    <h1>
+                        분석 준비가<br>
+                        완료되었습니다
+                    </h1>
+
+
+                    <p>
+                        입력한 정보를 기준으로
+                        원국과 대운·세운의 흐름을 계산합니다.
+                    </p>
+
+
+                    <button type="button"
+                            id="startAnalysisButton"
+                            class="primary-button">
+
+                        사주 분석 시작
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             ANALYSIS
+             ================================================= -->
+
+        <section class="screen"
+                 data-screen="analysis">
+
+            <div class="analysis-page">
+
+
+                <div class="analysis-background"></div>
+
+                <div class="analysis-shade"></div>
+
+
+                <div class="analysis-orbit-stage"
+                     aria-hidden="true">
+
+                    <span class="analysis-orbit analysis-orbit-one"></span>
+
+                    <span class="analysis-orbit analysis-orbit-two"></span>
+
+                    <span class="analysis-orbit analysis-orbit-three"></span>
+
+                    <strong>
+                        命
+                    </strong>
+
+                </div>
+
+
+                <div class="analysis-copy">
+
+                    <span id="analysisStatus">
+                        출생정보 확인
+                    </span>
+
+
+                    <h1 id="analysisTitle">
+                        명식을 구성하고 있습니다
+                    </h1>
+
+
+                    <p id="analysisMessage">
+                        입력한 출생정보를 확인하고 있습니다.
+                    </p>
+
+                </div>
+
+
+                <!-- ==============================
+                     FIVE ELEMENTS
+                     ============================== -->
+
+                <div class="element-grid">
+
+                    <span data-analysis-element="0">
+                        木
+                    </span>
+
+                    <span data-analysis-element="1">
+                        火
+                    </span>
+
+                    <span data-analysis-element="2">
+                        土
+                    </span>
+
+                    <span data-analysis-element="3">
+                        金
+                    </span>
+
+                    <span data-analysis-element="4">
+                        水
+                    </span>
+
+                </div>
+
+
+                <!-- ==============================
+                     PROGRESS
+                     ============================== -->
+
+                <div class="analysis-progress">
+
+                    <div class="progress-heading">
+
+                        <span>
+                            분석 진행
+                        </span>
+
+                        <strong id="analysisProgressPercent">
+                            0%
+                        </strong>
+
+                    </div>
+
+
+                    <div class="progress-track">
+
+                        <div id="analysisProgressBar"
+                             class="progress-bar">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     FACT ONLY
+                     ================================================= -->
+
+                <div id="analysisFactOverlay"
+                     class="fact-overlay">
+
+
+                    <div class="fact-top">
+
+                        <span id="factCategoryKicker">
+                            DETERMINISTIC FACT
+                        </span>
+
+
+                        <strong id="factCategoryIndex">
+                            01 / 11
+                        </strong>
+
+                    </div>
+
+
+                    <article class="fact-card">
+
+
+                        <h2 id="factCategoryTitle">
+                            기본 성향
+                        </h2>
+
+
+                        <div id="factStatusRow"
+                             class="fact-status-row">
+                        </div>
+
+
+                        <div class="fact-basis-area">
+
+                            <span>
+                                계산 근거
+                            </span>
+
+
+                            <div id="factBasis"
+                                 class="fact-basis">
+                            </div>
+
+                        </div>
+
+                    </article>
+
+
+                    <button type="button"
+                            id="skipFactsButton"
+                            class="skip-facts-button">
+
+                        바로 최종 결과 보기
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             RESULT
+             ================================================= -->
+
+        <section class="screen"
+                 data-screen="result">
+
+
+            <div class="result-cover">
+
+                <div class="result-cover-background"></div>
+
+                <div class="result-cover-shade"></div>
+
+
+                <div class="result-symbol"
+                     aria-hidden="true">
+
+                    <span></span>
+
+                    <strong>
+                        命
+                    </strong>
+
+                </div>
+
+
+                <div class="result-cover-copy">
+
+                    <span class="eyebrow">
+                        YOUR SAJU STORY
+                    </span>
+
+
+                    <h1 id="resultTitle">
+                        사주 이야기
+                    </h1>
+
+
+                    <p id="resultSummary">
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="result-content">
+
+
+                <!-- ==========================================
+                     FOUR PILLARS
+                     ========================================== -->
+
+                <section class="pillar-section">
+
+
+                    <div class="section-heading">
+
+                        <span>
+                            FOUR PILLARS
+                        </span>
+
+                        <h2>
+                            사주팔자
+                        </h2>
+
+                    </div>
+
+
+                    <div id="resultPillars"
+                         class="result-pillars">
+                    </div>
+
+                </section>
+
+
+                <!-- ==========================================
+                     11 STORIES
+                     ========================================== -->
+
+                <section class="story-section">
+
+
+                    <div class="section-heading">
+
+                        <span>
+                            11 CHAPTERS
+                        </span>
+
+
+                        <h2>
+                            분야별 사주 이야기
+                        </h2>
+
+
+                        <p>
+                            분석 과정에서 확인한 계산 근거를
+                            같은 기준으로 이야기 형태로 연결합니다.
+                        </p>
+
+                    </div>
+
+
+                    <div id="resultStoryList"
+                         class="story-list">
+                    </div>
+
+                </section>
+
+
+                <p id="resultDisclaimer"
+                   class="result-disclaimer">
+
+                    본 해석은 명리학적 계산을 기반으로 한 참고용 상담입니다.
+
+                </p>
+
+
+                <button type="button"
+                        id="resultHomeButton"
+                        class="secondary-button">
+
+                    홈으로 돌아가기
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =================================================
+         TOAST
+         ================================================= -->
+
+    <div id="toast"
+         class="toast"
+         role="status"
+         aria-live="polite">
+    </div>
+
+</div>
+
+
+<script th:src="@{/js/saju.js}"
+        src="/js/saju.js">
+</script>
+
+</body>
+</html>

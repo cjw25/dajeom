@@ -1,7 +1,7 @@
 package com.dajeom.model;
 
 import com.dajeom.type.CalendarType;
-import com.dajeom.type.Gender;
+import com.dajeom.entity.Gender;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

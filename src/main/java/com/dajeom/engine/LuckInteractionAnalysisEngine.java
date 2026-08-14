@@ -15,6 +15,7 @@ import com.dajeom.model.NatalChartAdvancedAnalysis;
 import com.dajeom.rule.LuckInteractionRule;
 import org.springframework.stereotype.Component;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -22,34 +23,41 @@ import java.util.Objects;
  * 원국 + 대운 + 세운의
  * 종합 상호작용 분석 Engine.
  *
- * 처리:
+ * =================================================
+ *
+ * 입력:
  *
  * NatalChartAdvancedAnalysis
- *      +
+ * +
  * DecadeLuckAnalysis
- *      +
+ * +
  * AnnualLuckAnalysis
  *
- *          ↓
+ * =================================================
  *
- * 대상 세운 시점의 대운 결정
+ * 처리:
  *
- *          ↓
+ * 1. 분석 대상 세운 시작 시점의 대운 결정
+ * 2. 세운 기간 중 대운 전환 여부 확인
+ * 3. 원국 / 대운 / 세운 천간 관계
+ * 4. 원국 / 대운 / 세운 지지 관계
+ * 5. 대운 / 세운 십성
+ * 6. 용신 / 희신 / 기신 / 조후 / 통관 오행 유입
  *
- * 원국 ↔ 대운
- * 원국 ↔ 세운
- * 대운 ↔ 세운
+ * =================================================
  *
- *          ↓
+ * 주의:
  *
- * 천간 관계
- * 지지 관계
- * 십성
- * 용신 후보 오행 유입
+ * 현재 13차에서는
+ * DecadeLuckAnalysis 내부에
+ * "현재 조회시각"이나 "현재 대운"을 저장하지 않는다.
  *
- *          ↓
+ * 필요한 날짜를 명시적으로 넘겨:
  *
- * LuckInteractionAnalysis
+ * exactPeriodAt()
+ * definitePeriodAt()
+ *
+ * 등으로 조회한다.
  */
 @Component
 public class LuckInteractionAnalysisEngine {
@@ -66,18 +74,26 @@ public class LuckInteractionAnalysisEngine {
     public LuckInteractionAnalysisEngine(
             LuckRelationAnalyzer luckRelationAnalyzer,
             LuckTenGodAnalyzer luckTenGodAnalyzer,
-            UsefulElementInteractionAnalyzer
-                    usefulElementInteractionAnalyzer
+            UsefulElementInteractionAnalyzer usefulElementInteractionAnalyzer
     ) {
 
         this.luckRelationAnalyzer =
-                luckRelationAnalyzer;
+                Objects.requireNonNull(
+                        luckRelationAnalyzer,
+                        "LuckRelationAnalyzer가 필요합니다."
+                );
 
         this.luckTenGodAnalyzer =
-                luckTenGodAnalyzer;
+                Objects.requireNonNull(
+                        luckTenGodAnalyzer,
+                        "LuckTenGodAnalyzer가 필요합니다."
+                );
 
         this.usefulElementInteractionAnalyzer =
-                usefulElementInteractionAnalyzer;
+                Objects.requireNonNull(
+                        usefulElementInteractionAnalyzer,
+                        "UsefulElementInteractionAnalyzer가 필요합니다."
+                );
     }
 
     public LuckInteractionAnalysis analyze(
@@ -102,9 +118,11 @@ public class LuckInteractionAnalysisEngine {
         );
 
         /*
+         * =================================================
          * 1.
          * 해당 세운을 분석할 때 사용할
-         * 대운 구간을 결정한다.
+         * 대운 구간 결정
+         * =================================================
          */
         DecadeLuckPeriod decadeLuckPeriod =
                 resolveDecadeLuckPeriod(
@@ -113,9 +131,11 @@ public class LuckInteractionAnalysisEngine {
                 );
 
         /*
+         * =================================================
          * 2.
          * 세운 기간 안에서
-         * 대운 교체가 발생하는지 확인한다.
+         * 대운 교체가 발생하는지 확인
+         * =================================================
          */
         boolean decadeTransition =
                 hasDecadeTransitionDuringAnnualLuck(
@@ -124,8 +144,10 @@ public class LuckInteractionAnalysisEngine {
                 );
 
         /*
+         * =================================================
          * 3.
-         * 원국/대운/세운 천간 관계.
+         * 원국 / 대운 / 세운 천간 관계
+         * =================================================
          */
         List<LuckStemInteraction>
                 stemInteractions =
@@ -138,8 +160,10 @@ public class LuckInteractionAnalysisEngine {
                         );
 
         /*
+         * =================================================
          * 4.
-         * 원국/대운/세운 지지 관계.
+         * 원국 / 대운 / 세운 지지 관계
+         * =================================================
          */
         List<LuckBranchInteraction>
                 branchInteractions =
@@ -152,8 +176,10 @@ public class LuckInteractionAnalysisEngine {
                         );
 
         /*
+         * =================================================
          * 5.
-         * 대운/세운의 십성.
+         * 대운 / 세운 십성
+         * =================================================
          */
         List<LuckTenGodInfluence>
                 tenGodInfluences =
@@ -167,10 +193,18 @@ public class LuckInteractionAnalysisEngine {
                         );
 
         /*
+         * =================================================
          * 6.
-         * 대운/세운에서 들어오는 오행이
-         * 용신/희신/기신/조후/통관 후보와
-         * 일치하는지 분석.
+         * 대운 / 세운에서 들어오는 오행과
+         *
+         * 용신
+         * 희신
+         * 기신
+         * 조후
+         * 통관
+         *
+         * 후보의 일치 여부
+         * =================================================
          */
         List<ElementCandidateMatch>
                 elementCandidateMatches =
@@ -189,25 +223,62 @@ public class LuckInteractionAnalysisEngine {
                 branchInteractions,
                 tenGodInfluences,
                 elementCandidateMatches,
+
+                /*
+                 * 이 Engine은 대운 Context가 아니라
+                 * 실제 대운 Period Sequence를 사용한다.
+                 *
+                 * 따라서 예전 calculationAvailable()의
+                 * 현재 대응값은 sequenceAvailable()이다.
+                 */
                 decadeLuckAnalysis
-                        .calculationAvailable(),
+                        .sequenceAvailable(),
+
                 decadeTransition,
+
                 LuckInteractionRule.RULE_VERSION
         );
     }
 
     /**
-     * 분석 대상 세운에 사용할 대운을 찾는다.
+     * 분석 대상 세운의 시작 시점에
+     * 사용할 수 있는 대운 하나를 결정한다.
      *
-     * 1.
-     * decadeLuckAnalysis의 기준 시각이
-     * 해당 세운 안에 들어 있다면
-     * 현재 대운을 우선 사용한다.
+     * =================================================
      *
-     * 2.
-     * 미래 또는 과거 세운을 분석한다면
-     * 해당 세운 시작 시점에 작동 중인
-     * 대운을 찾는다.
+     * 현재 13차 정책:
+     *
+     * 특정 기준시점을 Aggregate 내부에 저장하지 않는다.
+     *
+     * 따라서:
+     *
+     * annualStart
+     *
+     * 를 명시적으로 넘겨
+     * DecadeLuckAnalysis에서 조회한다.
+     *
+     * =================================================
+     *
+     * 우선순위:
+     *
+     * 1. definitePeriodAt()
+     *
+     * 시간 미상 등 불확실성이 있어도
+     * 어떤 가능한 출생시간을 적용해도
+     * 동일 대운으로 확정되는 경우.
+     *
+     * 2. exactPeriodAt()
+     *
+     * 정확한 교운시점 구조에서
+     * 해당 시점의 대운을 찾을 수 있는 경우.
+     *
+     * =================================================
+     *
+     * POSSIBLE 대운이 여러 개뿐인 경우에는
+     * 임의로 하나를 선택하지 않는다.
+     *
+     * 이 V1 Engine은 단일 DecadeLuckPeriod만
+     * 받을 수 있으므로 null로 남긴다.
      */
     private DecadeLuckPeriod resolveDecadeLuckPeriod(
             DecadeLuckAnalysis decadeLuckAnalysis,
@@ -216,65 +287,66 @@ public class LuckInteractionAnalysisEngine {
 
         if (
                 !decadeLuckAnalysis
-                        .calculationAvailable()
+                        .sequenceAvailable()
         ) {
 
             return null;
         }
 
-        /*
-         * 현재 조회시점과
-         * 분석 대상 세운이 같은 경우.
-         */
-        if (
+        ZonedDateTime annualStart =
                 annualLuckAnalysis
-                        .isActiveAt(
-                                decadeLuckAnalysis
-                                        .targetDateTime()
+                        .period()
+                        .startDateTimeInclusive();
+
+        /*
+         * 시간 미상 범위가 있더라도
+         * 확정적으로 활성화되는 대운이 있으면
+         * 그것을 우선 사용한다.
+         */
+        DecadeLuckPeriod definite =
+                decadeLuckAnalysis
+                        .definitePeriodAt(
+                                annualStart
                         )
+                        .orElse(
+                                null
+                        );
+
+        if (
+                definite != null
         ) {
 
-            DecadeLuckPeriod current =
-                    decadeLuckAnalysis
-                            .currentPeriod();
-
-            if (current != null) {
-
-                return current;
-            }
+            return definite;
         }
 
         /*
-         * 미래/과거 특정 세운 분석.
-         *
-         * 해당 세운 시작 시각에
-         * 어떤 대운이 작동하는지 찾는다.
+         * 정확한 교운 구조라면
+         * exactPeriodAt()으로 조회한다.
          */
         return decadeLuckAnalysis
-                .periods()
-                .stream()
-                .filter(
-                        period ->
-                                period.contains(
-                                        annualLuckAnalysis
-                                                .startDateTime()
-                                )
+                .exactPeriodAt(
+                        annualStart
                 )
-                .findFirst()
-                .orElse(null);
+                .orElse(
+                        null
+                );
     }
 
     /**
      * 해당 세운 기간 안에서
-     * 새로운 대운이 시작되는지 확인한다.
+     * 새로운 대운 시작이 발생하는지 확인한다.
      *
-     * 이 값이 true라면:
+     * =================================================
      *
-     * 같은 세운 안에서도
-     * 대운 배경이 중간에 바뀐다.
+     * true:
      *
-     * 이후 해석 단계에서
-     * 중요한 주의 정보로 사용할 수 있다.
+     * 하나의 세운 안에서
+     * 대운 배경이 중간에 변경된다.
+     *
+     * =================================================
+     *
+     * 여기에서도 대운 Sequence 자체가 없으면
+     * 전환 여부를 계산할 수 없으므로 false.
      */
     private boolean
     hasDecadeTransitionDuringAnnualLuck(
@@ -284,7 +356,7 @@ public class LuckInteractionAnalysisEngine {
 
         if (
                 !decadeLuckAnalysis
-                        .calculationAvailable()
+                        .sequenceAvailable()
         ) {
 
             return false;
@@ -299,7 +371,7 @@ public class LuckInteractionAnalysisEngine {
                                         .startsInsideAnnualLuck(
                                                 period,
                                                 annualLuckAnalysis
-                                                        .annualLuck()
+                                                        .period()
                                         )
                 );
     }

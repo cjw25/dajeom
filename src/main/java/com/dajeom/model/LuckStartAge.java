@@ -1,10 +1,32 @@
 package com.dajeom.model;
 
 /**
- * 대운 시작 나이.
+ * 정밀화 13차-2.
  *
- * 대운 시작시점을 단순한 문자열이 아니라
- * 계산 가능한 데이터로 보관한다.
+ * 전통적인 대운 기산 환산 결과.
+ *
+ * =================================================
+ *
+ * 내부 정규화 기준:
+ *
+ * 1년 = 12개월
+ * 1개월 = 30일
+ *
+ * =================================================
+ *
+ * 이는 실제 Gregorian Calendar의
+ * 한 달 길이가 항상 30일이라는 뜻이 아니다.
+ *
+ * 오직:
+ *
+ * 3 실제일 = 기산 1년
+ *
+ * 환산을:
+ *
+ * 년 / 개월 / 일
+ *
+ * 형태로 정규화하기 위한
+ * symbolic age 단위다.
  */
 public record LuckStartAge(
 
@@ -12,49 +34,76 @@ public record LuckStartAge(
 
         int months,
 
-        int days,
+        int days
 
-        double decimalYears
+) implements Comparable<LuckStartAge> {
 
-) {
+    private static final int
+            MONTHS_PER_YEAR = 12;
+
+    private static final int
+            DAYS_PER_MONTH = 30;
+
+    private static final int
+            DAYS_PER_YEAR =
+            MONTHS_PER_YEAR
+                    * DAYS_PER_MONTH;
 
     public LuckStartAge {
 
-        if (years < 0) {
+        if (
+                years < 0
+        ) {
 
             throw new IllegalArgumentException(
-                    "대운 시작 연수는 음수일 수 없습니다."
+                    "대운 시작 년수는 음수일 수 없습니다."
             );
         }
 
-        if (months < 0) {
+        if (
+                months < 0
+                        || months >= MONTHS_PER_YEAR
+        ) {
 
             throw new IllegalArgumentException(
-                    "대운 시작 개월수는 음수일 수 없습니다."
+                    "대운 시작 개월은 0~11 범위여야 합니다."
             );
         }
 
-        if (days < 0) {
+        if (
+                days < 0
+                        || days >= DAYS_PER_MONTH
+        ) {
 
             throw new IllegalArgumentException(
-                    "대운 시작 일수는 음수일 수 없습니다."
-            );
-        }
-
-        if (decimalYears < 0) {
-
-            throw new IllegalArgumentException(
-                    "대운 시작 나이는 음수일 수 없습니다."
+                    "대운 시작 일수는 0~29 범위여야 합니다."
             );
         }
     }
 
     /**
-     * 사용자 표시용.
+     * 비교를 위한 전통 환산 총일수.
      *
-     * 예:
-     * 4년 2개월 10일
+     * 실제 생존 일수나 Gregorian 날짜 차이가 아니다.
      */
+    public long totalTraditionalDays() {
+
+        return (long) years
+                * DAYS_PER_YEAR
+
+                + (long) months
+                * DAYS_PER_MONTH
+
+                + days;
+    }
+
+    public boolean zero() {
+
+        return years == 0
+                && months == 0
+                && days == 0;
+    }
+
     public String displayName() {
 
         return years
@@ -63,5 +112,23 @@ public record LuckStartAge(
                 + "개월 "
                 + days
                 + "일";
+    }
+
+    @Override
+    public int compareTo(
+            LuckStartAge other
+    ) {
+
+        if (
+                other == null
+        ) {
+
+            return 1;
+        }
+
+        return Long.compare(
+                totalTraditionalDays(),
+                other.totalTraditionalDays()
+        );
     }
 }

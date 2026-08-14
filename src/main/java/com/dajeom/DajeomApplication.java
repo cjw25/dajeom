@@ -8,6 +8,8 @@ public class DajeomApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(DajeomApplication.class, args);
-	}
+
+	System.out.println("-- dajeom start --");
+}
 
 }

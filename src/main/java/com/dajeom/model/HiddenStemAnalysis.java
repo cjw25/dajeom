@@ -57,7 +57,7 @@ public record HiddenStemAnalysis(
 
         return hiddenStem
                 .role()
-                .getKoreanName();
+                .koreanName();
     }
 
     public String tenGodKoreanName() {

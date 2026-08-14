@@ -1,7 +1,6 @@
 package com.dajeom.engine;
 
 import com.dajeom.analyzer.ElementStrengthAnalyzer;
-import com.dajeom.analyzer.RelationAnalyzer;
 import com.dajeom.analyzer.StrengthAnalyzer;
 import com.dajeom.model.ElementStrength;
 import com.dajeom.model.FourPillars;
@@ -14,41 +13,61 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 
 /**
- * 사주 원국의 통합 분석 Engine.
+ * 사주 원국의 기본 통합 분석 Engine.
  *
- * FourPillars를 받아 지금까지 만든
- * 원국 분석 계층을 순서대로 실행한다.
+ * =================================================
  *
  * 처리 흐름:
  *
  * FourPillars
- *      ↓
+ *
+ * ↓
+ *
  * NatalChartBaseAnalysisEngine
- *      ↓
+ *
+ * ↓
+ *
  * NatalChartBaseAnalysis
- *      ↓
+ *
+ * ↓
+ *
  * ElementStrengthAnalyzer
- *      ↓
+ *
+ * ↓
+ *
  * ElementStrength
- *      ↓
+ *
+ * ↓
+ *
  * StrengthAnalyzer
- *      ↓
+ *
+ * ↓
+ *
  * StrengthAnalysis
  *
- * 동시에:
+ * =================================================
+ *
+ * 관계 분석은 정밀화 8차의 공식 Engine인
+ * RelationAnalysisEngine을 사용한다.
  *
  * FourPillars
- *      ↓
- * RelationAnalyzer
- *      ↓
+ *
+ * ↓
+ *
+ * RelationAnalysisEngine
+ *
+ * ↓
+ *
  * RelationAnalysis
+ *
+ * =================================================
  *
  * 최종:
  *
  * NatalChartAnalysis
  *
- * 이 Engine은 분석 결과를 조립하지만
- * 직접적인 명리 공식이나 Rule을 구현하지 않는다.
+ * 이 Engine은 분석 결과를 조립하며
+ * 직접적인 명리 Rule을 구현하지 않는다.
  */
 @Component
 public class NatalChartAnalysisEngine {
@@ -62,36 +81,53 @@ public class NatalChartAnalysisEngine {
     private final StrengthAnalyzer
             strengthAnalyzer;
 
-    private final RelationAnalyzer
-            relationAnalyzer;
+    private final RelationAnalysisEngine
+            relationAnalysisEngine;
 
     public NatalChartAnalysisEngine(
+
             NatalChartBaseAnalysisEngine
                     natalChartBaseAnalysisEngine,
+
             ElementStrengthAnalyzer
                     elementStrengthAnalyzer,
+
             StrengthAnalyzer
                     strengthAnalyzer,
-            RelationAnalyzer
-                    relationAnalyzer
+
+            RelationAnalysisEngine
+                    relationAnalysisEngine
+
     ) {
 
         this.natalChartBaseAnalysisEngine =
-                natalChartBaseAnalysisEngine;
+                Objects.requireNonNull(
+                        natalChartBaseAnalysisEngine,
+                        "NatalChartBaseAnalysisEngine이 필요합니다."
+                );
 
         this.elementStrengthAnalyzer =
-                elementStrengthAnalyzer;
+                Objects.requireNonNull(
+                        elementStrengthAnalyzer,
+                        "ElementStrengthAnalyzer가 필요합니다."
+                );
 
         this.strengthAnalyzer =
-                strengthAnalyzer;
+                Objects.requireNonNull(
+                        strengthAnalyzer,
+                        "StrengthAnalyzer가 필요합니다."
+                );
 
-        this.relationAnalyzer =
-                relationAnalyzer;
+        this.relationAnalysisEngine =
+                Objects.requireNonNull(
+                        relationAnalysisEngine,
+                        "RelationAnalysisEngine이 필요합니다."
+                );
     }
 
     /**
      * 계산된 사주팔자를 받아
-     * 원국 전체 분석을 수행한다.
+     * 원국 기본 통합 분석을 수행한다.
      */
     public NatalChartAnalysis analyze(
             FourPillars fourPillars
@@ -103,8 +139,11 @@ public class NatalChartAnalysisEngine {
         );
 
         /*
+         * =================================================
          * 1.
+         *
          * 십성 / 지장간 / 기본 오행 분석.
+         * =================================================
          */
         NatalChartBaseAnalysis baseAnalysis =
                 natalChartBaseAnalysisEngine
@@ -113,8 +152,12 @@ public class NatalChartAnalysisEngine {
                         );
 
         /*
+         * =================================================
          * 2.
-         * 실제 분석용 가중 오행 세력 계산.
+         *
+         * 기존 기본 계층에서 사용하는
+         * 가중 오행 세력 분석.
+         * =================================================
          */
         ElementStrength elementStrength =
                 elementStrengthAnalyzer
@@ -123,11 +166,13 @@ public class NatalChartAnalysisEngine {
                         );
 
         /*
+         * =================================================
          * 3.
-         * 계산된 오행 세력을 그대로 사용해서
-         * 일간 강약을 분석한다.
+         *
+         * 기존 기본 계층의 강약 분석.
          *
          * ElementStrength를 다시 계산하지 않는다.
+         * =================================================
          */
         StrengthAnalysis strengthAnalysis =
                 strengthAnalyzer
@@ -137,18 +182,26 @@ public class NatalChartAnalysisEngine {
                         );
 
         /*
+         * =================================================
          * 4.
-         * 천간/지지 관계 분석.
+         *
+         * 정밀화 8차 천간/지지 관계 분석.
+         *
+         * 구형 RelationAnalyzer를 사용하지 않는다.
+         * =================================================
          */
         RelationAnalysis relationAnalysis =
-                relationAnalyzer
+                relationAnalysisEngine
                         .analyze(
                                 fourPillars
                         );
 
         /*
+         * =================================================
          * 5.
-         * 원국 전체 결과를 하나로 통합.
+         *
+         * 기본 원국 분석 통합.
+         * =================================================
          */
         return new NatalChartAnalysis(
                 baseAnalysis,
