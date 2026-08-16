@@ -5,6 +5,9 @@ document.addEventListener(
         "use strict";
 
 
+        /* =====================================================
+           CONSTANT
+        ====================================================== */
 
         const API_URL =
             "/api/saju/calculate";
@@ -30,6 +33,10 @@ document.addEventListener(
             94;
 
 
+        const VIDEO_PATH = {
+
+            opening:
+                "/video/opening.mp4",
 
             analysis1:
                 "/video/analysis1.mp4",
@@ -37,16 +44,20 @@ document.addEventListener(
             analysis2:
                 "/video/analysis2.mp4",
 
+            love:
                 "/video/motion_love.mp4",
 
             wealth:
                 "/video/motion_wealth.mp4",
+
             network:
                 "/video/motion_network.mp4"
 
+        };
 
 
 
+        /* =====================================================
            11 CONSULTATION CATEGORY
         ====================================================== */
 
@@ -102,6 +113,7 @@ document.addEventListener(
                 number:
                     "02",
 
+                chapter:
                     "제2장",
 
                 label:
@@ -171,6 +183,7 @@ document.addEventListener(
 
                 chapter:
                     "제6장",
+
                 label:
                     "재물",
 
@@ -186,6 +199,7 @@ document.addEventListener(
                     "07",
 
                 chapter:
+                    "제7장",
 
                 label:
                     "직업·사업",
@@ -220,6 +234,7 @@ document.addEventListener(
 
                 chapter:
                     "제9장",
+
                 label:
                     "건강·생활리듬",
 
@@ -266,6 +281,7 @@ document.addEventListener(
 
 
 
+        /* =====================================================
            SCREEN
         ====================================================== */
 
@@ -277,9 +293,9 @@ document.addEventListener(
             );
 
 
-         * =================================================
 
         /* =====================================================
+           REQUIRED DOM
         ====================================================== */
 
         const backButton =
@@ -301,6 +317,7 @@ document.addEventListener(
 
 
 
+        /* =====================================================
            OPTIONAL INTRO WORLD DOM
         ====================================================== */
 
@@ -320,6 +337,10 @@ document.addEventListener(
             optional(
                 "introWorldLine3"
             );
+
+
+        const introWorldEmblem =
+            optional(
                 "introWorldEmblem"
             );
 
@@ -333,6 +354,9 @@ document.addEventListener(
         const introStartButton =
             optional(
                 "introStartButton"
+            );
+
+
         const introWorldSkip =
             optional(
                 "introWorldSkip"
@@ -343,6 +367,12 @@ document.addEventListener(
             optional(
                 "openingVideo"
             );
+
+
+
+        /* =====================================================
+           NAME
+        ====================================================== */
 
         const nameForm =
             required(
