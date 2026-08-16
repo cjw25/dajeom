@@ -104,7 +104,7 @@ public class OpenAiConsultationStoryGenerator
             @Value("${OPENAI_API_KEY:}")
             String apiKey,
 
-            @Value("${OPENAI_MODEL:gpt-5-mini}")
+            @Value("${OPENAI_MODEL:gpt-4o-mini}")
             String model,
 
             @Value("${OPENAI_MAX_OUTPUT_TOKENS:24000}")

@@ -7,15 +7,18 @@
     <meta charset="UTF-8">
 
     <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+          content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <meta name="theme-color"
-          content="#1b1018">
+          content="#160d16">
+
+    <meta name="color-scheme"
+          content="dark">
 
     <link rel="icon"
           href="data:,">
 
-    <title>천명 사주상담</title>
+    <title>천명사주</title>
 
     <link rel="stylesheet"
           th:href="@{/css/saju.css}"
@@ -23,23 +26,26 @@
 
 </head>
 
+
 <body>
 
 <div class="saju-app">
 
 
-    <!-- =================================================
+    <!-- =====================================================
          HEADER
-         ================================================= -->
+         ===================================================== -->
 
     <header class="saju-header">
 
         <button type="button"
                 id="backButton"
                 class="header-button"
-                aria-label="뒤로가기">
+                aria-label="이전 화면">
 
-            ‹
+            <span aria-hidden="true">
+                ‹
+            </span>
 
         </button>
 
@@ -47,7 +53,7 @@
         <div class="header-title">
 
             <strong>
-                AI 사주
+                천명사주
             </strong>
 
             <span id="headerSubtitle">
@@ -62,11 +68,14 @@
                 class="header-button"
                 aria-label="홈으로">
 
-            ⌂
+            <span aria-hidden="true">
+                ⌂
+            </span>
 
         </button>
 
     </header>
+
 
 
     <main>
@@ -79,21 +88,81 @@
         <section class="screen is-active"
                  data-screen="intro">
 
-            <div class="intro-visual">
 
-                <div class="intro-background"></div>
-
-                <div class="intro-overlay"></div>
+            <div class="intro-world">
 
 
-                <div class="intro-symbol-stage"
+                <!-- ==========================================
+                     OPENING VIDEO
+                     ========================================== -->
+
+                <video id="openingVideo"
+                       class="world-video opening-video"
+                       muted
+                       playsinline
+                       preload="auto"
+                       poster="/img/frame13_blur.jpg">
+
+                    <source src="/opening.mp4"
+                            type="video/mp4">
+
+                </video>
+
+
+                <div class="world-video-shade"></div>
+
+                <div class="world-vignette"></div>
+
+
+                <!-- ==========================================
+                     WORLD STORY LINES
+                     ========================================== -->
+
+                <div class="intro-world-story"
                      aria-hidden="true">
 
-                    <span class="intro-orbit orbit-one"></span>
+                    <p id="introWorldLine1"
+                       class="intro-world-line is-hidden">
 
-                    <span class="intro-orbit orbit-two"></span>
+                        사람은 태어난 순간<br>
+                        하나의 명식을 품는다.
 
-                    <span class="intro-orbit orbit-three"></span>
+                    </p>
+
+
+                    <p id="introWorldLine2"
+                       class="intro-world-line is-hidden">
+
+                        그 안에는 성향과 관계,<br>
+                        시간의 흐름이 함께 기록된다.
+
+                    </p>
+
+
+                    <p id="introWorldLine3"
+                       class="intro-world-line is-hidden">
+
+                        이제 당신의 흐름을<br>
+                        하나씩 열어본다.
+
+                    </p>
+
+                </div>
+
+
+                <!-- ==========================================
+                     EMBLEM
+                     ========================================== -->
+
+                <div id="introWorldEmblem"
+                     class="intro-world-emblem"
+                     aria-hidden="true">
+
+                    <span class="intro-world-ring ring-one"></span>
+
+                    <span class="intro-world-ring ring-two"></span>
+
+                    <span class="intro-world-ring ring-three"></span>
 
                     <strong>
                         命
@@ -102,102 +171,53 @@
                 </div>
 
 
-                <div class="intro-copy">
+                <!-- ==========================================
+                     FINAL INTRO
+                     ========================================== -->
 
-                    <span class="eyebrow">
-                        AI SAJU CONSULTATION
+                <div id="introWorldFinal"
+                     class="intro-world-final">
+
+                    <span class="world-eyebrow">
+                        天命四柱
                     </span>
 
+
                     <h1>
-                        태어난 순간부터<br>
-                        지금의 흐름까지
+                        천명사주
                     </h1>
 
+
                     <p>
-                        계산된 명식과 운의 흐름을
-                        하나씩 살펴봅니다.
+                        태어난 순간의 명식에서<br>
+                        지금과 앞으로의 흐름까지
                     </p>
 
-                </div>
 
-            </div>
+                    <button type="button"
+                            id="introStartButton"
+                            class="primary-button intro-start-button"
+                            data-go="name">
 
+                        천명록 열기
 
-            <div class="intro-content">
-
-                <span class="section-badge">
-                    천명 사주상담
-                </span>
-
-
-                <h2>
-                    계산된 사실부터 확인하고<br>
-                    마지막에 이야기로 연결합니다
-                </h2>
-
-
-                <p>
-                    사주 원국, 용신, 관계, 대운과 세운의 흐름을
-                    Java 명리엔진에서 계산합니다.
-                    분석 과정에서는 분야별 계산 근거를 먼저 보여드리고,
-                    마지막 결과에서 11개 분야의 이야기를 이어서 보여드립니다.
-                </p>
-
-
-                <div class="intro-step-grid">
-
-                    <article>
-
-                        <strong>
-                            01
-                        </strong>
-
-                        <span>
-                            출생정보
-                        </span>
-
-                    </article>
-
-
-                    <article>
-
-                        <strong>
-                            02
-                        </strong>
-
-                        <span>
-                            명리 분석
-                        </span>
-
-                    </article>
-
-
-                    <article>
-
-                        <strong>
-                            03
-                        </strong>
-
-                        <span>
-                            11개 이야기
-                        </span>
-
-                    </article>
+                    </button>
 
                 </div>
 
 
                 <button type="button"
-                        class="primary-button"
-                        data-go="name">
+                        id="introWorldSkip"
+                        class="world-skip-button">
 
-                    상담 시작
+                    건너뛰기
 
                 </button>
 
             </div>
 
         </section>
+
 
 
         <!-- =================================================
@@ -207,10 +227,16 @@
         <section class="screen"
                  data-screen="name">
 
+
             <div class="form-screen">
 
 
-                <div class="form-visual mini-visual">
+                <div class="form-visual name-visual">
+
+                    <div class="form-visual-background"></div>
+
+                    <div class="form-visual-shade"></div>
+
 
                     <div class="mini-symbol"
                          aria-hidden="true">
@@ -223,21 +249,37 @@
 
                     </div>
 
+
+                    <div class="form-visual-copy">
+
+                        <small>
+                            FIRST RECORD
+                        </small>
+
+                        <p>
+                            천명록에 기록할<br>
+                            이름을 알려주세요.
+                        </p>
+
+                    </div>
+
                 </div>
 
 
                 <div class="form-content">
 
                     <span class="step-label">
-                        STEP 01
+                        기록 01
                     </span>
+
 
                     <h1>
                         이름을 알려주세요
                     </h1>
 
+
                     <p class="description">
-                        결과 화면에서 불러드릴 이름입니다.
+                        분석 결과와 천명록에서 불러드릴 이름입니다.
                     </p>
 
 
@@ -262,7 +304,8 @@
 
 
                         <p id="nameError"
-                           class="error-message">
+                           class="error-message"
+                           role="alert">
                         </p>
 
 
@@ -271,7 +314,7 @@
                                 class="primary-button"
                                 disabled>
 
-                            다음
+                            다음 기록으로
 
                         </button>
 
@@ -284,6 +327,7 @@
         </section>
 
 
+
         <!-- =================================================
              BIRTH
              ================================================= -->
@@ -291,21 +335,32 @@
         <section class="screen"
                  data-screen="birth">
 
+
             <div class="form-screen">
 
 
                 <div class="form-visual birth-visual">
 
+                    <div class="form-visual-background"></div>
+
+                    <div class="form-visual-shade"></div>
+
+
                     <div class="birth-visual-copy"
                          aria-hidden="true">
 
                         <span>
-                            出生情報
+                            出生記錄
                         </span>
 
                         <strong>
                             生
                         </strong>
+
+                        <p>
+                            태어난 순간은<br>
+                            명식 계산의 시작점입니다.
+                        </p>
 
                     </div>
 
@@ -315,15 +370,19 @@
                 <div class="form-content">
 
                     <span class="step-label">
-                        STEP 02
+                        기록 02
                     </span>
 
+
                     <h1>
-                        태어난 정보를 알려주세요
+                        태어난 정보를<br>
+                        알려주세요
                     </h1>
 
+
                     <p class="description">
-                        입력값은 만세력 계산에 직접 사용됩니다.
+                        입력한 정보는 Java 명리엔진의
+                        만세력 계산에 직접 사용됩니다.
                     </p>
 
 
@@ -331,14 +390,14 @@
                           novalidate>
 
 
-                        <!-- ==========================
+                        <!-- =================================
                              CALENDAR
-                             ========================== -->
+                             ================================= -->
 
-                        <fieldset>
+                        <fieldset class="form-fieldset">
 
                             <legend>
-                                달력
+                                달력 기준
                             </legend>
 
 
@@ -366,6 +425,11 @@
                         </fieldset>
 
 
+
+                        <!-- =================================
+                             LUNAR LEAP
+                             ================================= -->
+
                         <div id="lunarLeapArea"
                              class="option-box hidden">
 
@@ -383,11 +447,12 @@
                         </div>
 
 
-                        <!-- ==========================
-                             GENDER
-                             ========================== -->
 
-                        <fieldset>
+                        <!-- =================================
+                             GENDER
+                             ================================= -->
+
+                        <fieldset class="form-fieldset">
 
                             <legend>
                                 성별
@@ -418,11 +483,12 @@
                         </fieldset>
 
 
-                        <!-- ==========================
-                             DATE
-                             ========================== -->
 
-                        <fieldset>
+                        <!-- =================================
+                             BIRTH DATE
+                             ================================= -->
+
+                        <fieldset class="form-fieldset">
 
                             <legend>
                                 생년월일
@@ -430,6 +496,7 @@
 
 
                             <div class="date-input-grid">
+
 
                                 <label>
 
@@ -442,6 +509,7 @@
                                            class="text-input numeric-input"
                                            inputmode="numeric"
                                            maxlength="4"
+                                           autocomplete="bday-year"
                                            placeholder="1990">
 
                                 </label>
@@ -458,6 +526,7 @@
                                            class="text-input numeric-input"
                                            inputmode="numeric"
                                            maxlength="2"
+                                           autocomplete="bday-month"
                                            placeholder="01">
 
                                 </label>
@@ -474,6 +543,7 @@
                                            class="text-input numeric-input"
                                            inputmode="numeric"
                                            maxlength="2"
+                                           autocomplete="bday-day"
                                            placeholder="01">
 
                                 </label>
@@ -483,11 +553,12 @@
                         </fieldset>
 
 
-                        <!-- ==========================
-                             TIME
-                             ========================== -->
 
-                        <fieldset>
+                        <!-- =================================
+                             BIRTH TIME
+                             ================================= -->
+
+                        <fieldset class="form-fieldset">
 
 
                             <div class="legend-row">
@@ -514,6 +585,7 @@
                             <div id="timeInputArea"
                                  class="time-input-grid">
 
+
                                 <label>
 
                                     <span>
@@ -530,7 +602,7 @@
                                 </label>
 
 
-                                <strong>
+                                <strong aria-hidden="true">
                                     :
                                 </strong>
 
@@ -556,7 +628,8 @@
 
 
                         <p id="birthError"
-                           class="error-message">
+                           class="error-message"
+                           role="alert">
                         </p>
 
 
@@ -578,6 +651,7 @@
         </section>
 
 
+
         <!-- =================================================
              REVIEW
              ================================================= -->
@@ -585,20 +659,36 @@
         <section class="screen"
                  data-screen="review">
 
+
             <div class="review-page">
 
+
+                <div class="review-symbol"
+                     aria-hidden="true">
+
+                    <span></span>
+
+                    <strong>
+                        錄
+                    </strong>
+
+                </div>
+
+
                 <span class="step-label">
-                    STEP 03
+                    기록 확인
                 </span>
 
 
                 <h1>
-                    입력정보를 확인해주세요
+                    입력한 정보를<br>
+                    확인해주세요
                 </h1>
 
 
                 <p class="description">
-                    잘못된 정보가 있다면 분석 전에 수정해주세요.
+                    이 정보로 사주 원국과
+                    대운·세운을 계산합니다.
                 </p>
 
 
@@ -611,7 +701,8 @@
                             이름
                         </span>
 
-                        <strong id="reviewName"></strong>
+                        <strong id="reviewName">
+                        </strong>
 
                     </div>
 
@@ -622,7 +713,8 @@
                             성별
                         </span>
 
-                        <strong id="reviewGender"></strong>
+                        <strong id="reviewGender">
+                        </strong>
 
                     </div>
 
@@ -633,7 +725,8 @@
                             달력
                         </span>
 
-                        <strong id="reviewCalendar"></strong>
+                        <strong id="reviewCalendar">
+                        </strong>
 
                     </div>
 
@@ -645,7 +738,8 @@
                             음력 구분
                         </span>
 
-                        <strong id="reviewLeap"></strong>
+                        <strong id="reviewLeap">
+                        </strong>
 
                     </div>
 
@@ -656,7 +750,8 @@
                             생년월일
                         </span>
 
-                        <strong id="reviewBirthDate"></strong>
+                        <strong id="reviewBirthDate">
+                        </strong>
 
                     </div>
 
@@ -667,7 +762,8 @@
                             태어난 시간
                         </span>
 
-                        <strong id="reviewBirthTime"></strong>
+                        <strong id="reviewBirthTime">
+                        </strong>
 
                     </div>
 
@@ -689,7 +785,7 @@
                             id="reviewCompleteButton"
                             class="primary-button">
 
-                        이 정보로 계속
+                        이 정보로 분석하기
 
                     </button>
 
@@ -700,6 +796,7 @@
         </section>
 
 
+
         <!-- =================================================
              COMPLETE
              ================================================= -->
@@ -707,9 +804,13 @@
         <section class="screen"
                  data-screen="complete">
 
+
             <div class="complete-page">
 
+
                 <div class="complete-background"></div>
+
+                <div class="complete-shade"></div>
 
 
                 <div class="complete-content">
@@ -718,9 +819,9 @@
                     <div class="complete-emblem"
                          aria-hidden="true">
 
-                        <span></span>
+                        <span class="complete-ring ring-one"></span>
 
-                        <span></span>
+                        <span class="complete-ring ring-two"></span>
 
                         <strong>
                             命
@@ -730,19 +831,20 @@
 
 
                     <span class="eyebrow">
-                        READY
+                        READY TO ANALYZE
                     </span>
 
 
                     <h1>
-                        분석 준비가<br>
-                        완료되었습니다
+                        천명을 읽을<br>
+                        준비가 되었습니다
                     </h1>
 
 
                     <p>
-                        입력한 정보를 기준으로
-                        원국과 대운·세운의 흐름을 계산합니다.
+                        원국의 구조부터 관계,
+                        대운과 세운까지 계산한 뒤
+                        열한 장의 천명록으로 연결합니다.
                     </p>
 
 
@@ -761,6 +863,7 @@
         </section>
 
 
+
         <!-- =================================================
              ANALYSIS
              ================================================= -->
@@ -768,7 +871,40 @@
         <section class="screen"
                  data-screen="analysis">
 
+
             <div class="analysis-page">
+
+
+                <!-- ==========================================
+                     ANALYSIS VIDEO 1
+                     ========================================== -->
+
+                <video id="analysisVideo1"
+                       class="analysis-video analysis-video-one"
+                       muted
+                       playsinline
+                       preload="auto">
+
+                    <source src="/analysis1.mp4"
+                            type="video/mp4">
+
+                </video>
+
+
+                <!-- ==========================================
+                     ANALYSIS VIDEO 2
+                     ========================================== -->
+
+                <video id="analysisVideo2"
+                       class="analysis-video analysis-video-two"
+                       muted
+                       playsinline
+                       preload="auto">
+
+                    <source src="/analysis2.mp4"
+                            type="video/mp4">
+
+                </video>
 
 
                 <div class="analysis-background"></div>
@@ -776,14 +912,21 @@
                 <div class="analysis-shade"></div>
 
 
+                <!-- ==========================================
+                     CENTER SYMBOL
+                     ========================================== -->
+
                 <div class="analysis-orbit-stage"
                      aria-hidden="true">
 
-                    <span class="analysis-orbit analysis-orbit-one"></span>
+                    <span class="analysis-orbit analysis-orbit-one">
+                    </span>
 
-                    <span class="analysis-orbit analysis-orbit-two"></span>
+                    <span class="analysis-orbit analysis-orbit-two">
+                    </span>
 
-                    <span class="analysis-orbit analysis-orbit-three"></span>
+                    <span class="analysis-orbit analysis-orbit-three">
+                    </span>
 
                     <strong>
                         命
@@ -791,6 +934,11 @@
 
                 </div>
 
+
+
+                <!-- ==========================================
+                     ANALYSIS COPY
+                     ========================================== -->
 
                 <div class="analysis-copy">
 
@@ -811,27 +959,34 @@
                 </div>
 
 
-                <!-- ==============================
-                     FIVE ELEMENTS
-                     ============================== -->
 
-                <div class="element-grid">
+                <!-- ==========================================
+                     FIVE ELEMENTS
+                     ========================================== -->
+
+                <div class="element-grid"
+                     aria-label="오행 분석">
+
 
                     <span data-analysis-element="0">
                         木
                     </span>
 
+
                     <span data-analysis-element="1">
                         火
                     </span>
+
 
                     <span data-analysis-element="2">
                         土
                     </span>
 
+
                     <span data-analysis-element="3">
                         金
                     </span>
+
 
                     <span data-analysis-element="4">
                         水
@@ -840,16 +995,18 @@
                 </div>
 
 
-                <!-- ==============================
+
+                <!-- ==========================================
                      PROGRESS
-                     ============================== -->
+                     ========================================== -->
 
                 <div class="analysis-progress">
+
 
                     <div class="progress-heading">
 
                         <span>
-                            분석 진행
+                            천명 분석
                         </span>
 
                         <strong id="analysisProgressPercent">
@@ -870,64 +1027,88 @@
                 </div>
 
 
-                <!-- =================================================
-                     FACT ONLY
-                     ================================================= -->
+
+                <!-- ==========================================
+                     DETERMINISTIC FACT OVERLAY
+                     ========================================== -->
 
                 <div id="analysisFactOverlay"
                      class="fact-overlay">
 
 
-                    <div class="fact-top">
-
-                        <span id="factCategoryKicker">
-                            DETERMINISTIC FACT
-                        </span>
-
-
-                        <strong id="factCategoryIndex">
-                            01 / 11
-                        </strong>
-
-                    </div>
+                    <video id="factMotionVideo"
+                           class="fact-motion-video"
+                           muted
+                           playsinline
+                           loop
+                           preload="metadata">
+                    </video>
 
 
-                    <article class="fact-card">
+                    <div class="fact-motion-shade"></div>
 
 
-                        <h2 id="factCategoryTitle">
-                            기본 성향
-                        </h2>
+                    <div class="fact-content">
 
 
-                        <div id="factStatusRow"
-                             class="fact-status-row">
-                        </div>
+                        <div class="fact-top">
 
-
-                        <div class="fact-basis-area">
-
-                            <span>
-                                계산 근거
+                            <span id="factCategoryKicker">
+                                DETERMINISTIC FACT
                             </span>
 
 
-                            <div id="factBasis"
-                                 class="fact-basis">
-                            </div>
+                            <strong id="factCategoryIndex">
+                                01 / 11
+                            </strong>
 
                         </div>
 
-                    </article>
+
+                        <article class="fact-card">
 
 
-                    <button type="button"
-                            id="skipFactsButton"
-                            class="skip-facts-button">
+                            <span class="fact-card-label">
+                                천명 기록
+                            </span>
 
-                        바로 최종 결과 보기
 
-                    </button>
+                            <h2 id="factCategoryTitle">
+                                기본 성향
+                            </h2>
+
+
+                            <div id="factStatusRow"
+                                 class="fact-status-row">
+                            </div>
+
+
+                            <div class="fact-basis-area">
+
+
+                                <span>
+                                    계산 근거
+                                </span>
+
+
+                                <div id="factBasis"
+                                     class="fact-basis">
+                                </div>
+
+                            </div>
+
+                        </article>
+
+
+                        <button type="button"
+                                id="skipFactsButton"
+                                class="skip-facts-button">
+
+                            천명록 바로 보기
+
+                        </button>
+
+                    </div>
 
                 </div>
 
@@ -936,15 +1117,244 @@
         </section>
 
 
+
         <!-- =================================================
-             RESULT
+             REVEAL
+             ================================================= -->
+
+        <section class="screen"
+                 data-screen="reveal">
+
+
+            <div class="reveal-page">
+
+
+                <div class="reveal-background"></div>
+
+                <div class="reveal-shade"></div>
+
+
+                <button type="button"
+                        id="revealSkipButton"
+                        class="reveal-skip-button">
+
+                    바로 천명록 보기
+
+                </button>
+
+
+
+                <!-- ==========================================
+                     OPENING
+                     ========================================== -->
+
+                <div id="revealOpening"
+                     class="reveal-opening">
+
+
+                    <span class="reveal-eyebrow">
+                        天命開示
+                    </span>
+
+
+                    <div class="reveal-opening-symbol"
+                         aria-hidden="true">
+
+                        <span></span>
+
+                        <strong>
+                            命
+                        </strong>
+
+                    </div>
+
+
+                    <h1>
+                        당신의 명식이<br>
+                        모습을 드러냅니다
+                    </h1>
+
+                </div>
+
+
+
+                <!-- ==========================================
+                     FOUR PILLARS REVEAL
+                     ========================================== -->
+
+                <div id="revealPillarGrid"
+                     class="reveal-pillar-stage">
+
+
+                    <div class="reveal-pillar-heading">
+
+                        <span>
+                            四柱八字
+                        </span>
+
+                        <h2>
+                            태어난 순간의 네 기둥
+                        </h2>
+
+                    </div>
+
+
+                    <div class="reveal-pillar-grid">
+
+
+                        <!-- YEAR -->
+
+                        <article class="reveal-pillar"
+                                 data-reveal-pillar="year">
+
+                            <span>
+                                年柱
+                            </span>
+
+                            <small>
+                                년주
+                            </small>
+
+                            <strong id="revealYearChinese">
+                                ·
+                            </strong>
+
+                            <p id="revealYearKorean">
+                            </p>
+
+                        </article>
+
+
+
+                        <!-- MONTH -->
+
+                        <article class="reveal-pillar"
+                                 data-reveal-pillar="month">
+
+                            <span>
+                                月柱
+                            </span>
+
+                            <small>
+                                월주
+                            </small>
+
+                            <strong id="revealMonthChinese">
+                                ·
+                            </strong>
+
+                            <p id="revealMonthKorean">
+                            </p>
+
+                        </article>
+
+
+
+                        <!-- DAY -->
+
+                        <article class="reveal-pillar is-day"
+                                 data-reveal-pillar="day">
+
+                            <span>
+                                日柱
+                            </span>
+
+                            <small>
+                                일주
+                            </small>
+
+                            <strong id="revealDayChinese">
+                                ·
+                            </strong>
+
+                            <p id="revealDayKorean">
+                            </p>
+
+                        </article>
+
+
+
+                        <!-- HOUR -->
+
+                        <article class="reveal-pillar"
+                                 data-reveal-pillar="hour">
+
+                            <span>
+                                時柱
+                            </span>
+
+                            <small>
+                                시주
+                            </small>
+
+                            <strong id="revealHourChinese">
+                                ·
+                            </strong>
+
+                            <p id="revealHourKorean">
+                            </p>
+
+                        </article>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- ==========================================
+                     FINAL
+                     ========================================== -->
+
+                <div id="revealFinal"
+                     class="reveal-final">
+
+                    <div class="reveal-final-seal"
+                         aria-hidden="true">
+
+                        命
+
+                    </div>
+
+
+                    <span>
+                        天命錄
+                    </span>
+
+
+                    <h1>
+                        천명록이<br>
+                        열립니다
+                    </h1>
+
+
+                    <p>
+                        계산된 명리 근거를 바탕으로<br>
+                        열한 장의 기록을 확인합니다.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             RESULT / CHEONMYEONG BOOK
              ================================================= -->
 
         <section class="screen"
                  data-screen="result">
 
 
+            <!-- ==============================================
+                 BOOK COVER
+                 ============================================== -->
+
             <div class="result-cover">
+
 
                 <div class="result-cover-background"></div>
 
@@ -966,12 +1376,17 @@
                 <div class="result-cover-copy">
 
                     <span class="eyebrow">
-                        YOUR SAJU STORY
+                        天命錄
                     </span>
 
 
+                    <p class="result-cover-kicker">
+                        YOUR DESTINY RECORD
+                    </p>
+
+
                     <h1 id="resultTitle">
-                        사주 이야기
+                        천명록
                     </h1>
 
 
@@ -982,6 +1397,11 @@
 
             </div>
 
+
+
+            <!-- ==============================================
+                 RESULT CONTENT
+                 ============================================== -->
 
             <div class="result-content">
 
@@ -996,12 +1416,19 @@
                     <div class="section-heading">
 
                         <span>
-                            FOUR PILLARS
+                            四柱八字
                         </span>
 
+
                         <h2>
-                            사주팔자
+                            나의 사주팔자
                         </h2>
+
+
+                        <p>
+                            천명록의 모든 해석은
+                            아래 명식과 계산 결과를 기준으로 합니다.
+                        </p>
 
                     </div>
 
@@ -1013,53 +1440,80 @@
                 </section>
 
 
+
                 <!-- ==========================================
-                     11 STORIES
+                     CHEONMYEONG BOOK
                      ========================================== -->
 
                 <section class="story-section">
 
 
-                    <div class="section-heading">
+                    <div class="section-heading story-section-heading">
 
                         <span>
-                            11 CHAPTERS
+                            天命十一章
                         </span>
 
 
                         <h2>
-                            분야별 사주 이야기
+                            열한 장의 천명록
                         </h2>
 
 
                         <p>
-                            분석 과정에서 확인한 계산 근거를
-                            같은 기준으로 이야기 형태로 연결합니다.
+                            한 장씩 넘기며
+                            계산된 삶의 흐름을 확인하세요.
                         </p>
 
                     </div>
 
 
+                    <!--
+                        JS가 이 영역에 현재 한 장만 렌더링한다.
+
+                        제1장
+                        ↓
+                        제2장
+                        ↓
+                        ...
+                        ↓
+                        제11장
+                    -->
+
                     <div id="resultStoryList"
-                         class="story-list">
+                         class="story-list"
+                         aria-live="polite">
                     </div>
 
                 </section>
 
 
+
+                <!-- ==========================================
+                     DISCLAIMER
+                     ========================================== -->
+
                 <p id="resultDisclaimer"
                    class="result-disclaimer">
 
-                    본 해석은 명리학적 계산을 기반으로 한 참고용 상담입니다.
+                    천명록은 명리학적 계산 결과를 기반으로 한
+                    참고용 상담 콘텐츠입니다.
+                    삶의 중요한 결정은 실제 상황과 현실적인 판단을
+                    함께 고려해주세요.
 
                 </p>
 
 
+
+                <!-- ==========================================
+                     HOME
+                     ========================================== -->
+
                 <button type="button"
                         id="resultHomeButton"
-                        class="secondary-button">
+                        class="secondary-button result-home-button">
 
-                    홈으로 돌아가기
+                    천명사주 홈으로
 
                 </button>
 
@@ -1070,9 +1524,10 @@
     </main>
 
 
-    <!-- =================================================
+
+    <!-- =====================================================
          TOAST
-         ================================================= -->
+         ===================================================== -->
 
     <div id="toast"
          class="toast"
@@ -1083,9 +1538,16 @@
 </div>
 
 
+
+<!-- =========================================================
+     SCRIPT
+     ========================================================= -->
+
 <script th:src="@{/js/saju.js}"
         src="/js/saju.js">
 </script>
 
+
 </body>
+
 </html>

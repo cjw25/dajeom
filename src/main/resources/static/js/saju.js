@@ -5,11 +5,6 @@ document.addEventListener(
         "use strict";
 
 
-        /*
-         * =================================================
-         * CONSTANT
-         * =================================================
-         */
 
         const API_URL =
             "/api/saju/calculate";
@@ -23,34 +18,37 @@ document.addEventListener(
             "sajuAnalysisResult";
 
 
-        /*
-         * API가 너무 빨리 끝나더라도
-         * 분석 연출이 최소한 보이는 시간.
-         */
         const MINIMUM_ANALYSIS_TIME =
             4200;
 
 
-        /*
-         * Category Fact 한 장 표시 시간.
-         */
         const FACT_DISPLAY_TIME =
             900;
 
 
-        /*
-         * API 응답 대기 중
-         * Progress가 100%까지 먼저 가지 않도록 제한.
-         */
         const WAIT_PROGRESS_LIMIT =
             94;
 
 
-        /*
-         * =================================================
-         * 11 CONSULTATION CATEGORY
-         * =================================================
-         */
+
+            analysis1:
+                "/video/analysis1.mp4",
+
+            analysis2:
+                "/video/analysis2.mp4",
+
+                "/video/motion_love.mp4",
+
+            wealth:
+                "/video/motion_wealth.mp4",
+            network:
+                "/video/motion_network.mp4"
+
+
+
+
+           11 CONSULTATION CATEGORY
+        ====================================================== */
 
         const CATEGORY_ORDER = [
 
@@ -81,10 +79,14 @@ document.addEventListener(
 
         const CATEGORY_META = {
 
+
             PERSONALITY: {
 
                 number:
                     "01",
+
+                chapter:
+                    "제1장",
 
                 label:
                     "기본 성향",
@@ -100,6 +102,8 @@ document.addEventListener(
                 number:
                     "02",
 
+                    "제2장",
+
                 label:
                     "지나온 흐름",
 
@@ -113,6 +117,9 @@ document.addEventListener(
 
                 number:
                     "03",
+
+                chapter:
+                    "제3장",
 
                 label:
                     "대인관계",
@@ -128,6 +135,9 @@ document.addEventListener(
                 number:
                     "04",
 
+                chapter:
+                    "제4장",
+
                 label:
                     "연애 스타일",
 
@@ -141,6 +151,9 @@ document.addEventListener(
 
                 number:
                     "05",
+
+                chapter:
+                    "제5장",
 
                 label:
                     "인연·배우자",
@@ -156,6 +169,8 @@ document.addEventListener(
                 number:
                     "06",
 
+                chapter:
+                    "제6장",
                 label:
                     "재물",
 
@@ -169,6 +184,8 @@ document.addEventListener(
 
                 number:
                     "07",
+
+                chapter:
 
                 label:
                     "직업·사업",
@@ -184,6 +201,9 @@ document.addEventListener(
                 number:
                     "08",
 
+                chapter:
+                    "제8장",
+
                 label:
                     "분쟁·주의",
 
@@ -198,6 +218,8 @@ document.addEventListener(
                 number:
                     "09",
 
+                chapter:
+                    "제9장",
                 label:
                     "건강·생활리듬",
 
@@ -211,6 +233,9 @@ document.addEventListener(
 
                 number:
                     "10",
+
+                chapter:
+                    "제10장",
 
                 label:
                     "현재·올해",
@@ -226,6 +251,9 @@ document.addEventListener(
                 number:
                     "11",
 
+                chapter:
+                    "제11장",
+
                 label:
                     "앞으로의 흐름",
 
@@ -237,11 +265,9 @@ document.addEventListener(
         };
 
 
-        /*
-         * =================================================
-         * SCREEN
-         * =================================================
-         */
+
+           SCREEN
+        ====================================================== */
 
         const screens =
             Array.from(
@@ -251,11 +277,10 @@ document.addEventListener(
             );
 
 
-        /*
          * =================================================
-         * REQUIRED DOM
-         * =================================================
-         */
+
+        /* =====================================================
+        ====================================================== */
 
         const backButton =
             required(
@@ -275,9 +300,49 @@ document.addEventListener(
             );
 
 
-        /*
-         * NAME
-         */
+
+           OPTIONAL INTRO WORLD DOM
+        ====================================================== */
+
+        const introWorldLine1 =
+            optional(
+                "introWorldLine1"
+            );
+
+
+        const introWorldLine2 =
+            optional(
+                "introWorldLine2"
+            );
+
+
+        const introWorldLine3 =
+            optional(
+                "introWorldLine3"
+            );
+                "introWorldEmblem"
+            );
+
+
+        const introWorldFinal =
+            optional(
+                "introWorldFinal"
+            );
+
+
+        const introStartButton =
+            optional(
+                "introStartButton"
+        const introWorldSkip =
+            optional(
+                "introWorldSkip"
+            );
+
+
+        const openingVideo =
+            optional(
+                "openingVideo"
+            );
 
         const nameForm =
             required(
@@ -303,9 +368,10 @@ document.addEventListener(
             );
 
 
-        /*
-         * BIRTH
-         */
+
+        /* =====================================================
+           BIRTH
+        ====================================================== */
 
         const birthForm =
             required(
@@ -379,9 +445,10 @@ document.addEventListener(
             );
 
 
-        /*
-         * REVIEW
-         */
+
+        /* =====================================================
+           REVIEW
+        ====================================================== */
 
         const reviewCompleteButton =
             required(
@@ -389,9 +456,10 @@ document.addEventListener(
             );
 
 
-        /*
-         * COMPLETE
-         */
+
+        /* =====================================================
+           COMPLETE
+        ====================================================== */
 
         const startAnalysisButton =
             required(
@@ -399,9 +467,10 @@ document.addEventListener(
             );
 
 
-        /*
-         * ANALYSIS
-         */
+
+        /* =====================================================
+           ANALYSIS
+        ====================================================== */
 
         const analysisStatus =
             required(
@@ -441,9 +510,22 @@ document.addEventListener(
             );
 
 
-        /*
-         * FACT
-         */
+        const analysisVideo1 =
+            optional(
+                "analysisVideo1"
+            );
+
+
+        const analysisVideo2 =
+            optional(
+                "analysisVideo2"
+            );
+
+
+
+        /* =====================================================
+           FACT
+        ====================================================== */
 
         const analysisFactOverlay =
             required(
@@ -487,9 +569,45 @@ document.addEventListener(
             );
 
 
-        /*
-         * RESULT
-         */
+        const factMotionVideo =
+            optional(
+                "factMotionVideo"
+            );
+
+
+
+        /* =====================================================
+           OPTIONAL REVEAL
+        ====================================================== */
+
+        const revealOpening =
+            optional(
+                "revealOpening"
+            );
+
+
+        const revealPillarGrid =
+            optional(
+                "revealPillarGrid"
+            );
+
+
+        const revealFinal =
+            optional(
+                "revealFinal"
+            );
+
+
+        const revealSkipButton =
+            optional(
+                "revealSkipButton"
+            );
+
+
+
+        /* =====================================================
+           RESULT
+        ====================================================== */
 
         const resultTitle =
             required(
@@ -527,11 +645,10 @@ document.addEventListener(
             );
 
 
-        /*
-         * =================================================
-         * STATE
-         * =================================================
-         */
+
+        /* =====================================================
+           STATE
+        ====================================================== */
 
         const sajuForm =
             loadForm();
@@ -569,15 +686,38 @@ document.addEventListener(
             false;
 
 
-        let storyObserver =
+        let revealSkipRequested =
+            false;
+
+
+        let introSkipRequested =
+            false;
+
+
+        let introPlayed =
+            false;
+
+
+        let currentStoryIndex =
+            0;
+
+
+        let currentResult =
             null;
 
 
-        /*
-         * =================================================
-         * INITIALIZE
-         * =================================================
-         */
+        let storyTouchStartX =
+            null;
+
+
+        let storyTouchStartY =
+            null;
+
+
+
+        /* =====================================================
+           INITIALIZE
+        ====================================================== */
 
         initialize();
 
@@ -585,6 +725,8 @@ document.addEventListener(
         function initialize() {
 
             bindNavigation();
+
+            bindIntro();
 
             bindName();
 
@@ -596,6 +738,10 @@ document.addEventListener(
 
             bindFacts();
 
+            bindReveal();
+
+            bindStoryNavigation();
+
 
             restoreForm();
 
@@ -606,22 +752,25 @@ document.addEventListener(
             );
 
 
+            playIntroWorld();
+
+
             console.log(
                 "[SAJU] saju.js 초기화 완료"
             );
 
 
             console.log(
-                "[SAJU] 분석 버튼 이벤트 등록 완료"
+                "[SAJU] 천명록 11장 전환 방식 활성화"
             );
+
         }
 
 
-        /*
-         * =================================================
-         * REQUIRED
-         * =================================================
-         */
+
+        /* =====================================================
+           DOM UTIL
+        ====================================================== */
 
         function required(
             id
@@ -634,13 +783,14 @@ document.addEventListener(
 
 
             if (
-                    !element
+                !element
             ) {
 
                 throw new Error(
                     "필수 DOM을 찾을 수 없습니다: #"
                     + id
                 );
+
             }
 
 
@@ -648,11 +798,337 @@ document.addEventListener(
         }
 
 
-        /*
-         * =================================================
-         * FORM STORAGE
-         * =================================================
-         */
+        function optional(
+            id
+        ) {
+
+            return document.getElementById(
+                id
+            );
+        }
+
+
+
+        /* =====================================================
+           INTRO WORLD
+        ====================================================== */
+
+        function bindIntro() {
+
+            if (
+                introWorldSkip
+            ) {
+
+                introWorldSkip.addEventListener(
+                    "click",
+                    function () {
+
+                        introSkipRequested =
+                            true;
+
+
+                        stopVideo(
+                            openingVideo
+                        );
+
+
+                        showIntroFinal();
+
+                    }
+                );
+
+            }
+
+        }
+
+
+        async function playIntroWorld() {
+
+            if (
+                introPlayed
+            ) {
+
+                showIntroFinal();
+
+                return;
+            }
+
+
+            introPlayed =
+                true;
+
+
+            introSkipRequested =
+                false;
+
+
+            if (
+                openingVideo
+            ) {
+
+                await playVideo(
+                    openingVideo,
+                    VIDEO_PATH.opening,
+                    function () {
+
+                        return introSkipRequested;
+
+                    }
+                );
+
+
+                if (
+                    !introSkipRequested
+                ) {
+
+                    showIntroFinal();
+
+                }
+
+
+                return;
+            }
+
+
+            if (
+                !hasIntroWorldDom()
+            ) {
+
+                return;
+            }
+
+
+            await wait(
+                650
+            );
+
+
+            if (
+                introSkipRequested
+            ) {
+
+                return;
+            }
+
+
+            await playIntroLine(
+                introWorldLine1,
+                1900
+            );
+
+
+            if (
+                introSkipRequested
+            ) {
+
+                return;
+            }
+
+
+            await playIntroLine(
+                introWorldLine2,
+                2100
+            );
+
+
+            if (
+                introSkipRequested
+            ) {
+
+                return;
+            }
+
+
+            await playIntroLine(
+                introWorldLine3,
+                2100
+            );
+
+
+            if (
+                introSkipRequested
+            ) {
+
+                return;
+            }
+
+
+            if (
+                introWorldEmblem
+            ) {
+
+                introWorldEmblem.classList.add(
+                    "is-visible"
+                );
+
+            }
+
+
+            await wait(
+                1500
+            );
+
+
+            if (
+                introSkipRequested
+            ) {
+
+                return;
+            }
+
+
+            showIntroFinal();
+
+        }
+
+
+        function hasIntroWorldDom() {
+
+            return Boolean(
+                introWorldLine1
+                || introWorldLine2
+                || introWorldLine3
+                || introWorldEmblem
+                || introWorldFinal
+            );
+
+        }
+
+
+        async function playIntroLine(
+            element,
+            duration
+        ) {
+
+            if (
+                !element
+            ) {
+
+                return;
+            }
+
+
+            element.classList.remove(
+                "is-hidden"
+            );
+
+
+            element.classList.add(
+                "is-visible"
+            );
+
+
+            await wait(
+                duration
+            );
+
+
+            if (
+                introSkipRequested
+            ) {
+
+                return;
+            }
+
+
+            element.classList.remove(
+                "is-visible"
+            );
+
+
+            element.classList.add(
+                "is-hidden"
+            );
+
+
+            await wait(
+                650
+            );
+
+        }
+
+
+        function showIntroFinal() {
+
+            [
+
+                introWorldLine1,
+
+                introWorldLine2,
+
+                introWorldLine3
+
+            ]
+                .filter(
+                    Boolean
+                )
+                .forEach(
+                    function (
+                        element
+                    ) {
+
+                        element.classList.remove(
+                            "is-visible"
+                        );
+
+
+                        element.classList.add(
+                            "is-hidden"
+                        );
+
+                    }
+                );
+
+
+            if (
+                introWorldEmblem
+            ) {
+
+                introWorldEmblem.classList.add(
+                    "is-visible"
+                );
+
+            }
+
+
+            if (
+                introWorldFinal
+            ) {
+
+                introWorldFinal.classList.add(
+                    "is-visible"
+                );
+
+            }
+
+
+            if (
+                introStartButton
+            ) {
+
+                introStartButton.classList.add(
+                    "is-visible"
+                );
+
+            }
+
+
+            if (
+                introWorldSkip
+            ) {
+
+                introWorldSkip.style.display =
+                    "none";
+
+            }
+
+        }
+
+
+
+        /* =====================================================
+           FORM STORAGE
+        ====================================================== */
 
         function createEmptyForm() {
 
@@ -686,6 +1162,7 @@ document.addEventListener(
                     false
 
             };
+
         }
 
 
@@ -700,10 +1177,11 @@ document.addEventListener(
 
 
                 if (
-                        !stored
+                    !stored
                 ) {
 
                     return createEmptyForm();
+
                 }
 
 
@@ -725,7 +1203,9 @@ document.addEventListener(
 
 
                 return createEmptyForm();
+
             }
+
         }
 
 
@@ -737,14 +1217,14 @@ document.addEventListener(
                     sajuForm
                 )
             );
+
         }
 
 
-        /*
-         * =================================================
-         * NAVIGATION
-         * =================================================
-         */
+
+        /* =====================================================
+           NAVIGATION
+        ====================================================== */
 
         function bindNavigation() {
 
@@ -761,7 +1241,7 @@ document.addEventListener(
 
 
                     if (
-                            !target
+                        !target
                     ) {
 
                         return;
@@ -769,7 +1249,7 @@ document.addEventListener(
 
 
                     if (
-                            analysisRunning
+                        analysisRunning
                     ) {
 
                         return;
@@ -779,9 +1259,30 @@ document.addEventListener(
                     event.preventDefault();
 
 
+                    const screenName =
+                        target.dataset.go;
+
+
+                    if (
+                        !screenExists(
+                            screenName
+                        )
+                    ) {
+
+                        console.warn(
+                            "[SAJU] 존재하지 않는 data-go 화면",
+                            screenName
+                        );
+
+
+                        return;
+                    }
+
+
                     showScreen(
-                        target.dataset.go
+                        screenName
                     );
+
                 }
             );
 
@@ -791,7 +1292,7 @@ document.addEventListener(
                 function () {
 
                     if (
-                            analysisRunning
+                        analysisRunning
                     ) {
 
                         return;
@@ -799,8 +1300,21 @@ document.addEventListener(
 
 
                     if (
-                            currentScreen
-                            === "intro"
+                        currentScreen
+                        === "result"
+                        && currentResult
+                        && currentStoryIndex > 0
+                    ) {
+
+                        goPreviousStory();
+
+                        return;
+                    }
+
+
+                    if (
+                        currentScreen
+                        === "intro"
                     ) {
 
                         window.location.href =
@@ -819,6 +1333,7 @@ document.addEventListener(
                         previousScreen,
                         false
                     );
+
                 }
             );
 
@@ -828,7 +1343,7 @@ document.addEventListener(
                 function () {
 
                     if (
-                            analysisRunning
+                        analysisRunning
                     ) {
 
                         return;
@@ -837,6 +1352,7 @@ document.addEventListener(
 
                     window.location.href =
                         "/";
+
                 }
             );
 
@@ -847,8 +1363,28 @@ document.addEventListener(
 
                     window.location.href =
                         "/";
+
                 }
             );
+
+        }
+
+
+        function screenExists(
+            name
+        ) {
+
+            return screens.some(
+                function (
+                    screen
+                ) {
+
+                    return screen.dataset.screen
+                        === name;
+
+                }
+            );
+
         }
 
 
@@ -861,37 +1397,31 @@ document.addEventListener(
                 addHistory !== false;
 
 
-            const targetExists =
-                screens.some(
-                    function (
-                        screen
-                    ) {
-
-                        return screen.dataset.screen
-                            === name;
-                    }
-                );
-
-
             if (
-                    !targetExists
+                !screenExists(
+                    name
+                )
             ) {
 
-                throw new Error(
-                    "존재하지 않는 화면입니다: "
-                    + name
+                console.warn(
+                    "[SAJU] 존재하지 않는 화면 요청:",
+                    name
                 );
+
+
+                return false;
             }
 
 
             if (
-                    shouldAddHistory
-                    && currentScreen !== name
+                shouldAddHistory
+                && currentScreen !== name
             ) {
 
                 screenHistory.push(
                     currentScreen
                 );
+
             }
 
 
@@ -905,6 +1435,7 @@ document.addEventListener(
                         screen.dataset.screen
                         === name
                     );
+
                 }
             );
 
@@ -919,8 +1450,7 @@ document.addEventListener(
 
 
             if (
-                    name
-                    === "birth"
+                name === "birth"
             ) {
 
                 restoreBirth();
@@ -933,37 +1463,52 @@ document.addEventListener(
                 validateBirth(
                     false
                 );
+
             }
 
 
             if (
-                    name
-                    === "review"
+                name === "review"
             ) {
 
                 renderReview();
+
             }
 
 
             if (
-                    name
-                    === "result"
+                name === "intro"
+                && introPlayed
+                && hasIntroWorldDom()
             ) {
 
-                requestAnimationFrame(
-                    startStoryObserver
-                );
+                showIntroFinal();
 
-            } else {
+            }
 
-                stopStoryObserver();
+
+            if (
+                name === "result"
+                && currentResult
+            ) {
+
+                renderCurrentStory();
+
             }
 
 
             window.scrollTo({
-                top: 0,
-                behavior: "auto"
+
+                top:
+                    0,
+
+                behavior:
+                    "auto"
+
             });
+
+
+            return true;
         }
 
 
@@ -997,8 +1542,12 @@ document.addEventListener(
                     "명리 분석",
 
 
+                reveal:
+                    "천명 공개",
+
+
                 result:
-                    "종합 결과"
+                    "천명록"
 
             };
 
@@ -1006,14 +1555,14 @@ document.addEventListener(
             headerSubtitle.textContent =
                 labels[name]
                 || "천명 사주상담";
+
         }
 
 
-        /*
-         * =================================================
-         * NAME
-         * =================================================
-         */
+
+        /* =====================================================
+           NAME
+        ====================================================== */
 
         function bindName() {
 
@@ -1033,7 +1582,7 @@ document.addEventListener(
 
 
                     if (
-                            !validateName()
+                        !validateName()
                     ) {
 
                         return;
@@ -1052,23 +1601,27 @@ document.addEventListener(
                     showScreen(
                         "birth"
                     );
+
                 }
             );
+
         }
 
 
         function restoreForm() {
 
             if (
-                    sajuForm.name
+                sajuForm.name
             ) {
 
                 nameInput.value =
                     sajuForm.name;
+
             }
 
 
             validateName();
+
         }
 
 
@@ -1085,12 +1638,13 @@ document.addEventListener(
 
 
             if (
-                    value
-                    && value.length < 2
+                value
+                && value.length < 2
             ) {
 
                 errorMessage =
                     "이름은 두 글자 이상 입력해주세요.";
+
             }
 
 
@@ -1112,11 +1666,10 @@ document.addEventListener(
         }
 
 
-        /*
-         * =================================================
-         * BIRTH
-         * =================================================
-         */
+
+        /* =====================================================
+           BIRTH
+        ====================================================== */
 
         function bindBirth() {
 
@@ -1147,15 +1700,13 @@ document.addEventListener(
                                 validateBirth(
                                     true
                                 );
+
                             }
                         );
+
                     }
                 );
 
-
-            /*
-             * CALENDAR
-             */
 
             document
                 .querySelectorAll(
@@ -1186,6 +1737,7 @@ document.addEventListener(
                                             item.classList.remove(
                                                 "is-active"
                                             );
+
                                         }
                                     );
 
@@ -1207,27 +1759,26 @@ document.addEventListener(
 
 
                                 if (
-                                        sajuForm.calendarType
-                                        !== "LUNAR"
+                                    sajuForm.calendarType
+                                    !== "LUNAR"
                                 ) {
 
                                     lunarLeapMonth.checked =
                                         false;
+
                                 }
 
 
                                 validateBirth(
                                     true
                                 );
+
                             }
                         );
+
                     }
                 );
 
-
-            /*
-             * GENDER
-             */
 
             document
                 .querySelectorAll(
@@ -1258,6 +1809,7 @@ document.addEventListener(
                                             item.classList.remove(
                                                 "is-active"
                                             );
+
                                         }
                                     );
 
@@ -1274,15 +1826,13 @@ document.addEventListener(
                                 validateBirth(
                                     true
                                 );
+
                             }
                         );
+
                     }
                 );
 
-
-            /*
-             * UNKNOWN TIME
-             */
 
             birthTimeUnknown.addEventListener(
                 "change",
@@ -1310,13 +1860,8 @@ document.addEventListener(
                         unknown;
 
 
-                    /*
-                     * 출생시간 미상은 그대로 미상.
-                     * 임의 시간을 넣지 않는다.
-                     */
-
                     if (
-                            unknown
+                        unknown
                     ) {
 
                         birthHour.value =
@@ -1325,19 +1870,17 @@ document.addEventListener(
 
                         birthMinute.value =
                             "";
+
                     }
 
 
                     validateBirth(
                         true
                     );
+
                 }
             );
 
-
-            /*
-             * SUBMIT
-             */
 
             birthForm.addEventListener(
                 "submit",
@@ -1353,9 +1896,9 @@ document.addEventListener(
 
 
                     if (
-                            !validateBirth(
-                                true
-                            )
+                        !validateBirth(
+                            true
+                        )
                     ) {
 
                         return;
@@ -1405,16 +1948,14 @@ document.addEventListener(
                     showScreen(
                         "review"
                     );
+
                 }
             );
+
         }
 
 
         function restoreBirth() {
-
-            /*
-             * CALENDAR
-             */
 
             document
                 .querySelectorAll(
@@ -1430,13 +1971,10 @@ document.addEventListener(
                             button.dataset.calendar
                             === sajuForm.calendarType
                         );
+
                     }
                 );
 
-
-            /*
-             * GENDER
-             */
 
             document
                 .querySelectorAll(
@@ -1452,6 +1990,7 @@ document.addEventListener(
                             button.dataset.gender
                             === sajuForm.gender
                         );
+
                     }
                 );
 
@@ -1469,12 +2008,8 @@ document.addEventListener(
                 );
 
 
-            /*
-             * DATE
-             */
-
             if (
-                    sajuForm.birthDate
+                sajuForm.birthDate
             ) {
 
                 const parts =
@@ -1496,12 +2031,9 @@ document.addEventListener(
                 birthDay.value =
                     parts[2]
                     || "";
+
             }
 
-
-            /*
-             * TIME
-             */
 
             birthTimeUnknown.checked =
                 Boolean(
@@ -1524,8 +2056,8 @@ document.addEventListener(
 
 
             if (
-                    sajuForm.birthTime
-                    && !sajuForm.birthTimeUnknown
+                sajuForm.birthTime
+                && !sajuForm.birthTimeUnknown
             ) {
 
                 const timeParts =
@@ -1544,7 +2076,7 @@ document.addEventListener(
                     || "";
 
             } else if (
-                    sajuForm.birthTimeUnknown
+                sajuForm.birthTimeUnknown
             ) {
 
                 birthHour.value =
@@ -1553,7 +2085,9 @@ document.addEventListener(
 
                 birthMinute.value =
                     "";
+
             }
+
         }
 
 
@@ -1567,64 +2101,69 @@ document.addEventListener(
 
 
             if (
-                    !sajuForm.gender
+                !sajuForm.gender
             ) {
 
                 return birthInvalid(
                     "성별을 선택해주세요.",
                     show
                 );
+
             }
 
 
             if (
-                    !birthYear.value
-                    || !birthMonth.value
-                    || !birthDay.value
+                !birthYear.value
+                || !birthMonth.value
+                || !birthDay.value
             ) {
 
                 return birthInvalid(
                     "생년월일을 모두 입력해주세요.",
                     show
                 );
+
             }
 
 
             if (
-                    !validDate()
+                !validDate()
             ) {
 
                 return birthInvalid(
                     "올바른 생년월일을 입력해주세요.",
                     show
                 );
+
             }
 
 
             if (
-                    !birthTimeUnknown.checked
-                    && (
+                !birthTimeUnknown.checked
+                && (
                     !birthHour.value
                     || !birthMinute.value
-            )
+                )
             ) {
 
                 return birthInvalid(
                     "태어난 시간을 입력하거나 시간 모름을 선택해주세요.",
                     show
                 );
+
             }
 
 
             if (
-                    !birthTimeUnknown.checked
-                    && !validTime()
+                !birthTimeUnknown.checked
+                && !validTime()
             ) {
 
                 return birthInvalid(
                     "올바른 시간을 입력해주세요.",
                     show
                 );
+
             }
 
 
@@ -1685,15 +2224,15 @@ document.addEventListener(
 
 
             if (
-                    !Number.isInteger(
-                        year
-                    )
-                    || !Number.isInteger(
-                        month
-                    )
-                    || !Number.isInteger(
-                        day
-                    )
+                !Number.isInteger(
+                    year
+                )
+                || !Number.isInteger(
+                    month
+                )
+                || !Number.isInteger(
+                    day
+                )
             ) {
 
                 return false;
@@ -1701,30 +2240,24 @@ document.addEventListener(
 
 
             if (
-                    year < 1900
-                    || year > currentYear
-                    || month < 1
-                    || month > 12
-                    || day < 1
+                year < 1900
+                || year > currentYear
+                || month < 1
+                || month > 12
+                || day < 1
             ) {
 
                 return false;
             }
 
 
-            /*
-             * 음력의 실제 유효성은
-             * Java KoreanLunarCalendarCalculator가 최종 판단.
-             *
-             * 프론트에서는 기본 범위만 확인.
-             */
-
             if (
-                    sajuForm.calendarType
-                    === "LUNAR"
+                sajuForm.calendarType
+                === "LUNAR"
             ) {
 
                 return day <= 30;
+
             }
 
 
@@ -1737,13 +2270,13 @@ document.addEventListener(
 
 
             return date.getFullYear()
-                === year
+                    === year
 
                 && date.getMonth()
-                === month - 1
+                    === month - 1
 
                 && date.getDate()
-                === day;
+                    === day;
         }
 
 
@@ -1779,11 +2312,10 @@ document.addEventListener(
         }
 
 
-        /*
-         * =================================================
-         * REVIEW
-         * =================================================
-         */
+
+        /* =====================================================
+           REVIEW
+        ====================================================== */
 
         function bindReview() {
 
@@ -1797,8 +2329,10 @@ document.addEventListener(
                     showScreen(
                         "complete"
                     );
+
                 }
             );
+
         }
 
 
@@ -1858,23 +2392,33 @@ document.addEventListener(
             );
 
 
-            required(
-                "reviewLeapRow"
-            )
-                .classList
-                .toggle(
-                    "hidden",
-                    sajuForm.calendarType
-                    !== "LUNAR"
+            const leapRow =
+                optional(
+                    "reviewLeapRow"
                 );
+
+
+            if (
+                leapRow
+            ) {
+
+                leapRow
+                    .classList
+                    .toggle(
+                        "hidden",
+                        sajuForm.calendarType
+                        !== "LUNAR"
+                    );
+
+            }
+
         }
 
 
-        /*
-         * =================================================
-         * ANALYSIS BUTTON
-         * =================================================
-         */
+
+        /* =====================================================
+           ANALYSIS
+        ====================================================== */
 
         function bindAnalysis() {
 
@@ -1882,34 +2426,24 @@ document.addEventListener(
                 "click",
                 runAnalysis
             );
+
         }
 
-
-        /*
-         * =================================================
-         * RUN ANALYSIS
-         * =================================================
-         */
 
         async function runAnalysis() {
 
             if (
-                    analysisRunning
+                analysisRunning
             ) {
 
                 return;
             }
 
 
-            /*
-             * sessionStorage가 직접 수정되었거나
-             * 비정상 진입한 경우 방어.
-             */
-
             if (
-                    !sajuForm.name
-                    || !sajuForm.birthDate
-                    || !sajuForm.gender
+                !sajuForm.name
+                || !sajuForm.birthDate
+                || !sajuForm.gender
             ) {
 
                 showToast(
@@ -1935,6 +2469,10 @@ document.addEventListener(
                 false;
 
 
+            revealSkipRequested =
+                false;
+
+
             startAnalysisButton.disabled =
                 true;
 
@@ -1950,6 +2488,18 @@ document.addEventListener(
 
 
                 startProgress();
+
+
+                if (
+                    analysisVideo1
+                ) {
+
+                    playVideoDetached(
+                        analysisVideo1,
+                        VIDEO_PATH.analysis1
+                    );
+
+                }
 
 
                 const request =
@@ -2004,7 +2554,7 @@ document.addEventListener(
 
 
                 if (
-                        !response.ok
+                    !response.ok
                 ) {
 
                     throw new Error(
@@ -2013,24 +2563,22 @@ document.addEventListener(
                             response.status
                         )
                     );
+
                 }
 
 
                 if (
-                        !responseBody
-                        || typeof responseBody
-                        !== "object"
+                    !responseBody
+                    || typeof responseBody
+                    !== "object"
                 ) {
 
                     throw new Error(
                         "서버 응답 형식이 올바르지 않습니다."
                     );
+
                 }
 
-
-                /*
-                 * 최소 연출 시간.
-                 */
 
                 const elapsed =
                     Date.now()
@@ -2038,14 +2586,15 @@ document.addEventListener(
 
 
                 if (
-                        elapsed
-                        < MINIMUM_ANALYSIS_TIME
+                    elapsed
+                    < MINIMUM_ANALYSIS_TIME
                 ) {
 
                     await wait(
                         MINIMUM_ANALYSIS_TIME
                         - elapsed
                     );
+
                 }
 
 
@@ -2053,6 +2602,23 @@ document.addEventListener(
 
 
                 await finishProgress();
+
+
+                if (
+                    analysisVideo2
+                ) {
+
+                    stopVideo(
+                        analysisVideo1
+                    );
+
+
+                    await playVideo(
+                        analysisVideo2,
+                        VIDEO_PATH.analysis2
+                    );
+
+                }
 
 
                 const normalized =
@@ -2075,23 +2641,28 @@ document.addEventListener(
                 );
 
 
-                /*
-                 * 분석 중에는
-                 * Category별 Fact만 순차 표시.
-                 */
-
                 await revealCategoryFacts(
                     normalized.consultations
                 );
 
 
-                /*
-                 * 최종화면에서만 Story 출력.
-                 */
-
                 renderResult(
                     normalized
                 );
+
+
+                if (
+                    screenExists(
+                        "reveal"
+                    )
+                    && hasRevealDom()
+                ) {
+
+                    await playResultReveal(
+                        normalized
+                    );
+
+                }
 
 
                 showScreen(
@@ -2104,6 +2675,16 @@ document.addEventListener(
             ) {
 
                 stopProgress();
+
+
+                stopVideo(
+                    analysisVideo1
+                );
+
+
+                stopVideo(
+                    analysisVideo2
+                );
 
 
                 console.error(
@@ -2131,15 +2712,16 @@ document.addEventListener(
 
                 startAnalysisButton.disabled =
                     false;
+
             }
+
         }
 
 
-        /*
-         * =================================================
-         * REQUEST
-         * =================================================
-         */
+
+        /* =====================================================
+           REQUEST
+        ====================================================== */
 
         function createAnalysisRequest() {
 
@@ -2152,11 +2734,6 @@ document.addEventListener(
                 birthDate:
                     sajuForm.birthDate,
 
-
-                /*
-                 * 출생시간 미상은 null.
-                 * 00:00 등의 가상 시간을 만들지 않는다.
-                 */
 
                 birthTime:
                     sajuForm.birthTimeUnknown
@@ -2190,27 +2767,10 @@ document.addEventListener(
                         .getFullYear(),
 
 
-                /*
-                 * 중요:
-                 *
-                 * 16 → 17 → 18 → 19 → 20
-                 * deterministic grounding 경로 활성화.
-                 *
-                 * UTC 기준 toISOString() 사용 금지.
-                 * 사용자 Civil Date 그대로 보존.
-                 */
-
                 luckReferenceDate:
                     localDateIso(
                         new Date()
                     ),
-
-
-                /*
-                 * luckReferenceTime은 보내지 않는다.
-                 *
-                 * date-only semantics 유지.
-                 */
 
 
                 consultationCategories:
@@ -2221,14 +2781,14 @@ document.addEventListener(
                     null
 
             };
+
         }
 
 
-        /*
-         * =================================================
-         * RESPONSE READ
-         * =================================================
-         */
+
+        /* =====================================================
+           RESPONSE
+        ====================================================== */
 
         async function readResponseBody(
             response
@@ -2242,12 +2802,16 @@ document.addEventListener(
 
 
             if (
-                    contentType.includes(
-                        "application/json"
-                    )
+                contentType.includes(
+                    "application/json"
+                )
+                || contentType.includes(
+                    "application/problem+json"
+                )
             ) {
 
                 return await response.json();
+
             }
 
 
@@ -2256,7 +2820,7 @@ document.addEventListener(
 
 
             if (
-                    !text
+                !text
             ) {
 
                 return null;
@@ -2274,10 +2838,14 @@ document.addEventListener(
             ) {
 
                 return {
+
                     message:
                         text
+
                 };
+
             }
+
         }
 
 
@@ -2287,8 +2855,8 @@ document.addEventListener(
         ) {
 
             if (
-                    body
-                    && typeof body === "object"
+                body
+                && typeof body === "object"
             ) {
 
                 const candidate =
@@ -2306,11 +2874,13 @@ document.addEventListener(
 
 
                 if (
-                        candidate
+                    candidate
                 ) {
 
                     return candidate;
+
                 }
+
             }
 
 
@@ -2319,11 +2889,10 @@ document.addEventListener(
         }
 
 
-        /*
-         * =================================================
-         * ANALYSIS PROGRESS
-         * =================================================
-         */
+
+        /* =====================================================
+           PROGRESS
+        ====================================================== */
 
         function resetAnalysis() {
 
@@ -2357,8 +2926,10 @@ document.addEventListener(
                     element.classList.remove(
                         "is-active"
                     );
+
                 }
             );
+
         }
 
 
@@ -2372,8 +2943,8 @@ document.addEventListener(
                     function () {
 
                         if (
-                                analysisProgress
-                                >= WAIT_PROGRESS_LIMIT
+                            analysisProgress
+                            >= WAIT_PROGRESS_LIMIT
                         ) {
 
                             return;
@@ -2381,14 +2952,14 @@ document.addEventListener(
 
 
                         if (
-                                analysisProgress < 20
+                            analysisProgress < 20
                         ) {
 
                             analysisProgress +=
                                 2;
 
                         } else if (
-                                analysisProgress < 60
+                            analysisProgress < 60
                         ) {
 
                             analysisProgress +=
@@ -2398,6 +2969,7 @@ document.addEventListener(
 
                             analysisProgress +=
                                 0.5;
+
                         }
 
 
@@ -2415,13 +2987,14 @@ document.addEventListener(
                     },
                     90
                 );
+
         }
 
 
         function stopProgress() {
 
             if (
-                    progressTimer !== null
+                progressTimer !== null
             ) {
 
                 clearInterval(
@@ -2431,7 +3004,9 @@ document.addEventListener(
 
                 progressTimer =
                     null;
+
             }
+
         }
 
 
@@ -2456,7 +3031,9 @@ document.addEventListener(
                 await wait(
                     32
                 );
+
             }
+
         }
 
 
@@ -2493,7 +3070,7 @@ document.addEventListener(
 
 
             if (
-                    value >= 20
+                value >= 20
             ) {
 
                 status =
@@ -2506,11 +3083,12 @@ document.addEventListener(
 
                 message =
                     "오행의 세력과 일간의 상태를 계산하고 있습니다.";
+
             }
 
 
             if (
-                    value >= 42
+                value >= 42
             ) {
 
                 status =
@@ -2523,11 +3101,12 @@ document.addEventListener(
 
                 message =
                     "용신, 십신, 궁위와 관계 근거를 확인하고 있습니다.";
+
             }
 
 
             if (
-                    value >= 65
+                value >= 65
             ) {
 
                 status =
@@ -2540,11 +3119,12 @@ document.addEventListener(
 
                 message =
                     "원국과 대운·세운의 관계를 분석하고 있습니다.";
+
             }
 
 
             if (
-                    value >= 82
+                value >= 82
             ) {
 
                 status =
@@ -2557,11 +3137,12 @@ document.addEventListener(
 
                 message =
                     "계산된 근거를 상담 분야별로 정리하고 있습니다.";
+
             }
 
 
             if (
-                    value >= 97
+                value >= 97
             ) {
 
                 status =
@@ -2574,6 +3155,7 @@ document.addEventListener(
 
                 message =
                     "분야별 계산 근거를 확인합니다.";
+
             }
 
 
@@ -2609,19 +3191,19 @@ document.addEventListener(
 
                     element.classList.toggle(
                         "is-active",
-                        index
-                        < activeElementCount
+                        index < activeElementCount
                     );
+
                 }
             );
+
         }
 
 
-        /*
-         * =================================================
-         * NORMALIZE RESULT
-         * =================================================
-         */
+
+        /* =====================================================
+           NORMALIZE RESULT
+        ====================================================== */
 
         function normalizeResult(
             result
@@ -2647,8 +3229,8 @@ document.addEventListener(
                 ) {
 
                     if (
-                            source
-                            && source.category
+                        source
+                        && source.category
                     ) {
 
                         sectionMap.set(
@@ -2657,7 +3239,9 @@ document.addEventListener(
                             ),
                             source
                         );
+
                     }
+
                 }
             );
 
@@ -2674,6 +3258,7 @@ document.addEventListener(
                                 category
                             )
                         );
+
                     }
                 );
 
@@ -2686,6 +3271,7 @@ document.addEventListener(
                     normalizedConsultations
 
             };
+
         }
 
 
@@ -2700,68 +3286,16 @@ document.addEventListener(
                 ];
 
 
-            /*
-             * API에 Section 자체가 없는 경우.
-             *
-             * 프론트에서 내용을 추정하지 않는다.
-             */
-
             if (
-                    !source
+                !source
             ) {
 
-                return {
+                return createUnavailableSection(
+                    category,
+                    meta
+                );
 
-                    category:
-                        category,
-
-
-                    meta:
-                        meta,
-
-
-                    available:
-                        false,
-
-
-                    summary:
-                        "",
-
-
-                    storyText:
-                        "",
-
-
-                    polarity:
-                        "",
-
-
-                    intensity:
-                        "",
-
-
-                    confidence:
-                        "",
-
-
-                    evidenceCount:
-                        0,
-
-
-                    basisLabels:
-                        []
-
-                };
             }
-
-
-            /*
-             * 현재 DTO에는 available 필드가 없지만
-             * 향후 노출될 경우 그대로 존중한다.
-             */
-
-            const available =
-                source.available !== false;
 
 
             const basisLabels =
@@ -2776,12 +3310,15 @@ document.addEventListener(
                             ) {
 
                                 return value !== null
+
                                     && value !== undefined
+
                                     && String(
                                         value
                                     )
                                         .trim()
                                         .length > 0;
+
                             }
                         )
                         .map(
@@ -2793,25 +3330,12 @@ document.addEventListener(
                                     value
                                 )
                                     .trim();
+
                             }
                         )
 
                     : [];
 
-
-            /*
-             * 중요한 우선순위:
-             *
-             * 1. storyText
-             *    정밀화 20차 → 외부 LLM 장문
-             *
-             * 2. narrationText
-             *    기존 legacy narration
-             *
-             * 3. 기존 메시지 결합
-             *
-             * 프론트는 새 문장을 만들어내지 않는다.
-             */
 
             const storyText =
                 firstNonEmpty(
@@ -2833,20 +3357,25 @@ document.addEventListener(
                 );
 
 
+            const available =
+                resolveSectionAvailable(
+                    source,
+                    storyText
+                );
+
+
             if (
-                    source.storyText
+                storyText
+                && available
             ) {
 
                 const length =
-                    String(
-                        source.storyText
-                    )
-                        .length;
+                    storyText.length;
 
 
                 if (
-                        length < 1600
-                        || length > 2400
+                    length < 1600
+                    || length > 2400
                 ) {
 
                     console.warn(
@@ -2856,7 +3385,9 @@ document.addEventListener(
                         + length
                         + "자"
                     );
+
                 }
+
             }
 
 
@@ -2919,6 +3450,102 @@ document.addEventListener(
                     basisLabels
 
             };
+
+        }
+
+
+        function createUnavailableSection(
+            category,
+            meta
+        ) {
+
+            return {
+
+                category:
+                    category,
+
+
+                meta:
+                    meta,
+
+
+                available:
+                    false,
+
+
+                summary:
+                    "",
+
+
+                storyText:
+                    "",
+
+
+                polarity:
+                    "",
+
+
+                intensity:
+                    "",
+
+
+                confidence:
+                    "",
+
+
+                evidenceCount:
+                    0,
+
+
+                basisLabels:
+                    []
+
+            };
+
+        }
+
+
+        function resolveSectionAvailable(
+            source,
+            storyText
+        ) {
+
+            if (
+                typeof source.available
+                === "boolean"
+            ) {
+
+                return source.available;
+            }
+
+
+            const normalized =
+                safeText(
+                    storyText
+                );
+
+
+            if (
+                normalized.includes(
+                    "현재 계산 근거만으로는 이 분야의 독립적인 해석을 확정하지 않습니다."
+                )
+            ) {
+
+                return false;
+            }
+
+
+            if (
+                normalized.includes(
+                    "근거가 없는 내용을 추정해서 채우지 않았습니다."
+                )
+            ) {
+
+                return false;
+            }
+
+
+            return true;
         }
 
 
@@ -2934,15 +3561,16 @@ document.addEventListener(
 
 
             if (
-                    Number.isFinite(
-                        count
-                    )
-                    && count >= 0
+                Number.isFinite(
+                    count
+                )
+                && count >= 0
             ) {
 
                 return Math.floor(
                     count
                 );
+
             }
 
 
@@ -2950,11 +3578,10 @@ document.addEventListener(
         }
 
 
-        /*
-         * =================================================
-         * FACT
-         * =================================================
-         */
+
+        /* =====================================================
+           FACT
+        ====================================================== */
 
         function bindFacts() {
 
@@ -2964,8 +3591,15 @@ document.addEventListener(
 
                     factSkipRequested =
                         true;
+
+
+                    stopVideo(
+                        factMotionVideo
+                    );
+
                 }
             );
+
         }
 
 
@@ -2985,26 +3619,114 @@ document.addEventListener(
             ) {
 
                 if (
-                        factSkipRequested
+                    factSkipRequested
                 ) {
 
                     break;
                 }
 
 
+                const section =
+                    consultations[
+                        index
+                    ];
+
+
                 renderFact(
-                    consultations[index],
+                    section,
                     index
                 );
 
 
+                playFactMotionVideo(
+                    section
+                );
+
+
                 await waitForFactDuration();
+
             }
+
+
+            stopVideo(
+                factMotionVideo
+            );
 
 
             analysisFactOverlay.classList.remove(
                 "is-show"
             );
+
+        }
+
+
+        function playFactMotionVideo(
+            section
+        ) {
+
+            if (
+                !factMotionVideo
+                || !section
+            ) {
+
+                return;
+            }
+
+
+            let source =
+                "";
+
+
+            if (
+                section.category
+                === "SOCIAL_RELATIONSHIP"
+            ) {
+
+                source =
+                    VIDEO_PATH.network;
+
+            } else if (
+                section.category
+                === "LOVE_STYLE"
+            ) {
+
+                source =
+                    VIDEO_PATH.love;
+
+            } else if (
+                section.category
+                === "WEALTH"
+            ) {
+
+                source =
+                    VIDEO_PATH.wealth;
+
+            }
+
+
+            if (
+                !source
+            ) {
+
+                stopVideo(
+                    factMotionVideo
+                );
+
+
+                factMotionVideo.removeAttribute(
+                    "src"
+                );
+
+
+                return;
+            }
+
+
+            playVideoDetached(
+                factMotionVideo,
+                source
+            );
+
         }
 
 
@@ -3019,11 +3741,12 @@ document.addEventListener(
 
 
             while (
-                elapsed < FACT_DISPLAY_TIME
+                elapsed
+                < FACT_DISPLAY_TIME
             ) {
 
                 if (
-                        factSkipRequested
+                    factSkipRequested
                 ) {
 
                     return;
@@ -3037,7 +3760,9 @@ document.addEventListener(
 
                 elapsed +=
                     interval;
+
             }
+
         }
 
 
@@ -3054,7 +3779,9 @@ document.addEventListener(
                         2,
                         "0"
                     )
+
                 + " / "
+
                 + String(
                     CATEGORY_ORDER.length
                 )
@@ -3069,26 +3796,19 @@ document.addEventListener(
 
                     ? "DETERMINISTIC FACT"
 
-                    : "UNAVAILABLE";
+                    : "GROUNDING LIMITED";
 
 
             factCategoryTitle.textContent =
                 section.meta.label;
 
 
-            /*
-             * 분석 화면에서는
-             * 서술형 summary/story를 출력하지 않는다.
-             *
-             * 팩트 필드만 출력.
-             */
-
             const statusValues =
                 [];
 
 
             if (
-                    section.polarity
+                section.polarity
             ) {
 
                 statusValues.push(
@@ -3096,11 +3816,12 @@ document.addEventListener(
                         section.polarity
                     )
                 );
+
             }
 
 
             if (
-                    section.intensity
+                section.intensity
             ) {
 
                 statusValues.push(
@@ -3108,11 +3829,12 @@ document.addEventListener(
                         section.intensity
                     )
                 );
+
             }
 
 
             if (
-                    section.confidence
+                section.confidence
             ) {
 
                 statusValues.push(
@@ -3120,6 +3842,7 @@ document.addEventListener(
                         section.confidence
                     )
                 );
+
             }
 
 
@@ -3142,6 +3865,7 @@ document.addEventListener(
                                     value
                                 )
                                 + "</span>";
+
                         }
                     )
                     .join(
@@ -3150,12 +3874,13 @@ document.addEventListener(
 
 
             if (
-                    section.basisLabels.length
-                    === 0
+                section.basisLabels.length
+                === 0
             ) {
 
                 factBasis.innerHTML =
                     "<span>제공된 계산 근거 없음</span>";
+
 
                 return;
             }
@@ -3177,27 +3902,473 @@ document.addEventListener(
                                     value
                                 )
                                 + "</span>";
+
                         }
                     )
                     .join(
                         ""
                     );
+
         }
 
 
-        /*
-         * =================================================
-         * RESULT
-         * =================================================
-         */
+
+        /* =====================================================
+           RESULT REVEAL
+        ====================================================== */
+
+        function bindReveal() {
+
+            if (
+                !revealSkipButton
+            ) {
+
+                return;
+            }
+
+
+            revealSkipButton.addEventListener(
+                "click",
+                function () {
+
+                    revealSkipRequested =
+                        true;
+
+                }
+            );
+
+        }
+
+
+        function hasRevealDom() {
+
+            return Boolean(
+
+                revealOpening
+
+                && revealPillarGrid
+
+                && revealFinal
+
+            );
+
+        }
+
+
+        async function playResultReveal(
+            result
+        ) {
+
+            if (
+                !screenExists(
+                    "reveal"
+                )
+                || !hasRevealDom()
+            ) {
+
+                return;
+            }
+
+
+            revealSkipRequested =
+                false;
+
+
+            resetReveal();
+
+
+            fillRevealPillars(
+                result
+            );
+
+
+            showScreen(
+                "reveal",
+                false
+            );
+
+
+            await wait(
+                500
+            );
+
+
+            if (
+                revealSkipRequested
+            ) {
+
+                return;
+            }
+
+
+            revealOpening.classList.add(
+                "is-visible"
+            );
+
+
+            await waitCancelable(
+                2200,
+                function () {
+
+                    return revealSkipRequested;
+
+                }
+            );
+
+
+            if (
+                revealSkipRequested
+            ) {
+
+                return;
+            }
+
+
+            revealOpening.classList.remove(
+                "is-visible"
+            );
+
+
+            revealOpening.classList.add(
+                "is-hidden"
+            );
+
+
+            await wait(
+                650
+            );
+
+
+            if (
+                revealSkipRequested
+            ) {
+
+                return;
+            }
+
+
+            revealPillarGrid.classList.add(
+                "is-visible"
+            );
+
+
+            const revealOrder = [
+
+                "year",
+
+                "month",
+
+                "day",
+
+                "hour"
+
+            ];
+
+
+            for (
+                const pillarName
+                of revealOrder
+            ) {
+
+                if (
+                    revealSkipRequested
+                ) {
+
+                    return;
+                }
+
+
+                const pillar =
+                    document.querySelector(
+                        "[data-reveal-pillar=\""
+                        + pillarName
+                        + "\"]"
+                    );
+
+
+                if (
+                    pillar
+                ) {
+
+                    pillar.classList.add(
+                        "is-visible"
+                    );
+
+                }
+
+
+                await waitCancelable(
+                    720,
+                    function () {
+
+                        return revealSkipRequested;
+
+                    }
+                );
+
+            }
+
+
+            if (
+                revealSkipRequested
+            ) {
+
+                return;
+            }
+
+
+            await wait(
+                1050
+            );
+
+
+            if (
+                revealSkipRequested
+            ) {
+
+                return;
+            }
+
+
+            revealPillarGrid.classList.remove(
+                "is-visible"
+            );
+
+
+            document
+                .querySelectorAll(
+                    "[data-reveal-pillar]"
+                )
+                .forEach(
+                    function (
+                        element
+                    ) {
+
+                        element.classList.remove(
+                            "is-visible"
+                        );
+
+                    }
+                );
+
+
+            await wait(
+                500
+            );
+
+
+            if (
+                revealSkipRequested
+            ) {
+
+                return;
+            }
+
+
+            revealFinal.classList.add(
+                "is-visible"
+            );
+
+
+            await waitCancelable(
+                2200,
+                function () {
+
+                    return revealSkipRequested;
+
+                }
+            );
+
+        }
+
+
+        function resetReveal() {
+
+            if (
+                revealOpening
+            ) {
+
+                revealOpening.classList.remove(
+                    "is-visible",
+                    "is-hidden"
+                );
+
+            }
+
+
+            if (
+                revealPillarGrid
+            ) {
+
+                revealPillarGrid.classList.remove(
+                    "is-visible"
+                );
+
+            }
+
+
+            if (
+                revealFinal
+            ) {
+
+                revealFinal.classList.remove(
+                    "is-visible"
+                );
+
+            }
+
+
+            document
+                .querySelectorAll(
+                    "[data-reveal-pillar]"
+                )
+                .forEach(
+                    function (
+                        element
+                    ) {
+
+                        element.classList.remove(
+                            "is-visible"
+                        );
+
+                    }
+                );
+
+        }
+
+
+        function fillRevealPillars(
+            result
+        ) {
+
+            if (
+                !hasRevealDom()
+            ) {
+
+                return;
+            }
+
+
+            fillRevealPillar(
+                "Year",
+                result.yearPillar,
+                false
+            );
+
+
+            fillRevealPillar(
+                "Month",
+                result.monthPillar,
+                false
+            );
+
+
+            fillRevealPillar(
+                "Day",
+                result.dayPillar,
+                false
+            );
+
+
+            fillRevealPillar(
+                "Hour",
+                result.birthTimeUnknown
+                    ? null
+                    : result.hourPillar,
+                Boolean(
+                    result.birthTimeUnknown
+                )
+            );
+
+        }
+
+
+        function fillRevealPillar(
+            prefix,
+            pillar,
+            unknown
+        ) {
+
+            const chineseElement =
+                optional(
+                    "reveal"
+                    + prefix
+                    + "Chinese"
+                );
+
+
+            const koreanElement =
+                optional(
+                    "reveal"
+                    + prefix
+                    + "Korean"
+                );
+
+
+            if (
+                !chineseElement
+                || !koreanElement
+            ) {
+
+                return;
+            }
+
+
+            if (
+                unknown
+                || !pillar
+            ) {
+
+                chineseElement.textContent =
+                    "?";
+
+
+                koreanElement.textContent =
+                    unknown
+                        ? "시간 미상"
+                        : "계산값 없음";
+
+
+                return;
+            }
+
+
+            chineseElement.textContent =
+                safeText(
+                    pillar.chineseName,
+                    "-"
+                );
+
+
+            koreanElement.textContent =
+                safeText(
+                    pillar.koreanName,
+                    ""
+                );
+
+        }
+
+
+
+        /* =====================================================
+           RESULT
+        ====================================================== */
 
         function renderResult(
             result
         ) {
 
+            currentResult =
+                result;
+
+
+            currentStoryIndex =
+                0;
+
+
             resultTitle.textContent =
                 sajuForm.name
-                + "님의 사주 이야기";
+                + "님의 천명록";
 
 
             const firstSection =
@@ -3208,12 +4379,13 @@ document.addEventListener(
 
                         return section.available
                             && section.summary;
+
                     }
                 );
 
 
             if (
-                    firstSection
+                firstSection
             ) {
 
                 resultSummary.textContent =
@@ -3225,7 +4397,8 @@ document.addEventListener(
             } else {
 
                 resultSummary.textContent =
-                    "계산된 사주 근거를 분야별로 정리했습니다.";
+                    "계산된 사주 근거를 열한 장의 천명록으로 정리했습니다.";
+
             }
 
 
@@ -3234,35 +4407,25 @@ document.addEventListener(
             );
 
 
-            resultStoryList.innerHTML =
-                result.consultations
-                    .map(
-                        function (
-                            section,
-                            index
-                        ) {
+            renderCurrentStory();
 
-                            return renderStory(
-                                section,
-                                index
-                            );
-                        }
-                    )
-                    .join(
-                        ""
-                    );
         }
 
 
-        /*
-         * =================================================
-         * FOUR PILLARS
-         * =================================================
-         */
+
+        /* =====================================================
+           FOUR PILLARS
+        ====================================================== */
 
         function renderPillars(
             result
         ) {
+
+            const birthTimeUnknown =
+                Boolean(
+                    result.birthTimeUnknown
+                );
+
 
             const pillars = [
 
@@ -3272,7 +4435,10 @@ document.addEventListener(
                         "년주",
 
                     pillar:
-                        result.yearPillar
+                        result.yearPillar,
+
+                    unknown:
+                        false
 
                 },
 
@@ -3283,7 +4449,10 @@ document.addEventListener(
                         "월주",
 
                     pillar:
-                        result.monthPillar
+                        result.monthPillar,
+
+                    unknown:
+                        false
 
                 },
 
@@ -3294,7 +4463,10 @@ document.addEventListener(
                         "일주",
 
                     pillar:
-                        result.dayPillar
+                        result.dayPillar,
+
+                    unknown:
+                        false
 
                 },
 
@@ -3305,11 +4477,12 @@ document.addEventListener(
                         "시주",
 
                     pillar:
-                        result.birthTimeUnknown
-
+                        birthTimeUnknown
                             ? null
+                            : result.hourPillar,
 
-                            : result.hourPillar
+                    unknown:
+                        birthTimeUnknown
 
                 }
 
@@ -3324,7 +4497,7 @@ document.addEventListener(
                         ) {
 
                             if (
-                                    !item.pillar
+                                !item.pillar
                             ) {
 
                                 return `
@@ -3339,11 +4512,16 @@ document.addEventListener(
                                         </strong>
 
                                         <small>
-                                            시간 미상
+                                            ${
+                                                item.unknown
+                                                    ? "시간 미상"
+                                                    : "계산값 없음"
+                                            }
                                         </small>
 
                                     </article>
                                 `;
+
                             }
 
 
@@ -3374,67 +4552,623 @@ document.addEventListener(
 
                                 </article>
                             `;
+
                         }
                     )
                     .join(
                         ""
                     );
+
         }
 
 
-        /*
-         * =================================================
-         * STORY
-         * =================================================
-         */
 
-        function renderStory(
-            section,
-            index
-        ) {
+        /* =====================================================
+           STORY NAVIGATION
+        ====================================================== */
 
-            const darkClass =
-                index % 2 === 1
+        function bindStoryNavigation() {
 
-                    ? "is-dark"
+            resultStoryList.addEventListener(
+                "click",
+                function (
+                    event
+                ) {
 
-                    : "";
+                    const previousButton =
+                        event.target.closest(
+                            "[data-story-prev]"
+                        );
+
+
+                    if (
+                        previousButton
+                    ) {
+
+                        goPreviousStory();
+
+                        return;
+                    }
+
+
+                    const nextButton =
+                        event.target.closest(
+                            "[data-story-next]"
+                        );
+
+
+                    if (
+                        nextButton
+                    ) {
+
+                        goNextStory();
+
+                        return;
+                    }
+
+
+                    const restartButton =
+                        event.target.closest(
+                            "[data-story-restart]"
+                        );
+
+
+                    if (
+                        restartButton
+                    ) {
+
+                        currentStoryIndex =
+                            0;
+
+
+                        renderCurrentStory();
+
+
+                        scrollStoryTop();
+
+                        return;
+                    }
+
+
+                    const finishButton =
+                        event.target.closest(
+                            "[data-story-finish]"
+                        );
+
+
+                    if (
+                        finishButton
+                    ) {
+
+                        window.location.href =
+                            "/";
+
+                    }
+
+                }
+            );
+
+
+            resultStoryList.addEventListener(
+                "touchstart",
+                function (
+                    event
+                ) {
+
+                    if (
+                        !event.touches
+                        || event.touches.length !== 1
+                    ) {
+
+                        return;
+                    }
+
+
+                    storyTouchStartX =
+                        event.touches[0].clientX;
+
+
+                    storyTouchStartY =
+                        event.touches[0].clientY;
+
+                },
+                {
+                    passive:
+                        true
+                }
+            );
+
+
+            resultStoryList.addEventListener(
+                "touchend",
+                function (
+                    event
+                ) {
+
+                    if (
+                        storyTouchStartX === null
+                        || storyTouchStartY === null
+                        || !event.changedTouches
+                        || event.changedTouches.length !== 1
+                    ) {
+
+                        resetStoryTouch();
+
+                        return;
+                    }
+
+
+                    const endX =
+                        event.changedTouches[0].clientX;
+
+
+                    const endY =
+                        event.changedTouches[0].clientY;
+
+
+                    const deltaX =
+                        endX
+                        - storyTouchStartX;
+
+
+                    const deltaY =
+                        endY
+                        - storyTouchStartY;
+
+
+                    resetStoryTouch();
+
+
+                    if (
+                        Math.abs(
+                            deltaX
+                        ) < 65
+                    ) {
+
+                        return;
+                    }
+
+
+                    if (
+                        Math.abs(
+                            deltaY
+                        )
+                        > Math.abs(
+                            deltaX
+                        )
+                    ) {
+
+                        return;
+                    }
+
+
+                    if (
+                        deltaX < 0
+                    ) {
+
+                        goNextStory();
+
+                    } else {
+
+                        goPreviousStory();
+
+                    }
+
+                },
+                {
+                    passive:
+                        true
+                }
+            );
+
+
+            document.addEventListener(
+                "keydown",
+                function (
+                    event
+                ) {
+
+                    if (
+                        currentScreen
+                        !== "result"
+                        || !currentResult
+                    ) {
+
+                        return;
+                    }
+
+
+                    if (
+                        event.key
+                        === "ArrowLeft"
+                    ) {
+
+                        event.preventDefault();
+
+
+                        goPreviousStory();
+
+                    }
+
+
+                    if (
+                        event.key
+                        === "ArrowRight"
+                    ) {
+
+                        event.preventDefault();
+
+
+                        goNextStory();
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        function resetStoryTouch() {
+
+            storyTouchStartX =
+                null;
+
+
+            storyTouchStartY =
+                null;
+
+        }
+
+
+        function goPreviousStory() {
+
+            if (
+                !currentResult
+            ) {
+
+                return;
+            }
 
 
             if (
-                    !section.available
+                currentStoryIndex <= 0
             ) {
 
-                return `
-                    <article class="story-card ${darkClass}">
+                return;
+            }
 
-                        <div class="story-heading">
 
-                            <div>
+            currentStoryIndex -=
+                1;
 
-                                <span>
-                                    CHAPTER ${escapeHtml(section.meta.number)}
-                                </span>
 
-                                <h2>
-                                    ${escapeHtml(section.meta.title)}
-                                </h2>
+            renderCurrentStory();
 
-                            </div>
+
+            scrollStoryTop();
+
+        }
+
+
+        function goNextStory() {
+
+            if (
+                !currentResult
+            ) {
+
+                return;
+            }
+
+
+            const sections =
+                currentResult.consultations;
+
+
+            if (
+                currentStoryIndex
+                < sections.length - 1
+            ) {
+
+                currentStoryIndex +=
+                    1;
+
+
+                renderCurrentStory();
+
+
+                scrollStoryTop();
+
+
+                return;
+            }
+
+
+            renderStoryCompletion();
+
+
+            scrollStoryTop();
+
+        }
+
+
+        function scrollStoryTop() {
+
+            requestAnimationFrame(
+                function () {
+
+                    const top =
+                        resultStoryList
+                            .getBoundingClientRect()
+                            .top
+                        + window.scrollY
+                        - 90;
+
+
+                    window.scrollTo({
+
+                        top:
+                            Math.max(
+                                0,
+                                top
+                            ),
+
+                        behavior:
+                            "smooth"
+
+                    });
+
+                }
+            );
+
+        }
+
+
+
+        /* =====================================================
+           CURRENT STORY
+        ====================================================== */
+
+        function renderCurrentStory() {
+
+            if (
+                !currentResult
+                || !Array.isArray(
+                    currentResult.consultations
+                )
+                || currentResult.consultations.length === 0
+            ) {
+
+                resultStoryList.innerHTML =
+                    `
+                        <div class="story-empty">
+                            천명록을 표시할 수 없습니다.
+                        </div>
+                    `;
+
+
+                return;
+            }
+
+
+            currentStoryIndex =
+                Math.max(
+                    0,
+                    Math.min(
+                        currentStoryIndex,
+                        currentResult.consultations.length - 1
+                    )
+                );
+
+
+            const section =
+                currentResult.consultations[
+                    currentStoryIndex
+                ];
+
+
+            resultStoryList.innerHTML =
+                renderStoryBook(
+                    section,
+                    currentStoryIndex,
+                    currentResult.consultations.length
+                );
+
+        }
+
+
+        function renderStoryBook(
+            section,
+            index,
+            total
+        ) {
+
+            const previousDisabled =
+                index === 0;
+
+
+            const last =
+                index === total - 1;
+
+
+            const progressPercent =
+                Math.round(
+                    (
+                        (
+                            index + 1
+                        )
+                        / total
+                    )
+                    * 100
+                );
+
+
+            return `
+                <section
+                    class="cheonmyeong-book"
+                    data-current-story="${escapeHtml(section.category)}"
+                >
+
+                    <div class="cheonmyeong-book-progress">
+
+                        <div class="cheonmyeong-book-progress-head">
+
+                            <span>
+                                천명록
+                            </span>
 
                             <strong>
-                                ${escapeHtml(section.meta.number)}
+                                ${String(index + 1).padStart(2, "0")}
+                                /
+                                ${String(total).padStart(2, "0")}
                             </strong>
 
                         </div>
 
-                        <p class="story-unavailable">
-                            현재 계산 결과에서는 이 분야를 독립적으로 설명할 근거가 제공되지 않았습니다.
-                            없는 내용을 추정해서 채우지 않습니다.
-                        </p>
+
+                        <div class="cheonmyeong-book-progress-track">
+
+                            <div
+                                class="cheonmyeong-book-progress-bar"
+                                style="width:${progressPercent}%"
+                            ></div>
+
+                        </div>
+
+                    </div>
+
+
+                    ${renderStoryPage(section)}
+
+
+                    <nav
+                        class="cheonmyeong-book-navigation"
+                        aria-label="천명록 장 이동"
+                    >
+
+                        <button
+                            type="button"
+                            class="cheonmyeong-book-nav-button is-prev"
+                            data-story-prev
+                            ${previousDisabled ? "disabled" : ""}
+                        >
+                            <span aria-hidden="true">
+                                ←
+                            </span>
+
+                            <span>
+                                이전 장
+                            </span>
+                        </button>
+
+
+                        ${
+                            last
+
+                                ? `
+                                    <button
+                                        type="button"
+                                        class="cheonmyeong-book-nav-button is-next is-finish"
+                                        data-story-next
+                                    >
+                                        <span>
+                                            천명록 마치기
+                                        </span>
+
+                                        <span aria-hidden="true">
+                                            ✓
+                                        </span>
+                                    </button>
+                                `
+
+                                : `
+                                    <button
+                                        type="button"
+                                        class="cheonmyeong-book-nav-button is-next"
+                                        data-story-next
+                                    >
+                                        <span>
+                                            다음 장
+                                        </span>
+
+                                        <span aria-hidden="true">
+                                            →
+                                        </span>
+                                    </button>
+                                `
+                        }
+
+                    </nav>
+
+
+                    <p class="cheonmyeong-book-swipe-hint">
+                        좌우로 넘겨 다음 장을 볼 수 있습니다.
+                    </p>
+
+                </section>
+            `;
+
+        }
+
+
+
+        /* =====================================================
+           STORY PAGE
+        ====================================================== */
+
+        function renderStoryPage(
+            section
+        ) {
+
+            if (
+                !section.available
+            ) {
+
+                return `
+                    <article class="story-card story-page is-visible">
+
+                        <header class="story-page-header">
+
+                            <span class="story-page-book-label">
+                                천명록
+                            </span>
+
+                            <span class="story-page-chapter">
+                                ${escapeHtml(section.meta.chapter)}
+                            </span>
+
+                            <h2>
+                                ${escapeHtml(section.meta.title)}
+                            </h2>
+
+                            <p>
+                                ${escapeHtml(section.meta.label)}
+                            </p>
+
+                        </header>
+
+
+                        <div class="story-page-seal">
+                            命
+                        </div>
+
+
+                        <div class="story-page-body">
+
+                            <p class="story-unavailable">
+                                현재 계산 결과에서는 이 분야를
+                                독립적으로 설명할 근거가 충분하지 않습니다.
+                                없는 내용을 임의로 추정해서 채우지 않습니다.
+                            </p>
+
+                        </div>
+
+
+                        ${renderEvidence(section)}
 
                     </article>
                 `;
+
             }
 
 
@@ -3443,7 +5177,7 @@ document.addEventListener(
 
 
             if (
-                    section.polarity
+                section.polarity
             ) {
 
                 facts.push(
@@ -3451,11 +5185,12 @@ document.addEventListener(
                         section.polarity
                     )
                 );
+
             }
 
 
             if (
-                    section.intensity
+                section.intensity
             ) {
 
                 facts.push(
@@ -3463,11 +5198,12 @@ document.addEventListener(
                         section.intensity
                     )
                 );
+
             }
 
 
             if (
-                    section.confidence
+                section.confidence
             ) {
 
                 facts.push(
@@ -3475,6 +5211,7 @@ document.addEventListener(
                         section.confidence
                     )
                 );
+
             }
 
 
@@ -3492,11 +5229,12 @@ document.addEventListener(
                             value
                         ) {
 
-                            return "<span>"
-                                + escapeHtml(
-                                    value
-                                )
-                                + "</span>";
+                            return `
+                                <span>
+                                    ${escapeHtml(value)}
+                                </span>
+                            `;
+
                         }
                     )
                     .join(
@@ -3510,10 +5248,6 @@ document.addEventListener(
                 );
 
 
-            /*
-             * Story를 프론트에서 새로 만들지 않는다.
-             */
-
             const bodyHtml =
                 paragraphs.length > 0
 
@@ -3523,11 +5257,12 @@ document.addEventListener(
                                 paragraph
                             ) {
 
-                                return "<p>"
-                                    + escapeHtml(
-                                        paragraph
-                                    )
-                                    + "</p>";
+                                return `
+                                    <p>
+                                        ${escapeHtml(paragraph)}
+                                    </p>
+                                `;
+
                             }
                         )
                         .join(
@@ -3536,55 +5271,38 @@ document.addEventListener(
 
                     : `
                         <p>
-                            이 분야의 장문 스토리 원문이 아직 응답에 연결되지 않았습니다.
+                            이 분야의 장문 상담문이
+                            아직 응답에 연결되지 않았습니다.
                         </p>
                     `;
 
 
-            const evidenceHtml =
-                section.basisLabels
-                    .slice(
-                        0,
-                        14
-                    )
-                    .map(
-                        function (
-                            value
-                        ) {
-
-                            return "<span>"
-                                + escapeHtml(
-                                    value
-                                )
-                                + "</span>";
-                        }
-                    )
-                    .join(
-                        ""
-                    );
-
-
             return `
-                <article class="story-card ${darkClass}">
+                <article class="story-card story-page is-visible">
 
-                    <div class="story-heading">
+                    <header class="story-page-header">
 
-                        <div>
+                        <span class="story-page-book-label">
+                            천명록
+                        </span>
 
-                            <span>
-                                CHAPTER ${escapeHtml(section.meta.number)}
-                            </span>
+                        <span class="story-page-chapter">
+                            ${escapeHtml(section.meta.chapter)}
+                        </span>
 
-                            <h2>
-                                ${escapeHtml(section.meta.title)}
-                            </h2>
+                        <h2>
+                            ${escapeHtml(section.meta.title)}
+                        </h2>
 
-                        </div>
+                        <p>
+                            ${escapeHtml(section.meta.label)}
+                        </p>
 
-                        <strong>
-                            ${escapeHtml(section.meta.number)}
-                        </strong>
+                    </header>
 
+
+                    <div class="story-page-seal">
+                        命
                     </div>
 
 
@@ -3606,41 +5324,143 @@ document.addEventListener(
                     }
 
 
-                    <div class="story-body">
+                    <div class="story-body story-page-body">
                         ${bodyHtml}
                     </div>
 
 
-                    ${
-                        evidenceHtml
-
-                            ? `
-                                <details class="story-evidence">
-
-                                    <summary>
-                                        계산 근거 보기
-                                    </summary>
-
-                                    <div>
-                                        ${evidenceHtml}
-                                    </div>
-
-                                </details>
-                            `
-
-                            : ""
-                    }
+                    ${renderEvidence(section)}
 
                 </article>
             `;
+
         }
 
 
-        /*
-         * =================================================
-         * STORY PARAGRAPH
-         * =================================================
-         */
+        function renderEvidence(
+            section
+        ) {
+
+            const evidenceHtml =
+                section.basisLabels
+                    .slice(
+                        0,
+                        14
+                    )
+                    .map(
+                        function (
+                            value
+                        ) {
+
+                            return `
+                                <span>
+                                    ${escapeHtml(value)}
+                                </span>
+                            `;
+
+                        }
+                    )
+                    .join(
+                        ""
+                    );
+
+
+            if (
+                !evidenceHtml
+            ) {
+
+                return "";
+            }
+
+
+            return `
+                <details class="story-evidence">
+
+                    <summary>
+                        계산 근거 보기
+                    </summary>
+
+                    <div>
+                        ${evidenceHtml}
+                    </div>
+
+                </details>
+            `;
+
+        }
+
+
+
+        /* =====================================================
+           STORY COMPLETION
+        ====================================================== */
+
+        function renderStoryCompletion() {
+
+            resultStoryList.innerHTML =
+                `
+                    <section class="cheonmyeong-book-complete">
+
+                        <div class="cheonmyeong-book-complete-seal">
+                            命
+                        </div>
+
+
+                        <p class="cheonmyeong-book-complete-kicker">
+                            天命錄
+                        </p>
+
+
+                        <h2>
+                            천명록 완독
+                        </h2>
+
+
+                        <p class="cheonmyeong-book-complete-copy">
+                            열한 장의 천명록을
+                            모두 확인했습니다.
+                        </p>
+
+
+                        <p class="cheonmyeong-book-complete-subcopy">
+                            사주는 하나의 문장으로
+                            삶을 확정하는 것이 아니라,
+                            여러 흐름이 어디에서 만나고
+                            어떻게 움직이는지를 살펴보는 기록입니다.
+                        </p>
+
+
+                        <div class="cheonmyeong-book-complete-actions">
+
+                            <button
+                                type="button"
+                                class="cheonmyeong-book-complete-button is-secondary"
+                                data-story-restart
+                            >
+                                처음부터 다시 읽기
+                            </button>
+
+
+                            <button
+                                type="button"
+                                class="cheonmyeong-book-complete-button is-primary"
+                                data-story-finish
+                            >
+                                천명록 마치기
+                            </button>
+
+                        </div>
+
+                    </section>
+                `;
+
+        }
+
+
+
+        /* =====================================================
+           PARAGRAPH
+        ====================================================== */
 
         function splitParagraphs(
             source
@@ -3654,17 +5474,12 @@ document.addEventListener(
 
 
             if (
-                    !text
+                !text
             ) {
 
                 return [];
             }
 
-
-            /*
-             * LLM이 이미 문단을 만든 경우
-             * 그대로 보존.
-             */
 
             const explicitParagraphs =
                 text
@@ -3677,6 +5492,7 @@ document.addEventListener(
                         ) {
 
                             return paragraph.trim();
+
                         }
                     )
                     .filter(
@@ -3685,21 +5501,12 @@ document.addEventListener(
 
 
             if (
-                    explicitParagraphs.length
-                    > 1
+                explicitParagraphs.length > 1
             ) {
 
                 return explicitParagraphs;
             }
 
-
-            /*
-             * 기존 narrationText처럼
-             * 한 덩어리로 온 경우에만
-             * 화면 가독성을 위해 문장 경계에서 나눈다.
-             *
-             * 새로운 문장은 생성하지 않는다.
-             */
 
             const sentences =
                 text
@@ -3712,6 +5519,7 @@ document.addEventListener(
                         ) {
 
                             return sentence.trim();
+
                         }
                     )
                     .filter(
@@ -3720,12 +5528,13 @@ document.addEventListener(
 
 
             if (
-                    sentences.length <= 1
+                sentences.length <= 1
             ) {
 
                 return [
                     text
                 ];
+
             }
 
 
@@ -3756,7 +5565,7 @@ document.addEventListener(
 
 
                     if (
-                            currentLength >= 240
+                        currentLength >= 240
                     ) {
 
                         result.push(
@@ -3772,13 +5581,15 @@ document.addEventListener(
 
                         currentLength =
                             0;
+
                     }
+
                 }
             );
 
 
             if (
-                    buffer.length > 0
+                buffer.length > 0
             ) {
 
                 result.push(
@@ -3786,6 +5597,7 @@ document.addEventListener(
                         " "
                     )
                 );
+
             }
 
 
@@ -3793,125 +5605,10 @@ document.addEventListener(
         }
 
 
-        /*
-         * =================================================
-         * STORY REVEAL
-         * =================================================
-         */
 
-        function startStoryObserver() {
-
-            stopStoryObserver();
-
-
-            const cards =
-                Array.from(
-                    document.querySelectorAll(
-                        ".story-card"
-                    )
-                );
-
-
-            if (
-                    !(
-                        "IntersectionObserver"
-                        in window
-                    )
-            ) {
-
-                cards.forEach(
-                    function (
-                        card
-                    ) {
-
-                        card.classList.add(
-                            "is-visible"
-                        );
-                    }
-                );
-
-
-                return;
-            }
-
-
-            storyObserver =
-                new IntersectionObserver(
-                    function (
-                        entries
-                    ) {
-
-                        entries.forEach(
-                            function (
-                                entry
-                            ) {
-
-                                if (
-                                        !entry.isIntersecting
-                                ) {
-
-                                    return;
-                                }
-
-
-                                entry.target.classList.add(
-                                    "is-visible"
-                                );
-
-
-                                storyObserver.unobserve(
-                                    entry.target
-                                );
-                            }
-                        );
-                    },
-                    {
-
-                        threshold:
-                            0.08
-
-                    }
-                );
-
-
-            cards.forEach(
-                function (
-                    card
-                ) {
-
-                    storyObserver.observe(
-                        card
-                    );
-                }
-            );
-        }
-
-
-        function stopStoryObserver() {
-
-            if (
-                    storyObserver
-            ) {
-
-                storyObserver.disconnect();
-
-
-                storyObserver =
-                    null;
-            }
-        }
-
-
-        /*
-         * =================================================
-         * LABELS
-         * =================================================
-         *
-         * 확실히 알고 있는 값만 한글화.
-         *
-         * 정의되지 않은 Enum은
-         * 의미를 추측하지 않고 원문 그대로 표시.
-         */
+        /* =====================================================
+           LABELS
+        ====================================================== */
 
         function labelPolarity(
             value
@@ -3925,6 +5622,14 @@ document.addEventListener(
 
                 PRESSURE:
                     "압력 흐름",
+
+
+                CAUTION:
+                    "주의 흐름",
+
+
+                NEUTRAL:
+                    "중립 흐름",
 
 
                 MIXED:
@@ -3995,12 +5700,6 @@ document.addEventListener(
             };
 
 
-            /*
-             * DEFINITE / POSSIBLE 등
-             * 다른 불확실성 체계와
-             * 임의로 같은 의미라고 처리하지 않는다.
-             */
-
             return labels[value]
                 || String(
                     value
@@ -4008,18 +5707,270 @@ document.addEventListener(
         }
 
 
-        /*
-         * =================================================
-         * LOCAL DATE
-         * =================================================
-         */
+
+        /* =====================================================
+           VIDEO
+        ====================================================== */
+
+        async function playVideo(
+            element,
+            source,
+            shouldCancel
+        ) {
+
+            if (
+                !element
+            ) {
+
+                return;
+            }
+
+
+            if (
+                source
+                && element.getAttribute(
+                    "src"
+                ) !== source
+            ) {
+
+                element.src =
+                    source;
+
+            }
+
+
+            element.currentTime =
+                0;
+
+
+            try {
+
+                await element.play();
+
+            } catch (
+                error
+            ) {
+
+                console.warn(
+                    "[SAJU] 영상 자동재생 실패",
+                    source,
+                    error
+                );
+
+
+                return;
+            }
+
+
+            await new Promise(
+                function (
+                    resolve
+                ) {
+
+                    let finished =
+                        false;
+
+
+                    const finish =
+                        function () {
+
+                            if (
+                                finished
+                            ) {
+
+                                return;
+                            }
+
+
+                            finished =
+                                true;
+
+
+                            element.removeEventListener(
+                                "ended",
+                                finish
+                            );
+
+
+                            resolve();
+
+                        };
+
+
+                    element.addEventListener(
+                        "ended",
+                        finish
+                    );
+
+
+                    const watch =
+                        setInterval(
+                            function () {
+
+                                if (
+                                    finished
+                                ) {
+
+                                    clearInterval(
+                                        watch
+                                    );
+
+
+                                    return;
+                                }
+
+
+                                if (
+                                    typeof shouldCancel
+                                    === "function"
+
+                                    && shouldCancel()
+                                ) {
+
+                                    clearInterval(
+                                        watch
+                                    );
+
+
+                                    stopVideo(
+                                        element
+                                    );
+
+
+                                    finish();
+
+                                }
+
+                            },
+                            50
+                        );
+
+                }
+            );
+
+        }
+
+
+        function playVideoDetached(
+            element,
+            source
+        ) {
+
+            if (
+                !element
+            ) {
+
+                return;
+            }
+
+
+            if (
+                source
+                && element.getAttribute(
+                    "src"
+                ) !== source
+            ) {
+
+                element.src =
+                    source;
+
+            }
+
+
+            try {
+
+                element.currentTime =
+                    0;
+
+
+                const promise =
+                    element.play();
+
+
+                if (
+                    promise
+                    && typeof promise.catch
+                    === "function"
+                ) {
+
+                    promise.catch(
+                        function (
+                            error
+                        ) {
+
+                            console.warn(
+                                "[SAJU] 영상 재생 실패",
+                                source,
+                                error
+                            );
+
+                        }
+                    );
+
+                }
+
+            } catch (
+                error
+            ) {
+
+                console.warn(
+                    "[SAJU] 영상 재생 실패",
+                    source,
+                    error
+                );
+
+            }
+
+        }
+
+
+        function stopVideo(
+            element
+        ) {
+
+            if (
+                !element
+            ) {
+
+                return;
+            }
+
+
+            try {
+
+                element.pause();
+
+
+                element.currentTime =
+                    0;
+
+            } catch (
+                error
+            ) {
+
+                console.debug(
+                    "[SAJU] 영상 정지 생략",
+                    error
+                );
+
+            }
+
+        }
+
+
+
+        /* =====================================================
+           LOCAL DATE
+        ====================================================== */
 
         function localDateIso(
             date
         ) {
 
             return date.getFullYear()
+
                 + "-"
+
                 + String(
                     date.getMonth()
                     + 1
@@ -4028,7 +5979,9 @@ document.addEventListener(
                         2,
                         "0"
                     )
+
                 + "-"
+
                 + String(
                     date.getDate()
                 )
@@ -4036,14 +5989,14 @@ document.addEventListener(
                         2,
                         "0"
                     );
+
         }
 
 
-        /*
-         * =================================================
-         * UTIL
-         * =================================================
-         */
+
+        /* =====================================================
+           UTIL
+        ====================================================== */
 
         function pad2(
             value
@@ -4065,13 +6018,14 @@ document.addEventListener(
         ) {
 
             if (
-                    value === null
-                    || value === undefined
-                    || value === ""
+                value === null
+                || value === undefined
+                || value === ""
             ) {
 
                 return fallback
                     || "";
+
             }
 
 
@@ -4102,11 +6056,12 @@ document.addEventListener(
 
 
                 if (
-                        text
+                    text
                 ) {
 
                     return text;
                 }
+
             }
 
 
@@ -4136,6 +6091,7 @@ document.addEventListener(
                             value
                         )
                             .trim();
+
                     }
                 )
                 .filter(
@@ -4147,9 +6103,9 @@ document.addEventListener(
                     ) {
 
                         if (
-                                seen.has(
-                                    value
-                                )
+                            seen.has(
+                                value
+                            )
                         ) {
 
                             return false;
@@ -4162,6 +6118,7 @@ document.addEventListener(
 
 
                         return true;
+
                     }
                 )
                 .join(
@@ -4182,8 +6139,8 @@ document.addEventListener(
 
 
             if (
-                    text.length
-                    <= maxLength
+                text.length
+                <= maxLength
             ) {
 
                 return text;
@@ -4210,7 +6167,7 @@ document.addEventListener(
 
 
             if (
-                    !element
+                !element
             ) {
 
                 return;
@@ -4221,6 +6178,7 @@ document.addEventListener(
                 safeText(
                     value
                 );
+
         }
 
 
@@ -4237,8 +6195,55 @@ document.addEventListener(
                         resolve,
                         milliseconds
                     );
+
                 }
             );
+
+        }
+
+
+        async function waitCancelable(
+            milliseconds,
+            shouldCancel
+        ) {
+
+            const interval =
+                50;
+
+
+            let remaining =
+                milliseconds;
+
+
+            while (
+                remaining > 0
+            ) {
+
+                if (
+                    shouldCancel()
+                ) {
+
+                    return;
+                }
+
+
+                const waitTime =
+                    Math.min(
+                        interval,
+                        remaining
+                    );
+
+
+                await wait(
+                    waitTime
+                );
+
+
+                remaining -=
+                    waitTime;
+
+            }
+
         }
 
 
@@ -4274,6 +6279,7 @@ document.addEventListener(
                     },
                     2400
                 );
+
         }
 
 
