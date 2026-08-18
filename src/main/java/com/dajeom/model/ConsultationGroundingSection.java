@@ -8,45 +8,90 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * 정밀화 20차.
+ * 정밀화 20차 / 21차 Range 확장.
  *
  * 하나의 ConsultationCategory에 대한
  * LLM Grounding Section.
  *
  * =================================================
  *
- * 아직 최종 상담문이 아니다.
+ * natalEvidences
  *
- * LLM에게 제공할:
- *
- * - 상담 분야
- * - 원국 Evidence
- * - Timeline Scenario
- * - unavailable 상태
- *
- * 만 구조화한다.
+ * 원국 Grounding Evidence.
  *
  * =================================================
  *
- * unavailable:
+ * timelineScenarios
  *
- * Evidence가 나쁘다는 뜻이 아니다.
+ * 현재 조회시점의 가능한 Timeline Segment.
  *
- * 현재 deterministic 계산 범위만으로
- * 해당 View를 완성할 수 없다는 뜻이다.
+ * =================================================
+ *
+ * timelineYears
+ *
+ * PAST_LUCK / FUTURE_LUCK 전용
+ * 실제 Timeline Range의 연도별 Grounding.
+ *
+ * =================================================
+ *
+ * unavailableReason
+ *
+ * deterministic 계산 범위에서
+ * 아직 해당 Category를 만들 수 없는 경우.
+ *
+ * =================================================
+ *
+ * 중요한 원칙:
+ *
+ * 현재 Segment Scenario와
+ * 과거/미래 Range Year를
+ * 같은 개념으로 합치지 않는다.
  */
 public record ConsultationGroundingSection(
 
         ConsultationCategory category,
 
-        List<ConsultationGroundingEvidence> natalEvidences,
+        List<ConsultationGroundingEvidence>
+        natalEvidences,
 
         List<ConsultationGroundingTimelineScenario>
         timelineScenarios,
 
+        List<ConsultationGroundingTimelineYear>
+        timelineYears,
+
         Optional<String> unavailableReason
 
 ) {
+
+    /*
+     * =================================================
+     * 기존 20차 호출 호환 Constructor
+     * =================================================
+     */
+
+    public ConsultationGroundingSection(
+
+            ConsultationCategory category,
+
+            List<ConsultationGroundingEvidence>
+                    natalEvidences,
+
+            List<ConsultationGroundingTimelineScenario>
+                    timelineScenarios,
+
+            Optional<String> unavailableReason
+
+    ) {
+
+        this(
+                category,
+                natalEvidences,
+                timelineScenarios,
+                List.of(),
+                unavailableReason
+        );
+    }
 
     public ConsultationGroundingSection {
 
@@ -56,40 +101,19 @@ public record ConsultationGroundingSection(
         );
 
         natalEvidences =
-                natalEvidences == null
-                        ? List.of()
-                        : List.copyOf(
+                normalizeNatalEvidences(
                         natalEvidences
                 );
 
-        for (
-                ConsultationGroundingEvidence evidence
-                : natalEvidences
-        ) {
-
-            Objects.requireNonNull(
-                    evidence,
-                    "Grounding Natal Evidence는 null일 수 없습니다."
-            );
-        }
-
         timelineScenarios =
-                timelineScenarios == null
-                        ? List.of()
-                        : List.copyOf(
+                normalizeTimelineScenarios(
                         timelineScenarios
                 );
 
-        for (
-                ConsultationGroundingTimelineScenario scenario
-                : timelineScenarios
-        ) {
-
-            Objects.requireNonNull(
-                    scenario,
-                    "Grounding Timeline Scenario는 null일 수 없습니다."
-            );
-        }
+        timelineYears =
+                normalizeTimelineYears(
+                        timelineYears
+                );
 
         unavailableReason =
                 normalizeUnavailableReason(
@@ -100,10 +124,6 @@ public record ConsultationGroundingSection(
          * =================================================
          * unavailable View 검증
          * =================================================
-         *
-         * 현재 deterministic 계산 범위에서
-         * 만들 수 없는 Section에는
-         * 가짜 Evidence를 같이 넣지 않는다.
          */
 
         if (
@@ -111,6 +131,7 @@ public record ConsultationGroundingSection(
                         && (
                         !natalEvidences.isEmpty()
                                 || !timelineScenarios.isEmpty()
+                                || !timelineYears.isEmpty()
                 )
         ) {
 
@@ -170,7 +191,7 @@ public record ConsultationGroundingSection(
 
     /*
      * =================================================
-     * Timeline
+     * Current Timeline Scenario
      * =================================================
      */
 
@@ -186,18 +207,62 @@ public record ConsultationGroundingSection(
                 .size();
     }
 
+    /*
+     * =================================================
+     * Timeline Range Year
+     * =================================================
+     */
+
+    public boolean hasTimelineYears() {
+
+        return !timelineYears
+                .isEmpty();
+    }
+
+    public int timelineYearCount() {
+
+        return timelineYears
+                .size();
+    }
+
+    /*
+     * =================================================
+     * Timeline
+     * =================================================
+     */
+
+    public boolean hasAnyTimeline() {
+
+        return hasTimelineScenarios()
+                || hasTimelineYears();
+    }
+
     /**
-     * 가능한 Timeline Scenario 중 하나라도
-     * 불확실성을 포함하면 true.
-     *
-     * 여러 Scenario 중 하나를 임의로 선택하지 않는다.
+     * 현재 Segment 또는
+     * Range Year 중 하나라도
+     * Timeline 불확실성을 가지면 true.
      */
     public boolean timelineUncertaintyExists() {
 
-        return timelineScenarios
+        boolean currentScenarioUncertainty =
+                timelineScenarios
+                        .stream()
+                        .anyMatch(
+                                ConsultationGroundingTimelineScenario
+                                        ::timelineUncertaintyExists
+                        );
+
+        if (
+                currentScenarioUncertainty
+        ) {
+
+            return true;
+        }
+
+        return timelineYears
                 .stream()
                 .anyMatch(
-                        ConsultationGroundingTimelineScenario
+                        ConsultationGroundingTimelineYear
                                 ::timelineUncertaintyExists
                 );
     }
@@ -207,12 +272,15 @@ public record ConsultationGroundingSection(
      * 전체 Evidence
      * =================================================
      *
-     * 원국 Evidence
-     * +
-     * 각 가능한 Timeline Scenario의 Evidence.
+     * 단순 조회용 연결이다.
      *
-     * 여기서 중복 제거하거나
-     * 상태를 하나로 합치지 않는다.
+     * 여기서:
+     *
+     * - 합산
+     * - 대표 polarity
+     * - 점수화
+     *
+     * 하지 않는다.
      */
 
     public List<ConsultationGroundingEvidence>
@@ -235,6 +303,16 @@ public record ConsultationGroundingSection(
             );
         }
 
+        for (
+                ConsultationGroundingTimelineYear timelineYear
+                : timelineYears
+        ) {
+
+            result.addAll(
+                    timelineYear.evidences()
+            );
+        }
+
         return List.copyOf(
                 result
         );
@@ -253,7 +331,142 @@ public record ConsultationGroundingSection(
 
     /*
      * =================================================
-     * unavailableReason 정규화
+     * Normalize Natal
+     * =================================================
+     */
+
+    private static List<ConsultationGroundingEvidence>
+    normalizeNatalEvidences(
+
+            List<ConsultationGroundingEvidence> source
+
+    ) {
+
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationGroundingEvidence> result =
+                new ArrayList<>();
+
+        for (
+                ConsultationGroundingEvidence evidence
+                : source
+        ) {
+
+            result.add(
+                    Objects.requireNonNull(
+                            evidence,
+                            "Grounding Natal Evidence는 null일 수 없습니다."
+                    )
+            );
+        }
+
+        return List.copyOf(
+                result
+        );
+    }
+
+    /*
+     * =================================================
+     * Normalize Current Timeline
+     * =================================================
+     */
+
+    private static List<ConsultationGroundingTimelineScenario>
+    normalizeTimelineScenarios(
+
+            List<ConsultationGroundingTimelineScenario>
+                    source
+
+    ) {
+
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationGroundingTimelineScenario> result =
+                new ArrayList<>();
+
+        for (
+                ConsultationGroundingTimelineScenario scenario
+                : source
+        ) {
+
+            result.add(
+                    Objects.requireNonNull(
+                            scenario,
+                            "Grounding Timeline Scenario는 null일 수 없습니다."
+                    )
+            );
+        }
+
+        return List.copyOf(
+                result
+        );
+    }
+
+    /*
+     * =================================================
+     * Normalize Timeline Year
+     * =================================================
+     */
+
+    private static List<ConsultationGroundingTimelineYear>
+    normalizeTimelineYears(
+
+            List<ConsultationGroundingTimelineYear> source
+
+    ) {
+
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationGroundingTimelineYear> result =
+                new ArrayList<>();
+
+        for (
+                ConsultationGroundingTimelineYear timelineYear
+                : source
+        ) {
+
+            result.add(
+                    Objects.requireNonNull(
+                            timelineYear,
+                            "Grounding Timeline Year는 null일 수 없습니다."
+                    )
+            );
+        }
+
+        result.sort(
+                java.util.Comparator
+                        .comparingInt(
+                                ConsultationGroundingTimelineYear
+                                        ::yearOrder
+                        )
+        );
+
+        return List.copyOf(
+                result
+        );
+    }
+
+    /*
+     * =================================================
+     * unavailableReason
      * =================================================
      */
 

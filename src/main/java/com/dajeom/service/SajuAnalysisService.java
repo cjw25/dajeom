@@ -7,6 +7,7 @@ import com.dajeom.analyzer.ConsultationGroundingPolicyAnalyzer;
 import com.dajeom.analyzer.ConsultationInterpretationPromptContextAnalyzer;
 import com.dajeom.analyzer.ConsultationRequestEvidenceAnalyzer;
 import com.dajeom.analyzer.ConsultationRequestScopeAnalyzer;
+import com.dajeom.analyzer.ConsultationTimelineRangeAnalyzer;
 import com.dajeom.calculator.KoreanLunarCalendarCalculator;
 import com.dajeom.constant.SajuConstants;
 import com.dajeom.dto.AnnualLuckResponse;
@@ -44,6 +45,7 @@ import com.dajeom.model.ConsultationRequestEvidenceAnalysis;
 import com.dajeom.model.ConsultationRequestScopeAnalysis;
 import com.dajeom.model.ConsultationSection;
 import com.dajeom.model.ConsultationStoryGeneration;
+import com.dajeom.model.ConsultationTimelineRangeAnalysis;
 import com.dajeom.model.DecadeLuckAnalysis;
 import com.dajeom.model.DecadeLuckPeriod;
 import com.dajeom.model.FourPillars;
@@ -247,6 +249,15 @@ public class SajuAnalysisService {
     private final ConsultationCategoryEvidenceAnalyzer
             consultationCategoryEvidenceAnalyzer;
 
+    /*
+     * =================================================
+     * 21차 Timeline Range
+     * =================================================
+     */
+
+    private final ConsultationTimelineRangeAnalyzer
+            consultationTimelineRangeAnalyzer;
+
     private final ConsultationRequestEvidenceAnalyzer
             consultationRequestEvidenceAnalyzer;
 
@@ -374,6 +385,9 @@ public class SajuAnalysisService {
 
             ConsultationCategoryEvidenceAnalyzer
                     consultationCategoryEvidenceAnalyzer,
+
+            ConsultationTimelineRangeAnalyzer
+                    consultationTimelineRangeAnalyzer,
 
             ConsultationRequestEvidenceAnalyzer
                     consultationRequestEvidenceAnalyzer,
@@ -523,6 +537,11 @@ public class SajuAnalysisService {
         this.consultationCategoryEvidenceAnalyzer =
                 Objects.requireNonNull(
                         consultationCategoryEvidenceAnalyzer
+                );
+
+        this.consultationTimelineRangeAnalyzer =
+                Objects.requireNonNull(
+                        consultationTimelineRangeAnalyzer
                 );
 
         this.consultationRequestEvidenceAnalyzer =
@@ -795,11 +814,58 @@ public class SajuAnalysisService {
             );
         }
 
+        /*
+         * =================================================
+         * 19차 요청 범위
+         * =================================================
+         *
+         * Timeline Range가 실제로 필요한 요청인지
+         * 먼저 확정한다.
+         *
+         * 종합운 또는 PAST_LUCK / FUTURE_LUCK이
+         * 선택된 요청에서만 21차 Range 계산을 실행한다.
+         */
+        Optional<ConsultationRequestScopeAnalysis>
+                consultationRequestScopeAnalysis =
+                analyzeConsultationRequestScopeIfAvailable(
+                        request,
+                        lifeDomainAnalysis
+                );
+
+        if (
+                lifeDomainAnalysis.isPresent()
+                        != consultationRequestScopeAnalysis.isPresent()
+        ) {
+
+            throw new IllegalStateException(
+                    "18차 LifeDomainAnalysis와 19차 ConsultationRequestScopeAnalysis 생성 상태가 일치하지 않습니다."
+            );
+        }
+
+        /*
+         * =================================================
+         * 21차 과거/미래 Timeline Range
+         * =================================================
+         */
+        Optional<ConsultationTimelineRangeAnalysis>
+                consultationTimelineRangeAnalysis =
+                analyzeConsultationTimelineRangeIfRequested(
+                        request,
+                        birthData,
+                        advancedAnalysis,
+                        tenGodCompositeAnalysis,
+                        palaceAnalysis,
+                        decadeLuckAnalysis,
+                        lifeDomainAnalysis,
+                        consultationRequestScopeAnalysis
+                );
+
         Optional<ConsultationRequestEvidenceAnalysis>
                 consultationRequestEvidenceAnalysis =
                 analyzeConsultationRequestEvidenceIfAvailable(
-                        request,
-                        lifeDomainAnalysis
+                        consultationRequestScopeAnalysis,
+                        lifeDomainAnalysis,
+                        consultationTimelineRangeAnalysis
                 );
 
         if (
@@ -1038,8 +1104,14 @@ public class SajuAnalysisService {
         );
     }
 
-    private Optional<ConsultationRequestEvidenceAnalysis>
-    analyzeConsultationRequestEvidenceIfAvailable(
+    /*
+     * =================================================
+     * 19차 요청 범위
+     * =================================================
+     */
+
+    private Optional<ConsultationRequestScopeAnalysis>
+    analyzeConsultationRequestScopeIfAvailable(
 
             SajuAnalysisRequest request,
 
@@ -1050,12 +1122,12 @@ public class SajuAnalysisService {
 
         Objects.requireNonNull(
                 request,
-                "19차에는 SajuAnalysisRequest가 필요합니다."
+                "19차 요청 범위 분석에는 SajuAnalysisRequest가 필요합니다."
         );
 
         Objects.requireNonNull(
                 lifeDomainAnalysis,
-                "19차에는 LifeDomainAnalysis Optional이 필요합니다."
+                "19차 요청 범위 분석에는 LifeDomainAnalysis Optional이 필요합니다."
         );
 
         if (
@@ -1065,12 +1137,7 @@ public class SajuAnalysisService {
             return Optional.empty();
         }
 
-        LifeDomainAnalysis resolvedLifeDomainAnalysis =
-                lifeDomainAnalysis
-                        .orElseThrow();
-
-        ConsultationRequestScopeAnalysis
-                requestScope =
+        ConsultationRequestScopeAnalysis requestScope =
                 Objects.requireNonNull(
                         consultationRequestScopeAnalyzer
                                 .analyze(
@@ -1079,12 +1146,260 @@ public class SajuAnalysisService {
                         "ConsultationRequestScopeAnalyzer가 null을 반환했습니다."
                 );
 
+        return Optional.of(
+                requestScope
+        );
+    }
+
+    /*
+     * =================================================
+     * 21차 과거/미래 Timeline Range
+     * =================================================
+     *
+     * PAST_LUCK 또는 FUTURE_LUCK이
+     * 실제 요청 범위에 포함된 경우에만 실행한다.
+     *
+     * 일반 성향/관계/재물 등 일부 Category만
+     * 조회하는 요청에서 10년 Range 계산을
+     * 불필요하게 수행하지 않는다.
+     */
+
+    private Optional<ConsultationTimelineRangeAnalysis>
+    analyzeConsultationTimelineRangeIfRequested(
+
+            SajuAnalysisRequest request,
+
+            NormalizedBirthData birthData,
+
+            NatalChartAdvancedAnalysis advancedAnalysis,
+
+            TenGodCompositeAnalysis tenGodCompositeAnalysis,
+
+            PalaceAnalysis palaceAnalysis,
+
+            DecadeLuckAnalysis decadeLuckAnalysis,
+
+            Optional<LifeDomainAnalysis>
+                    lifeDomainAnalysis,
+
+            Optional<ConsultationRequestScopeAnalysis>
+                    requestScopeAnalysis
+
+    ) {
+
+        Objects.requireNonNull(
+                request,
+                "21차 Timeline Range에는 SajuAnalysisRequest가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                birthData,
+                "21차 Timeline Range에는 NormalizedBirthData가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                advancedAnalysis,
+                "21차 Timeline Range에는 NatalChartAdvancedAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                tenGodCompositeAnalysis,
+                "21차 Timeline Range에는 TenGodCompositeAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                palaceAnalysis,
+                "21차 Timeline Range에는 PalaceAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                decadeLuckAnalysis,
+                "21차 Timeline Range에는 DecadeLuckAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                lifeDomainAnalysis,
+                "21차 Timeline Range에는 LifeDomainAnalysis Optional이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                requestScopeAnalysis,
+                "21차 Timeline Range에는 ConsultationRequestScopeAnalysis Optional이 필요합니다."
+        );
+
+        if (
+                lifeDomainAnalysis.isEmpty()
+                        && requestScopeAnalysis.isEmpty()
+        ) {
+
+            return Optional.empty();
+        }
+
+        if (
+                lifeDomainAnalysis.isEmpty()
+                        || requestScopeAnalysis.isEmpty()
+        ) {
+
+            throw new IllegalStateException(
+                    "21차 Timeline Range 실행 조건의 LifeDomainAnalysis와 ConsultationRequestScopeAnalysis 상태가 일치하지 않습니다."
+            );
+        }
+
+        ConsultationRequestScopeAnalysis requestScope =
+                requestScopeAnalysis
+                        .orElseThrow();
+
+        boolean pastRequested =
+                requestScope
+                        .selectedCategories()
+                        .contains(
+                                ConsultationCategory.PAST_LUCK
+                        );
+
+        boolean futureRequested =
+                requestScope
+                        .selectedCategories()
+                        .contains(
+                                ConsultationCategory.FUTURE_LUCK
+                        );
+
+        if (
+                !pastRequested
+                        && !futureRequested
+        ) {
+
+            return Optional.empty();
+        }
+
+        LocalDate currentReferenceDate =
+                request
+                        .luckReferenceDateOptional()
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "PAST_LUCK/FUTURE_LUCK Timeline Range에는 luckReferenceDate가 필요합니다."
+                                        )
+                        );
+
+        ConsultationTimelineRangeAnalysis analysis =
+                Objects.requireNonNull(
+                        consultationTimelineRangeAnalyzer
+                                .analyze(
+                                        currentReferenceDate,
+                                        birthData.zoneId(),
+                                        advancedAnalysis,
+                                        tenGodCompositeAnalysis,
+                                        palaceAnalysis,
+                                        decadeLuckAnalysis
+                                ),
+                        "ConsultationTimelineRangeAnalyzer가 null을 반환했습니다."
+                );
+
+        if (
+                pastRequested
+                        && !analysis.hasPastRange()
+        ) {
+
+            throw new IllegalStateException(
+                    "PAST_LUCK이 요청되었지만 과거 Timeline Range가 생성되지 않았습니다."
+            );
+        }
+
+        if (
+                futureRequested
+                        && !analysis.hasFutureRange()
+        ) {
+
+            throw new IllegalStateException(
+                    "FUTURE_LUCK이 요청되었지만 미래 Timeline Range가 생성되지 않았습니다."
+            );
+        }
+
+        return Optional.of(
+                analysis
+        );
+    }
+
+    /*
+     * =================================================
+     * 19차 Category / Request Evidence
+     * =================================================
+     */
+
+    private Optional<ConsultationRequestEvidenceAnalysis>
+    analyzeConsultationRequestEvidenceIfAvailable(
+
+            Optional<ConsultationRequestScopeAnalysis>
+                    requestScopeAnalysis,
+
+            Optional<LifeDomainAnalysis>
+                    lifeDomainAnalysis,
+
+            Optional<ConsultationTimelineRangeAnalysis>
+                    timelineRangeAnalysis
+
+    ) {
+
+        Objects.requireNonNull(
+                requestScopeAnalysis,
+                "19차에는 ConsultationRequestScopeAnalysis Optional이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                lifeDomainAnalysis,
+                "19차에는 LifeDomainAnalysis Optional이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                timelineRangeAnalysis,
+                "19차에는 ConsultationTimelineRangeAnalysis Optional이 필요합니다."
+        );
+
+        if (
+                requestScopeAnalysis.isEmpty()
+                        && lifeDomainAnalysis.isEmpty()
+        ) {
+
+            if (
+                    timelineRangeAnalysis.isPresent()
+            ) {
+
+                throw new IllegalStateException(
+                        "18차/19차 입력이 없는데 21차 Timeline Range만 존재할 수 없습니다."
+                );
+            }
+
+            return Optional.empty();
+        }
+
+        if (
+                requestScopeAnalysis.isEmpty()
+                        || lifeDomainAnalysis.isEmpty()
+        ) {
+
+            throw new IllegalStateException(
+                    "19차 ConsultationRequestScopeAnalysis와 LifeDomainAnalysis 생성 상태가 일치하지 않습니다."
+            );
+        }
+
+        ConsultationRequestScopeAnalysis requestScope =
+                requestScopeAnalysis
+                        .orElseThrow();
+
+        LifeDomainAnalysis resolvedLifeDomainAnalysis =
+                lifeDomainAnalysis
+                        .orElseThrow();
+
         ConsultationCategoryEvidenceAnalysis
                 categoryEvidenceAnalysis =
                 Objects.requireNonNull(
                         consultationCategoryEvidenceAnalyzer
                                 .analyze(
-                                        resolvedLifeDomainAnalysis
+                                        resolvedLifeDomainAnalysis,
+                                        timelineRangeAnalysis
+                                                .orElse(
+                                                        null
+                                                )
                                 ),
                         "ConsultationCategoryEvidenceAnalyzer가 null을 반환했습니다."
                 );

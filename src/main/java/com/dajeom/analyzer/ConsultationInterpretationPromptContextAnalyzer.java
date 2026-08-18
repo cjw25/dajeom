@@ -15,53 +15,46 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 정밀화 20차.
+ * 정밀화 20차 / 21차 Range 확장.
  *
  * ConsultationGroundingPolicyAnalysis를
- * 실제 LLM 입력용 Prompt Context로 조립한다.
+ * 외부 LLM 공식 Prompt Context로 조립한다.
  *
  * =================================================
  *
- * 여기서는 프롬프트 문자열 하나로
- * 모든 데이터를 평탄화하지 않는다.
- *
- * 구조화된:
+ * 유지:
  *
  * - 전역 Interpretation 계약
  * - 사용자 질문
  * - Category
- * - Category별 Constraint
+ * - Constraint
  * - 원국 Evidence
- * - Timeline Scenario
- *
- * 를 그대로 유지한다.
+ * - 현재 Timeline Scenario
  *
  * =================================================
  *
- * 실제 OpenAI API 호출 형식:
+ * 추가:
  *
- * - system message
- * - developer message
- * - structured output
- * - JSON schema
- *
- * 등은 외부 Client 구현에 따라 달라질 수 있으므로
- * 이 Analyzer에서 결정하지 않는다.
+ * - PAST/FUTURE Timeline Year Range
  *
  * =================================================
  *
- * 이 클래스의 결과가
- * 외부 LLM Adapter의 공식 입력 Anchor가 된다.
+ * 이 클래스는:
+ *
+ * - 새로운 명리 계산을 하지 않는다.
+ * - 연도 흐름을 재판정하지 않는다.
+ * - Prompt Section 구조만 조립한다.
  */
 @Component
 public class ConsultationInterpretationPromptContextAnalyzer {
 
     public static final String GROUNDING_VERSION =
-            "DAJEOM_AI_GROUNDING_20";
+            "DAJEOM_AI_GROUNDING_21";
 
     private static final List<String>
             GLOBAL_INSTRUCTIONS =
             List.of(
+
                     "당신의 역할은 제공된 사주 분석 결과를 설명하는 것이며, 새로운 사주 계산을 수행하는 것이 아니다.",
 
                     "제공되지 않은 명리 근거, 운의 상태, 출생시간 정보 또는 사건을 임의로 추정하거나 생성하지 않는다.",
@@ -70,7 +63,17 @@ public class ConsultationInterpretationPromptContextAnalyzer {
 
                     "서로 다른 방향의 Evidence가 동시에 존재하면 하나를 제거하거나 평균내지 말고 각각의 의미와 조건을 함께 설명한다.",
 
-                    "Timeline Scenario가 여러 개이면 하나를 실제 Scenario로 임의 선택하지 않고 가능한 흐름이 복수임을 명확히 설명한다.",
+                    "현재 Timeline Scenario가 여러 개이면 하나를 실제 Scenario로 임의 선택하지 않고 가능한 흐름이 복수임을 보존한다.",
+
+                    "Timeline Year Range는 실제 여러 시점의 deterministic 계산을 연도별로 정리한 결과이며 특정 사건 기록이나 사건 예측이 아니다.",
+
+                    "Timeline Year에 여러 Evidence가 존재한다고 해서 가장 강해 보이는 하나만 선택하지 않고 서로 다른 방향의 Evidence를 함께 보존한다.",
+
+                    "Timeline Year의 monthIndices는 계산에 참여한 명리 월 범위를 나타내는 내부 시간 정보이며 이를 사용해 입력에 없는 특정 월 사건을 만들어내지 않는다.",
+
+                    "PAST_LUCK의 Timeline Year는 과거에 실제 특정 사건이 발생했다는 뜻이 아니며 당시 나타날 수 있었던 생활 흐름 수준에서 설명한다.",
+
+                    "FUTURE_LUCK의 Timeline Year는 미래 사건 확정이 아니며 해당 시기에 나타날 수 있는 선택, 부담, 활동 방향 수준에서 설명한다.",
 
                     "출생시간이 알려지지 않은 경우 시주나 시주 기반 의미를 추측해서 보완하지 않는다.",
 
@@ -92,8 +95,10 @@ public class ConsultationInterpretationPromptContextAnalyzer {
             );
 
     public ConsultationInterpretationPromptContext analyze(
+
             ConsultationGroundingPolicyAnalysis
                     policyAnalysis
+
     ) {
 
         Objects.requireNonNull(
@@ -152,6 +157,12 @@ public class ConsultationInterpretationPromptContextAnalyzer {
         );
     }
 
+    /*
+     * =================================================
+     * Section
+     * =================================================
+     */
+
     private ConsultationInterpretationPromptSection
     toPromptSection(
 
@@ -198,6 +209,7 @@ public class ConsultationInterpretationPromptContextAnalyzer {
                         .toList();
 
         return new ConsultationInterpretationPromptSection(
+
                 groundingSection
                         .category()
                         .getOrder(),
@@ -220,7 +232,10 @@ public class ConsultationInterpretationPromptContextAnalyzer {
                         .natalEvidences(),
 
                 groundingSection
-                        .timelineScenarios()
+                        .timelineScenarios(),
+
+                groundingSection
+                        .timelineYears()
         );
     }
 }

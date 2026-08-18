@@ -2,22 +2,16 @@ package com.dajeom.model;
 
 import com.dajeom.type.ConsultationCategory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * 정밀화 20차.
+ * 정밀화 20차 / 21차 Range 확장.
  *
  * 하나의 ConsultationCategory를
  * LLM에 전달하기 위한 최종 Prompt Section.
- *
- * =================================================
- *
- * 이 객체는 이미 Grounding 단계에서
- * 정리된 Evidence만 포함한다.
- *
- * 3~17차의 원본 계산 객체는 포함하지 않는다.
  *
  * =================================================
  *
@@ -27,20 +21,32 @@ import java.util.Optional;
  * - 사용자용 제목
  * - 사용 가능 여부
  * - 사용 불가 사유
- * - Category별 Grounding 제약
+ * - Category별 Constraint
  * - 원국 Evidence
- * - Timeline Scenario
+ * - 현재 Timeline Scenario
+ * - 과거/미래 Timeline Year Range
  *
  * =================================================
  *
- * 하지 않는 것:
+ * 여기에는 3~17차 원본 계산 객체를
+ * 직접 포함하지 않는다.
  *
- * - 사주 계산
+ * =================================================
+ *
+ * 중요한 원칙:
+ *
+ * 이 객체는 이미 deterministic 계산이 끝난
+ * Grounding만 전달한다.
+ *
+ * 여기서:
+ *
+ * - 새로운 사주 계산
  * - Evidence 재판정
- * - 대표 polarity 결정
- * - 점수화
+ * - 대표 polarity 선택
+ * - 점수 계산
  * - 사건 예측
- * - 사용자 상담문 생성
+ *
+ * 을 하지 않는다.
  */
 public record ConsultationInterpretationPromptSection(
 
@@ -56,12 +62,66 @@ public record ConsultationInterpretationPromptSection(
 
         List<String> constraints,
 
-        List<ConsultationGroundingEvidence> natalEvidences,
+        List<ConsultationGroundingEvidence>
+        natalEvidences,
 
         List<ConsultationGroundingTimelineScenario>
-        timelineScenarios
+        timelineScenarios,
+
+        List<ConsultationGroundingTimelineYear>
+        timelineYears
 
 ) {
+
+    /*
+     * =================================================
+     * 기존 20차 호출 호환 Constructor
+     * =================================================
+     *
+     * 기존 코드 중 아직 timelineYears를 전달하지 않는
+     * 호출부가 있어도 컴파일이 깨지지 않게 유지한다.
+     */
+
+    public ConsultationInterpretationPromptSection(
+
+            int order,
+
+            ConsultationCategory category,
+
+            String title,
+
+            boolean available,
+
+            Optional<String> unavailableReason,
+
+            List<String> constraints,
+
+            List<ConsultationGroundingEvidence>
+                    natalEvidences,
+
+            List<ConsultationGroundingTimelineScenario>
+                    timelineScenarios
+
+    ) {
+
+        this(
+                order,
+                category,
+                title,
+                available,
+                unavailableReason,
+                constraints,
+                natalEvidences,
+                timelineScenarios,
+                List.of()
+        );
+    }
+
+    /*
+     * =================================================
+     * Canonical Constructor
+     * =================================================
+     */
 
     public ConsultationInterpretationPromptSection {
 
@@ -97,40 +157,19 @@ public record ConsultationInterpretationPromptSection(
                 );
 
         natalEvidences =
-                natalEvidences == null
-                        ? List.of()
-                        : List.copyOf(
+                normalizeNatalEvidences(
                         natalEvidences
                 );
 
-        for (
-                ConsultationGroundingEvidence evidence
-                : natalEvidences
-        ) {
-
-            Objects.requireNonNull(
-                    evidence,
-                    "Prompt Section의 Natal Evidence는 null일 수 없습니다."
-            );
-        }
-
         timelineScenarios =
-                timelineScenarios == null
-                        ? List.of()
-                        : List.copyOf(
+                normalizeTimelineScenarios(
                         timelineScenarios
                 );
 
-        for (
-                ConsultationGroundingTimelineScenario scenario
-                : timelineScenarios
-        ) {
-
-            Objects.requireNonNull(
-                    scenario,
-                    "Prompt Section의 Timeline Scenario는 null일 수 없습니다."
-            );
-        }
+        timelineYears =
+                normalizeTimelineYears(
+                        timelineYears
+                );
 
         /*
          * =================================================
@@ -161,8 +200,9 @@ public record ConsultationInterpretationPromptSection(
         }
 
         /*
-         * 사용 불가 View를
-         * 가짜 Evidence로 채우지 않는다.
+         * =================================================
+         * unavailable에는 Evidence 금지
+         * =================================================
          */
 
         if (
@@ -170,6 +210,7 @@ public record ConsultationInterpretationPromptSection(
                         && (
                         !natalEvidences.isEmpty()
                                 || !timelineScenarios.isEmpty()
+                                || !timelineYears.isEmpty()
                 )
         ) {
 
@@ -180,8 +221,9 @@ public record ConsultationInterpretationPromptSection(
         }
 
         /*
-         * 모든 실제 Section에는
-         * 명시적인 Grounding 제약이 있어야 한다.
+         * =================================================
+         * Constraint
+         * =================================================
          */
 
         if (
@@ -195,10 +237,22 @@ public record ConsultationInterpretationPromptSection(
         }
     }
 
+    /*
+     * =================================================
+     * Availability
+     * =================================================
+     */
+
     public boolean unavailable() {
 
         return !available;
     }
+
+    /*
+     * =================================================
+     * Natal
+     * =================================================
+     */
 
     public boolean hasNatalEvidence() {
 
@@ -206,26 +260,84 @@ public record ConsultationInterpretationPromptSection(
                 .isEmpty();
     }
 
+    /*
+     * =================================================
+     * Current Timeline
+     * =================================================
+     */
+
     public boolean hasTimelineScenarios() {
 
         return !timelineScenarios
                 .isEmpty();
     }
 
+    /*
+     * =================================================
+     * Timeline Range
+     * =================================================
+     */
+
+    public boolean hasTimelineYears() {
+
+        return !timelineYears
+                .isEmpty();
+    }
+
+    public int timelineYearCount() {
+
+        return timelineYears
+                .size();
+    }
+
+    public boolean hasAnyTimeline() {
+
+        return hasTimelineScenarios()
+                || hasTimelineYears();
+    }
+
+    /*
+     * =================================================
+     * Timeline Uncertainty
+     * =================================================
+     */
+
     public boolean timelineUncertaintyExists() {
 
-        return timelineScenarios
+        boolean scenarioUncertainty =
+                timelineScenarios
+                        .stream()
+                        .anyMatch(
+                                ConsultationGroundingTimelineScenario
+                                        ::timelineUncertaintyExists
+                        );
+
+        if (
+                scenarioUncertainty
+        ) {
+
+            return true;
+        }
+
+        return timelineYears
                 .stream()
                 .anyMatch(
-                        ConsultationGroundingTimelineScenario
+                        ConsultationGroundingTimelineYear
                                 ::timelineUncertaintyExists
                 );
     }
 
+    /*
+     * =================================================
+     * Evidence Count
+     * =================================================
+     */
+
     public int evidenceCount() {
 
         int result =
-                natalEvidences.size();
+                natalEvidences
+                        .size();
 
         for (
                 ConsultationGroundingTimelineScenario scenario
@@ -237,12 +349,177 @@ public record ConsultationInterpretationPromptSection(
                             .evidenceCount();
         }
 
+        for (
+                ConsultationGroundingTimelineYear timelineYear
+                : timelineYears
+        ) {
+
+            result +=
+                    timelineYear
+                            .evidenceCount();
+        }
+
         return result;
     }
 
+    public boolean hasAnyEvidence() {
+
+        return evidenceCount() > 0;
+    }
+
+    /*
+     * =================================================
+     * Natal Normalize
+     * =================================================
+     */
+
+    private static List<ConsultationGroundingEvidence>
+    normalizeNatalEvidences(
+
+            List<ConsultationGroundingEvidence> source
+
+    ) {
+
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationGroundingEvidence> result =
+                new ArrayList<>(
+                        source.size()
+                );
+
+        for (
+                ConsultationGroundingEvidence evidence
+                : source
+        ) {
+
+            result.add(
+                    Objects.requireNonNull(
+                            evidence,
+                            "Prompt Section의 Natal Evidence는 null일 수 없습니다."
+                    )
+            );
+        }
+
+        return List.copyOf(
+                result
+        );
+    }
+
+    /*
+     * =================================================
+     * Current Timeline Normalize
+     * =================================================
+     */
+
+    private static List<ConsultationGroundingTimelineScenario>
+    normalizeTimelineScenarios(
+
+            List<ConsultationGroundingTimelineScenario>
+                    source
+
+    ) {
+
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationGroundingTimelineScenario> result =
+                new ArrayList<>(
+                        source.size()
+                );
+
+        for (
+                ConsultationGroundingTimelineScenario scenario
+                : source
+        ) {
+
+            result.add(
+                    Objects.requireNonNull(
+                            scenario,
+                            "Prompt Section의 Timeline Scenario는 null일 수 없습니다."
+                    )
+            );
+        }
+
+        return List.copyOf(
+                result
+        );
+    }
+
+    /*
+     * =================================================
+     * Timeline Range Normalize
+     * =================================================
+     */
+
+    private static List<ConsultationGroundingTimelineYear>
+    normalizeTimelineYears(
+
+            List<ConsultationGroundingTimelineYear> source
+
+    ) {
+
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationGroundingTimelineYear> result =
+                new ArrayList<>(
+                        source.size()
+                );
+
+        for (
+                ConsultationGroundingTimelineYear timelineYear
+                : source
+        ) {
+
+            result.add(
+                    Objects.requireNonNull(
+                            timelineYear,
+                            "Prompt Section의 Timeline Year는 null일 수 없습니다."
+                    )
+            );
+        }
+
+        result.sort(
+                java.util.Comparator
+                        .comparingInt(
+                                ConsultationGroundingTimelineYear
+                                        ::yearOrder
+                        )
+        );
+
+        return List.copyOf(
+                result
+        );
+    }
+
+    /*
+     * =================================================
+     * Text
+     * =================================================
+     */
+
     private static String requireText(
+
             String value,
+
             String message
+
     ) {
 
         Objects.requireNonNull(
@@ -265,9 +542,17 @@ public record ConsultationInterpretationPromptSection(
         return normalized;
     }
 
+    /*
+     * =================================================
+     * Optional Text
+     * =================================================
+     */
+
     private static Optional<String>
     normalizeOptionalText(
+
             Optional<String> source
+
     ) {
 
         if (
@@ -287,7 +572,9 @@ public record ConsultationInterpretationPromptSection(
                 value.isBlank()
         ) {
 
-            return Optional.empty();
+            throw new IllegalArgumentException(
+                    "Prompt Section unavailableReason은 빈 문자열일 수 없습니다."
+            );
         }
 
         return Optional.of(
@@ -295,7 +582,14 @@ public record ConsultationInterpretationPromptSection(
         );
     }
 
-    private static List<String> normalizeTexts(
+    /*
+     * =================================================
+     * Constraint Text
+     * =================================================
+     */
+
+    private static List<String>
+    normalizeTexts(
 
             List<String> source,
 

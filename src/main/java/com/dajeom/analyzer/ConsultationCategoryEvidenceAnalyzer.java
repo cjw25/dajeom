@@ -5,6 +5,8 @@ import com.dajeom.model.ConsultationCategoryEvidenceAnalysis;
 import com.dajeom.model.ConsultationCategoryEvidencePolicy;
 import com.dajeom.model.ConsultationCategoryEvidenceView;
 import com.dajeom.model.ConsultationCategorySegmentEvidence;
+import com.dajeom.model.ConsultationCategoryTimelineYearEvidence;
+import com.dajeom.model.ConsultationTimelineRangeAnalysis;
 import com.dajeom.model.LifeDomainAnalysis;
 import com.dajeom.model.LifeDomainRuleMatch;
 import com.dajeom.model.LifeDomainSegmentAnalysis;
@@ -14,12 +16,16 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
- * 정밀화 19차.
+ * 정밀화 19차 / 21차 확장.
  *
  * 18차 LifeDomainAnalysis를
  * 11개 ConsultationCategory Evidence View로
@@ -27,66 +33,38 @@ import java.util.Optional;
  *
  * =================================================
  *
- * 입력:
+ * 일반 Category:
  *
- * LifeDomainAnalysis
- *
- * =================================================
- *
- * 출력:
- *
- * ConsultationCategoryEvidenceAnalysis
+ * 현재 LifeDomainAnalysis.
  *
  * =================================================
  *
- * 역할:
+ * PAST_LUCK:
  *
- * 18차가 계산한 Match를
- * 사용자 상담 주제별로:
- *
- * - 선별
- * - 배치
- * - 시간층 분리
- *
- * 한다.
+ * 실제 과거 Timeline Range.
  *
  * =================================================
  *
- * 하지 않는 것:
+ * FUTURE_LUCK:
  *
- * - 새로운 명리 계산
- * - support/caution 점수 계산
- * - polarity 계산
- * - intensity 계산
- * - 사용자 상담문 생성
- * - LLM용 문장 생성
+ * 실제 미래 Timeline Range.
  *
  * =================================================
  *
- * 특히 하지 않는 것:
+ * LEGAL_RISK:
  *
- * YEAR
- * -> PAST_LUCK
- *
- * HOUR
- * -> FUTURE_LUCK
- *
- * 충
- * -> LEGAL_RISK
- *
- * PRESSURE
- * -> LEGAL_RISK
- *
- * 같은 V1 고정 변환.
+ * ConsultationLegalRiskAnalyzer의
+ * 전용 Cross-Domain Rule.
  *
  * =================================================
  *
- * 불확실성:
+ * 중요한 원칙:
  *
- * 현재 조회가 여러 가능한 Timeline Segment를
- * 생성하면 전부 유지한다.
- *
- * 하나를 대표 Segment로 선택하지 않는다.
+ * - 새로운 명리 계산을 하지 않는다.
+ * - 상태를 합산하지 않는다.
+ * - 대표 polarity를 만들지 않는다.
+ * - 현재 Segment를 과거/미래 전체로 사용하지 않는다.
+ * - LEGAL_RISK를 단일 Match로 생성하지 않는다.
  */
 @Component
 public class ConsultationCategoryEvidenceAnalyzer {
@@ -94,9 +72,17 @@ public class ConsultationCategoryEvidenceAnalyzer {
     private final ConsultationCategoryEvidencePolicyRegistry
             policyRegistry;
 
+    private final ConsultationLegalRiskAnalyzer
+            consultationLegalRiskAnalyzer;
+
     public ConsultationCategoryEvidenceAnalyzer(
+
             ConsultationCategoryEvidencePolicyRegistry
-                    policyRegistry
+                    policyRegistry,
+
+            ConsultationLegalRiskAnalyzer
+                    consultationLegalRiskAnalyzer
+
     ) {
 
         this.policyRegistry =
@@ -104,16 +90,43 @@ public class ConsultationCategoryEvidenceAnalyzer {
                         policyRegistry,
                         "ConsultationCategoryEvidencePolicyRegistry가 필요합니다."
                 );
+
+        this.consultationLegalRiskAnalyzer =
+                Objects.requireNonNull(
+                        consultationLegalRiskAnalyzer,
+                        "ConsultationLegalRiskAnalyzer가 필요합니다."
+                );
     }
 
     /*
      * =================================================
-     * 공식 19차 Routing API
+     * 기존 공식 API
      * =================================================
      */
 
     public ConsultationCategoryEvidenceAnalysis analyze(
             LifeDomainAnalysis lifeDomainAnalysis
+    ) {
+
+        return analyze(
+                lifeDomainAnalysis,
+                null
+        );
+    }
+
+    /*
+     * =================================================
+     * Timeline Range 연결 API
+     * =================================================
+     */
+
+    public ConsultationCategoryEvidenceAnalysis analyze(
+
+            LifeDomainAnalysis lifeDomainAnalysis,
+
+            ConsultationTimelineRangeAnalysis
+                    timelineRangeAnalysis
+
     ) {
 
         Objects.requireNonNull(
@@ -142,6 +155,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
             views.add(
                     routeCategory(
                             lifeDomainAnalysis,
+                            timelineRangeAnalysis,
                             policy
                     )
             );
@@ -170,7 +184,10 @@ public class ConsultationCategoryEvidenceAnalyzer {
 
     private ConsultationCategoryEvidenceView routeCategory(
 
-            LifeDomainAnalysis lifeDomainAnalysis,
+            LifeDomainAnalysis currentLifeDomainAnalysis,
+
+            ConsultationTimelineRangeAnalysis
+                    timelineRangeAnalysis,
 
             ConsultationCategoryEvidencePolicy policy
 
@@ -180,18 +197,37 @@ public class ConsultationCategoryEvidenceAnalyzer {
          * =================================================
          * PAST_LUCK
          * =================================================
-         *
-         * 현재 기준시점의 Timeline Segment를
-         * 지나온 전체 흐름으로 오용하지 않는다.
          */
 
         if (
                 policy.requiresPastTimelineRange()
         ) {
 
-            return unavailable(
+            if (
+                    timelineRangeAnalysis == null
+            ) {
+
+                return unavailable(
+                        policy.category(),
+                        "PAST_LUCK은 실제 과거 Timeline Range 분석이 필요합니다."
+                );
+            }
+
+            if (
+                    !timelineRangeAnalysis
+                            .hasPastRange()
+            ) {
+
+                return unavailable(
+                        policy.category(),
+                        "PAST_LUCK에 사용할 과거 Timeline Range가 존재하지 않습니다."
+                );
+            }
+
+            return routeTimelineRange(
                     policy.category(),
-                    "PAST_LUCK은 현재 기준시점의 단일 Timeline 분석이 아니라 실제 과거 Timeline Range 분석이 필요합니다."
+                    timelineRangeAnalysis
+                            .pastAnalyses()
             );
         }
 
@@ -199,19 +235,37 @@ public class ConsultationCategoryEvidenceAnalyzer {
          * =================================================
          * FUTURE_LUCK
          * =================================================
-         *
-         * 현재 활성 대운 하나나
-         * HOUR Palace 하나를
-         * 미래 전체 흐름으로 사용하지 않는다.
          */
 
         if (
                 policy.requiresFutureTimelineRange()
         ) {
 
-            return unavailable(
+            if (
+                    timelineRangeAnalysis == null
+            ) {
+
+                return unavailable(
+                        policy.category(),
+                        "FUTURE_LUCK은 실제 미래 Timeline Range 분석이 필요합니다."
+                );
+            }
+
+            if (
+                    !timelineRangeAnalysis
+                            .hasFutureRange()
+            ) {
+
+                return unavailable(
+                        policy.category(),
+                        "FUTURE_LUCK에 사용할 미래 Timeline Range가 존재하지 않습니다."
+                );
+            }
+
+            return routeTimelineRange(
                     policy.category(),
-                    "FUTURE_LUCK은 현재 Segment 하나가 아니라 실제 미래 대운·세운·월운 Timeline Range 분석이 필요합니다."
+                    timelineRangeAnalysis
+                            .futureAnalyses()
             );
         }
 
@@ -219,46 +273,45 @@ public class ConsultationCategoryEvidenceAnalyzer {
          * =================================================
          * LEGAL_RISK
          * =================================================
-         *
-         * 단일 PRESSURE나 충/형 하나로
-         * 법률·분쟁 View를 만들지 않는다.
          */
 
         if (
                 policy.requiresDedicatedCrossDomainRule()
         ) {
 
-            return unavailable(
-                    policy.category(),
-                    "LEGAL_RISK는 단일 LifeDomain 또는 하나의 관계 Evidence로 생성하지 않고 전용 교차 Evidence Rule이 필요합니다."
-            );
+            if (
+                    policy.category()
+                            != ConsultationCategory.LEGAL_RISK
+            ) {
+
+                throw new IllegalStateException(
+                        "현재 전용 Cross-Domain Rule은 LEGAL_RISK에만 구현되어 있습니다: "
+                                + policy.category()
+                );
+            }
+
+            return consultationLegalRiskAnalyzer
+                    .analyze(
+                            currentLifeDomainAnalysis
+                    );
         }
 
         /*
          * =================================================
-         * 원국 Match Routing
+         * 일반 Category
          * =================================================
          */
 
         List<LifeDomainRuleMatch> natalMatches =
                 collectNatalMatches(
-                        lifeDomainAnalysis,
+                        currentLifeDomainAnalysis,
                         policy
                 );
-
-        /*
-         * =================================================
-         * 현재 Timeline Segment Routing
-         * =================================================
-         *
-         * 날짜/교운 불확실성으로 Segment가 여러 개면
-         * 모든 Segment를 동일 순서로 유지한다.
-         */
 
         List<ConsultationCategorySegmentEvidence>
                 segmentEvidences =
                 collectSegmentEvidences(
-                        lifeDomainAnalysis,
+                        currentLifeDomainAnalysis,
                         policy
                 );
 
@@ -266,7 +319,172 @@ public class ConsultationCategoryEvidenceAnalyzer {
                 policy.category(),
                 natalMatches,
                 segmentEvidences,
+                List.of(),
                 Optional.empty()
+        );
+    }
+
+    /*
+     * =================================================
+     * PAST / FUTURE Timeline Range
+     * =================================================
+     */
+
+    private ConsultationCategoryEvidenceView
+    routeTimelineRange(
+
+            ConsultationCategory category,
+
+            List<LifeDomainAnalysis> analyses
+
+    ) {
+
+        Objects.requireNonNull(
+                category,
+                "Timeline Range Routing에는 ConsultationCategory가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                analyses,
+                "Timeline Range Routing에는 LifeDomainAnalysis 목록이 필요합니다."
+        );
+
+        List<ConsultationCategoryTimelineYearEvidence>
+                yearEvidences =
+                collectTimelineYearEvidences(
+                        analyses
+                );
+
+        if (
+                yearEvidences.isEmpty()
+        ) {
+
+            return unavailable(
+                    category,
+                    category
+                            + " Timeline Range에서 사용할 수 있는 연도 Evidence를 생성하지 못했습니다."
+            );
+        }
+
+        return new ConsultationCategoryEvidenceView(
+                category,
+                List.of(),
+                List.of(),
+                yearEvidences,
+                Optional.empty()
+        );
+    }
+
+    /*
+     * =================================================
+     * Range -> Year
+     * =================================================
+     */
+
+    private List<ConsultationCategoryTimelineYearEvidence>
+    collectTimelineYearEvidences(
+
+            List<LifeDomainAnalysis> analyses
+
+    ) {
+
+        Map<
+                Integer,
+                TimelineYearAccumulator
+                > grouped =
+                new TreeMap<>();
+
+        for (
+                LifeDomainAnalysis analysis
+                : analyses
+        ) {
+
+            Objects.requireNonNull(
+                    analysis,
+                    "Timeline Range의 LifeDomainAnalysis는 null일 수 없습니다."
+            );
+
+            for (
+                    LifeDomainSegmentAnalysis segmentAnalysis
+                    : analysis.segmentAnalyses()
+            ) {
+
+                int sajuYear =
+                        segmentAnalysis
+                                .segmentAnalysis()
+                                .annualCandidate()
+                                .targetYear();
+
+                int monthIndex =
+                        segmentAnalysis
+                                .segmentAnalysis()
+                                .monthlyCandidate()
+                                .monthIndex();
+
+                TimelineYearAccumulator accumulator =
+                        grouped.computeIfAbsent(
+                                sajuYear,
+                                TimelineYearAccumulator::new
+                        );
+
+                accumulator.addMonthIndex(
+                        monthIndex
+                );
+
+                if (
+                        analysis
+                                .uncertaintyExists()
+
+                                || segmentAnalysis
+                                .segmentAnalysis()
+                                .timelineUncertaintyExists()
+                ) {
+
+                    accumulator
+                            .markTimelineUncertainty();
+                }
+
+                for (
+                        LifeDomain domain
+                        : LifeDomain.values()
+                ) {
+
+                    List<LifeDomainRuleMatch> matches =
+                            segmentAnalysis
+                                    .matchesOf(
+                                            domain
+                                    );
+
+                    validateDomain(
+                            domain,
+                            matches
+                    );
+
+                    accumulator.addMatches(
+                            matches
+                    );
+                }
+            }
+        }
+
+        List<ConsultationCategoryTimelineYearEvidence>
+                result =
+                new ArrayList<>(
+                        grouped.size()
+                );
+
+        for (
+                TimelineYearAccumulator accumulator
+                : grouped.values()
+        ) {
+
+            result.add(
+                    accumulator.toEvidence()
+            );
+        }
+
+        return List.copyOf(
+                result
         );
     }
 
@@ -276,7 +494,8 @@ public class ConsultationCategoryEvidenceAnalyzer {
      * =================================================
      */
 
-    private List<LifeDomainRuleMatch> collectNatalMatches(
+    private List<LifeDomainRuleMatch>
+    collectNatalMatches(
 
             LifeDomainAnalysis lifeDomainAnalysis,
 
@@ -324,32 +543,8 @@ public class ConsultationCategoryEvidenceAnalyzer {
 
     /*
      * =================================================
-     * Segment
+     * Current Segment
      * =================================================
-     *
-     * 중요한 점:
-     *
-     * 여기서는:
-     *
-     * lifeDomainAnalysis.effectiveMatchesOf(...)
-     *
-     * 를 사용하지 않는다.
-     *
-     * effectiveMatchesOf는:
-     *
-     * natal
-     * +
-     * segment
-     *
-     * 를 반환한다.
-     *
-     * 그러면 원국 Match가 Segment마다 반복된다.
-     *
-     * 따라서:
-     *
-     * LifeDomainSegmentAnalysis.matchesOf(domain)
-     *
-     * 만 사용한다.
      */
 
     private List<ConsultationCategorySegmentEvidence>
@@ -413,24 +608,12 @@ public class ConsultationCategoryEvidenceAnalyzer {
                 );
             }
 
-            /*
-             * =================================================
-             * Match가 0개여도 Segment 객체는 유지한다.
-             * =================================================
-             *
-             * "해당 가능 Timeline Scenario에는
-             *  이 Category의 추가 Evidence가 없다"
-             *
-             * 는 정보도 deterministic 결과다.
-             */
-
             result.add(
                     new ConsultationCategorySegmentEvidence(
                             segmentAnalysis
                                     .segmentAnalysis(),
-                            List.copyOf(
-                                    matches
-                            )
+
+                            matches
                     )
             );
         }
@@ -442,7 +625,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
 
     /*
      * =================================================
-     * Match Domain 검증
+     * Domain Validation
      * =================================================
      */
 
@@ -456,12 +639,12 @@ public class ConsultationCategoryEvidenceAnalyzer {
 
         Objects.requireNonNull(
                 expectedDomain,
-                "expectedDomain이 필요합니다."
+                "LifeDomain 검증에는 expectedDomain이 필요합니다."
         );
 
         Objects.requireNonNull(
                 matches,
-                "LifeDomainRuleMatch 목록은 null일 수 없습니다."
+                "LifeDomain Match 목록은 null일 수 없습니다."
         );
 
         for (
@@ -480,7 +663,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
             ) {
 
                 throw new IllegalStateException(
-                        "19차 Consultation Routing 중 LifeDomain이 일치하지 않습니다. "
+                        "LifeDomainRuleMatch의 Domain이 조회 Domain과 일치하지 않습니다. "
                                 + "expected="
                                 + expectedDomain
                                 + ", actual="
@@ -494,7 +677,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
 
     /*
      * =================================================
-     * unavailable View
+     * Unavailable
      * =================================================
      */
 
@@ -508,7 +691,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
 
         Objects.requireNonNull(
                 category,
-                "ConsultationCategory가 필요합니다."
+                "Unavailable View에는 ConsultationCategory가 필요합니다."
         );
 
         if (
@@ -517,7 +700,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
         ) {
 
             throw new IllegalArgumentException(
-                    "unavailable ConsultationCategory에는 reason이 필요합니다."
+                    "Unavailable View에는 사유가 필요합니다."
             );
         }
 
@@ -525,9 +708,96 @@ public class ConsultationCategoryEvidenceAnalyzer {
                 category,
                 List.of(),
                 List.of(),
+                List.of(),
                 Optional.of(
                         reason.trim()
                 )
         );
+    }
+
+    /*
+     * =================================================
+     * Year Accumulator
+     * =================================================
+     */
+
+    private static final class TimelineYearAccumulator {
+
+        private final int sajuYear;
+
+        private final Set<Integer>
+                monthIndices =
+                new LinkedHashSet<>();
+
+        private final Set<LifeDomainRuleMatch>
+                matches =
+                new LinkedHashSet<>();
+
+        private boolean
+                timelineUncertaintyExists;
+
+        private TimelineYearAccumulator(
+                int sajuYear
+        ) {
+
+            this.sajuYear =
+                    sajuYear;
+        }
+
+        private void addMonthIndex(
+                int monthIndex
+        ) {
+
+            monthIndices.add(
+                    monthIndex
+            );
+        }
+
+        private void addMatches(
+                List<LifeDomainRuleMatch> values
+        ) {
+
+            Objects.requireNonNull(
+                    values,
+                    "Timeline Year Accumulator Match 목록은 null일 수 없습니다."
+            );
+
+            for (
+                    LifeDomainRuleMatch match
+                    : values
+            ) {
+
+                matches.add(
+                        Objects.requireNonNull(
+                                match,
+                                "Timeline Year Accumulator Match는 null일 수 없습니다."
+                        )
+                );
+            }
+        }
+
+        private void markTimelineUncertainty() {
+
+            timelineUncertaintyExists =
+                    true;
+        }
+
+        private ConsultationCategoryTimelineYearEvidence
+        toEvidence() {
+
+            return new ConsultationCategoryTimelineYearEvidence(
+                    sajuYear,
+
+                    new ArrayList<>(
+                            monthIndices
+                    ),
+
+                    timelineUncertaintyExists,
+
+                    new ArrayList<>(
+                            matches
+                    )
+            );
+        }
     }
 }

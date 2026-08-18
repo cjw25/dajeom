@@ -2,44 +2,42 @@ package com.dajeom.analyzer;
 
 import com.dajeom.model.ConsultationCategoryEvidenceView;
 import com.dajeom.model.ConsultationCategorySegmentEvidence;
+import com.dajeom.model.ConsultationCategoryTimelineYearEvidence;
 import com.dajeom.model.ConsultationGroundingAnalysis;
 import com.dajeom.model.ConsultationGroundingEvidence;
 import com.dajeom.model.ConsultationGroundingSection;
 import com.dajeom.model.ConsultationGroundingSource;
 import com.dajeom.model.ConsultationGroundingTimelineScenario;
+import com.dajeom.model.ConsultationGroundingTimelineYear;
 import com.dajeom.model.ConsultationRequestEvidenceAnalysis;
 import com.dajeom.model.LifeDomainEvidenceReference;
 import com.dajeom.model.LifeDomainRuleMatch;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
 /**
- * 정밀화 20차.
+ * 정밀화 20차 / 21차 Range 확장.
  *
  * 19차 ConsultationRequestEvidenceAnalysis를
  * LLM Interpretation용 Grounding으로 변환한다.
  *
  * =================================================
  *
- * 핵심:
+ * 기존:
  *
- * 원본 명리 계산 객체를
- * LLM 입력 모델에 직접 노출하지 않는다.
+ * Natal Match
+ * Current Timeline Segment
  *
- * LifeDomainRuleMatch가 실제 사용한:
+ * =================================================
  *
- * - 상태
- * - Summary
- * - Reasons
- * - Source Type
- * - Tier
- * - Source Key
- * - Auxiliary 여부
+ * 추가:
  *
- * 만 추출한다.
+ * PAST_LUCK / FUTURE_LUCK용
+ * Timeline Year Range
  *
  * =================================================
  *
@@ -47,16 +45,19 @@ import java.util.Objects;
  *
  * - 새로운 명리 계산
  * - 점수 계산
- * - polarity/intensity 계산
- * - 여러 Match 합산
- * - POSSIBLE Scenario 제거
+ * - polarity 계산
+ * - 상태 합산
+ * - Timeline 대표 연도 선택
  * - 사용자 문장 생성
  */
 @Component
 public class ConsultationGroundingAnalyzer {
 
     public ConsultationGroundingAnalysis analyze(
-            ConsultationRequestEvidenceAnalysis requestEvidenceAnalysis
+
+            ConsultationRequestEvidenceAnalysis
+                    requestEvidenceAnalysis
+
     ) {
 
         Objects.requireNonNull(
@@ -80,6 +81,7 @@ public class ConsultationGroundingAnalyzer {
         }
 
         return new ConsultationGroundingAnalysis(
+
                 requestEvidenceAnalysis
                         .questionRoutingAnalysis()
                         .status(),
@@ -106,7 +108,9 @@ public class ConsultationGroundingAnalyzer {
      */
 
     private ConsultationGroundingSection toSection(
+
             ConsultationCategoryEvidenceView view
+
     ) {
 
         Objects.requireNonNull(
@@ -115,11 +119,11 @@ public class ConsultationGroundingAnalyzer {
         );
 
         /*
-         * 현재 deterministic 범위에서
-         * 만들 수 없는 Category.
-         *
-         * 가짜 Evidence를 생성하지 않는다.
+         * =================================================
+         * unavailable
+         * =================================================
          */
+
         if (
                 view.unavailable()
         ) {
@@ -128,9 +132,16 @@ public class ConsultationGroundingAnalyzer {
                     view.category(),
                     List.of(),
                     List.of(),
+                    List.of(),
                     view.unavailableReason()
             );
         }
+
+        /*
+         * =================================================
+         * Natal
+         * =================================================
+         */
 
         List<ConsultationGroundingEvidence>
                 natalEvidences =
@@ -141,6 +152,12 @@ public class ConsultationGroundingAnalyzer {
                                 this::toEvidence
                         )
                         .toList();
+
+        /*
+         * =================================================
+         * Current Timeline Scenario
+         * =================================================
+         */
 
         List<ConsultationGroundingTimelineScenario>
                 scenarios =
@@ -183,13 +200,103 @@ public class ConsultationGroundingAnalyzer {
             scenarioOrder++;
         }
 
+        /*
+         * =================================================
+         * Timeline Range Year
+         * =================================================
+         */
+
+        List<ConsultationGroundingTimelineYear>
+                timelineYears =
+                toTimelineYears(
+                        view
+                                .timelineYearEvidences()
+                );
+
         return new ConsultationGroundingSection(
                 view.category(),
                 natalEvidences,
                 List.copyOf(
                         scenarios
                 ),
+                timelineYears,
                 view.unavailableReason()
+        );
+    }
+
+    /*
+     * =================================================
+     * Timeline Range
+     * =================================================
+     */
+
+    private List<ConsultationGroundingTimelineYear>
+    toTimelineYears(
+
+            List<ConsultationCategoryTimelineYearEvidence>
+                    yearEvidences
+
+    ) {
+
+        if (
+                yearEvidences == null
+                        || yearEvidences.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationCategoryTimelineYearEvidence>
+                ordered =
+                yearEvidences
+                        .stream()
+                        .sorted(
+                                Comparator.comparingInt(
+                                        ConsultationCategoryTimelineYearEvidence
+                                                ::sajuYear
+                                )
+                        )
+                        .toList();
+
+        List<ConsultationGroundingTimelineYear> result =
+                new ArrayList<>(
+                        ordered.size()
+                );
+
+        int yearOrder =
+                1;
+
+        for (
+                ConsultationCategoryTimelineYearEvidence
+                        yearEvidence
+                : ordered
+        ) {
+
+            List<ConsultationGroundingEvidence>
+                    evidences =
+                    yearEvidence
+                            .matches()
+                            .stream()
+                            .map(
+                                    this::toEvidence
+                            )
+                            .toList();
+
+            result.add(
+                    new ConsultationGroundingTimelineYear(
+                            yearOrder,
+                            yearEvidence.sajuYear(),
+                            yearEvidence.monthIndices(),
+                            yearEvidence.timelineUncertaintyExists(),
+                            evidences
+                    )
+            );
+
+            yearOrder++;
+        }
+
+        return List.copyOf(
+                result
         );
     }
 
@@ -200,7 +307,9 @@ public class ConsultationGroundingAnalyzer {
      */
 
     private ConsultationGroundingEvidence toEvidence(
+
             LifeDomainRuleMatch match
+
     ) {
 
         Objects.requireNonNull(
@@ -234,7 +343,9 @@ public class ConsultationGroundingAnalyzer {
      */
 
     private ConsultationGroundingSource toSource(
+
             LifeDomainEvidenceReference<?> reference
+
     ) {
 
         Objects.requireNonNull(
@@ -243,11 +354,8 @@ public class ConsultationGroundingAnalyzer {
         );
 
         /*
-         * reference.source()
-         *
-         * 는 의도적으로 Grounding에 전달하지 않는다.
-         *
-         * 3~17차 계산 객체는 Java 내부에 남긴다.
+         * 원본 reference.source()는
+         * 외부 Grounding으로 넘기지 않는다.
          */
 
         return new ConsultationGroundingSource(

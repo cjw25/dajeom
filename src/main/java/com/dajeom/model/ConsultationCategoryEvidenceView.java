@@ -5,78 +5,60 @@ import com.dajeom.type.ConsultationCategory;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 /**
- * 정밀화 19차.
+ * 정밀화 19차 / 21차 확장.
  *
- * 하나의 ConsultationCategory에
- * 18차 LifeDomain Evidence를 선별한 결과.
- *
- * =================================================
- *
- * 아직 사용자 상담문이 아니다.
- *
- * 이 객체는:
- *
- * 18차 deterministic Match
- * ->
- * 11개 사용자 상담 View
- *
- * 사이의 경계다.
+ * 하나의 ConsultationCategory가
+ * 실제로 사용할 deterministic Evidence View.
  *
  * =================================================
  *
- * natalMatches:
+ * 구성:
  *
- * 해당 Category가 사용하는
- * 원국 LifeDomainRuleMatch.
+ * 1.
+ * natalMatches
  *
- * =================================================
- *
- * segmentEvidences:
- *
- * 현재 조회 기준시점에서 가능한
- * Timeline Segment별 변화 Match.
+ * 원국 LifeDomain Match.
  *
  * =================================================
  *
- * unavailableReason:
+ * 2.
+ * segmentEvidences
  *
- * 현재 LifeDomainAnalysis만으로
- * 해당 Category를 만들면 안 되는 경우 사용.
+ * 현재 조회시점의 실제 Timeline Segment Evidence.
  *
- * 대표:
+ * =================================================
  *
- * PAST_LUCK
- * -> 실제 과거 Timeline Range 필요
+ * 3.
+ * timelineYearEvidences
  *
- * FUTURE_LUCK
- * -> 실제 미래 Timeline Range 필요
+ * PAST_LUCK / FUTURE_LUCK 전용
+ * 다중 월 Timeline Range의 연도별 Evidence.
  *
- * LEGAL_RISK
- * -> 전용 교차 Evidence Rule 필요
+ * =================================================
+ *
+ * 4.
+ * unavailableReason
+ *
+ * 해당 Category를 현재 deterministic 계산만으로
+ * 독립적으로 만들 수 없는 경우의 사유.
  *
  * =================================================
  *
  * 중요한 원칙:
  *
- * Evidence 없음
- * !=
- * 불리함
+ * 현재 Segment와
+ * 과거/미래 Timeline Range를
+ * 같은 의미로 취급하지 않는다.
  *
- * unavailable
- * !=
- * 나쁨
+ * =================================================
  *
- * POSSIBLE
- * !=
- * DEFINITE
- *
- * 서로 다른 Match 상태를
- * 하나의 polarity로 합치지 않는다.
+ * unavailable 상태에서는
+ * 어떤 Evidence도 함께 존재할 수 없다.
  */
 public record ConsultationCategoryEvidenceView(
 
@@ -86,6 +68,9 @@ public record ConsultationCategoryEvidenceView(
 
         List<ConsultationCategorySegmentEvidence>
         segmentEvidences,
+
+        List<ConsultationCategoryTimelineYearEvidence>
+        timelineYearEvidences,
 
         Optional<String> unavailableReason
 
@@ -99,64 +84,44 @@ public record ConsultationCategoryEvidenceView(
         );
 
         natalMatches =
-                natalMatches == null
-                        ? List.of()
-                        : List.copyOf(
+                normalizeNatalMatches(
                         natalMatches
                 );
 
-        for (
-                LifeDomainRuleMatch match
-                : natalMatches
-        ) {
-
-            Objects.requireNonNull(
-                    match,
-                    "ConsultationCategoryEvidenceView의 Natal Match는 null일 수 없습니다."
-            );
-        }
-
         segmentEvidences =
-                segmentEvidences == null
-                        ? List.of()
-                        : List.copyOf(
+                normalizeSegmentEvidences(
                         segmentEvidences
                 );
 
-        validateSegmentEvidences(
-                segmentEvidences
-        );
+        timelineYearEvidences =
+                normalizeTimelineYearEvidences(
+                        timelineYearEvidences
+                );
 
         unavailableReason =
                 normalizeUnavailableReason(
                         unavailableReason
                 );
 
-        /*
-         * =================================================
-         * unavailable View에는
-         * 가짜 Evidence를 넣지 않는다.
-         * =================================================
-         */
+        validateUnavailableState(
+                natalMatches,
+                segmentEvidences,
+                timelineYearEvidences,
+                unavailableReason
+        );
 
-        if (
-                unavailableReason.isPresent()
-                        && (
-                        !natalMatches.isEmpty()
-                                || !segmentEvidences.isEmpty()
-                )
-        ) {
+        validateSegmentIdentityUniqueness(
+                segmentEvidences
+        );
 
-            throw new IllegalArgumentException(
-                    "unavailable ConsultationCategory View에는 Evidence를 함께 넣을 수 없습니다: "
-                            + category
-            );
-        }
+        validateTimelineYearUniqueness(
+                timelineYearEvidences
+        );
     }
 
     /*
      * =================================================
-     * 상태
+     * Availability
      * =================================================
      */
 
@@ -168,59 +133,93 @@ public record ConsultationCategoryEvidenceView(
 
     public boolean unavailable() {
 
-        return !available();
+        return unavailableReason
+                .isPresent();
+    }
+
+    public String requireUnavailableReason() {
+
+        if (
+                available()
+        ) {
+
+            throw new IllegalStateException(
+                    "사용 가능한 ConsultationCategoryEvidenceView에는 unavailableReason이 없습니다."
+            );
+        }
+
+        return unavailableReason
+                .orElseThrow();
     }
 
     /*
      * =================================================
-     * 원국
+     * Natal
      * =================================================
      */
 
     public boolean hasNatalMatches() {
 
-        return !natalMatches.isEmpty();
+        return !natalMatches
+                .isEmpty();
     }
 
     public int natalMatchCount() {
 
-        return natalMatches.size();
+        return natalMatches
+                .size();
     }
 
     /*
      * =================================================
-     * Timeline
+     * Current Timeline Segment
      * =================================================
      */
 
     public boolean hasSegmentEvidences() {
 
-        return !segmentEvidences.isEmpty();
+        return !segmentEvidences
+                .isEmpty();
     }
 
-    public boolean hasSegmentMatches() {
+    public int segmentEvidenceCount() {
 
         return segmentEvidences
-                .stream()
-                .anyMatch(
-                        ConsultationCategorySegmentEvidence
-                                ::hasMatches
-                );
+                .size();
     }
 
-    public int segmentCount() {
+    /*
+     * =================================================
+     * Timeline Year Range
+     * =================================================
+     */
 
-        return segmentEvidences.size();
+    public boolean hasTimelineYearEvidences() {
+
+        return !timelineYearEvidences
+                .isEmpty();
     }
 
-    public boolean timelineUncertaintyExists() {
+    public int timelineYearEvidenceCount() {
 
-        return segmentEvidences
+        return timelineYearEvidences
+                .size();
+    }
+
+    public Optional<ConsultationCategoryTimelineYearEvidence>
+    findTimelineYearEvidence(
+            int sajuYear
+    ) {
+
+        return timelineYearEvidences
                 .stream()
-                .anyMatch(
-                        ConsultationCategorySegmentEvidence
-                                ::timelineUncertaintyExists
-                );
+                .filter(
+                        evidence ->
+                                evidence
+                                        .sajuYear()
+                                        == sajuYear
+                )
+                .findFirst();
     }
 
     /*
@@ -228,14 +227,19 @@ public record ConsultationCategoryEvidenceView(
      * 전체 Match
      * =================================================
      *
-     * 원국
-     * +
-     * 모든 가능한 현재 Segment 변화분.
+     * 단순 조회 편의를 위한 연결이다.
      *
-     * 상태는 합산하지 않는다.
+     * 여기서:
+     *
+     * - 점수
+     * - polarity
+     * - 대표 상태
+     *
+     * 를 계산하지 않는다.
      */
 
-    public List<LifeDomainRuleMatch> allMatches() {
+    public List<LifeDomainRuleMatch>
+    allMatches() {
 
         List<LifeDomainRuleMatch> result =
                 new ArrayList<>();
@@ -245,12 +249,22 @@ public record ConsultationCategoryEvidenceView(
         );
 
         for (
-                ConsultationCategorySegmentEvidence segmentEvidence
+                ConsultationCategorySegmentEvidence evidence
                 : segmentEvidences
         ) {
 
             result.addAll(
-                    segmentEvidence.matches()
+                    evidence.matches()
+            );
+        }
+
+        for (
+                ConsultationCategoryTimelineYearEvidence evidence
+                : timelineYearEvidences
+        ) {
+
+            result.addAll(
+                    evidence.matches()
             );
         }
 
@@ -259,62 +273,187 @@ public record ConsultationCategoryEvidenceView(
         );
     }
 
+    public boolean hasMatches() {
+
+        return !allMatches()
+                .isEmpty();
+    }
+
     public int matchCount() {
 
         return allMatches()
                 .size();
     }
 
-    public boolean hasAnyMatch() {
+    /*
+     * =================================================
+     * Timeline Uncertainty
+     * =================================================
+     */
 
-        return matchCount() > 0;
+    public boolean timelineUncertaintyExists() {
+
+        boolean currentSegmentUncertainty =
+                segmentEvidences
+                        .stream()
+                        .anyMatch(
+                                ConsultationCategorySegmentEvidence
+                                        ::timelineUncertaintyExists
+                        );
+
+        if (
+                currentSegmentUncertainty
+        ) {
+
+            return true;
+        }
+
+        return timelineYearEvidences
+                .stream()
+                .anyMatch(
+                        ConsultationCategoryTimelineYearEvidence
+                                ::timelineUncertaintyExists
+                );
     }
 
     /*
      * =================================================
-     * Segment Identity 검증
+     * Normalize Natal
      * =================================================
-     *
-     * 동일 Timeline Segment를
-     * 같은 Category에 중복 삽입하지 않는다.
      */
 
-    private static void validateSegmentEvidences(
-            List<ConsultationCategorySegmentEvidence> evidences
+    private static List<LifeDomainRuleMatch>
+    normalizeNatalMatches(
+            List<LifeDomainRuleMatch> source
     ) {
 
-        Set<LuckIntegratedSegmentAnalysis> identities =
-                java.util.Collections
-                        .newSetFromMap(
-                                new IdentityHashMap<>()
-                        );
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<LifeDomainRuleMatch> normalized =
+                new ArrayList<>();
+
+        for (
+                LifeDomainRuleMatch match
+                : source
+        ) {
+
+            normalized.add(
+                    Objects.requireNonNull(
+                            match,
+                            "ConsultationCategoryEvidenceView의 Natal Match는 null일 수 없습니다."
+                    )
+            );
+        }
+
+        return List.copyOf(
+                normalized
+        );
+    }
+
+    /*
+     * =================================================
+     * Normalize Segment
+     * =================================================
+     */
+
+    private static List<ConsultationCategorySegmentEvidence>
+    normalizeSegmentEvidences(
+
+            List<ConsultationCategorySegmentEvidence>
+                    source
+
+    ) {
+
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationCategorySegmentEvidence>
+                normalized =
+                new ArrayList<>();
 
         for (
                 ConsultationCategorySegmentEvidence evidence
-                : evidences
+                : source
         ) {
 
-            Objects.requireNonNull(
-                    evidence,
-                    "ConsultationCategorySegmentEvidence는 null일 수 없습니다."
-            );
-
-            if (
-                    !identities.add(
-                            evidence.segmentAnalysis()
+            normalized.add(
+                    Objects.requireNonNull(
+                            evidence,
+                            "ConsultationCategory Segment Evidence는 null일 수 없습니다."
                     )
-            ) {
-
-                throw new IllegalArgumentException(
-                        "동일 Timeline Segment가 ConsultationCategory View에 중복 연결되었습니다."
-                );
-            }
+            );
         }
+
+        return List.copyOf(
+                normalized
+        );
     }
 
     /*
      * =================================================
-     * unavailableReason 정규화
+     * Normalize Timeline Year
+     * =================================================
+     */
+
+    private static List<ConsultationCategoryTimelineYearEvidence>
+    normalizeTimelineYearEvidences(
+
+            List<ConsultationCategoryTimelineYearEvidence>
+                    source
+
+    ) {
+
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationCategoryTimelineYearEvidence>
+                normalized =
+                new ArrayList<>();
+
+        for (
+                ConsultationCategoryTimelineYearEvidence evidence
+                : source
+        ) {
+
+            normalized.add(
+                    Objects.requireNonNull(
+                            evidence,
+                            "ConsultationCategory Timeline Year Evidence는 null일 수 없습니다."
+                    )
+            );
+        }
+
+        normalized.sort(
+                java.util.Comparator.comparingInt(
+                        ConsultationCategoryTimelineYearEvidence
+                                ::sajuYear
+                )
+        );
+
+        return List.copyOf(
+                normalized
+        );
+    }
+
+    /*
+     * =================================================
+     * Normalize Unavailable
      * =================================================
      */
 
@@ -340,13 +479,136 @@ public record ConsultationCategoryEvidenceView(
                 value.isBlank()
         ) {
 
-            throw new IllegalArgumentException(
-                    "unavailableReason은 빈 문자열일 수 없습니다."
-            );
+            return Optional.empty();
         }
 
         return Optional.of(
                 value
         );
+    }
+
+    /*
+     * =================================================
+     * Unavailable 검증
+     * =================================================
+     */
+
+    private static void validateUnavailableState(
+
+            List<LifeDomainRuleMatch> natalMatches,
+
+            List<ConsultationCategorySegmentEvidence>
+                    segmentEvidences,
+
+            List<ConsultationCategoryTimelineYearEvidence>
+                    timelineYearEvidences,
+
+            Optional<String> unavailableReason
+
+    ) {
+
+        if (
+                unavailableReason.isEmpty()
+        ) {
+
+            return;
+        }
+
+        if (
+                !natalMatches.isEmpty()
+                        || !segmentEvidences.isEmpty()
+                        || !timelineYearEvidences.isEmpty()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "사용 불가능한 ConsultationCategoryEvidenceView에는 Evidence를 함께 넣을 수 없습니다."
+            );
+        }
+    }
+
+    /*
+     * =================================================
+     * Segment Identity 중복 검증
+     * =================================================
+     */
+
+    private static void
+    validateSegmentIdentityUniqueness(
+
+            List<ConsultationCategorySegmentEvidence>
+                    segmentEvidences
+
+    ) {
+
+        Map<
+                LuckIntegratedSegmentAnalysis,
+                Boolean
+                > identities =
+                new IdentityHashMap<>();
+
+        for (
+                ConsultationCategorySegmentEvidence evidence
+                : segmentEvidences
+        ) {
+
+            LuckIntegratedSegmentAnalysis segment =
+                    evidence
+                            .segmentAnalysis();
+
+            Boolean previous =
+                    identities.put(
+                            segment,
+                            Boolean.TRUE
+                    );
+
+            if (
+                    previous != null
+            ) {
+
+                throw new IllegalArgumentException(
+                        "동일 LuckIntegratedSegmentAnalysis가 ConsultationCategoryEvidenceView에 중복 포함되었습니다."
+                );
+            }
+        }
+    }
+
+    /*
+     * =================================================
+     * Timeline Year 중복 검증
+     * =================================================
+     */
+
+    private static void
+    validateTimelineYearUniqueness(
+
+            List<ConsultationCategoryTimelineYearEvidence>
+                    timelineYearEvidences
+
+    ) {
+
+        List<Integer> years =
+                new ArrayList<>();
+
+        for (
+                ConsultationCategoryTimelineYearEvidence evidence
+                : timelineYearEvidences
+        ) {
+
+            if (
+                    years.contains(
+                            evidence.sajuYear()
+                    )
+            ) {
+
+                throw new IllegalArgumentException(
+                        "동일 명리연도가 Timeline Year Evidence에 중복 포함되었습니다: "
+                                + evidence.sajuYear()
+                );
+            }
+
+            years.add(
+                    evidence.sajuYear()
+            );
+        }
     }
 }

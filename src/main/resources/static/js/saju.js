@@ -1,5331 +1,3158 @@
+"use strict";
+
+
+/* =========================================================
+   CONFIG
+   ========================================================= */
+
+const API_URL =
+    "/api/saju/calculate";
+
+
+const FORM_STORAGE_KEY =
+    "sajuForm";
+
+
+const RESULT_STORAGE_KEY =
+    "sajuAnalysisResult";
+
+
+const MINIMUM_ANALYSIS_TIME =
+    4200;
+
+
+const FACT_DISPLAY_TIME =
+    900;
+
+
+const WAIT_PROGRESS_LIMIT =
+    94;
+
+
+const VIDEO_PATH = {
+
+    opening:
+        "/video/opening.mp4",
+
+    analysis1:
+        "/video/analysis1.mp4",
+
+    analysis2:
+        "/video/analysis2.mp4",
+
+    love:
+        "/video/motion_love.mp4",
+
+    wealth:
+        "/video/motion_wealth.mp4",
+
+    network:
+        "/video/motion_network.mp4"
+
+};
+
+
+
+/* =========================================================
+   CATEGORY
+   ========================================================= */
+
+const CATEGORY_META = {
+
+    PERSONALITY: {
+
+        number: 1,
+        chapter: "제1장",
+        label: "타고난 성향",
+        title: "나는 어떤 사람인가",
+        analyzing: "당신이 타고난 성향과 기질을 풀어보고 있습니다."
+
+    },
+
+
+    PAST_LUCK: {
+
+        number: 2,
+        chapter: "제2장",
+        label: "지나온 운",
+        title: "지나온 시간의 흐름",
+        analyzing: "지금까지 지나온 삶의 흐름을 살펴보고 있습니다."
+
+    },
+
+
+    SOCIAL_RELATIONSHIP: {
+
+        number: 3,
+        chapter: "제3장",
+        label: "대인관계",
+        title: "사람과 관계를 맺는 방식",
+        analyzing: "사람을 만나고 관계를 이어가는 흐름을 살펴보고 있습니다."
+
+    },
+
+
+    LOVE_STYLE: {
+
+        number: 4,
+        chapter: "제4장",
+        label: "연애 성향",
+        title: "마음을 주고받는 방식",
+        analyzing: "사랑에서 마음을 표현하고 받아들이는 방식을 살펴보고 있습니다."
+
+    },
+
+
+    PARTNER_LUCK: {
+
+        number: 5,
+        chapter: "제5장",
+        label: "배우자운",
+        title: "인연과 동반자의 흐름",
+        analyzing: "인연과 동반자 관계의 흐름을 살펴보고 있습니다."
+
+    },
+
+
+    WEALTH: {
+
+        number: 6,
+        chapter: "제6장",
+        label: "재물운",
+        title: "재물을 다루는 흐름",
+        analyzing: "재물을 만들고 지키고 운용하는 흐름을 살펴보고 있습니다."
+
+    },
+
+
+    CAREER: {
+
+        number: 7,
+        chapter: "제7장",
+        label: "직업운",
+        title: "일과 성취를 향하는 방식",
+        analyzing: "일과 책임, 성취를 향하는 흐름을 살펴보고 있습니다."
+
+    },
+
+
+    LEGAL_RISK: {
+
+        number: 8,
+        chapter: "제8장",
+        label: "분쟁과 주의",
+        title: "갈등과 책임을 다루는 흐름",
+        analyzing: "갈등이나 책임이 생길 때의 흐름을 살펴보고 있습니다."
+
+    },
+
+
+    HEALTH_TENDENCY: {
+
+        number: 9,
+        chapter: "제9장",
+        label: "건강 경향",
+        title: "균형과 회복의 흐름",
+        analyzing: "생활의 균형과 회복 리듬을 살펴보고 있습니다."
+
+    },
+
+
+    CURRENT_YEAR_LUCK: {
+
+        number: 10,
+        chapter: "제10장",
+        label: "올해의 운",
+        title: "지금 흐르는 운의 방향",
+        analyzing: "현재 시점에 들어와 있는 운의 흐름을 살펴보고 있습니다."
+
+    },
+
+
+    FUTURE_LUCK: {
+
+        number: 11,
+        chapter: "제11장",
+        label: "앞으로의 운",
+        title: "다가오는 흐름을 바라보는 법",
+        analyzing: "앞으로 이어질 흐름을 살펴보고 있습니다."
+
+    }
+
+};
+
+
+const CATEGORY_ORDER =
+    Object
+        .keys(
+            CATEGORY_META
+        )
+        .sort(
+            (
+                left,
+                right
+            ) =>
+                CATEGORY_META[left].number
+                -
+                CATEGORY_META[right].number
+        );
+
+
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
+let currentScreen =
+    "intro";
+
+
+let currentResult =
+    null;
+
+
+let currentStoryIndex =
+    0;
+
+
+let introFinished =
+    false;
+
+
+let skipFactsRequested =
+    false;
+
+
+let analysisRunning =
+    false;
+
+
+let touchStartX =
+    null;
+
+
+let formState = {
+
+    name:
+        "",
+
+    calendarType:
+        "SOLAR",
+
+    leapMonth:
+        false,
+
+    gender:
+        "MALE",
+
+    birthYear:
+        "",
+
+    birthMonth:
+        "",
+
+    birthDay:
+        "",
+
+    birthHour:
+        "",
+
+    birthMinute:
+        "",
+
+    birthTimeUnknown:
+        false
+
+};
+
+
+
+/* =========================================================
+   DOM
+   ========================================================= */
+
+const screens =
+    Array.from(
+        document.querySelectorAll(
+            "[data-screen]"
+        )
+    );
+
+
+const backButton =
+    required(
+        "backButton"
+    );
+
+
+const homeButton =
+    required(
+        "homeButton"
+    );
+
+
+const headerSubtitle =
+    required(
+        "headerSubtitle"
+    );
+
+
+/* NAME */
+
+const nameForm =
+    required(
+        "nameForm"
+    );
+
+
+const nameInput =
+    required(
+        "nameInput"
+    );
+
+
+const nameError =
+    required(
+        "nameError"
+    );
+
+
+const nameNextButton =
+    required(
+        "nameNextButton"
+    );
+
+
+/* BIRTH */
+
+const birthForm =
+    required(
+        "birthForm"
+    );
+
+
+const birthYear =
+    required(
+        "birthYear"
+    );
+
+
+const birthMonth =
+    required(
+        "birthMonth"
+    );
+
+
+const birthDay =
+    required(
+        "birthDay"
+    );
+
+
+const birthHour =
+    required(
+        "birthHour"
+    );
+
+
+const birthMinute =
+    required(
+        "birthMinute"
+    );
+
+
+const birthTimeUnknown =
+    required(
+        "birthTimeUnknown"
+    );
+
+
+const timeInputArea =
+    required(
+        "timeInputArea"
+    );
+
+
+const lunarLeapArea =
+    required(
+        "lunarLeapArea"
+    );
+
+
+const lunarLeapMonth =
+    required(
+        "lunarLeapMonth"
+    );
+
+
+const birthError =
+    required(
+        "birthError"
+    );
+
+
+const birthNextButton =
+    required(
+        "birthNextButton"
+    );
+
+
+/* REVIEW */
+
+const reviewCompleteButton =
+    required(
+        "reviewCompleteButton"
+    );
+
+
+/* COMPLETE */
+
+const startAnalysisButton =
+    required(
+        "startAnalysisButton"
+    );
+
+
+/* ANALYSIS */
+
+const analysisStatus =
+    required(
+        "analysisStatus"
+    );
+
+
+const analysisTitle =
+    required(
+        "analysisTitle"
+    );
+
+
+const analysisMessage =
+    required(
+        "analysisMessage"
+    );
+
+
+const analysisProgressPercent =
+    required(
+        "analysisProgressPercent"
+    );
+
+
+const analysisProgressBar =
+    required(
+        "analysisProgressBar"
+    );
+
+
+const analysisElements =
+    Array.from(
+        document.querySelectorAll(
+            "[data-analysis-element]"
+        )
+    );
+
+
+/* ANALYSIS CATEGORY */
+
+const analysisFactOverlay =
+    required(
+        "analysisFactOverlay"
+    );
+
+
+const factCategoryIndex =
+    required(
+        "factCategoryIndex"
+    );
+
+
+const factCategoryKicker =
+    required(
+        "factCategoryKicker"
+    );
+
+
+const factCategoryTitle =
+    required(
+        "factCategoryTitle"
+    );
+
+
+const factCategoryMessage =
+    required(
+        "factCategoryMessage"
+    );
+
+
+const skipFactsButton =
+    required(
+        "skipFactsButton"
+    );
+
+
+/* RESULT */
+
+const resultTitle =
+    required(
+        "resultTitle"
+    );
+
+
+const resultSummary =
+    required(
+        "resultSummary"
+    );
+
+
+const resultPillars =
+    required(
+        "resultPillars"
+    );
+
+
+const resultStoryList =
+    required(
+        "resultStoryList"
+    );
+
+
+const resultHomeButton =
+    required(
+        "resultHomeButton"
+    );
+
+
+const toast =
+    required(
+        "toast"
+    );
+
+
+/* OPTIONAL INTRO */
+
+const openingVideo =
+    optional(
+        "openingVideo"
+    );
+
+
+const introWorldLine1 =
+    optional(
+        "introWorldLine1"
+    );
+
+
+const introWorldLine2 =
+    optional(
+        "introWorldLine2"
+    );
+
+
+const introWorldLine3 =
+    optional(
+        "introWorldLine3"
+    );
+
+
+const introWorldEmblem =
+    optional(
+        "introWorldEmblem"
+    );
+
+
+const introWorldFinal =
+    optional(
+        "introWorldFinal"
+    );
+
+
+const introStartButton =
+    optional(
+        "introStartButton"
+    );
+
+
+const introWorldSkip =
+    optional(
+        "introWorldSkip"
+    );
+
+
+/* OPTIONAL VIDEO */
+
+const analysisVideo1 =
+    optional(
+        "analysisVideo1"
+    );
+
+
+const analysisVideo2 =
+    optional(
+        "analysisVideo2"
+    );
+
+
+const factMotionVideo =
+    optional(
+        "factMotionVideo"
+    );
+
+
+/* OPTIONAL REVEAL */
+
+const revealOpening =
+    optional(
+        "revealOpening"
+    );
+
+
+const revealPillarGrid =
+    optional(
+        "revealPillarGrid"
+    );
+
+
+const revealFinal =
+    optional(
+        "revealFinal"
+    );
+
+
+const revealSkipButton =
+    optional(
+        "revealSkipButton"
+    );
+
+
+
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
+
 document.addEventListener(
     "DOMContentLoaded",
-    function () {
+    initialize
+);
 
-        "use strict";
 
+function initialize() {
 
-        /* =====================================================
-           CONSTANT
-        ====================================================== */
+    loadStoredForm();
 
-        const API_URL =
-            "/api/saju/calculate";
+    bindNavigation();
 
+    bindIntro();
 
-        const FORM_STORAGE_KEY =
-            "sajuForm";
+    bindName();
 
+    bindBirth();
 
-        const RESULT_STORAGE_KEY =
-            "sajuAnalysisResult";
+    bindReview();
 
+    bindAnalysis();
 
-        const MINIMUM_ANALYSIS_TIME =
-            4200;
+    bindStoryNavigation();
 
+    restoreFormInputs();
 
-        const FACT_DISPLAY_TIME =
-            900;
+    updateNameValidation();
 
+    updateBirthValidation();
 
-        const WAIT_PROGRESS_LIMIT =
-            94;
+    updateHeader();
 
+    prepareVideoPaths();
 
-        const VIDEO_PATH = {
+    playIntroWorld();
 
-            opening:
-                "/video/opening.mp4",
+}
 
-            analysis1:
-                "/video/analysis1.mp4",
 
-            analysis2:
-                "/video/analysis2.mp4",
 
-            love:
-                "/video/motion_love.mp4",
+/* =========================================================
+   VIDEO PATH
+   ========================================================= */
 
-            wealth:
-                "/video/motion_wealth.mp4",
+function prepareVideoPaths() {
 
-            network:
-                "/video/motion_network.mp4"
+    setVideoSource(
+        openingVideo,
+        VIDEO_PATH.opening
+    );
 
-        };
 
+    setVideoSource(
+        analysisVideo1,
+        VIDEO_PATH.analysis1
+    );
 
 
-        /* =====================================================
-           11 CONSULTATION CATEGORY
-        ====================================================== */
+    setVideoSource(
+        analysisVideo2,
+        VIDEO_PATH.analysis2
+    );
 
-        const CATEGORY_ORDER = [
+}
 
-            "PERSONALITY",
 
-            "PAST_LUCK",
+function setVideoSource(
+    video,
+    path
+) {
 
-            "SOCIAL_RELATIONSHIP",
+    if (
+        !video
+        ||
+        !path
+    ) {
 
-            "LOVE_STYLE",
+        return;
 
-            "PARTNER_LUCK",
+    }
 
-            "WEALTH",
 
-            "CAREER",
+    if (
+        video.getAttribute(
+            "src"
+        )
+        !== path
+    ) {
 
-            "LEGAL_RISK",
+        video.src =
+            path;
 
-            "HEALTH_TENDENCY",
+    }
 
-            "CURRENT_YEAR_LUCK",
 
-            "FUTURE_LUCK"
+    video.load();
 
-        ];
+}
 
 
-        const CATEGORY_META = {
 
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
 
-            PERSONALITY: {
+function bindNavigation() {
 
-                number:
-                    "01",
+    document.addEventListener(
+        "click",
+        event => {
 
-                chapter:
-                    "제1장",
-
-                label:
-                    "기본 성향",
-
-                title:
-                    "나는 어떤 사람인가"
-
-            },
-
-
-            PAST_LUCK: {
-
-                number:
-                    "02",
-
-                chapter:
-                    "제2장",
-
-                label:
-                    "지나온 흐름",
-
-                title:
-                    "지나온 시간에 반복된 흐름"
-
-            },
-
-
-            SOCIAL_RELATIONSHIP: {
-
-                number:
-                    "03",
-
-                chapter:
-                    "제3장",
-
-                label:
-                    "대인관계",
-
-                title:
-                    "사람과 관계를 맺는 방식"
-
-            },
-
-
-            LOVE_STYLE: {
-
-                number:
-                    "04",
-
-                chapter:
-                    "제4장",
-
-                label:
-                    "연애 스타일",
-
-                title:
-                    "마음이 움직일 때 드러나는 모습"
-
-            },
-
-
-            PARTNER_LUCK: {
-
-                number:
-                    "05",
-
-                chapter:
-                    "제5장",
-
-                label:
-                    "인연·배우자",
-
-                title:
-                    "인연을 바라보는 기준과 거리"
-
-            },
-
-
-            WEALTH: {
-
-                number:
-                    "06",
-
-                chapter:
-                    "제6장",
-
-                label:
-                    "재물",
-
-                title:
-                    "돈을 벌고 지키고 쓰는 흐름"
-
-            },
-
-
-            CAREER: {
-
-                number:
-                    "07",
-
-                chapter:
-                    "제7장",
-
-                label:
-                    "직업·사업",
-
-                title:
-                    "일과 책임을 다루는 방식"
-
-            },
-
-
-            LEGAL_RISK: {
-
-                number:
-                    "08",
-
-                chapter:
-                    "제8장",
-
-                label:
-                    "분쟁·주의",
-
-                title:
-                    "조심해서 다뤄야 하는 지점"
-
-            },
-
-
-            HEALTH_TENDENCY: {
-
-                number:
-                    "09",
-
-                chapter:
-                    "제9장",
-
-                label:
-                    "건강·생활리듬",
-
-                title:
-                    "오래 가기 위한 생활 리듬"
-
-            },
-
-
-            CURRENT_YEAR_LUCK: {
-
-                number:
-                    "10",
-
-                chapter:
-                    "제10장",
-
-                label:
-                    "현재·올해",
-
-                title:
-                    "지금 지나고 있는 운의 장면"
-
-            },
-
-
-            FUTURE_LUCK: {
-
-                number:
-                    "11",
-
-                chapter:
-                    "제11장",
-
-                label:
-                    "앞으로의 흐름",
-
-                title:
-                    "앞으로 이어질 흐름"
-
-            }
-
-        };
-
-
-
-        /* =====================================================
-           SCREEN
-        ====================================================== */
-
-        const screens =
-            Array.from(
-                document.querySelectorAll(
-                    "[data-screen]"
-                )
-            );
-
-
-
-        /* =====================================================
-           REQUIRED DOM
-        ====================================================== */
-
-        const backButton =
-            required(
-                "backButton"
-            );
-
-
-        const homeButton =
-            required(
-                "homeButton"
-            );
-
-
-        const headerSubtitle =
-            required(
-                "headerSubtitle"
-            );
-
-
-
-        /* =====================================================
-           OPTIONAL INTRO WORLD DOM
-        ====================================================== */
-
-        const introWorldLine1 =
-            optional(
-                "introWorldLine1"
-            );
-
-
-        const introWorldLine2 =
-            optional(
-                "introWorldLine2"
-            );
-
-
-        const introWorldLine3 =
-            optional(
-                "introWorldLine3"
-            );
-
-
-        const introWorldEmblem =
-            optional(
-                "introWorldEmblem"
-            );
-
-
-        const introWorldFinal =
-            optional(
-                "introWorldFinal"
-            );
-
-
-        const introStartButton =
-            optional(
-                "introStartButton"
-            );
-
-
-        const introWorldSkip =
-            optional(
-                "introWorldSkip"
-            );
-
-
-        const openingVideo =
-            optional(
-                "openingVideo"
-            );
-
-
-
-        /* =====================================================
-           NAME
-        ====================================================== */
-
-        const nameForm =
-            required(
-                "nameForm"
-            );
-
-
-        const nameInput =
-            required(
-                "nameInput"
-            );
-
-
-        const nameError =
-            required(
-                "nameError"
-            );
-
-
-        const nameNextButton =
-            required(
-                "nameNextButton"
-            );
-
-
-
-        /* =====================================================
-           BIRTH
-        ====================================================== */
-
-        const birthForm =
-            required(
-                "birthForm"
-            );
-
-
-        const birthYear =
-            required(
-                "birthYear"
-            );
-
-
-        const birthMonth =
-            required(
-                "birthMonth"
-            );
-
-
-        const birthDay =
-            required(
-                "birthDay"
-            );
-
-
-        const birthHour =
-            required(
-                "birthHour"
-            );
-
-
-        const birthMinute =
-            required(
-                "birthMinute"
-            );
-
-
-        const birthTimeUnknown =
-            required(
-                "birthTimeUnknown"
-            );
-
-
-        const timeInputArea =
-            required(
-                "timeInputArea"
-            );
-
-
-        const lunarLeapArea =
-            required(
-                "lunarLeapArea"
-            );
-
-
-        const lunarLeapMonth =
-            required(
-                "lunarLeapMonth"
-            );
-
-
-        const birthError =
-            required(
-                "birthError"
-            );
-
-
-        const birthNextButton =
-            required(
-                "birthNextButton"
-            );
-
-
-
-        /* =====================================================
-           REVIEW
-        ====================================================== */
-
-        const reviewCompleteButton =
-            required(
-                "reviewCompleteButton"
-            );
-
-
-
-        /* =====================================================
-           COMPLETE
-        ====================================================== */
-
-        const startAnalysisButton =
-            required(
-                "startAnalysisButton"
-            );
-
-
-
-        /* =====================================================
-           ANALYSIS
-        ====================================================== */
-
-        const analysisStatus =
-            required(
-                "analysisStatus"
-            );
-
-
-        const analysisTitle =
-            required(
-                "analysisTitle"
-            );
-
-
-        const analysisMessage =
-            required(
-                "analysisMessage"
-            );
-
-
-        const analysisProgressPercent =
-            required(
-                "analysisProgressPercent"
-            );
-
-
-        const analysisProgressBar =
-            required(
-                "analysisProgressBar"
-            );
-
-
-        const analysisElements =
-            Array.from(
-                document.querySelectorAll(
-                    "[data-analysis-element]"
-                )
-            );
-
-
-        const analysisVideo1 =
-            optional(
-                "analysisVideo1"
-            );
-
-
-        const analysisVideo2 =
-            optional(
-                "analysisVideo2"
-            );
-
-
-
-        /* =====================================================
-           FACT
-        ====================================================== */
-
-        const analysisFactOverlay =
-            required(
-                "analysisFactOverlay"
-            );
-
-
-        const factCategoryIndex =
-            required(
-                "factCategoryIndex"
-            );
-
-
-        const factCategoryKicker =
-            required(
-                "factCategoryKicker"
-            );
-
-
-        const factCategoryTitle =
-            required(
-                "factCategoryTitle"
-            );
-
-
-        const factStatusRow =
-            required(
-                "factStatusRow"
-            );
-
-
-        const factBasis =
-            required(
-                "factBasis"
-            );
-
-
-        const skipFactsButton =
-            required(
-                "skipFactsButton"
-            );
-
-
-        const factMotionVideo =
-            optional(
-                "factMotionVideo"
-            );
-
-
-
-        /* =====================================================
-           OPTIONAL REVEAL
-        ====================================================== */
-
-        const revealOpening =
-            optional(
-                "revealOpening"
-            );
-
-
-        const revealPillarGrid =
-            optional(
-                "revealPillarGrid"
-            );
-
-
-        const revealFinal =
-            optional(
-                "revealFinal"
-            );
-
-
-        const revealSkipButton =
-            optional(
-                "revealSkipButton"
-            );
-
-
-
-        /* =====================================================
-           RESULT
-        ====================================================== */
-
-        const resultTitle =
-            required(
-                "resultTitle"
-            );
-
-
-        const resultSummary =
-            required(
-                "resultSummary"
-            );
-
-
-        const resultPillars =
-            required(
-                "resultPillars"
-            );
-
-
-        const resultStoryList =
-            required(
-                "resultStoryList"
-            );
-
-
-        const resultHomeButton =
-            required(
-                "resultHomeButton"
-            );
-
-
-        const toast =
-            required(
-                "toast"
-            );
-
-
-
-        /* =====================================================
-           STATE
-        ====================================================== */
-
-        const sajuForm =
-            loadForm();
-
-
-        const screenHistory =
-            [];
-
-
-        let currentScreen =
-            "intro";
-
-
-        let birthTouched =
-            false;
-
-
-        let analysisRunning =
-            false;
-
-
-        let analysisProgress =
-            0;
-
-
-        let progressTimer =
-            null;
-
-
-        let toastTimer =
-            null;
-
-
-        let factSkipRequested =
-            false;
-
-
-        let revealSkipRequested =
-            false;
-
-
-        let introSkipRequested =
-            false;
-
-
-        let introPlayed =
-            false;
-
-
-        let currentStoryIndex =
-            0;
-
-
-        let currentResult =
-            null;
-
-
-        let storyTouchStartX =
-            null;
-
-
-        let storyTouchStartY =
-            null;
-
-
-
-        /* =====================================================
-           INITIALIZE
-        ====================================================== */
-
-        initialize();
-
-
-        function initialize() {
-
-            bindNavigation();
-
-            bindIntro();
-
-            bindName();
-
-            bindBirth();
-
-            bindReview();
-
-            bindAnalysis();
-
-            bindFacts();
-
-            bindReveal();
-
-            bindStoryNavigation();
-
-
-            restoreForm();
-
-
-            showScreen(
-                "intro",
-                false
-            );
-
-
-            playIntroWorld();
-
-
-            console.log(
-                "[SAJU] saju.js 초기화 완료"
-            );
-
-
-            console.log(
-                "[SAJU] 천명록 11장 전환 방식 활성화"
-            );
-
-        }
-
-
-
-        /* =====================================================
-           DOM UTIL
-        ====================================================== */
-
-        function required(
-            id
-        ) {
-
-            const element =
-                document.getElementById(
-                    id
+            const target =
+                event.target.closest(
+                    "[data-go]"
                 );
 
 
             if (
-                !element
+                !target
             ) {
 
-                throw new Error(
-                    "필수 DOM을 찾을 수 없습니다: #"
-                    + id
-                );
+                return;
 
             }
 
 
-            return element;
-        }
+            const screen =
+                target.dataset.go;
 
-
-        function optional(
-            id
-        ) {
-
-            return document.getElementById(
-                id
-            );
-        }
-
-
-
-        /* =====================================================
-           INTRO WORLD
-        ====================================================== */
-
-        function bindIntro() {
 
             if (
-                introWorldSkip
+                screen
             ) {
 
-                introWorldSkip.addEventListener(
-                    "click",
-                    function () {
-
-                        introSkipRequested =
-                            true;
-
-
-                        stopVideo(
-                            openingVideo
-                        );
-
-
-                        showIntroFinal();
-
-                    }
+                showScreen(
+                    screen
                 );
 
             }
 
         }
+    );
 
 
-        async function playIntroWorld() {
+    backButton.addEventListener(
+        "click",
+        handleBack
+    );
 
-            if (
-                introPlayed
-            ) {
+
+    homeButton.addEventListener(
+        "click",
+        goHome
+    );
+
+
+    resultHomeButton.addEventListener(
+        "click",
+        goHome
+    );
+
+}
+
+
+function handleBack() {
+
+    if (
+        currentScreen
+        === "result"
+        &&
+        currentStoryIndex
+        > 0
+    ) {
+
+        goPreviousStory();
+
+        return;
+
+    }
+
+
+    const backMap = {
+
+        name:
+            "intro",
+
+        birth:
+            "name",
+
+        review:
+            "birth",
+
+        complete:
+            "review",
+
+        analysis:
+            "complete",
+
+        reveal:
+            "complete",
+
+        result:
+            "complete"
+
+    };
+
+
+    const destination =
+        backMap[currentScreen];
+
+
+    if (
+        destination
+    ) {
+
+        showScreen(
+            destination
+        );
+
+    }
+
+}
+
+
+function goHome() {
+
+    currentResult =
+        null;
+
+
+    currentStoryIndex =
+        0;
+
+
+    analysisRunning =
+        false;
+
+
+    skipFactsRequested =
+        false;
+
+
+    sessionStorage.removeItem(
+        RESULT_STORAGE_KEY
+    );
+
+
+    showScreen(
+        "intro"
+    );
+
+
+    showIntroFinal();
+
+}
+
+
+function showScreen(
+    screenName
+) {
+
+    screens.forEach(
+        screen => {
+
+            screen.classList.toggle(
+                "is-active",
+                screen.dataset.screen
+                === screenName
+            );
+
+        }
+    );
+
+
+    currentScreen =
+        screenName;
+
+
+    updateHeader();
+
+
+    window.scrollTo({
+
+        top:
+            0,
+
+        behavior:
+            "smooth"
+
+    });
+
+}
+
+
+function updateHeader() {
+
+    const subtitles = {
+
+        intro:
+            "천명사주",
+
+        name:
+            "이름 입력",
+
+        birth:
+            "생년월일 입력",
+
+        review:
+            "입력 확인",
+
+        complete:
+            "분석 준비",
+
+        analysis:
+            "천명 분석",
+
+        reveal:
+            "사주팔자",
+
+        result:
+            "천명록"
+
+    };
+
+
+    headerSubtitle.textContent =
+        subtitles[currentScreen]
+        || "천명사주";
+
+
+    backButton.style.visibility =
+        currentScreen
+        === "intro"
+            ? "hidden"
+            : "visible";
+
+}
+
+
+
+/* =========================================================
+   INTRO
+   ========================================================= */
+
+function bindIntro() {
+
+    introWorldSkip
+        ?.addEventListener(
+            "click",
+            () => {
+
+                stopVideo(
+                    openingVideo
+                );
+
 
                 showIntroFinal();
 
-                return;
             }
+        );
 
 
-            introPlayed =
-                true;
+    introStartButton
+        ?.addEventListener(
+            "click",
+            () => {
 
-
-            introSkipRequested =
-                false;
-
-
-            if (
-                openingVideo
-            ) {
-
-                await playVideo(
-                    openingVideo,
-                    VIDEO_PATH.opening,
-                    function () {
-
-                        return introSkipRequested;
-
-                    }
-                );
-
-
-                if (
-                    !introSkipRequested
-                ) {
-
-                    showIntroFinal();
-
-                }
-
-
-                return;
-            }
-
-
-            if (
-                !hasIntroWorldDom()
-            ) {
-
-                return;
-            }
-
-
-            await wait(
-                650
-            );
-
-
-            if (
-                introSkipRequested
-            ) {
-
-                return;
-            }
-
-
-            await playIntroLine(
-                introWorldLine1,
-                1900
-            );
-
-
-            if (
-                introSkipRequested
-            ) {
-
-                return;
-            }
-
-
-            await playIntroLine(
-                introWorldLine2,
-                2100
-            );
-
-
-            if (
-                introSkipRequested
-            ) {
-
-                return;
-            }
-
-
-            await playIntroLine(
-                introWorldLine3,
-                2100
-            );
-
-
-            if (
-                introSkipRequested
-            ) {
-
-                return;
-            }
-
-
-            if (
-                introWorldEmblem
-            ) {
-
-                introWorldEmblem.classList.add(
-                    "is-visible"
+                showScreen(
+                    "name"
                 );
 
             }
+        );
+
+}
 
 
-            await wait(
-                1500
+async function playIntroWorld() {
+
+    if (
+        introFinished
+    ) {
+
+        showIntroFinal();
+
+        return;
+
+    }
+
+
+    hideIntroFinal();
+
+
+    if (
+        openingVideo
+    ) {
+
+        const played =
+            await playVideo(
+                openingVideo,
+                VIDEO_PATH.opening,
+                true
             );
 
 
-            if (
-                introSkipRequested
-            ) {
-
-                return;
-            }
-
+        if (
+            played
+        ) {
 
             showIntroFinal();
 
-        }
-
-
-        function hasIntroWorldDom() {
-
-            return Boolean(
-                introWorldLine1
-                || introWorldLine2
-                || introWorldLine3
-                || introWorldEmblem
-                || introWorldFinal
-            );
+            return;
 
         }
 
+    }
 
-        async function playIntroLine(
-            element,
-            duration
-        ) {
 
-            if (
-                !element
-            ) {
+    await playIntroTextFallback();
 
-                return;
-            }
 
+    showIntroFinal();
 
-            element.classList.remove(
-                "is-hidden"
-            );
+}
 
 
-            element.classList.add(
-                "is-visible"
-            );
+async function playIntroTextFallback() {
 
+    const lines = [
 
-            await wait(
-                duration
-            );
+        introWorldLine1,
 
+        introWorldLine2,
 
-            if (
-                introSkipRequested
-            ) {
+        introWorldLine3
 
-                return;
-            }
+    ].filter(
+        Boolean
+    );
 
 
-            element.classList.remove(
-                "is-visible"
-            );
+    for (
+        const line
+        of lines
+    ) {
 
+        line.classList.remove(
+            "is-hidden"
+        );
 
-            element.classList.add(
-                "is-hidden"
-            );
 
+        line.classList.add(
+            "is-visible"
+        );
 
-            await wait(
-                650
-            );
 
-        }
+        await delay(
+            1500
+        );
 
 
-        function showIntroFinal() {
+        line.classList.remove(
+            "is-visible"
+        );
 
-            [
 
-                introWorldLine1,
+        line.classList.add(
+            "is-hidden"
+        );
 
-                introWorldLine2,
 
-                introWorldLine3
+        await delay(
+            350
+        );
 
-            ]
-                .filter(
-                    Boolean
-                )
-                .forEach(
-                    function (
-                        element
-                    ) {
+    }
 
-                        element.classList.remove(
-                            "is-visible"
-                        );
+}
 
 
-                        element.classList.add(
-                            "is-hidden"
-                        );
+function showIntroFinal() {
 
-                    }
-                );
+    introFinished =
+        true;
 
 
-            if (
-                introWorldEmblem
-            ) {
+    introWorldEmblem
+        ?.classList.add(
+            "is-visible"
+        );
 
-                introWorldEmblem.classList.add(
-                    "is-visible"
-                );
 
-            }
+    introWorldFinal
+        ?.classList.add(
+            "is-visible"
+        );
 
 
-            if (
-                introWorldFinal
-            ) {
+    introWorldSkip
+        ?.classList.add(
+            "hidden"
+        );
 
-                introWorldFinal.classList.add(
-                    "is-visible"
-                );
+}
 
-            }
 
+function hideIntroFinal() {
 
-            if (
-                introStartButton
-            ) {
+    introWorldEmblem
+        ?.classList.remove(
+            "is-visible"
+        );
 
-                introStartButton.classList.add(
-                    "is-visible"
-                );
 
-            }
+    introWorldFinal
+        ?.classList.remove(
+            "is-visible"
+        );
 
+}
 
-            if (
-                introWorldSkip
-            ) {
 
-                introWorldSkip.style.display =
-                    "none";
 
-            }
+/* =========================================================
+   NAME
+   ========================================================= */
 
-        }
+function bindName() {
 
+    nameInput.addEventListener(
+        "input",
+        () => {
 
-
-        /* =====================================================
-           FORM STORAGE
-        ====================================================== */
-
-        function createEmptyForm() {
-
-            return {
-
-                name:
-                    "",
-
-
-                calendarType:
-                    "SOLAR",
-
-
-                gender:
-                    "",
-
-
-                lunarLeapMonth:
-                    false,
-
-
-                birthDate:
-                    "",
-
-
-                birthTime:
-                    null,
-
-
-                birthTimeUnknown:
-                    false
-
-            };
-
-        }
-
-
-        function loadForm() {
-
-            try {
-
-                const stored =
-                    sessionStorage.getItem(
-                        FORM_STORAGE_KEY
-                    );
-
-
-                if (
-                    !stored
-                ) {
-
-                    return createEmptyForm();
-
-                }
-
-
-                return Object.assign(
-                    createEmptyForm(),
-                    JSON.parse(
-                        stored
-                    )
-                );
-
-            } catch (
-                error
-            ) {
-
-                console.warn(
-                    "[SAJU] 저장된 입력정보 복원 실패",
-                    error
-                );
-
-
-                return createEmptyForm();
-
-            }
-
-        }
-
-
-        function saveForm() {
-
-            sessionStorage.setItem(
-                FORM_STORAGE_KEY,
-                JSON.stringify(
-                    sajuForm
-                )
-            );
-
-        }
-
-
-
-        /* =====================================================
-           NAVIGATION
-        ====================================================== */
-
-        function bindNavigation() {
-
-            document.addEventListener(
-                "click",
-                function (
-                    event
-                ) {
-
-                    const target =
-                        event.target.closest(
-                            "[data-go]"
-                        );
-
-
-                    if (
-                        !target
-                    ) {
-
-                        return;
-                    }
-
-
-                    if (
-                        analysisRunning
-                    ) {
-
-                        return;
-                    }
-
-
-                    event.preventDefault();
-
-
-                    const screenName =
-                        target.dataset.go;
-
-
-                    if (
-                        !screenExists(
-                            screenName
-                        )
-                    ) {
-
-                        console.warn(
-                            "[SAJU] 존재하지 않는 data-go 화면",
-                            screenName
-                        );
-
-
-                        return;
-                    }
-
-
-                    showScreen(
-                        screenName
-                    );
-
-                }
-            );
-
-
-            backButton.addEventListener(
-                "click",
-                function () {
-
-                    if (
-                        analysisRunning
-                    ) {
-
-                        return;
-                    }
-
-
-                    if (
-                        currentScreen
-                        === "result"
-                        && currentResult
-                        && currentStoryIndex > 0
-                    ) {
-
-                        goPreviousStory();
-
-                        return;
-                    }
-
-
-                    if (
-                        currentScreen
-                        === "intro"
-                    ) {
-
-                        window.location.href =
-                            "/";
-
-                        return;
-                    }
-
-
-                    const previousScreen =
-                        screenHistory.pop()
-                        || "intro";
-
-
-                    showScreen(
-                        previousScreen,
-                        false
-                    );
-
-                }
-            );
-
-
-            homeButton.addEventListener(
-                "click",
-                function () {
-
-                    if (
-                        analysisRunning
-                    ) {
-
-                        return;
-                    }
-
-
-                    window.location.href =
-                        "/";
-
-                }
-            );
-
-
-            resultHomeButton.addEventListener(
-                "click",
-                function () {
-
-                    window.location.href =
-                        "/";
-
-                }
-            );
-
-        }
-
-
-        function screenExists(
-            name
-        ) {
-
-            return screens.some(
-                function (
-                    screen
-                ) {
-
-                    return screen.dataset.screen
-                        === name;
-
-                }
-            );
-
-        }
-
-
-        function showScreen(
-            name,
-            addHistory
-        ) {
-
-            const shouldAddHistory =
-                addHistory !== false;
-
-
-            if (
-                !screenExists(
-                    name
-                )
-            ) {
-
-                console.warn(
-                    "[SAJU] 존재하지 않는 화면 요청:",
-                    name
-                );
-
-
-                return false;
-            }
-
-
-            if (
-                shouldAddHistory
-                && currentScreen !== name
-            ) {
-
-                screenHistory.push(
-                    currentScreen
-                );
-
-            }
-
-
-            screens.forEach(
-                function (
-                    screen
-                ) {
-
-                    screen.classList.toggle(
-                        "is-active",
-                        screen.dataset.screen
-                        === name
-                    );
-
-                }
-            );
-
-
-            currentScreen =
-                name;
-
-
-            updateHeader(
-                name
-            );
-
-
-            if (
-                name === "birth"
-            ) {
-
-                restoreBirth();
-
-
-                birthTouched =
-                    false;
-
-
-                validateBirth(
-                    false
-                );
-
-            }
-
-
-            if (
-                name === "review"
-            ) {
-
-                renderReview();
-
-            }
-
-
-            if (
-                name === "intro"
-                && introPlayed
-                && hasIntroWorldDom()
-            ) {
-
-                showIntroFinal();
-
-            }
-
-
-            if (
-                name === "result"
-                && currentResult
-            ) {
-
-                renderCurrentStory();
-
-            }
-
-
-            window.scrollTo({
-
-                top:
-                    0,
-
-                behavior:
-                    "auto"
-
-            });
-
-
-            return true;
-        }
-
-
-        function updateHeader(
-            name
-        ) {
-
-            const labels = {
-
-                intro:
-                    "천명 사주상담",
-
-
-                name:
-                    "기본정보 1 / 2",
-
-
-                birth:
-                    "기본정보 2 / 2",
-
-
-                review:
-                    "입력정보 확인",
-
-
-                complete:
-                    "분석 준비",
-
-
-                analysis:
-                    "명리 분석",
-
-
-                reveal:
-                    "천명 공개",
-
-
-                result:
-                    "천명록"
-
-            };
-
-
-            headerSubtitle.textContent =
-                labels[name]
-                || "천명 사주상담";
-
-        }
-
-
-
-        /* =====================================================
-           NAME
-        ====================================================== */
-
-        function bindName() {
-
-            nameInput.addEventListener(
-                "input",
-                validateName
-            );
-
-
-            nameForm.addEventListener(
-                "submit",
-                function (
-                    event
-                ) {
-
-                    event.preventDefault();
-
-
-                    if (
-                        !validateName()
-                    ) {
-
-                        return;
-                    }
-
-
-                    sajuForm.name =
-                        nameInput
-                            .value
-                            .trim();
-
-
-                    saveForm();
-
-
-                    showScreen(
-                        "birth"
-                    );
-
-                }
-            );
-
-        }
-
-
-        function restoreForm() {
-
-            if (
-                sajuForm.name
-            ) {
-
-                nameInput.value =
-                    sajuForm.name;
-
-            }
-
-
-            validateName();
-
-        }
-
-
-        function validateName() {
-
-            const value =
+            formState.name =
                 nameInput
                     .value
                     .trim();
 
 
-            let errorMessage =
-                "";
+            updateNameValidation();
+
+            saveForm();
+
+        }
+    );
+
+
+    nameForm.addEventListener(
+        "submit",
+        event => {
+
+            event.preventDefault();
 
 
             if (
-                value
-                && value.length < 2
+                !validateName()
             ) {
 
-                errorMessage =
-                    "이름은 두 글자 이상 입력해주세요.";
+                return;
 
             }
 
 
-            nameError.textContent =
-                errorMessage;
+            saveForm();
 
+            showScreen(
+                "birth"
+            );
 
-            nameNextButton.disabled =
-                !value
-                || Boolean(
-                    errorMessage
-                );
-
-
-            return Boolean(
-                value
-            )
-                && !errorMessage;
         }
+    );
+
+}
+
+
+function validateName() {
+
+    const name =
+        nameInput
+            .value
+            .trim();
+
+
+    if (
+        name.length
+        < 1
+    ) {
+
+        nameError.textContent =
+            "이름을 입력해주세요.";
+
+        return false;
+
+    }
+
+
+    nameError.textContent =
+        "";
+
+
+    return true;
+
+}
+
+
+function updateNameValidation() {
+
+    const valid =
+        nameInput
+            .value
+            .trim()
+            .length
+        > 0;
+
+
+    nameNextButton.disabled =
+        !valid;
+
+
+    if (
+        valid
+    ) {
+
+        nameError.textContent =
+            "";
+
+    }
+
+}
 
 
 
-        /* =====================================================
-           BIRTH
-        ====================================================== */
+/* =========================================================
+   BIRTH
+   ========================================================= */
 
-        function bindBirth() {
+function bindBirth() {
 
-            document
-                .querySelectorAll(
-                    ".numeric-input"
-                )
-                .forEach(
-                    function (
-                        input
-                    ) {
+    document
+        .querySelectorAll(
+            "[data-calendar]"
+        )
+        .forEach(
+            button => {
 
-                        input.addEventListener(
-                            "input",
-                            function () {
+                button.addEventListener(
+                    "click",
+                    () => {
 
-                                birthTouched =
-                                    true;
+                        formState.calendarType =
+                            button.dataset.calendar;
 
 
-                                input.value =
-                                    input.value.replace(
-                                        /[^0-9]/g,
-                                        ""
+                        document
+                            .querySelectorAll(
+                                "[data-calendar]"
+                            )
+                            .forEach(
+                                item => {
+
+                                    item.classList.toggle(
+                                        "is-active",
+                                        item === button
                                     );
-
-
-                                validateBirth(
-                                    true
-                                );
-
-                            }
-                        );
-
-                    }
-                );
-
-
-            document
-                .querySelectorAll(
-                    "[data-calendar]"
-                )
-                .forEach(
-                    function (
-                        button
-                    ) {
-
-                        button.addEventListener(
-                            "click",
-                            function () {
-
-                                birthTouched =
-                                    true;
-
-
-                                document
-                                    .querySelectorAll(
-                                        "[data-calendar]"
-                                    )
-                                    .forEach(
-                                        function (
-                                            item
-                                        ) {
-
-                                            item.classList.remove(
-                                                "is-active"
-                                            );
-
-                                        }
-                                    );
-
-
-                                button.classList.add(
-                                    "is-active"
-                                );
-
-
-                                sajuForm.calendarType =
-                                    button.dataset.calendar;
-
-
-                                lunarLeapArea.classList.toggle(
-                                    "hidden",
-                                    sajuForm.calendarType
-                                    !== "LUNAR"
-                                );
-
-
-                                if (
-                                    sajuForm.calendarType
-                                    !== "LUNAR"
-                                ) {
-
-                                    lunarLeapMonth.checked =
-                                        false;
 
                                 }
+                            );
 
 
-                                validateBirth(
-                                    true
-                                );
+                        updateCalendarUI();
 
-                            }
-                        );
+                        updateBirthValidation();
+
+                        saveForm();
 
                     }
                 );
 
-
-            document
-                .querySelectorAll(
-                    "[data-gender]"
-                )
-                .forEach(
-                    function (
-                        button
-                    ) {
-
-                        button.addEventListener(
-                            "click",
-                            function () {
-
-                                birthTouched =
-                                    true;
+            }
+        );
 
 
-                                document
-                                    .querySelectorAll(
-                                        "[data-gender]"
-                                    )
-                                    .forEach(
-                                        function (
-                                            item
-                                        ) {
+    document
+        .querySelectorAll(
+            "[data-gender]"
+        )
+        .forEach(
+            button => {
 
-                                            item.classList.remove(
-                                                "is-active"
-                                            );
+                button.addEventListener(
+                    "click",
+                    () => {
 
-                                        }
+                        formState.gender =
+                            button.dataset.gender;
+
+
+                        document
+                            .querySelectorAll(
+                                "[data-gender]"
+                            )
+                            .forEach(
+                                item => {
+
+                                    item.classList.toggle(
+                                        "is-active",
+                                        item === button
                                     );
 
-
-                                button.classList.add(
-                                    "is-active"
-                                );
-
-
-                                sajuForm.gender =
-                                    button.dataset.gender;
-
-
-                                validateBirth(
-                                    true
-                                );
-
-                            }
-                        );
-
-                    }
-                );
-
-
-            birthTimeUnknown.addEventListener(
-                "change",
-                function () {
-
-                    birthTouched =
-                        true;
-
-
-                    const unknown =
-                        birthTimeUnknown.checked;
-
-
-                    timeInputArea.classList.toggle(
-                        "is-disabled",
-                        unknown
-                    );
-
-
-                    birthHour.disabled =
-                        unknown;
-
-
-                    birthMinute.disabled =
-                        unknown;
-
-
-                    if (
-                        unknown
-                    ) {
-
-                        birthHour.value =
-                            "";
-
-
-                        birthMinute.value =
-                            "";
-
-                    }
-
-
-                    validateBirth(
-                        true
-                    );
-
-                }
-            );
-
-
-            birthForm.addEventListener(
-                "submit",
-                function (
-                    event
-                ) {
-
-                    event.preventDefault();
-
-
-                    birthTouched =
-                        true;
-
-
-                    if (
-                        !validateBirth(
-                            true
-                        )
-                    ) {
-
-                        return;
-                    }
-
-
-                    sajuForm.birthDate =
-                        birthYear.value
-                        + "-"
-                        + pad2(
-                            birthMonth.value
-                        )
-                        + "-"
-                        + pad2(
-                            birthDay.value
-                        );
-
-
-                    sajuForm.birthTimeUnknown =
-                        birthTimeUnknown.checked;
-
-
-                    sajuForm.birthTime =
-                        birthTimeUnknown.checked
-
-                            ? null
-
-                            : pad2(
-                                birthHour.value
-                            )
-                            + ":"
-                            + pad2(
-                                birthMinute.value
+                                }
                             );
 
 
-                    sajuForm.lunarLeapMonth =
-                        sajuForm.calendarType
-                        === "LUNAR"
-
-                        && lunarLeapMonth.checked;
-
-
-                    saveForm();
-
-
-                    showScreen(
-                        "review"
-                    );
-
-                }
-            );
-
-        }
-
-
-        function restoreBirth() {
-
-            document
-                .querySelectorAll(
-                    "[data-calendar]"
-                )
-                .forEach(
-                    function (
-                        button
-                    ) {
-
-                        button.classList.toggle(
-                            "is-active",
-                            button.dataset.calendar
-                            === sajuForm.calendarType
-                        );
+                        saveForm();
 
                     }
                 );
 
+            }
+        );
 
-            document
-                .querySelectorAll(
-                    "[data-gender]"
-                )
-                .forEach(
-                    function (
-                        button
-                    ) {
 
-                        button.classList.toggle(
-                            "is-active",
-                            button.dataset.gender
-                            === sajuForm.gender
-                        );
+    [
+        birthYear,
+        birthMonth,
+        birthDay,
+        birthHour,
+        birthMinute
+    ]
+        .forEach(
+            input => {
+
+                input.addEventListener(
+                    "input",
+                    () => {
+
+                        syncBirthFormState();
+
+                        updateBirthValidation();
+
+                        saveForm();
 
                     }
                 );
 
-
-            lunarLeapArea.classList.toggle(
-                "hidden",
-                sajuForm.calendarType
-                !== "LUNAR"
-            );
-
-
-            lunarLeapMonth.checked =
-                Boolean(
-                    sajuForm.lunarLeapMonth
-                );
-
-
-            if (
-                sajuForm.birthDate
-            ) {
-
-                const parts =
-                    sajuForm.birthDate.split(
-                        "-"
-                    );
-
-
-                birthYear.value =
-                    parts[0]
-                    || "";
-
-
-                birthMonth.value =
-                    parts[1]
-                    || "";
-
-
-                birthDay.value =
-                    parts[2]
-                    || "";
-
             }
+        );
 
 
-            birthTimeUnknown.checked =
-                Boolean(
-                    sajuForm.birthTimeUnknown
-                );
+    birthTimeUnknown.addEventListener(
+        "change",
+        () => {
 
-
-            timeInputArea.classList.toggle(
-                "is-disabled",
-                birthTimeUnknown.checked
-            );
-
-
-            birthHour.disabled =
+            formState.birthTimeUnknown =
                 birthTimeUnknown.checked;
 
 
-            birthMinute.disabled =
-                birthTimeUnknown.checked;
+            updateTimeUI();
 
+            updateBirthValidation();
 
-            if (
-                sajuForm.birthTime
-                && !sajuForm.birthTimeUnknown
-            ) {
-
-                const timeParts =
-                    sajuForm.birthTime.split(
-                        ":"
-                    );
-
-
-                birthHour.value =
-                    timeParts[0]
-                    || "";
-
-
-                birthMinute.value =
-                    timeParts[1]
-                    || "";
-
-            } else if (
-                sajuForm.birthTimeUnknown
-            ) {
-
-                birthHour.value =
-                    "";
-
-
-                birthMinute.value =
-                    "";
-
-            }
+            saveForm();
 
         }
+    );
 
 
-        function validateBirth(
-            showMessage
-        ) {
+    lunarLeapMonth.addEventListener(
+        "change",
+        () => {
 
-            const show =
-                showMessage !== false
-                && birthTouched;
-
-
-            if (
-                !sajuForm.gender
-            ) {
-
-                return birthInvalid(
-                    "성별을 선택해주세요.",
-                    show
-                );
-
-            }
+            formState.leapMonth =
+                lunarLeapMonth.checked;
 
 
-            if (
-                !birthYear.value
-                || !birthMonth.value
-                || !birthDay.value
-            ) {
+            saveForm();
 
-                return birthInvalid(
-                    "생년월일을 모두 입력해주세요.",
-                    show
-                );
-
-            }
-
-
-            if (
-                !validDate()
-            ) {
-
-                return birthInvalid(
-                    "올바른 생년월일을 입력해주세요.",
-                    show
-                );
-
-            }
-
-
-            if (
-                !birthTimeUnknown.checked
-                && (
-                    !birthHour.value
-                    || !birthMinute.value
-                )
-            ) {
-
-                return birthInvalid(
-                    "태어난 시간을 입력하거나 시간 모름을 선택해주세요.",
-                    show
-                );
-
-            }
-
-
-            if (
-                !birthTimeUnknown.checked
-                && !validTime()
-            ) {
-
-                return birthInvalid(
-                    "올바른 시간을 입력해주세요.",
-                    show
-                );
-
-            }
-
-
-            birthError.textContent =
-                "";
-
-
-            birthNextButton.disabled =
-                false;
-
-
-            return true;
         }
+    );
 
 
-        function birthInvalid(
-            message,
-            show
+    birthForm.addEventListener(
+        "submit",
+        event => {
+
+            event.preventDefault();
+
+
+            syncBirthFormState();
+
+
+            if (
+                !validateBirth()
+            ) {
+
+                return;
+
+            }
+
+
+            saveForm();
+
+            renderReview();
+
+            showScreen(
+                "review"
+            );
+
+        }
+    );
+
+}
+
+
+function syncBirthFormState() {
+
+    formState.birthYear =
+        birthYear.value.trim();
+
+
+    formState.birthMonth =
+        birthMonth.value.trim();
+
+
+    formState.birthDay =
+        birthDay.value.trim();
+
+
+    formState.birthHour =
+        birthHour.value.trim();
+
+
+    formState.birthMinute =
+        birthMinute.value.trim();
+
+
+    formState.birthTimeUnknown =
+        birthTimeUnknown.checked;
+
+
+    formState.leapMonth =
+        lunarLeapMonth.checked;
+
+}
+
+
+function validateBirth() {
+
+    syncBirthFormState();
+
+
+    const year =
+        Number(
+            formState.birthYear
+        );
+
+
+    const month =
+        Number(
+            formState.birthMonth
+        );
+
+
+    const day =
+        Number(
+            formState.birthDay
+        );
+
+
+    if (
+        !Number.isInteger(
+            year
+        )
+        ||
+        year < 1900
+        ||
+        year > 2100
+    ) {
+
+        birthError.textContent =
+            "출생 연도를 확인해주세요.";
+
+        return false;
+
+    }
+
+
+    if (
+        !Number.isInteger(
+            month
+        )
+        ||
+        month < 1
+        ||
+        month > 12
+    ) {
+
+        birthError.textContent =
+            "출생 월을 확인해주세요.";
+
+        return false;
+
+    }
+
+
+    if (
+        !Number.isInteger(
+            day
+        )
+        ||
+        day < 1
+        ||
+        day > 31
+    ) {
+
+        birthError.textContent =
+            "출생 일을 확인해주세요.";
+
+        return false;
+
+    }
+
+
+    if (
+        formState.calendarType
+        === "SOLAR"
+    ) {
+
+        const date =
+            new Date(
+                year,
+                month - 1,
+                day
+            );
+
+
+        if (
+            date.getFullYear()
+            !== year
+            ||
+            date.getMonth()
+            !== month - 1
+            ||
+            date.getDate()
+            !== day
         ) {
 
             birthError.textContent =
-                show
-                    ? message
-                    : "";
-
-
-            birthNextButton.disabled =
-                true;
-
+                "올바른 생년월일을 입력해주세요.";
 
             return false;
+
         }
 
-
-        function validDate() {
-
-            const year =
-                Number(
-                    birthYear.value
-                );
+    }
 
 
-            const month =
-                Number(
-                    birthMonth.value
-                );
+    if (
+        !formState.birthTimeUnknown
+    ) {
+
+        const hour =
+            Number(
+                formState.birthHour
+            );
 
 
-            const day =
-                Number(
-                    birthDay.value
-                );
+        const minute =
+            Number(
+                formState.birthMinute
+            );
 
 
-            const currentYear =
-                new Date()
-                    .getFullYear();
-
-
-            if (
-                !Number.isInteger(
-                    year
-                )
-                || !Number.isInteger(
-                    month
-                )
-                || !Number.isInteger(
-                    day
-                )
-            ) {
-
-                return false;
-            }
-
-
-            if (
-                year < 1900
-                || year > currentYear
-                || month < 1
-                || month > 12
-                || day < 1
-            ) {
-
-                return false;
-            }
-
-
-            if (
-                sajuForm.calendarType
-                === "LUNAR"
-            ) {
-
-                return day <= 30;
-
-            }
-
-
-            const date =
-                new Date(
-                    year,
-                    month - 1,
-                    day
-                );
-
-
-            return date.getFullYear()
-                    === year
-
-                && date.getMonth()
-                    === month - 1
-
-                && date.getDate()
-                    === day;
-        }
-
-
-        function validTime() {
-
-            const hour =
-                Number(
-                    birthHour.value
-                );
-
-
-            const minute =
-                Number(
-                    birthMinute.value
-                );
-
-
-            return Number.isInteger(
+        if (
+            !Number.isInteger(
                 hour
             )
+            ||
+            hour < 0
+            ||
+            hour > 23
+        ) {
 
-                && Number.isInteger(
-                    minute
-                )
+            birthError.textContent =
+                "태어난 시간을 확인해주세요.";
 
-                && hour >= 0
-
-                && hour <= 23
-
-                && minute >= 0
-
-                && minute <= 59;
-        }
-
-
-
-        /* =====================================================
-           REVIEW
-        ====================================================== */
-
-        function bindReview() {
-
-            reviewCompleteButton.addEventListener(
-                "click",
-                function () {
-
-                    saveForm();
-
-
-                    showScreen(
-                        "complete"
-                    );
-
-                }
-            );
+            return false;
 
         }
 
 
-        function renderReview() {
+        if (
+            !Number.isInteger(
+                minute
+            )
+            ||
+            minute < 0
+            ||
+            minute > 59
+        ) {
 
-            setText(
-                "reviewName",
-                sajuForm.name
-            );
+            birthError.textContent =
+                "태어난 분을 확인해주세요.";
 
-
-            setText(
-                "reviewGender",
-                sajuForm.gender
-                === "MALE"
-
-                    ? "남성"
-
-                    : "여성"
-            );
-
-
-            setText(
-                "reviewCalendar",
-                sajuForm.calendarType
-                === "SOLAR"
-
-                    ? "양력"
-
-                    : "음력"
-            );
-
-
-            setText(
-                "reviewLeap",
-                sajuForm.lunarLeapMonth
-
-                    ? "윤달"
-
-                    : "평달"
-            );
-
-
-            setText(
-                "reviewBirthDate",
-                sajuForm.birthDate
-            );
-
-
-            setText(
-                "reviewBirthTime",
-                sajuForm.birthTimeUnknown
-
-                    ? "시간 모름"
-
-                    : sajuForm.birthTime
-            );
-
-
-            const leapRow =
-                optional(
-                    "reviewLeapRow"
-                );
-
-
-            if (
-                leapRow
-            ) {
-
-                leapRow
-                    .classList
-                    .toggle(
-                        "hidden",
-                        sajuForm.calendarType
-                        !== "LUNAR"
-                    );
-
-            }
+            return false;
 
         }
 
+    }
 
 
-        /* =====================================================
-           ANALYSIS
-        ====================================================== */
+    birthError.textContent =
+        "";
 
-        function bindAnalysis() {
 
-            startAnalysisButton.addEventListener(
-                "click",
-                runAnalysis
+    return true;
+
+}
+
+
+function updateBirthValidation() {
+
+    syncBirthFormState();
+
+
+    const hasDate =
+        formState.birthYear
+        &&
+        formState.birthMonth
+        &&
+        formState.birthDay;
+
+
+    const hasTime =
+        formState.birthTimeUnknown
+        ||
+        (
+            formState.birthHour
+            !== ""
+            &&
+            formState.birthMinute
+            !== ""
+        );
+
+
+    birthNextButton.disabled =
+        !(
+            hasDate
+            &&
+            hasTime
+        );
+
+
+    if (
+        hasDate
+        &&
+        hasTime
+    ) {
+
+        birthError.textContent =
+            "";
+
+    }
+
+}
+
+
+function updateCalendarUI() {
+
+    const lunar =
+        formState.calendarType
+        === "LUNAR";
+
+
+    lunarLeapArea.classList.toggle(
+        "hidden",
+        !lunar
+    );
+
+
+    if (
+        !lunar
+    ) {
+
+        lunarLeapMonth.checked =
+            false;
+
+
+        formState.leapMonth =
+            false;
+
+    }
+
+}
+
+
+function updateTimeUI() {
+
+    const unknown =
+        birthTimeUnknown.checked;
+
+
+    timeInputArea.classList.toggle(
+        "is-disabled",
+        unknown
+    );
+
+
+    birthHour.disabled =
+        unknown;
+
+
+    birthMinute.disabled =
+        unknown;
+
+}
+
+
+
+/* =========================================================
+   REVIEW
+   ========================================================= */
+
+function bindReview() {
+
+    reviewCompleteButton.addEventListener(
+        "click",
+        () => {
+
+            saveForm();
+
+            showScreen(
+                "complete"
             );
 
         }
+    );
+
+}
 
 
-        async function runAnalysis() {
+function renderReview() {
 
-            if (
-                analysisRunning
-            ) {
-
-                return;
-            }
+    setText(
+        "reviewName",
+        formState.name
+    );
 
 
-            if (
-                !sajuForm.name
-                || !sajuForm.birthDate
-                || !sajuForm.gender
-            ) {
-
-                showToast(
-                    "입력정보를 다시 확인해주세요."
-                );
+    setText(
+        "reviewGender",
+        formState.gender
+        === "MALE"
+            ? "남성"
+            : "여성"
+    );
 
 
-                showScreen(
-                    "name",
-                    false
-                );
+    setText(
+        "reviewCalendar",
+        formState.calendarType
+        === "SOLAR"
+            ? "양력"
+            : "음력"
+    );
 
 
-                return;
-            }
+    const leapRow =
+        optional(
+            "reviewLeapRow"
+        );
 
 
-            analysisRunning =
+    if (
+        formState.calendarType
+        === "LUNAR"
+    ) {
+
+        leapRow
+            ?.classList.remove(
+                "hidden"
+            );
+
+
+        setText(
+            "reviewLeap",
+            formState.leapMonth
+                ? "윤달"
+                : "평달"
+        );
+
+    }
+    else {
+
+        leapRow
+            ?.classList.add(
+                "hidden"
+            );
+
+    }
+
+
+    setText(
+        "reviewBirthDate",
+        `${formState.birthYear}년 ${Number(formState.birthMonth)}월 ${Number(formState.birthDay)}일`
+    );
+
+
+    setText(
+        "reviewBirthTime",
+        formState.birthTimeUnknown
+            ? "태어난 시간 모름"
+            : `${pad2(formState.birthHour)}:${pad2(formState.birthMinute)}`
+    );
+
+}
+
+
+
+/* =========================================================
+   ANALYSIS
+   ========================================================= */
+
+function bindAnalysis() {
+
+    startAnalysisButton.addEventListener(
+        "click",
+        startAnalysis
+    );
+
+
+    skipFactsButton.addEventListener(
+        "click",
+        () => {
+
+            skipFactsRequested =
                 true;
 
 
-            factSkipRequested =
-                false;
-
-
-            revealSkipRequested =
-                false;
-
-
-            startAnalysisButton.disabled =
-                true;
-
-
-            try {
-
-                resetAnalysis();
-
-
-                showScreen(
-                    "analysis"
+            analysisFactOverlay
+                .classList.remove(
+                    "is-show"
                 );
-
-
-                startProgress();
-
-
-                if (
-                    analysisVideo1
-                ) {
-
-                    playVideoDetached(
-                        analysisVideo1,
-                        VIDEO_PATH.analysis1
-                    );
-
-                }
-
-
-                const request =
-                    createAnalysisRequest();
-
-
-                console.log(
-                    "[SAJU] POST /api/saju/calculate"
-                );
-
-
-                console.log(
-                    "[SAJU] request",
-                    request
-                );
-
-
-                const startedAt =
-                    Date.now();
-
-
-                const response =
-                    await fetch(
-                        API_URL,
-                        {
-
-                            method:
-                                "POST",
-
-
-                            headers: {
-
-                                "Content-Type":
-                                    "application/json"
-
-                            },
-
-
-                            body:
-                                JSON.stringify(
-                                    request
-                                )
-
-                        }
-                    );
-
-
-                const responseBody =
-                    await readResponseBody(
-                        response
-                    );
-
-
-                if (
-                    !response.ok
-                ) {
-
-                    throw new Error(
-                        resolveErrorMessage(
-                            responseBody,
-                            response.status
-                        )
-                    );
-
-                }
-
-
-                if (
-                    !responseBody
-                    || typeof responseBody
-                    !== "object"
-                ) {
-
-                    throw new Error(
-                        "서버 응답 형식이 올바르지 않습니다."
-                    );
-
-                }
-
-
-                const elapsed =
-                    Date.now()
-                    - startedAt;
-
-
-                if (
-                    elapsed
-                    < MINIMUM_ANALYSIS_TIME
-                ) {
-
-                    await wait(
-                        MINIMUM_ANALYSIS_TIME
-                        - elapsed
-                    );
-
-                }
-
-
-                stopProgress();
-
-
-                await finishProgress();
-
-
-                if (
-                    analysisVideo2
-                ) {
-
-                    stopVideo(
-                        analysisVideo1
-                    );
-
-
-                    await playVideo(
-                        analysisVideo2,
-                        VIDEO_PATH.analysis2
-                    );
-
-                }
-
-
-                const normalized =
-                    normalizeResult(
-                        responseBody
-                    );
-
-
-                sessionStorage.setItem(
-                    RESULT_STORAGE_KEY,
-                    JSON.stringify(
-                        normalized
-                    )
-                );
-
-
-                console.log(
-                    "[SAJU] calculate response",
-                    normalized
-                );
-
-
-                await revealCategoryFacts(
-                    normalized.consultations
-                );
-
-
-                renderResult(
-                    normalized
-                );
-
-
-                if (
-                    screenExists(
-                        "reveal"
-                    )
-                    && hasRevealDom()
-                ) {
-
-                    await playResultReveal(
-                        normalized
-                    );
-
-                }
-
-
-                showScreen(
-                    "result",
-                    false
-                );
-
-            } catch (
-                error
-            ) {
-
-                stopProgress();
-
-
-                stopVideo(
-                    analysisVideo1
-                );
-
-
-                stopVideo(
-                    analysisVideo2
-                );
-
-
-                console.error(
-                    "[SAJU] 분석 실패",
-                    error
-                );
-
-
-                showToast(
-                    error.message
-                    || "사주 분석 중 오류가 발생했습니다."
-                );
-
-
-                showScreen(
-                    "complete",
-                    false
-                );
-
-            } finally {
-
-                analysisRunning =
-                    false;
-
-
-                startAnalysisButton.disabled =
-                    false;
-
-            }
-
-        }
-
-
-
-        /* =====================================================
-           REQUEST
-        ====================================================== */
-
-        function createAnalysisRequest() {
-
-            return {
-
-                calendarType:
-                    sajuForm.calendarType,
-
-
-                birthDate:
-                    sajuForm.birthDate,
-
-
-                birthTime:
-                    sajuForm.birthTimeUnknown
-
-                        ? null
-
-                        : sajuForm.birthTime,
-
-
-                birthTimeUnknown:
-                    Boolean(
-                        sajuForm.birthTimeUnknown
-                    ),
-
-
-                gender:
-                    sajuForm.gender,
-
-
-                leapMonth:
-                    sajuForm.calendarType
-                    === "LUNAR"
-
-                    && Boolean(
-                        sajuForm.lunarLeapMonth
-                    ),
-
-
-                targetYear:
-                    new Date()
-                        .getFullYear(),
-
-
-                luckReferenceDate:
-                    localDateIso(
-                        new Date()
-                    ),
-
-
-                consultationCategories:
-                    CATEGORY_ORDER.slice(),
-
-
-                consultationQuestion:
-                    null
-
-            };
-
-        }
-
-
-
-        /* =====================================================
-           RESPONSE
-        ====================================================== */
-
-        async function readResponseBody(
-            response
-        ) {
-
-            const contentType =
-                response.headers.get(
-                    "content-type"
-                )
-                || "";
-
-
-            if (
-                contentType.includes(
-                    "application/json"
-                )
-                || contentType.includes(
-                    "application/problem+json"
-                )
-            ) {
-
-                return await response.json();
-
-            }
-
-
-            const text =
-                await response.text();
-
-
-            if (
-                !text
-            ) {
-
-                return null;
-            }
-
-
-            try {
-
-                return JSON.parse(
-                    text
-                );
-
-            } catch (
-                error
-            ) {
-
-                return {
-
-                    message:
-                        text
-
-                };
-
-            }
-
-        }
-
-
-        function resolveErrorMessage(
-            body,
-            status
-        ) {
-
-            if (
-                body
-                && typeof body === "object"
-            ) {
-
-                const candidate =
-                    firstNonEmpty(
-
-                        body.message,
-
-                        body.error,
-
-                        body.detail,
-
-                        body.title
-
-                    );
-
-
-                if (
-                    candidate
-                ) {
-
-                    return candidate;
-
-                }
-
-            }
-
-
-            return "사주 분석 요청에 실패했습니다. HTTP "
-                + status;
-        }
-
-
-
-        /* =====================================================
-           PROGRESS
-        ====================================================== */
-
-        function resetAnalysis() {
-
-            analysisProgress =
-                0;
-
-
-            updateProgress(
-                0
-            );
-
-
-            analysisFactOverlay.classList.remove(
-                "is-show"
-            );
-
-
-            factStatusRow.innerHTML =
-                "";
-
-
-            factBasis.innerHTML =
-                "";
-
-
-            analysisElements.forEach(
-                function (
-                    element
-                ) {
-
-                    element.classList.remove(
-                        "is-active"
-                    );
-
-                }
-            );
-
-        }
-
-
-        function startProgress() {
-
-            stopProgress();
-
-
-            progressTimer =
-                setInterval(
-                    function () {
-
-                        if (
-                            analysisProgress
-                            >= WAIT_PROGRESS_LIMIT
-                        ) {
-
-                            return;
-                        }
-
-
-                        if (
-                            analysisProgress < 20
-                        ) {
-
-                            analysisProgress +=
-                                2;
-
-                        } else if (
-                            analysisProgress < 60
-                        ) {
-
-                            analysisProgress +=
-                                1;
-
-                        } else {
-
-                            analysisProgress +=
-                                0.5;
-
-                        }
-
-
-                        analysisProgress =
-                            Math.min(
-                                WAIT_PROGRESS_LIMIT,
-                                analysisProgress
-                            );
-
-
-                        updateProgress(
-                            analysisProgress
-                        );
-
-                    },
-                    90
-                );
-
-        }
-
-
-        function stopProgress() {
-
-            if (
-                progressTimer !== null
-            ) {
-
-                clearInterval(
-                    progressTimer
-                );
-
-
-                progressTimer =
-                    null;
-
-            }
-
-        }
-
-
-        async function finishProgress() {
-
-            while (
-                analysisProgress < 100
-            ) {
-
-                analysisProgress =
-                    Math.min(
-                        100,
-                        analysisProgress + 2
-                    );
-
-
-                updateProgress(
-                    analysisProgress
-                );
-
-
-                await wait(
-                    32
-                );
-
-            }
-
-        }
-
-
-        function updateProgress(
-            rawValue
-        ) {
-
-            const value =
-                Math.round(
-                    rawValue
-                );
-
-
-            analysisProgressPercent.textContent =
-                value
-                + "%";
-
-
-            analysisProgressBar.style.width =
-                value
-                + "%";
-
-
-            let status =
-                "출생정보 확인";
-
-
-            let title =
-                "명식을 구성하고 있습니다";
-
-
-            let message =
-                "입력한 출생정보를 확인하고 있습니다.";
-
-
-            if (
-                value >= 20
-            ) {
-
-                status =
-                    "원국 분석";
-
-
-                title =
-                    "원국의 구조를 살펴봅니다";
-
-
-                message =
-                    "오행의 세력과 일간의 상태를 계산하고 있습니다.";
-
-            }
-
-
-            if (
-                value >= 42
-            ) {
-
-                status =
-                    "용신·관계 분석";
-
-
-                title =
-                    "원국 내부의 관계를 교차 확인합니다";
-
-
-                message =
-                    "용신, 십신, 궁위와 관계 근거를 확인하고 있습니다.";
-
-            }
-
-
-            if (
-                value >= 65
-            ) {
-
-                status =
-                    "대운·세운 분석";
-
-
-                title =
-                    "현재 운의 흐름을 연결합니다";
-
-
-                message =
-                    "원국과 대운·세운의 관계를 분석하고 있습니다.";
-
-            }
-
-
-            if (
-                value >= 82
-            ) {
-
-                status =
-                    "상담 근거 구성";
-
-
-                title =
-                    "11개 분야의 근거를 정리합니다";
-
-
-                message =
-                    "계산된 근거를 상담 분야별로 정리하고 있습니다.";
-
-            }
-
-
-            if (
-                value >= 97
-            ) {
-
-                status =
-                    "분석 완료";
-
-
-                title =
-                    "계산 결과를 정리했습니다";
-
-
-                message =
-                    "분야별 계산 근거를 확인합니다.";
-
-            }
-
-
-            analysisStatus.textContent =
-                status;
-
-
-            analysisTitle.textContent =
-                title;
-
-
-            analysisMessage.textContent =
-                message;
-
-
-            const activeElementCount =
-                Math.min(
-                    5,
-                    Math.max(
-                        0,
-                        Math.ceil(
-                            value / 17
-                        )
-                    )
-                );
-
-
-            analysisElements.forEach(
-                function (
-                    element,
-                    index
-                ) {
-
-                    element.classList.toggle(
-                        "is-active",
-                        index < activeElementCount
-                    );
-
-                }
-            );
-
-        }
-
-
-
-        /* =====================================================
-           NORMALIZE RESULT
-        ====================================================== */
-
-        function normalizeResult(
-            result
-        ) {
-
-            const rawConsultations =
-                Array.isArray(
-                    result.consultations
-                )
-
-                    ? result.consultations
-
-                    : [];
-
-
-            const sectionMap =
-                new Map();
-
-
-            rawConsultations.forEach(
-                function (
-                    source
-                ) {
-
-                    if (
-                        source
-                        && source.category
-                    ) {
-
-                        sectionMap.set(
-                            String(
-                                source.category
-                            ),
-                            source
-                        );
-
-                    }
-
-                }
-            );
-
-
-            const normalizedConsultations =
-                CATEGORY_ORDER.map(
-                    function (
-                        category
-                    ) {
-
-                        return normalizeSection(
-                            category,
-                            sectionMap.get(
-                                category
-                            )
-                        );
-
-                    }
-                );
-
-
-            return {
-
-                ...result,
-
-                consultations:
-                    normalizedConsultations
-
-            };
-
-        }
-
-
-        function normalizeSection(
-            category,
-            source
-        ) {
-
-            const meta =
-                CATEGORY_META[
-                    category
-                ];
-
-
-            if (
-                !source
-            ) {
-
-                return createUnavailableSection(
-                    category,
-                    meta
-                );
-
-            }
-
-
-            const basisLabels =
-                Array.isArray(
-                    source.basisLabels
-                )
-
-                    ? source.basisLabels
-                        .filter(
-                            function (
-                                value
-                            ) {
-
-                                return value !== null
-
-                                    && value !== undefined
-
-                                    && String(
-                                        value
-                                    )
-                                        .trim()
-                                        .length > 0;
-
-                            }
-                        )
-                        .map(
-                            function (
-                                value
-                            ) {
-
-                                return String(
-                                    value
-                                )
-                                    .trim();
-
-                            }
-                        )
-
-                    : [];
-
-
-            const storyText =
-                firstNonEmpty(
-
-                    source.storyText,
-
-                    source.narrationText,
-
-                    joinUnique(
-
-                        source.openingMessage,
-
-                        source.summaryMessage,
-
-                        source.guidanceMessage
-
-                    )
-
-                );
-
-
-            const available =
-                resolveSectionAvailable(
-                    source,
-                    storyText
-                );
-
-
-            if (
-                storyText
-                && available
-            ) {
-
-                const length =
-                    storyText.length;
-
-
-                if (
-                    length < 1600
-                    || length > 2400
-                ) {
-
-                    console.warn(
-                        "[SAJU] "
-                        + category
-                        + " storyText 분량 "
-                        + length
-                        + "자"
-                    );
-
-                }
-
-            }
-
-
-            return {
-
-                category:
-                    category,
-
-
-                meta:
-                    meta,
-
-
-                available:
-                    available,
-
-
-                summary:
-                    firstNonEmpty(
-
-                        source.summaryMessage,
-
-                        source.openingMessage,
-
-                        meta.label
-
-                    ),
-
-
-                storyText:
-                    storyText,
-
-
-                polarity:
-                    safeText(
-                        source.polarity
-                    ),
-
-
-                intensity:
-                    safeText(
-                        source.intensity
-                    ),
-
-
-                confidence:
-                    safeText(
-                        source.confidence
-                    ),
-
-
-                evidenceCount:
-                    normalizeEvidenceCount(
-                        source.evidenceCount,
-                        basisLabels.length
-                    ),
-
-
-                basisLabels:
-                    basisLabels
-
-            };
-
-        }
-
-
-        function createUnavailableSection(
-            category,
-            meta
-        ) {
-
-            return {
-
-                category:
-                    category,
-
-
-                meta:
-                    meta,
-
-
-                available:
-                    false,
-
-
-                summary:
-                    "",
-
-
-                storyText:
-                    "",
-
-
-                polarity:
-                    "",
-
-
-                intensity:
-                    "",
-
-
-                confidence:
-                    "",
-
-
-                evidenceCount:
-                    0,
-
-
-                basisLabels:
-                    []
-
-            };
-
-        }
-
-
-        function resolveSectionAvailable(
-            source,
-            storyText
-        ) {
-
-            if (
-                typeof source.available
-                === "boolean"
-            ) {
-
-                return source.available;
-            }
-
-
-            const normalized =
-                safeText(
-                    storyText
-                );
-
-
-            if (
-                normalized.includes(
-                    "현재 계산 근거만으로는 이 분야의 독립적인 해석을 확정하지 않습니다."
-                )
-            ) {
-
-                return false;
-            }
-
-
-            if (
-                normalized.includes(
-                    "근거가 없는 내용을 추정해서 채우지 않았습니다."
-                )
-            ) {
-
-                return false;
-            }
-
-
-            return true;
-        }
-
-
-        function normalizeEvidenceCount(
-            sourceCount,
-            fallback
-        ) {
-
-            const count =
-                Number(
-                    sourceCount
-                );
-
-
-            if (
-                Number.isFinite(
-                    count
-                )
-                && count >= 0
-            ) {
-
-                return Math.floor(
-                    count
-                );
-
-            }
-
-
-            return fallback;
-        }
-
-
-
-        /* =====================================================
-           FACT
-        ====================================================== */
-
-        function bindFacts() {
-
-            skipFactsButton.addEventListener(
-                "click",
-                function () {
-
-                    factSkipRequested =
-                        true;
-
-
-                    stopVideo(
-                        factMotionVideo
-                    );
-
-                }
-            );
-
-        }
-
-
-        async function revealCategoryFacts(
-            consultations
-        ) {
-
-            analysisFactOverlay.classList.add(
-                "is-show"
-            );
-
-
-            for (
-                let index = 0;
-                index < consultations.length;
-                index += 1
-            ) {
-
-                if (
-                    factSkipRequested
-                ) {
-
-                    break;
-                }
-
-
-                const section =
-                    consultations[
-                        index
-                    ];
-
-
-                renderFact(
-                    section,
-                    index
-                );
-
-
-                playFactMotionVideo(
-                    section
-                );
-
-
-                await waitForFactDuration();
-
-            }
 
 
             stopVideo(
                 factMotionVideo
             );
 
+        }
+    );
 
-            analysisFactOverlay.classList.remove(
+
+    revealSkipButton
+        ?.addEventListener(
+            "click",
+            showResult
+        );
+
+}
+
+
+async function startAnalysis() {
+
+    if (
+        analysisRunning
+    ) {
+
+        return;
+
+    }
+
+
+    analysisRunning =
+        true;
+
+
+    skipFactsRequested =
+        false;
+
+
+    showScreen(
+        "analysis"
+    );
+
+
+    resetAnalysisUI();
+
+
+    const startedAt =
+        Date.now();
+
+
+    const progressController =
+        startProgressAnimation();
+
+
+    try {
+
+        if (
+            analysisVideo1
+        ) {
+
+            analysisVideo1
+                .classList.remove(
+                    "hidden"
+                );
+
+
+            analysisVideo2
+                ?.classList.add(
+                    "hidden"
+                );
+
+
+            await playVideo(
+                analysisVideo1,
+                VIDEO_PATH.analysis1,
+                false
+            );
+
+        }
+
+
+        analysisStatus.textContent =
+            "사주 분석 중";
+
+
+        analysisTitle.textContent =
+            "당신의 천명록을 만들고 있습니다";
+
+
+        analysisMessage.textContent =
+            "타고난 명과 현재의 흐름을 분야별로 풀어가고 있습니다.";
+
+
+        const response =
+            await fetch(
+                API_URL,
+                {
+
+                    method:
+                        "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify(
+                            createAnalysisRequest()
+                        )
+
+                }
+            );
+
+
+        if (
+            !response.ok
+        ) {
+
+            const message =
+                await safeErrorBody(
+                    response
+                );
+
+
+            throw new Error(
+                `사주 분석 요청 실패 (${response.status}) ${message}`
+            );
+
+        }
+
+
+        const rawResult =
+            await response.json();
+
+
+        currentResult =
+            normalizeResult(
+                rawResult
+            );
+
+
+        sessionStorage.setItem(
+            RESULT_STORAGE_KEY,
+            JSON.stringify(
+                currentResult
+            )
+        );
+
+
+        const elapsed =
+            Date.now()
+            -
+            startedAt;
+
+
+        if (
+            elapsed
+            < MINIMUM_ANALYSIS_TIME
+        ) {
+
+            await delay(
+                MINIMUM_ANALYSIS_TIME
+                -
+                elapsed
+            );
+
+        }
+
+
+        if (
+            analysisVideo2
+        ) {
+
+            analysisVideo1
+                ?.classList.add(
+                    "hidden"
+                );
+
+
+            analysisVideo2
+                .classList.remove(
+                    "hidden"
+                );
+
+
+            await playVideo(
+                analysisVideo2,
+                VIDEO_PATH.analysis2,
+                false
+            );
+
+        }
+
+
+        finishProgress(
+            progressController
+        );
+
+
+        await showCategoryFlow(
+            currentResult.consultations
+        );
+
+
+        await playReveal();
+
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            error
+        );
+
+
+        finishProgress(
+            progressController
+        );
+
+
+        showToast(
+            error.message
+            || "사주 분석 중 오류가 발생했습니다."
+        );
+
+
+        showScreen(
+            "complete"
+        );
+
+    } finally {
+
+        analysisRunning =
+            false;
+
+    }
+
+}
+
+
+function createAnalysisRequest() {
+
+    const now =
+        new Date();
+
+
+    const targetYear =
+        now.getFullYear();
+
+
+    const luckReferenceDate =
+        [
+            now.getFullYear(),
+            pad2(
+                now.getMonth()
+                +
+                1
+            ),
+            pad2(
+                now.getDate()
+            )
+        ].join(
+            "-"
+        );
+
+
+    const birthDate =
+        [
+            formState.birthYear,
+            pad2(
+                formState.birthMonth
+            ),
+            pad2(
+                formState.birthDay
+            )
+        ].join(
+            "-"
+        );
+
+
+    const birthTime =
+        formState.birthTimeUnknown
+            ? null
+            : `${pad2(formState.birthHour)}:${pad2(formState.birthMinute)}`;
+
+
+    return {
+
+        calendarType:
+            formState.calendarType,
+
+        birthDate:
+            birthDate,
+
+        birthTime:
+            birthTime,
+
+        birthTimeUnknown:
+            formState.birthTimeUnknown,
+
+        gender:
+            formState.gender,
+
+        leapMonth:
+            formState.calendarType
+            === "LUNAR"
+                ? formState.leapMonth
+                : false,
+
+        targetYear:
+            targetYear,
+
+        luckReferenceDate:
+            luckReferenceDate,
+
+        consultationCategories:
+            CATEGORY_ORDER,
+
+        consultationQuestion:
+            null
+
+    };
+
+}
+
+
+function resetAnalysisUI() {
+
+    analysisStatus.textContent =
+        "천명 분석 중";
+
+
+    analysisTitle.textContent =
+        "사주팔자를 계산하고 있습니다";
+
+
+    analysisMessage.textContent =
+        "타고난 명과 흐르는 운을 하나씩 풀어가고 있습니다.";
+
+
+    analysisProgressPercent.textContent =
+        "0%";
+
+
+    analysisProgressBar.style.width =
+        "0%";
+
+
+    analysisElements.forEach(
+        element => {
+
+            element.classList.remove(
+                "hidden"
+            );
+
+        }
+    );
+
+
+    analysisFactOverlay.classList.remove(
+        "is-show"
+    );
+
+
+    document
+        .querySelectorAll(
+            ".element-grid span"
+        )
+        .forEach(
+            element => {
+
+                element.classList.remove(
+                    "is-active"
+                );
+
+            }
+        );
+
+}
+
+
+function startProgressAnimation() {
+
+    let progress =
+        0;
+
+
+    const fiveElements =
+        Array.from(
+            document.querySelectorAll(
+                ".element-grid span"
+            )
+        );
+
+
+    const interval =
+        window.setInterval(
+            () => {
+
+                if (
+                    progress
+                    >= WAIT_PROGRESS_LIMIT
+                ) {
+
+                    return;
+
+                }
+
+
+                progress +=
+                    progress < 60
+                        ? 1.4
+                        : 0.35;
+
+
+                progress =
+                    Math.min(
+                        progress,
+                        WAIT_PROGRESS_LIMIT
+                    );
+
+
+                setAnalysisProgress(
+                    progress
+                );
+
+
+                if (
+                    fiveElements.length
+                    > 0
+                ) {
+
+                    const activeCount =
+                        Math.min(
+                            fiveElements.length,
+                            Math.ceil(
+                                (
+                                    progress
+                                    /
+                                    WAIT_PROGRESS_LIMIT
+                                )
+                                *
+                                fiveElements.length
+                            )
+                        );
+
+
+                    fiveElements.forEach(
+                        (
+                            element,
+                            index
+                        ) => {
+
+                            element.classList.toggle(
+                                "is-active",
+                                index
+                                < activeCount
+                            );
+
+                        }
+                    );
+
+                }
+
+            },
+            80
+        );
+
+
+    return {
+
+        interval
+
+    };
+
+}
+
+
+function finishProgress(
+    controller
+) {
+
+    if (
+        controller
+        ?.interval
+    ) {
+
+        clearInterval(
+            controller.interval
+        );
+
+    }
+
+
+    setAnalysisProgress(
+        100
+    );
+
+}
+
+
+function setAnalysisProgress(
+    value
+) {
+
+    const normalized =
+        Math.max(
+            0,
+            Math.min(
+                100,
+                Math.round(
+                    value
+                )
+            )
+        );
+
+
+    analysisProgressPercent.textContent =
+        `${normalized}%`;
+
+
+    analysisProgressBar.style.width =
+        `${normalized}%`;
+
+}
+
+
+
+/* =========================================================
+   CATEGORY FLOW
+   ========================================================= */
+
+async function showCategoryFlow(
+    consultations
+) {
+
+    if (
+        !Array.isArray(
+            consultations
+        )
+        ||
+        consultations.length
+        === 0
+    ) {
+
+        return;
+
+    }
+
+
+    skipFactsRequested =
+        false;
+
+
+    for (
+        let index = 0;
+        index < consultations.length;
+        index++
+    ) {
+
+        if (
+            skipFactsRequested
+        ) {
+
+            break;
+
+        }
+
+
+        const consultation =
+            consultations[index];
+
+
+        renderCategoryFlow(
+            consultation,
+            index,
+            consultations.length
+        );
+
+
+        analysisFactOverlay
+            .classList.add(
                 "is-show"
             );
 
-        }
+
+        await delay(
+            FACT_DISPLAY_TIME
+        );
+
+    }
 
 
-        function playFactMotionVideo(
-            section
+    analysisFactOverlay
+        .classList.remove(
+            "is-show"
+        );
+
+
+    stopVideo(
+        factMotionVideo
+    );
+
+}
+
+
+function renderCategoryFlow(
+    consultation,
+    index,
+    total
+) {
+
+    const category =
+        consultation.category;
+
+
+    const meta =
+        CATEGORY_META[category]
+        ||
+        {
+
+            number:
+                index + 1,
+
+            chapter:
+                `제${index + 1}장`,
+
+            label:
+                category,
+
+            analyzing:
+                "당신의 흐름을 살펴보고 있습니다."
+
+        };
+
+
+    factCategoryIndex.textContent =
+        `${pad2(index + 1)} / ${pad2(total)}`;
+
+
+    factCategoryKicker.textContent =
+        meta.chapter;
+
+
+    factCategoryTitle.textContent =
+        meta.label;
+
+
+    factCategoryMessage.textContent =
+        meta.analyzing;
+
+
+    playCategoryMotion(
+        category
+    );
+
+}
+
+
+function playCategoryMotion(
+    category
+) {
+
+    if (
+        !factMotionVideo
+    ) {
+
+        return;
+
+    }
+
+
+    let path =
+        null;
+
+
+    switch (
+        category
+    ) {
+
+        case "SOCIAL_RELATIONSHIP":
+
+            path =
+                VIDEO_PATH.network;
+
+            break;
+
+
+        case "LOVE_STYLE":
+
+        case "PARTNER_LUCK":
+
+            path =
+                VIDEO_PATH.love;
+
+            break;
+
+
+        case "WEALTH":
+
+        case "CAREER":
+
+            path =
+                VIDEO_PATH.wealth;
+
+            break;
+
+
+        default:
+
+            path =
+                null;
+
+    }
+
+
+    if (
+        !path
+    ) {
+
+        stopVideo(
+            factMotionVideo
+        );
+
+
+        factMotionVideo
+            .removeAttribute(
+                "src"
+            );
+
+
+        return;
+
+    }
+
+
+    factMotionVideo.src =
+        path;
+
+
+    factMotionVideo.load();
+
+
+    factMotionVideo
+        .play()
+        .catch(
+            () => {
+
+            }
+        );
+
+}
+
+
+
+/* =========================================================
+   REVEAL
+   ========================================================= */
+
+async function playReveal() {
+
+    showScreen(
+        "reveal"
+    );
+
+
+    renderRevealPillars();
+
+
+    revealOpening
+        ?.classList.remove(
+            "is-visible",
+            "is-hidden"
+        );
+
+
+    revealPillarGrid
+        ?.classList.remove(
+            "is-visible"
+        );
+
+
+    revealFinal
+        ?.classList.remove(
+            "is-visible"
+        );
+
+
+    revealOpening
+        ?.classList.add(
+            "is-visible"
+        );
+
+
+    await delay(
+        1300
+    );
+
+
+    revealOpening
+        ?.classList.add(
+            "is-hidden"
+        );
+
+
+    await delay(
+        450
+    );
+
+
+    revealPillarGrid
+        ?.classList.add(
+            "is-visible"
+        );
+
+
+    const pillars =
+        Array.from(
+            document.querySelectorAll(
+                "[data-reveal-pillar]"
+            )
+        );
+
+
+    for (
+        const pillar
+        of pillars
+    ) {
+
+        pillar.classList.add(
+            "is-visible"
+        );
+
+
+        await delay(
+            260
+        );
+
+    }
+
+
+    await delay(
+        1500
+    );
+
+
+    revealPillarGrid
+        ?.classList.remove(
+            "is-visible"
+        );
+
+
+    await delay(
+        300
+    );
+
+
+    revealFinal
+        ?.classList.add(
+            "is-visible"
+        );
+
+
+    await delay(
+        1600
+    );
+
+
+    showResult();
+
+}
+
+
+function renderRevealPillars() {
+
+    const pillars =
+        extractPillars(
+            currentResult
+        );
+
+
+    setPillarText(
+        "revealYearChinese",
+        "revealYearKorean",
+        pillars[0]
+    );
+
+
+    setPillarText(
+        "revealMonthChinese",
+        "revealMonthKorean",
+        pillars[1]
+    );
+
+
+    setPillarText(
+        "revealDayChinese",
+        "revealDayKorean",
+        pillars[2]
+    );
+
+
+    setPillarText(
+        "revealHourChinese",
+        "revealHourKorean",
+        pillars[3]
+    );
+
+}
+
+
+function setPillarText(
+    chineseId,
+    koreanId,
+    pillar
+) {
+
+    setText(
+        chineseId,
+        pillar?.chinese
+        || "-"
+    );
+
+
+    setText(
+        koreanId,
+        pillar?.korean
+        || "-"
+    );
+
+}
+
+
+
+/* =========================================================
+   RESULT
+   ========================================================= */
+
+function showResult() {
+
+    if (
+        !currentResult
+    ) {
+
+        const stored =
+            sessionStorage.getItem(
+                RESULT_STORAGE_KEY
+            );
+
+
+        if (
+            stored
         ) {
 
-            if (
-                !factMotionVideo
-                || !section
-            ) {
+            try {
 
-                return;
-            }
-
-
-            let source =
-                "";
-
-
-            if (
-                section.category
-                === "SOCIAL_RELATIONSHIP"
-            ) {
-
-                source =
-                    VIDEO_PATH.network;
-
-            } else if (
-                section.category
-                === "LOVE_STYLE"
-            ) {
-
-                source =
-                    VIDEO_PATH.love;
-
-            } else if (
-                section.category
-                === "WEALTH"
-            ) {
-
-                source =
-                    VIDEO_PATH.wealth;
-
-            }
-
-
-            if (
-                !source
-            ) {
-
-                stopVideo(
-                    factMotionVideo
-                );
-
-
-                factMotionVideo.removeAttribute(
-                    "src"
-                );
-
-
-                return;
-            }
-
-
-            playVideoDetached(
-                factMotionVideo,
-                source
-            );
-
-        }
-
-
-        async function waitForFactDuration() {
-
-            const interval =
-                50;
-
-
-            let elapsed =
-                0;
-
-
-            while (
-                elapsed
-                < FACT_DISPLAY_TIME
-            ) {
-
-                if (
-                    factSkipRequested
-                ) {
-
-                    return;
-                }
-
-
-                await wait(
-                    interval
-                );
-
-
-                elapsed +=
-                    interval;
-
-            }
-
-        }
-
-
-        function renderFact(
-            section,
-            index
-        ) {
-
-            factCategoryIndex.textContent =
-                String(
-                    index + 1
-                )
-                    .padStart(
-                        2,
-                        "0"
-                    )
-
-                + " / "
-
-                + String(
-                    CATEGORY_ORDER.length
-                )
-                    .padStart(
-                        2,
-                        "0"
+                currentResult =
+                    JSON.parse(
+                        stored
                     );
 
-
-            factCategoryKicker.textContent =
-                section.available
-
-                    ? "DETERMINISTIC FACT"
-
-                    : "GROUNDING LIMITED";
-
-
-            factCategoryTitle.textContent =
-                section.meta.label;
-
-
-            const statusValues =
-                [];
-
-
-            if (
-                section.polarity
+            } catch (
+                ignored
             ) {
 
-                statusValues.push(
-                    labelPolarity(
-                        section.polarity
-                    )
-                );
+                currentResult =
+                    null;
 
             }
-
-
-            if (
-                section.intensity
-            ) {
-
-                statusValues.push(
-                    labelIntensity(
-                        section.intensity
-                    )
-                );
-
-            }
-
-
-            if (
-                section.confidence
-            ) {
-
-                statusValues.push(
-                    labelConfidence(
-                        section.confidence
-                    )
-                );
-
-            }
-
-
-            statusValues.push(
-                "근거 "
-                + section.evidenceCount
-                + "개"
-            );
-
-
-            factStatusRow.innerHTML =
-                statusValues
-                    .map(
-                        function (
-                            value
-                        ) {
-
-                            return "<span>"
-                                + escapeHtml(
-                                    value
-                                )
-                                + "</span>";
-
-                        }
-                    )
-                    .join(
-                        ""
-                    );
-
-
-            if (
-                section.basisLabels.length
-                === 0
-            ) {
-
-                factBasis.innerHTML =
-                    "<span>제공된 계산 근거 없음</span>";
-
-
-                return;
-            }
-
-
-            factBasis.innerHTML =
-                section.basisLabels
-                    .slice(
-                        0,
-                        12
-                    )
-                    .map(
-                        function (
-                            value
-                        ) {
-
-                            return "<span>"
-                                + escapeHtml(
-                                    value
-                                )
-                                + "</span>";
-
-                        }
-                    )
-                    .join(
-                        ""
-                    );
 
         }
 
+    }
 
 
-        /* =====================================================
-           RESULT REVEAL
-        ====================================================== */
+    if (
+        !currentResult
+    ) {
 
-        function bindReveal() {
+        showToast(
+            "분석 결과를 찾을 수 없습니다."
+        );
 
-            if (
-                !revealSkipButton
-            ) {
 
-                return;
-            }
+        showScreen(
+            "complete"
+        );
 
 
-            revealSkipButton.addEventListener(
-                "click",
-                function () {
+        return;
 
-                    revealSkipRequested =
-                        true;
+    }
 
-                }
-            );
 
-        }
+    currentStoryIndex =
+        0;
 
 
-        function hasRevealDom() {
+    renderResultHeader();
 
-            return Boolean(
+    renderResultPillars();
 
-                revealOpening
+    renderCurrentStory();
 
-                && revealPillarGrid
 
-                && revealFinal
+    showScreen(
+        "result"
+    );
 
-            );
+}
 
-        }
 
+function renderResultHeader() {
 
-        async function playResultReveal(
-            result
-        ) {
+    resultTitle.textContent =
+        formState.name
+            ? `${formState.name}님의 천명록`
+            : "천명록";
 
-            if (
-                !screenExists(
-                    "reveal"
-                )
-                || !hasRevealDom()
-            ) {
 
-                return;
-            }
+    resultSummary.textContent =
+        "타고난 명과 흐르는 운을 열한 장의 기록으로 정리했습니다.";
 
+}
 
-            revealSkipRequested =
-                false;
 
+function renderResultPillars() {
 
-            resetReveal();
+    const pillars =
+        extractPillars(
+            currentResult
+        );
 
 
-            fillRevealPillars(
-                result
-            );
+    const labels = [
 
+        "年柱",
 
-            showScreen(
-                "reveal",
-                false
-            );
+        "月柱",
 
+        "日柱",
 
-            await wait(
-                500
-            );
+        "時柱"
 
+    ];
 
-            if (
-                revealSkipRequested
-            ) {
 
-                return;
-            }
+    const koreanLabels = [
 
+        "년주",
 
-            revealOpening.classList.add(
-                "is-visible"
-            );
+        "월주",
 
+        "일주",
 
-            await waitCancelable(
-                2200,
-                function () {
+        "시주"
 
-                    return revealSkipRequested;
+    ];
 
-                }
-            );
 
+    resultPillars.innerHTML =
+        "";
 
-            if (
-                revealSkipRequested
-            ) {
 
-                return;
-            }
-
-
-            revealOpening.classList.remove(
-                "is-visible"
-            );
-
-
-            revealOpening.classList.add(
-                "is-hidden"
-            );
-
-
-            await wait(
-                650
-            );
-
-
-            if (
-                revealSkipRequested
-            ) {
-
-                return;
-            }
-
-
-            revealPillarGrid.classList.add(
-                "is-visible"
-            );
-
-
-            const revealOrder = [
-
-                "year",
-
-                "month",
-
-                "day",
-
-                "hour"
-
-            ];
-
-
-            for (
-                const pillarName
-                of revealOrder
-            ) {
-
-                if (
-                    revealSkipRequested
-                ) {
-
-                    return;
-                }
-
-
-                const pillar =
-                    document.querySelector(
-                        "[data-reveal-pillar=\""
-                        + pillarName
-                        + "\"]"
-                    );
-
-
-                if (
-                    pillar
-                ) {
-
-                    pillar.classList.add(
-                        "is-visible"
-                    );
-
-                }
-
-
-                await waitCancelable(
-                    720,
-                    function () {
-
-                        return revealSkipRequested;
-
-                    }
-                );
-
-            }
-
-
-            if (
-                revealSkipRequested
-            ) {
-
-                return;
-            }
-
-
-            await wait(
-                1050
-            );
-
-
-            if (
-                revealSkipRequested
-            ) {
-
-                return;
-            }
-
-
-            revealPillarGrid.classList.remove(
-                "is-visible"
-            );
-
-
-            document
-                .querySelectorAll(
-                    "[data-reveal-pillar]"
-                )
-                .forEach(
-                    function (
-                        element
-                    ) {
-
-                        element.classList.remove(
-                            "is-visible"
-                        );
-
-                    }
-                );
-
-
-            await wait(
-                500
-            );
-
-
-            if (
-                revealSkipRequested
-            ) {
-
-                return;
-            }
-
-
-            revealFinal.classList.add(
-                "is-visible"
-            );
-
-
-            await waitCancelable(
-                2200,
-                function () {
-
-                    return revealSkipRequested;
-
-                }
-            );
-
-        }
-
-
-        function resetReveal() {
-
-            if (
-                revealOpening
-            ) {
-
-                revealOpening.classList.remove(
-                    "is-visible",
-                    "is-hidden"
-                );
-
-            }
-
-
-            if (
-                revealPillarGrid
-            ) {
-
-                revealPillarGrid.classList.remove(
-                    "is-visible"
-                );
-
-            }
-
-
-            if (
-                revealFinal
-            ) {
-
-                revealFinal.classList.remove(
-                    "is-visible"
-                );
-
-            }
-
-
-            document
-                .querySelectorAll(
-                    "[data-reveal-pillar]"
-                )
-                .forEach(
-                    function (
-                        element
-                    ) {
-
-                        element.classList.remove(
-                            "is-visible"
-                        );
-
-                    }
-                );
-
-        }
-
-
-        function fillRevealPillars(
-            result
-        ) {
-
-            if (
-                !hasRevealDom()
-            ) {
-
-                return;
-            }
-
-
-            fillRevealPillar(
-                "Year",
-                result.yearPillar,
-                false
-            );
-
-
-            fillRevealPillar(
-                "Month",
-                result.monthPillar,
-                false
-            );
-
-
-            fillRevealPillar(
-                "Day",
-                result.dayPillar,
-                false
-            );
-
-
-            fillRevealPillar(
-                "Hour",
-                result.birthTimeUnknown
-                    ? null
-                    : result.hourPillar,
-                Boolean(
-                    result.birthTimeUnknown
-                )
-            );
-
-        }
-
-
-        function fillRevealPillar(
-            prefix,
+    pillars.forEach(
+        (
             pillar,
-            unknown
-        ) {
+            index
+        ) => {
 
-            const chineseElement =
-                optional(
-                    "reveal"
-                    + prefix
-                    + "Chinese"
+            const article =
+                document.createElement(
+                    "article"
                 );
 
 
-            const koreanElement =
-                optional(
-                    "reveal"
-                    + prefix
-                    + "Korean"
-                );
+            article.className =
+                "pillar-card";
 
 
-            if (
-                !chineseElement
-                || !koreanElement
-            ) {
+            article.innerHTML =
+                `
+                    <span>
+                        ${escapeHtml(labels[index])}
+                    </span>
 
-                return;
-            }
+                    <strong>
+                        ${escapeHtml(pillar.chinese || "-")}
+                    </strong>
 
+                    <small>
+                        ${escapeHtml(koreanLabels[index])}
+                        ${pillar.korean ? ` · ${escapeHtml(pillar.korean)}` : ""}
+                    </small>
+                `;
 
-            if (
-                unknown
-                || !pillar
-            ) {
 
-                chineseElement.textContent =
-                    "?";
-
-
-                koreanElement.textContent =
-                    unknown
-                        ? "시간 미상"
-                        : "계산값 없음";
-
-
-                return;
-            }
-
-
-            chineseElement.textContent =
-                safeText(
-                    pillar.chineseName,
-                    "-"
-                );
-
-
-            koreanElement.textContent =
-                safeText(
-                    pillar.koreanName,
-                    ""
-                );
-
-        }
-
-
-
-        /* =====================================================
-           RESULT
-        ====================================================== */
-
-        function renderResult(
-            result
-        ) {
-
-            currentResult =
-                result;
-
-
-            currentStoryIndex =
-                0;
-
-
-            resultTitle.textContent =
-                sajuForm.name
-                + "님의 천명록";
-
-
-            const firstSection =
-                result.consultations.find(
-                    function (
-                        section
-                    ) {
-
-                        return section.available
-                            && section.summary;
-
-                    }
-                );
-
-
-            if (
-                firstSection
-            ) {
-
-                resultSummary.textContent =
-                    shorten(
-                        firstSection.summary,
-                        120
-                    );
-
-            } else {
-
-                resultSummary.textContent =
-                    "계산된 사주 근거를 열한 장의 천명록으로 정리했습니다.";
-
-            }
-
-
-            renderPillars(
-                result
-            );
-
-
-            renderCurrentStory();
-
-        }
-
-
-
-        /* =====================================================
-           FOUR PILLARS
-        ====================================================== */
-
-        function renderPillars(
-            result
-        ) {
-
-            const birthTimeUnknown =
-                Boolean(
-                    result.birthTimeUnknown
-                );
-
-
-            const pillars = [
-
-                {
-
-                    label:
-                        "년주",
-
-                    pillar:
-                        result.yearPillar,
-
-                    unknown:
-                        false
-
-                },
-
-
-                {
-
-                    label:
-                        "월주",
-
-                    pillar:
-                        result.monthPillar,
-
-                    unknown:
-                        false
-
-                },
-
-
-                {
-
-                    label:
-                        "일주",
-
-                    pillar:
-                        result.dayPillar,
-
-                    unknown:
-                        false
-
-                },
-
-
-                {
-
-                    label:
-                        "시주",
-
-                    pillar:
-                        birthTimeUnknown
-                            ? null
-                            : result.hourPillar,
-
-                    unknown:
-                        birthTimeUnknown
-
-                }
-
-            ];
-
-
-            resultPillars.innerHTML =
-                pillars
-                    .map(
-                        function (
-                            item
-                        ) {
-
-                            if (
-                                !item.pillar
-                            ) {
-
-                                return `
-                                    <article class="pillar-card">
-
-                                        <span>
-                                            ${escapeHtml(item.label)}
-                                        </span>
-
-                                        <strong>
-                                            ?
-                                        </strong>
-
-                                        <small>
-                                            ${
-                                                item.unknown
-                                                    ? "시간 미상"
-                                                    : "계산값 없음"
-                                            }
-                                        </small>
-
-                                    </article>
-                                `;
-
-                            }
-
-
-                            return `
-                                <article class="pillar-card">
-
-                                    <span>
-                                        ${escapeHtml(item.label)}
-                                    </span>
-
-                                    <strong>
-                                        ${escapeHtml(
-                                            safeText(
-                                                item.pillar.chineseName,
-                                                "-"
-                                            )
-                                        )}
-                                    </strong>
-
-                                    <small>
-                                        ${escapeHtml(
-                                            safeText(
-                                                item.pillar.koreanName,
-                                                ""
-                                            )
-                                        )}
-                                    </small>
-
-                                </article>
-                            `;
-
-                        }
-                    )
-                    .join(
-                        ""
-                    );
-
-        }
-
-
-
-        /* =====================================================
-           STORY NAVIGATION
-        ====================================================== */
-
-        function bindStoryNavigation() {
-
-            resultStoryList.addEventListener(
-                "click",
-                function (
-                    event
-                ) {
-
-                    const previousButton =
-                        event.target.closest(
-                            "[data-story-prev]"
-                        );
-
-
-                    if (
-                        previousButton
-                    ) {
-
-                        goPreviousStory();
-
-                        return;
-                    }
-
-
-                    const nextButton =
-                        event.target.closest(
-                            "[data-story-next]"
-                        );
-
-
-                    if (
-                        nextButton
-                    ) {
-
-                        goNextStory();
-
-                        return;
-                    }
-
-
-                    const restartButton =
-                        event.target.closest(
-                            "[data-story-restart]"
-                        );
-
-
-                    if (
-                        restartButton
-                    ) {
-
-                        currentStoryIndex =
-                            0;
-
-
-                        renderCurrentStory();
-
-
-                        scrollStoryTop();
-
-                        return;
-                    }
-
-
-                    const finishButton =
-                        event.target.closest(
-                            "[data-story-finish]"
-                        );
-
-
-                    if (
-                        finishButton
-                    ) {
-
-                        window.location.href =
-                            "/";
-
-                    }
-
-                }
-            );
-
-
-            resultStoryList.addEventListener(
-                "touchstart",
-                function (
-                    event
-                ) {
-
-                    if (
-                        !event.touches
-                        || event.touches.length !== 1
-                    ) {
-
-                        return;
-                    }
-
-
-                    storyTouchStartX =
-                        event.touches[0].clientX;
-
-
-                    storyTouchStartY =
-                        event.touches[0].clientY;
-
-                },
-                {
-                    passive:
-                        true
-                }
-            );
-
-
-            resultStoryList.addEventListener(
-                "touchend",
-                function (
-                    event
-                ) {
-
-                    if (
-                        storyTouchStartX === null
-                        || storyTouchStartY === null
-                        || !event.changedTouches
-                        || event.changedTouches.length !== 1
-                    ) {
-
-                        resetStoryTouch();
-
-                        return;
-                    }
-
-
-                    const endX =
-                        event.changedTouches[0].clientX;
-
-
-                    const endY =
-                        event.changedTouches[0].clientY;
-
-
-                    const deltaX =
-                        endX
-                        - storyTouchStartX;
-
-
-                    const deltaY =
-                        endY
-                        - storyTouchStartY;
-
-
-                    resetStoryTouch();
-
-
-                    if (
-                        Math.abs(
-                            deltaX
-                        ) < 65
-                    ) {
-
-                        return;
-                    }
-
-
-                    if (
-                        Math.abs(
-                            deltaY
-                        )
-                        > Math.abs(
-                            deltaX
-                        )
-                    ) {
-
-                        return;
-                    }
-
-
-                    if (
-                        deltaX < 0
-                    ) {
-
-                        goNextStory();
-
-                    } else {
-
-                        goPreviousStory();
-
-                    }
-
-                },
-                {
-                    passive:
-                        true
-                }
-            );
-
-
-            document.addEventListener(
-                "keydown",
-                function (
-                    event
-                ) {
-
-                    if (
-                        currentScreen
-                        !== "result"
-                        || !currentResult
-                    ) {
-
-                        return;
-                    }
-
-
-                    if (
-                        event.key
-                        === "ArrowLeft"
-                    ) {
-
-                        event.preventDefault();
-
-
-                        goPreviousStory();
-
-                    }
-
-
-                    if (
-                        event.key
-                        === "ArrowRight"
-                    ) {
-
-                        event.preventDefault();
-
-
-                        goNextStory();
-
-                    }
-
-                }
+            resultPillars.appendChild(
+                article
             );
 
         }
+    );
 
+}
 
-        function resetStoryTouch() {
 
-            storyTouchStartX =
-                null;
 
+/* =========================================================
+   STORY BOOK
+   ========================================================= */
 
-            storyTouchStartY =
-                null;
+function renderCurrentStory() {
 
-        }
+    if (
+        !currentResult
+        ||
+        !Array.isArray(
+            currentResult.consultations
+        )
+    ) {
 
+        return;
 
-        function goPreviousStory() {
+    }
 
-            if (
-                !currentResult
-            ) {
 
-                return;
-            }
+    const consultations =
+        currentResult.consultations;
 
 
-            if (
-                currentStoryIndex <= 0
-            ) {
+    if (
+        currentStoryIndex
+        >= consultations.length
+    ) {
 
-                return;
-            }
+        renderStoryComplete();
 
+        return;
 
-            currentStoryIndex -=
-                1;
+    }
 
 
-            renderCurrentStory();
+    const consultation =
+        consultations[currentStoryIndex];
 
 
-            scrollStoryTop();
+    renderStoryBook(
+        consultation,
+        currentStoryIndex,
+        consultations.length
+    );
 
-        }
+}
 
 
-        function goNextStory() {
+function renderStoryBook(
+    consultation,
+    index,
+    total
+) {
 
-            if (
-                !currentResult
-            ) {
+    const meta =
+        CATEGORY_META[
+            consultation.category
+        ]
+        ||
+        {
 
-                return;
-            }
+            number:
+                index + 1,
 
+            chapter:
+                `제${index + 1}장`,
 
-            const sections =
-                currentResult.consultations;
+            label:
+                consultation.category,
 
+            title:
+                consultation.category
 
-            if (
-                currentStoryIndex
-                < sections.length - 1
-            ) {
+        };
 
-                currentStoryIndex +=
-                    1;
 
-
-                renderCurrentStory();
-
-
-                scrollStoryTop();
-
-
-                return;
-            }
-
-
-            renderStoryCompletion();
-
-
-            scrollStoryTop();
-
-        }
-
-
-        function scrollStoryTop() {
-
-            requestAnimationFrame(
-                function () {
-
-                    const top =
-                        resultStoryList
-                            .getBoundingClientRect()
-                            .top
-                        + window.scrollY
-                        - 90;
-
-
-                    window.scrollTo({
-
-                        top:
-                            Math.max(
-                                0,
-                                top
-                            ),
-
-                        behavior:
-                            "smooth"
-
-                    });
-
-                }
-            );
-
-        }
-
-
-
-        /* =====================================================
-           CURRENT STORY
-        ====================================================== */
-
-        function renderCurrentStory() {
-
-            if (
-                !currentResult
-                || !Array.isArray(
-                    currentResult.consultations
-                )
-                || currentResult.consultations.length === 0
-            ) {
-
-                resultStoryList.innerHTML =
-                    `
-                        <div class="story-empty">
-                            천명록을 표시할 수 없습니다.
-                        </div>
-                    `;
-
-
-                return;
-            }
-
-
-            currentStoryIndex =
-                Math.max(
-                    0,
-                    Math.min(
-                        currentStoryIndex,
-                        currentResult.consultations.length - 1
-                    )
-                );
-
-
-            const section =
-                currentResult.consultations[
-                    currentStoryIndex
-                ];
-
-
-            resultStoryList.innerHTML =
-                renderStoryBook(
-                    section,
-                    currentStoryIndex,
-                    currentResult.consultations.length
-                );
-
-        }
-
-
-        function renderStoryBook(
-            section,
-            index,
+    const progress =
+        (
+            (
+                index + 1
+            )
+            /
             total
-        ) {
-
-            const previousDisabled =
-                index === 0;
-
-
-            const last =
-                index === total - 1;
+        )
+        *
+        100;
 
 
-            const progressPercent =
-                Math.round(
-                    (
-                        (
-                            index + 1
-                        )
-                        / total
-                    )
-                    * 100
-                );
+    const unavailable =
+        isUnavailableConsultation(
+            consultation
+        );
 
 
-            return `
-                <section
-                    class="cheonmyeong-book"
-                    data-current-story="${escapeHtml(section.category)}"
-                >
+    /*
+     * =================================================
+     * 중요
+     * =================================================
+     *
+     * 최종 화면은 storyText만 사용한다.
+     *
+     * narrationText를 fallback으로 사용하지 않는다.
+     *
+     * OpenAI 문장화가 실패한 경우
+     * Legacy 백엔드 문장이 사용자에게 다시 노출되는 것을
+     * 방지한다.
+     */
 
-                    <div class="cheonmyeong-book-progress">
-
-                        <div class="cheonmyeong-book-progress-head">
-
-                            <span>
-                                천명록
-                            </span>
-
-                            <strong>
-                                ${String(index + 1).padStart(2, "0")}
-                                /
-                                ${String(total).padStart(2, "0")}
-                            </strong>
-
-                        </div>
+    const storyText =
+        consultation.storyText
+        ||
+        "현재 이 장의 상담문을 표시할 수 없습니다.";
 
 
-                        <div class="cheonmyeong-book-progress-track">
+    const paragraphs =
+        splitParagraphs(
+            storyText
+        );
 
-                            <div
-                                class="cheonmyeong-book-progress-bar"
-                                style="width:${progressPercent}%"
-                            ></div>
 
-                        </div>
+    resultStoryList.innerHTML =
+        `
+            <div class="cheonmyeong-book">
+
+                <div class="cheonmyeong-book-progress">
+
+                    <div class="cheonmyeong-book-progress-head">
+
+                        <span>
+                            ${escapeHtml(meta.chapter)}
+                        </span>
+
+                        <strong>
+                            ${pad2(index + 1)} / ${pad2(total)}
+                        </strong>
 
                     </div>
 
+                    <div class="cheonmyeong-book-progress-track">
 
-                    ${renderStoryPage(section)}
+                        <div
+                            class="cheonmyeong-book-progress-bar"
+                            style="width:${progress}%"
+                        ></div>
 
+                    </div>
 
-                    <nav
-                        class="cheonmyeong-book-navigation"
-                        aria-label="천명록 장 이동"
-                    >
+                </div>
 
-                        <button
-                            type="button"
-                            class="cheonmyeong-book-nav-button is-prev"
-                            data-story-prev
-                            ${previousDisabled ? "disabled" : ""}
-                        >
-                            <span aria-hidden="true">
-                                ←
-                            </span>
 
-                            <span>
-                                이전 장
-                            </span>
-                        </button>
-
-
-                        ${
-                            last
-
-                                ? `
-                                    <button
-                                        type="button"
-                                        class="cheonmyeong-book-nav-button is-next is-finish"
-                                        data-story-next
-                                    >
-                                        <span>
-                                            천명록 마치기
-                                        </span>
-
-                                        <span aria-hidden="true">
-                                            ✓
-                                        </span>
-                                    </button>
-                                `
-
-                                : `
-                                    <button
-                                        type="button"
-                                        class="cheonmyeong-book-nav-button is-next"
-                                        data-story-next
-                                    >
-                                        <span>
-                                            다음 장
-                                        </span>
-
-                                        <span aria-hidden="true">
-                                            →
-                                        </span>
-                                    </button>
-                                `
-                        }
-
-                    </nav>
-
-
-                    <p class="cheonmyeong-book-swipe-hint">
-                        좌우로 넘겨 다음 장을 볼 수 있습니다.
-                    </p>
-
-                </section>
-            `;
-
-        }
-
-
-
-        /* =====================================================
-           STORY PAGE
-        ====================================================== */
-
-        function renderStoryPage(
-            section
-        ) {
-
-            if (
-                !section.available
-            ) {
-
-                return `
-                    <article class="story-card story-page is-visible">
-
-                        <header class="story-page-header">
-
-                            <span class="story-page-book-label">
-                                천명록
-                            </span>
-
-                            <span class="story-page-chapter">
-                                ${escapeHtml(section.meta.chapter)}
-                            </span>
-
-                            <h2>
-                                ${escapeHtml(section.meta.title)}
-                            </h2>
-
-                            <p>
-                                ${escapeHtml(section.meta.label)}
-                            </p>
-
-                        </header>
-
-
-                        <div class="story-page-seal">
-                            命
-                        </div>
-
-
-                        <div class="story-page-body">
-
-                            <p class="story-unavailable">
-                                현재 계산 결과에서는 이 분야를
-                                독립적으로 설명할 근거가 충분하지 않습니다.
-                                없는 내용을 임의로 추정해서 채우지 않습니다.
-                            </p>
-
-                        </div>
-
-
-                        ${renderEvidence(section)}
-
-                    </article>
-                `;
-
-            }
-
-
-            const facts =
-                [];
-
-
-            if (
-                section.polarity
-            ) {
-
-                facts.push(
-                    labelPolarity(
-                        section.polarity
-                    )
-                );
-
-            }
-
-
-            if (
-                section.intensity
-            ) {
-
-                facts.push(
-                    labelIntensity(
-                        section.intensity
-                    )
-                );
-
-            }
-
-
-            if (
-                section.confidence
-            ) {
-
-                facts.push(
-                    labelConfidence(
-                        section.confidence
-                    )
-                );
-
-            }
-
-
-            facts.push(
-                "근거 "
-                + section.evidenceCount
-                + "개"
-            );
-
-
-            const factHtml =
-                facts
-                    .map(
-                        function (
-                            value
-                        ) {
-
-                            return `
-                                <span>
-                                    ${escapeHtml(value)}
-                                </span>
-                            `;
-
-                        }
-                    )
-                    .join(
-                        ""
-                    );
-
-
-            const paragraphs =
-                splitParagraphs(
-                    section.storyText
-                );
-
-
-            const bodyHtml =
-                paragraphs.length > 0
-
-                    ? paragraphs
-                        .map(
-                            function (
-                                paragraph
-                            ) {
-
-                                return `
-                                    <p>
-                                        ${escapeHtml(paragraph)}
-                                    </p>
-                                `;
-
-                            }
-                        )
-                        .join(
-                            ""
-                        )
-
-                    : `
-                        <p>
-                            이 분야의 장문 상담문이
-                            아직 응답에 연결되지 않았습니다.
-                        </p>
-                    `;
-
-
-            return `
-                <article class="story-card story-page is-visible">
+                <article class="story-page">
 
                     <header class="story-page-header">
 
                         <span class="story-page-book-label">
-                            천명록
+                            天命錄
                         </span>
 
                         <span class="story-page-chapter">
-                            ${escapeHtml(section.meta.chapter)}
+                            ${escapeHtml(meta.chapter)}
                         </span>
 
                         <h2>
-                            ${escapeHtml(section.meta.title)}
+                            ${escapeHtml(meta.title)}
                         </h2>
 
                         <p>
-                            ${escapeHtml(section.meta.label)}
+                            ${escapeHtml(meta.label)}
                         </p>
 
                     </header>
@@ -5336,1001 +3163,1594 @@ document.addEventListener(
                     </div>
 
 
-                    <div class="story-facts">
-                        ${factHtml}
+                    <div class="story-page-body">
+
+                        ${
+                            paragraphs
+                                .map(
+                                    paragraph =>
+                                        `
+                                            <p class="${unavailable ? "story-unavailable" : ""}">
+                                                ${escapeHtml(paragraph)}
+                                            </p>
+                                        `
+                                )
+                                .join("")
+                        }
+
                     </div>
-
-
-                    ${
-                        section.summary
-
-                            ? `
-                                <p class="story-summary">
-                                    ${escapeHtml(section.summary)}
-                                </p>
-                            `
-
-                            : ""
-                    }
-
-
-                    <div class="story-body story-page-body">
-                        ${bodyHtml}
-                    </div>
-
-
-                    ${renderEvidence(section)}
 
                 </article>
-            `;
-
-        }
 
 
-        function renderEvidence(
-            section
-        ) {
+                <div class="cheonmyeong-book-navigation">
 
-            const evidenceHtml =
-                section.basisLabels
-                    .slice(
-                        0,
-                        14
-                    )
-                    .map(
-                        function (
-                            value
-                        ) {
+                    <button
+                        class="cheonmyeong-book-nav-button"
+                        type="button"
+                        data-story-prev
+                        ${index === 0 ? "disabled" : ""}
+                    >
+                        ‹ 이전 장
+                    </button>
 
-                            return `
-                                <span>
-                                    ${escapeHtml(value)}
-                                </span>
-                            `;
 
+                    <button
+                        class="cheonmyeong-book-nav-button is-next ${index === total - 1 ? "is-finish" : ""}"
+                        type="button"
+                        data-story-next
+                    >
+                        ${
+                            index === total - 1
+                                ? "천명록 마치기"
+                                : "다음 장 ›"
                         }
-                    )
-                    .join(
-                        ""
-                    );
+                    </button>
 
+                </div>
+
+
+                <p class="cheonmyeong-book-swipe-hint">
+                    좌우로 넘겨 다음 장을 읽을 수 있습니다.
+                </p>
+
+            </div>
+        `;
+
+
+    bindRenderedStoryButtons();
+
+}
+
+
+function bindRenderedStoryButtons() {
+
+    resultStoryList
+        .querySelector(
+            "[data-story-prev]"
+        )
+        ?.addEventListener(
+            "click",
+            goPreviousStory
+        );
+
+
+    resultStoryList
+        .querySelector(
+            "[data-story-next]"
+        )
+        ?.addEventListener(
+            "click",
+            goNextStory
+        );
+
+
+    resultStoryList
+        .querySelector(
+            "[data-story-restart]"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                currentStoryIndex =
+                    0;
+
+
+                renderCurrentStory();
+
+                scrollStoryTop();
+
+            }
+        );
+
+
+    resultStoryList
+        .querySelector(
+            "[data-story-finish]"
+        )
+        ?.addEventListener(
+            "click",
+            goHome
+        );
+
+}
+
+
+function goPreviousStory() {
+
+    if (
+        !currentResult
+        ||
+        currentStoryIndex
+        <= 0
+    ) {
+
+        return;
+
+    }
+
+
+    currentStoryIndex--;
+
+
+    renderCurrentStory();
+
+    scrollStoryTop();
+
+}
+
+
+function goNextStory() {
+
+    if (
+        !currentResult
+    ) {
+
+        return;
+
+    }
+
+
+    currentStoryIndex++;
+
+
+    renderCurrentStory();
+
+    scrollStoryTop();
+
+}
+
+
+function renderStoryComplete() {
+
+    resultStoryList.innerHTML =
+        `
+            <div class="cheonmyeong-book-complete">
+
+                <div class="cheonmyeong-book-complete-seal">
+                    錄
+                </div>
+
+                <p class="cheonmyeong-book-complete-kicker">
+                    天命十一章 完
+                </p>
+
+                <h2>
+                    천명록 완독
+                </h2>
+
+                <p class="cheonmyeong-book-complete-copy">
+                    열한 장의 기록을 모두 펼쳤습니다.
+                </p>
+
+                <p class="cheonmyeong-book-complete-subcopy">
+                    사주는 삶을 대신 결정하는 답이 아니라,
+                    자신이 가진 흐름을 이해하는 하나의 지도입니다.
+                </p>
+
+                <div class="cheonmyeong-book-complete-actions">
+
+                    <button
+                        class="cheonmyeong-book-complete-button is-secondary"
+                        type="button"
+                        data-story-restart
+                    >
+                        처음부터 다시 읽기
+                    </button>
+
+                    <button
+                        class="cheonmyeong-book-complete-button is-primary"
+                        type="button"
+                        data-story-finish
+                    >
+                        천명록 마치기
+                    </button>
+
+                </div>
+
+            </div>
+        `;
+
+
+    bindRenderedStoryButtons();
+
+}
+
+
+function scrollStoryTop() {
+
+    resultStoryList.scrollIntoView({
+
+        behavior:
+            "smooth",
+
+        block:
+            "start"
+
+    });
+
+}
+
+
+
+/* =========================================================
+   SWIPE / KEYBOARD
+   ========================================================= */
+
+function bindStoryNavigation() {
+
+    resultStoryList.addEventListener(
+        "touchstart",
+        event => {
+
+            touchStartX =
+                event
+                    .changedTouches[0]
+                    .clientX;
+
+        },
+        {
+            passive:
+                true
+        }
+    );
+
+
+    resultStoryList.addEventListener(
+        "touchend",
+        event => {
 
             if (
-                !evidenceHtml
+                touchStartX
+                === null
             ) {
 
-                return "";
+                return;
+
             }
 
 
-            return `
-                <details class="story-evidence">
-
-                    <summary>
-                        계산 근거 보기
-                    </summary>
-
-                    <div>
-                        ${evidenceHtml}
-                    </div>
-
-                </details>
-            `;
-
-        }
+            const endX =
+                event
+                    .changedTouches[0]
+                    .clientX;
 
 
-
-        /* =====================================================
-           STORY COMPLETION
-        ====================================================== */
-
-        function renderStoryCompletion() {
-
-            resultStoryList.innerHTML =
-                `
-                    <section class="cheonmyeong-book-complete">
-
-                        <div class="cheonmyeong-book-complete-seal">
-                            命
-                        </div>
+            const delta =
+                endX
+                -
+                touchStartX;
 
 
-                        <p class="cheonmyeong-book-complete-kicker">
-                            天命錄
-                        </p>
+            touchStartX =
+                null;
 
 
-                        <h2>
-                            천명록 완독
-                        </h2>
-
-
-                        <p class="cheonmyeong-book-complete-copy">
-                            열한 장의 천명록을
-                            모두 확인했습니다.
-                        </p>
-
-
-                        <p class="cheonmyeong-book-complete-subcopy">
-                            사주는 하나의 문장으로
-                            삶을 확정하는 것이 아니라,
-                            여러 흐름이 어디에서 만나고
-                            어떻게 움직이는지를 살펴보는 기록입니다.
-                        </p>
-
-
-                        <div class="cheonmyeong-book-complete-actions">
-
-                            <button
-                                type="button"
-                                class="cheonmyeong-book-complete-button is-secondary"
-                                data-story-restart
-                            >
-                                처음부터 다시 읽기
-                            </button>
-
-
-                            <button
-                                type="button"
-                                class="cheonmyeong-book-complete-button is-primary"
-                                data-story-finish
-                            >
-                                천명록 마치기
-                            </button>
-
-                        </div>
-
-                    </section>
-                `;
-
-        }
-
-
-
-        /* =====================================================
-           PARAGRAPH
-        ====================================================== */
-
-        function splitParagraphs(
-            source
-        ) {
-
-            const text =
-                safeText(
-                    source
+            if (
+                Math.abs(
+                    delta
                 )
-                    .trim();
-
-
-            if (
-                !text
+                < 55
             ) {
 
-                return [];
-            }
-
-
-            const explicitParagraphs =
-                text
-                    .split(
-                        /\n\s*\n/
-                    )
-                    .map(
-                        function (
-                            paragraph
-                        ) {
-
-                            return paragraph.trim();
-
-                        }
-                    )
-                    .filter(
-                        Boolean
-                    );
-
-
-            if (
-                explicitParagraphs.length > 1
-            ) {
-
-                return explicitParagraphs;
-            }
-
-
-            const sentences =
-                text
-                    .split(
-                        /(?<=[.!?。])\s+/
-                    )
-                    .map(
-                        function (
-                            sentence
-                        ) {
-
-                            return sentence.trim();
-
-                        }
-                    )
-                    .filter(
-                        Boolean
-                    );
-
-
-            if (
-                sentences.length <= 1
-            ) {
-
-                return [
-                    text
-                ];
+                return;
 
             }
 
 
-            const result =
-                [];
+            if (
+                delta < 0
+            ) {
+
+                goNextStory();
+
+            }
+            else {
+
+                goPreviousStory();
+
+            }
+
+        },
+        {
+            passive:
+                true
+        }
+    );
 
 
-            let buffer =
-                [];
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                currentScreen
+                !== "result"
+            ) {
+
+                return;
+
+            }
 
 
-            let currentLength =
-                0;
+            if (
+                event.key
+                === "ArrowLeft"
+            ) {
+
+                goPreviousStory();
+
+            }
 
 
-            sentences.forEach(
-                function (
-                    sentence
-                ) {
+            if (
+                event.key
+                === "ArrowRight"
+            ) {
 
-                    buffer.push(
-                        sentence
-                    );
+                goNextStory();
 
+            }
 
-                    currentLength +=
-                        sentence.length;
+        }
+    );
 
-
-                    if (
-                        currentLength >= 240
-                    ) {
-
-                        result.push(
-                            buffer.join(
-                                " "
-                            )
-                        );
+}
 
 
-                        buffer =
-                            [];
+
+/* =========================================================
+   NORMALIZE RESULT
+   ========================================================= */
+
+function normalizeResult(
+    raw
+) {
+
+    const consultations =
+        Array.isArray(
+            raw?.consultations
+        )
+            ? raw.consultations
+            : [];
 
 
-                        currentLength =
-                            0;
+    const byCategory =
+        new Map();
 
-                    }
 
-                }
+    consultations.forEach(
+        consultation => {
+
+            if (
+                consultation?.category
+            ) {
+
+                byCategory.set(
+                    consultation.category,
+                    consultation
+                );
+
+            }
+
+        }
+    );
+
+
+    const normalizedConsultations =
+        CATEGORY_ORDER.map(
+            category => {
+
+                const source =
+                    byCategory.get(
+                        category
+                    )
+                    ||
+                    {};
+
+
+                return {
+
+                    ...source,
+
+                    category:
+                        category,
+
+                    /*
+                     * 중요:
+                     *
+                     * storyText만 사용한다.
+                     *
+                     * 기존 narrationText는
+                     * 사용자 화면용 fallback으로 사용하지 않는다.
+                     */
+                    storyText:
+                        normalizeStoryText(
+                            source.storyText
+                            ||
+                            ""
+                        )
+
+                };
+
+            }
+        );
+
+
+    return {
+
+        ...raw,
+
+        consultations:
+            normalizedConsultations
+
+    };
+
+}
+
+
+function normalizeStoryText(
+    value
+) {
+
+    if (
+        value === null
+        ||
+        value === undefined
+    ) {
+
+        return "";
+
+    }
+
+
+    return String(
+        value
+    )
+        .trim();
+
+}
+
+
+
+/* =========================================================
+   PILLARS
+   ========================================================= */
+
+function extractPillars(
+    result
+) {
+
+    const empty = {
+
+        chinese:
+            "-",
+
+        korean:
+            ""
+
+    };
+
+
+    if (
+        !result
+    ) {
+
+        return [
+            {...empty},
+            {...empty},
+            {...empty},
+            {...empty}
+        ];
+
+    }
+
+
+    /*
+     * =================================================
+     * 현재 Dajeom SajuAnalysisResponse 공식 구조
+     * =================================================
+     *
+     * 백엔드 응답 최상위:
+     *
+     * yearPillar
+     * monthPillar
+     * dayPillar
+     * hourPillar
+     */
+
+    if (
+        result.yearPillar
+        ||
+        result.monthPillar
+        ||
+        result.dayPillar
+        ||
+        result.hourPillar
+    ) {
+
+        return [
+
+            normalizeSinglePillar(
+                result.yearPillar
+            ),
+
+            normalizeSinglePillar(
+                result.monthPillar
+            ),
+
+            normalizeSinglePillar(
+                result.dayPillar
+            ),
+
+            normalizeSinglePillar(
+                result.hourPillar
+            )
+
+        ];
+
+    }
+
+
+    /*
+     * =================================================
+     * 이전 구조 호환
+     * =================================================
+     */
+
+    const candidates = [
+
+        result.pillars,
+
+        result.fourPillars,
+
+        result.saju?.pillars,
+
+        result.saju?.fourPillars,
+
+        result.chart?.pillars
+
+    ];
+
+
+    for (
+        const candidate
+        of candidates
+    ) {
+
+        const parsed =
+            normalizePillarCandidate(
+                candidate
+            );
+
+
+        if (
+            parsed
+        ) {
+
+            return parsed;
+
+        }
+
+    }
+
+
+    return [
+        {...empty},
+        {...empty},
+        {...empty},
+        {...empty}
+    ];
+
+}
+
+
+function normalizePillarCandidate(
+    candidate
+) {
+
+    if (
+        !candidate
+    ) {
+
+        return null;
+
+    }
+
+
+    if (
+        Array.isArray(
+            candidate
+        )
+        &&
+        candidate.length
+        >= 4
+    ) {
+
+        return candidate
+            .slice(
+                0,
+                4
+            )
+            .map(
+                normalizeSinglePillar
+            );
+
+    }
+
+
+    if (
+        typeof candidate
+        === "object"
+    ) {
+
+        const values = [
+
+            candidate.year
+            || candidate.yearPillar,
+
+            candidate.month
+            || candidate.monthPillar,
+
+            candidate.day
+            || candidate.dayPillar,
+
+            candidate.hour
+            || candidate.time
+            || candidate.hourPillar
+
+        ];
+
+
+        if (
+            values.some(
+                Boolean
+            )
+        ) {
+
+            return values.map(
+                normalizeSinglePillar
+            );
+
+        }
+
+    }
+
+
+    return null;
+
+}
+
+
+function normalizeSinglePillar(
+    pillar
+) {
+
+    if (
+        !pillar
+    ) {
+
+        return {
+
+            chinese:
+                "-",
+
+            korean:
+                ""
+
+        };
+
+    }
+
+
+    if (
+        typeof pillar
+        === "string"
+    ) {
+
+        return {
+
+            chinese:
+                pillar,
+
+            korean:
+                ""
+
+        };
+
+    }
+
+
+    /*
+     * =================================================
+     * 현재 PillarResponse 공식 필드
+     * =================================================
+     *
+     * koreanName
+     * chineseName
+     * stemKoreanName
+     * stemChineseCharacter
+     * branchKoreanName
+     * branchChineseCharacter
+     */
+
+    const directChinese =
+        pillar.chineseName
+        ||
+        pillar.chinese
+        ||
+        pillar.ganzhi
+        ||
+        pillar.ganji
+        ||
+        pillar.display
+        ||
+        "";
+
+
+    const directKorean =
+        pillar.koreanName
+        ||
+        pillar.korean
+        ||
+        pillar.reading
+        ||
+        pillar.hangul
+        ||
+        "";
+
+
+    if (
+        directChinese
+        ||
+        directKorean
+    ) {
+
+        return {
+
+            chinese:
+                directChinese
+                || "-",
+
+            korean:
+                directKorean
+
+        };
+
+    }
+
+
+    /*
+     * =================================================
+     * Stem / Branch 별도 필드 호환
+     * =================================================
+     */
+
+    const stemChinese =
+        pillar.stemChineseCharacter
+        ||
+        pillar.heavenlyStem
+        ||
+        pillar.stem
+        ||
+        pillar.gan
+        ||
+        "";
+
+
+    const branchChinese =
+        pillar.branchChineseCharacter
+        ||
+        pillar.earthlyBranch
+        ||
+        pillar.branch
+        ||
+        pillar.ji
+        ||
+        "";
+
+
+    const stemKorean =
+        pillar.stemKoreanName
+        ||
+        "";
+
+
+    const branchKorean =
+        pillar.branchKoreanName
+        ||
+        "";
+
+
+    const chinese =
+        `${stemChinese}${branchChinese}`;
+
+
+    const korean =
+        `${stemKorean}${branchKorean}`;
+
+
+    return {
+
+        chinese:
+            chinese
+            ||
+            "-",
+
+        korean:
+            korean
+
+    };
+
+}
+
+
+
+/* =========================================================
+   UNAVAILABLE
+   ========================================================= */
+
+function isUnavailableConsultation(
+    consultation
+) {
+
+    if (
+        consultation?.available
+        === false
+    ) {
+
+        return true;
+
+    }
+
+
+    /*
+     * narrationText는 검사하지 않는다.
+     *
+     * 최종 사용자 화면은 storyText만 기준으로 한다.
+     */
+
+    const text =
+        String(
+            consultation?.storyText
+            ||
+            ""
+        );
+
+
+    return text.includes(
+        "현재 계산 근거만으로는 이 분야의 독립적인 해석을 확정하지 않습니다"
+    )
+    ||
+    text.includes(
+        "근거가 없는 내용을 추정해서 채우지 않았습니다"
+    );
+
+}
+
+
+
+/* =========================================================
+   STORY PARAGRAPH
+   ========================================================= */
+
+function splitParagraphs(
+    text
+) {
+
+    const normalized =
+        String(
+            text
+            || ""
+        )
+        .replace(
+            /\r\n/g,
+            "\n"
+        )
+        .trim();
+
+
+    if (
+        !normalized
+    ) {
+
+        return [
+            "해석 내용이 없습니다."
+        ];
+
+    }
+
+
+    const directParagraphs =
+        normalized
+            .split(
+                /\n{2,}/
+            )
+            .map(
+                paragraph =>
+                    paragraph.trim()
+            )
+            .filter(
+                Boolean
+            );
+
+
+    if (
+        directParagraphs.length
+        > 1
+    ) {
+
+        return directParagraphs;
+
+    }
+
+
+    const sentences =
+        normalized
+            .split(
+                /(?<=[.!?。])\s+/
+            )
+            .map(
+                sentence =>
+                    sentence.trim()
+            )
+            .filter(
+                Boolean
+            );
+
+
+    if (
+        sentences.length
+        <= 3
+    ) {
+
+        return [
+            normalized
+        ];
+
+    }
+
+
+    const paragraphs =
+        [];
+
+
+    let current =
+        [];
+
+
+    sentences.forEach(
+        sentence => {
+
+            current.push(
+                sentence
             );
 
 
             if (
-                buffer.length > 0
+                current.length
+                >= 3
             ) {
 
-                result.push(
-                    buffer.join(
+                paragraphs.push(
+                    current.join(
                         " "
                     )
                 );
 
-            }
 
-
-            return result;
-        }
-
-
-
-        /* =====================================================
-           LABELS
-        ====================================================== */
-
-        function labelPolarity(
-            value
-        ) {
-
-            const labels = {
-
-                SUPPORTIVE:
-                    "지원 흐름",
-
-
-                PRESSURE:
-                    "압력 흐름",
-
-
-                CAUTION:
-                    "주의 흐름",
-
-
-                NEUTRAL:
-                    "중립 흐름",
-
-
-                MIXED:
-                    "복합 흐름",
-
-
-                CONTEXTUAL:
-                    "상황 의존"
-
-            };
-
-
-            return labels[value]
-                || String(
-                    value
-                );
-        }
-
-
-        function labelIntensity(
-            value
-        ) {
-
-            const labels = {
-
-                LOW:
-                    "낮은 강도",
-
-
-                MEDIUM:
-                    "중간 강도",
-
-
-                HIGH:
-                    "높은 강도",
-
-
-                NONE:
-                    "강도 없음"
-
-            };
-
-
-            return labels[value]
-                || String(
-                    value
-                );
-        }
-
-
-        function labelConfidence(
-            value
-        ) {
-
-            const labels = {
-
-                LOW:
-                    "낮은 신뢰도",
-
-
-                MEDIUM:
-                    "중간 신뢰도",
-
-
-                HIGH:
-                    "높은 신뢰도"
-
-            };
-
-
-            return labels[value]
-                || String(
-                    value
-                );
-        }
-
-
-
-        /* =====================================================
-           VIDEO
-        ====================================================== */
-
-        async function playVideo(
-            element,
-            source,
-            shouldCancel
-        ) {
-
-            if (
-                !element
-            ) {
-
-                return;
-            }
-
-
-            if (
-                source
-                && element.getAttribute(
-                    "src"
-                ) !== source
-            ) {
-
-                element.src =
-                    source;
+                current =
+                    [];
 
             }
 
+        }
+    );
+
+
+    if (
+        current.length
+        > 0
+    ) {
+
+        paragraphs.push(
+            current.join(
+                " "
+            )
+        );
+
+    }
+
+
+    return paragraphs;
+
+}
+
+
+
+/* =========================================================
+   VIDEO
+   ========================================================= */
+
+async function playVideo(
+    element,
+    source,
+    restart
+) {
+
+    if (
+        !element
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        source
+        &&
+        element.getAttribute(
+            "src"
+        )
+        !== source
+    ) {
+
+        element.src =
+            source;
+
+
+        element.load();
+
+    }
+
+
+    if (
+        restart
+    ) {
+
+        try {
 
             element.currentTime =
                 0;
 
+        } catch (
+            ignored
+        ) {
 
-            try {
+        }
 
-                await element.play();
-
-            } catch (
-                error
-            ) {
-
-                console.warn(
-                    "[SAJU] 영상 자동재생 실패",
-                    source,
-                    error
-                );
+    }
 
 
-                return;
-            }
+    try {
+
+        const playPromise =
+            element.play();
 
 
-            await new Promise(
-                function (
-                    resolve
-                ) {
+        if (
+            playPromise
+        ) {
 
-                    let finished =
-                        false;
+            await playPromise;
 
+        }
 
-                    const finish =
-                        function () {
+    } catch (
+        error
+    ) {
 
-                            if (
-                                finished
-                            ) {
-
-                                return;
-                            }
-
-
-                            finished =
-                                true;
+        console.warn(
+            "Video play failed:",
+            source,
+            error
+        );
 
 
-                            element.removeEventListener(
-                                "ended",
-                                finish
-                            );
+        return false;
+
+    }
 
 
-                            resolve();
+    return new Promise(
+        resolve => {
 
-                        };
+            let finished =
+                false;
 
 
-                    element.addEventListener(
+            const finish =
+                () => {
+
+                    if (
+                        finished
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    finished =
+                        true;
+
+
+                    cleanup();
+
+
+                    resolve(
+                        true
+                    );
+
+                };
+
+
+            const cleanup =
+                () => {
+
+                    element.removeEventListener(
                         "ended",
                         finish
                     );
 
 
-                    const watch =
-                        setInterval(
-                            function () {
-
-                                if (
-                                    finished
-                                ) {
-
-                                    clearInterval(
-                                        watch
-                                    );
-
-
-                                    return;
-                                }
-
-
-                                if (
-                                    typeof shouldCancel
-                                    === "function"
-
-                                    && shouldCancel()
-                                ) {
-
-                                    clearInterval(
-                                        watch
-                                    );
-
-
-                                    stopVideo(
-                                        element
-                                    );
-
-
-                                    finish();
-
-                                }
-
-                            },
-                            50
-                        );
-
-                }
-            );
-
-        }
-
-
-        function playVideoDetached(
-            element,
-            source
-        ) {
-
-            if (
-                !element
-            ) {
-
-                return;
-            }
-
-
-            if (
-                source
-                && element.getAttribute(
-                    "src"
-                ) !== source
-            ) {
-
-                element.src =
-                    source;
-
-            }
-
-
-            try {
-
-                element.currentTime =
-                    0;
-
-
-                const promise =
-                    element.play();
-
-
-                if (
-                    promise
-                    && typeof promise.catch
-                    === "function"
-                ) {
-
-                    promise.catch(
-                        function (
-                            error
-                        ) {
-
-                            console.warn(
-                                "[SAJU] 영상 재생 실패",
-                                source,
-                                error
-                            );
-
-                        }
+                    element.removeEventListener(
+                        "error",
+                        finish
                     );
 
-                }
-
-            } catch (
-                error
-            ) {
-
-                console.warn(
-                    "[SAJU] 영상 재생 실패",
-                    source,
-                    error
-                );
-
-            }
-
-        }
-
-
-        function stopVideo(
-            element
-        ) {
-
-            if (
-                !element
-            ) {
-
-                return;
-            }
-
-
-            try {
-
-                element.pause();
-
-
-                element.currentTime =
-                    0;
-
-            } catch (
-                error
-            ) {
-
-                console.debug(
-                    "[SAJU] 영상 정지 생략",
-                    error
-                );
-
-            }
-
-        }
-
-
-
-        /* =====================================================
-           LOCAL DATE
-        ====================================================== */
-
-        function localDateIso(
-            date
-        ) {
-
-            return date.getFullYear()
-
-                + "-"
-
-                + String(
-                    date.getMonth()
-                    + 1
-                )
-                    .padStart(
-                        2,
-                        "0"
-                    )
-
-                + "-"
-
-                + String(
-                    date.getDate()
-                )
-                    .padStart(
-                        2,
-                        "0"
-                    );
-
-        }
-
-
-
-        /* =====================================================
-           UTIL
-        ====================================================== */
-
-        function pad2(
-            value
-        ) {
-
-            return String(
-                value
-            )
-                .padStart(
-                    2,
-                    "0"
-                );
-        }
-
-
-        function safeText(
-            value,
-            fallback
-        ) {
-
-            if (
-                value === null
-                || value === undefined
-                || value === ""
-            ) {
-
-                return fallback
-                    || "";
-
-            }
-
-
-            return String(
-                value
-            );
-        }
-
-
-        function firstNonEmpty() {
-
-            const values =
-                Array.from(
-                    arguments
-                );
-
-
-            for (
-                const value
-                of values
-            ) {
-
-                const text =
-                    safeText(
-                        value
-                    )
-                        .trim();
-
-
-                if (
-                    text
-                ) {
-
-                    return text;
-                }
-
-            }
-
-
-            return "";
-        }
-
-
-        function joinUnique() {
-
-            const values =
-                Array.from(
-                    arguments
-                );
-
-
-            const seen =
-                new Set();
-
-
-            return values
-                .map(
-                    function (
-                        value
-                    ) {
-
-                        return safeText(
-                            value
-                        )
-                            .trim();
-
-                    }
-                )
-                .filter(
-                    Boolean
-                )
-                .filter(
-                    function (
-                        value
-                    ) {
-
-                        if (
-                            seen.has(
-                                value
-                            )
-                        ) {
-
-                            return false;
-                        }
-
-
-                        seen.add(
-                            value
-                        );
-
-
-                        return true;
-
-                    }
-                )
-                .join(
-                    "\n\n"
-                );
-        }
-
-
-        function shorten(
-            value,
-            maxLength
-        ) {
-
-            const text =
-                safeText(
-                    value
-                );
-
-
-            if (
-                text.length
-                <= maxLength
-            ) {
-
-                return text;
-            }
-
-
-            return text.slice(
-                0,
-                maxLength
-            )
-                + "…";
-        }
-
-
-        function setText(
-            id,
-            value
-        ) {
-
-            const element =
-                document.getElementById(
-                    id
-                );
-
-
-            if (
-                !element
-            ) {
-
-                return;
-            }
-
-
-            element.textContent =
-                safeText(
-                    value
-                );
-
-        }
-
-
-        function wait(
-            milliseconds
-        ) {
-
-            return new Promise(
-                function (
-                    resolve
-                ) {
-
-                    setTimeout(
-                        resolve,
-                        milliseconds
-                    );
-
+                };
+
+
+            element.addEventListener(
+                "ended",
+                finish,
+                {
+                    once:
+                        true
                 }
             );
 
-        }
+
+            element.addEventListener(
+                "error",
+                finish,
+                {
+                    once:
+                        true
+                }
+            );
 
 
-        async function waitCancelable(
-            milliseconds,
-            shouldCancel
-        ) {
-
-            const interval =
-                50;
-
-
-            let remaining =
-                milliseconds;
-
-
-            while (
-                remaining > 0
+            if (
+                element.ended
             ) {
 
-                if (
-                    shouldCancel()
-                ) {
-
-                    return;
-                }
-
-
-                const waitTime =
-                    Math.min(
-                        interval,
-                        remaining
-                    );
-
-
-                await wait(
-                    waitTime
-                );
-
-
-                remaining -=
-                    waitTime;
+                finish();
 
             }
 
         }
+    );
+
+}
 
 
-        function showToast(
-            message
-        ) {
+function stopVideo(
+    element
+) {
 
-            clearTimeout(
-                toastTimer
-            );
+    if (
+        !element
+    ) {
 
-
-            toast.textContent =
-                safeText(
-                    message,
-                    "오류가 발생했습니다."
-                );
-
-
-            toast.classList.add(
-                "is-show"
-            );
-
-
-            toastTimer =
-                setTimeout(
-                    function () {
-
-                        toast.classList.remove(
-                            "is-show"
-                        );
-
-                    },
-                    2400
-                );
-
-        }
-
-
-        function escapeHtml(
-            value
-        ) {
-
-            const element =
-                document.createElement(
-                    "div"
-                );
-
-
-            element.textContent =
-                safeText(
-                    value
-                );
-
-
-            return element.innerHTML;
-        }
+        return;
 
     }
-);
+
+
+    try {
+
+        element.pause();
+
+    } catch (
+        ignored
+    ) {
+
+    }
+
+}
+
+
+
+/* =========================================================
+   STORAGE
+   ========================================================= */
+
+function saveForm() {
+
+    sessionStorage.setItem(
+        FORM_STORAGE_KEY,
+        JSON.stringify(
+            formState
+        )
+    );
+
+}
+
+
+function loadStoredForm() {
+
+    const stored =
+        sessionStorage.getItem(
+            FORM_STORAGE_KEY
+        );
+
+
+    if (
+        !stored
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        const parsed =
+            JSON.parse(
+                stored
+            );
+
+
+        formState = {
+
+            ...formState,
+
+            ...parsed
+
+        };
+
+    } catch (
+        ignored
+    ) {
+
+    }
+
+}
+
+
+function restoreFormInputs() {
+
+    nameInput.value =
+        formState.name
+        || "";
+
+
+    birthYear.value =
+        formState.birthYear
+        || "";
+
+
+    birthMonth.value =
+        formState.birthMonth
+        || "";
+
+
+    birthDay.value =
+        formState.birthDay
+        || "";
+
+
+    birthHour.value =
+        formState.birthHour
+        || "";
+
+
+    birthMinute.value =
+        formState.birthMinute
+        || "";
+
+
+    birthTimeUnknown.checked =
+        Boolean(
+            formState.birthTimeUnknown
+        );
+
+
+    lunarLeapMonth.checked =
+        Boolean(
+            formState.leapMonth
+        );
+
+
+    document
+        .querySelectorAll(
+            "[data-calendar]"
+        )
+        .forEach(
+            button => {
+
+                button.classList.toggle(
+                    "is-active",
+                    button.dataset.calendar
+                    === formState.calendarType
+                );
+
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            "[data-gender]"
+        )
+        .forEach(
+            button => {
+
+                button.classList.toggle(
+                    "is-active",
+                    button.dataset.gender
+                    === formState.gender
+                );
+
+            }
+        );
+
+
+    updateCalendarUI();
+
+    updateTimeUI();
+
+}
+
+
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+async function safeErrorBody(
+    response
+) {
+
+    try {
+
+        const text =
+            await response.text();
+
+
+        if (
+            !text
+        ) {
+
+            return "";
+
+        }
+
+
+        return text.length
+        > 500
+            ? text.substring(
+                0,
+                500
+            )
+            : text;
+
+    } catch (
+        ignored
+    ) {
+
+        return "";
+
+    }
+
+}
+
+
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+
+let toastTimer =
+    null;
+
+
+function showToast(
+    message
+) {
+
+    if (
+        !message
+    ) {
+
+        return;
+
+    }
+
+
+    toast.textContent =
+        message;
+
+
+    toast.classList.add(
+        "is-show"
+    );
+
+
+    if (
+        toastTimer
+    ) {
+
+        clearTimeout(
+            toastTimer
+        );
+
+    }
+
+
+    toastTimer =
+        setTimeout(
+            () => {
+
+                toast.classList.remove(
+                    "is-show"
+                );
+
+            },
+            3500
+        );
+
+}
+
+
+
+/* =========================================================
+   UTILITY
+   ========================================================= */
+
+function required(
+    id
+) {
+
+    const element =
+        document.getElementById(
+            id
+        );
+
+
+    if (
+        !element
+    ) {
+
+        throw new Error(
+            `필수 DOM을 찾을 수 없습니다: #${id}`
+        );
+
+    }
+
+
+    return element;
+
+}
+
+
+function optional(
+    id
+) {
+
+    return document.getElementById(
+        id
+    );
+
+}
+
+
+function setText(
+    id,
+    value
+) {
+
+    const element =
+        optional(
+            id
+        );
+
+
+    if (
+        element
+    ) {
+
+        element.textContent =
+            value
+            ?? "";
+
+    }
+
+}
+
+
+function pad2(
+    value
+) {
+
+    return String(
+        value
+    )
+        .padStart(
+            2,
+            "0"
+        );
+
+}
+
+
+function delay(
+    milliseconds
+) {
+
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                milliseconds
+            )
+    );
+
+}
+
+
+function escapeHtml(
+    value
+) {
+
+    return String(
+        value
+        ?? ""
+    )
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            "\"",
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
+
+}
