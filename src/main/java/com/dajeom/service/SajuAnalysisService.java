@@ -145,22 +145,23 @@ import java.util.Optional;
  *
  * =================================================
  *
- * 정밀화 20차 결과인
  * ConsultationInterpretationPromptContext가
  * 외부 LLM Adapter의 공식 deterministic 입력 Anchor다.
  *
  * =================================================
  *
- * 이 Service는 이제:
+ * 외부 LLM 결과는:
  *
- * - 20차 Prompt Context가 존재할 때 외부 LLM Story Adapter를 호출한다.
- * - LLM 결과는 storyText에만 연결한다.
- * - 20차 결과를 Legacy InterpretationSignal에 섞지 않는다.
- * - 외부 LLM 실패가 deterministic 분석 전체를 실패시키지 않도록 한다.
+ * - storyText
+ * - storyEmphasis
  *
- * 기존 targetYear 기반 14차와
- * Legacy Consultation 경로는
- * 기존 SajuAnalysisResponse 호환을 위해 유지한다.
+ * 에만 연결한다.
+ *
+ * storyEmphasis는 새로운 사주 계산값이 아니라
+ * storyText 중 화면에서 진하게 보여줄 위치 정보다.
+ *
+ * 외부 LLM 실패가 deterministic 분석 전체를
+ * 실패시키지 않도록 한다.
  */
 @Service
 public class SajuAnalysisService {
@@ -195,35 +196,17 @@ public class SajuAnalysisService {
     private final AnnualLuckAnalysisEngine
             annualLuckAnalysisEngine;
 
-    /*
-     * =================================================
-     * 16차
-     * =================================================
-     */
-
     private final LuckIntegratedAnalysisEngine
             luckIntegratedAnalysisEngine;
 
     private final LuckIntegratedLayerAnalysisResolverFactory
             luckIntegratedLayerAnalysisResolverFactory;
 
-    /*
-     * =================================================
-     * 17차
-     * =================================================
-     */
-
     private final ShinsalAnalysisEngine
             shinsalAnalysisEngine;
 
     private final ShinsalNatalPointSourceResolver
             shinsalNatalPointSourceResolver;
-
-    /*
-     * =================================================
-     * 18차
-     * =================================================
-     */
 
     private final LifeDomainEvidenceResolver
             lifeDomainEvidenceResolver;
@@ -237,35 +220,17 @@ public class SajuAnalysisService {
     private final LifeDomainDecadeContextSourceResolver
             lifeDomainDecadeContextSourceResolver;
 
-    /*
-     * =================================================
-     * 19차
-     * =================================================
-     */
-
     private final ConsultationRequestScopeAnalyzer
             consultationRequestScopeAnalyzer;
 
     private final ConsultationCategoryEvidenceAnalyzer
             consultationCategoryEvidenceAnalyzer;
 
-    /*
-     * =================================================
-     * 21차 Timeline Range
-     * =================================================
-     */
-
     private final ConsultationTimelineRangeAnalyzer
             consultationTimelineRangeAnalyzer;
 
     private final ConsultationRequestEvidenceAnalyzer
             consultationRequestEvidenceAnalyzer;
-
-    /*
-     * =================================================
-     * 20차
-     * =================================================
-     */
 
     private final ConsultationGroundingAnalyzer
             consultationGroundingAnalyzer;
@@ -276,20 +241,8 @@ public class SajuAnalysisService {
     private final ConsultationInterpretationPromptContextAnalyzer
             consultationInterpretationPromptContextAnalyzer;
 
-    /*
-     * =================================================
-     * 외부 LLM 문장화 경계
-     * =================================================
-     */
-
     private final ConsultationStoryGenerator
             consultationStoryGenerator;
-
-    /*
-     * =================================================
-     * Legacy Interpretation Path
-     * =================================================
-     */
 
     private final LuckInteractionAnalysisEngine
             luckInteractionAnalysisEngine;
@@ -814,17 +767,6 @@ public class SajuAnalysisService {
             );
         }
 
-        /*
-         * =================================================
-         * 19차 요청 범위
-         * =================================================
-         *
-         * Timeline Range가 실제로 필요한 요청인지
-         * 먼저 확정한다.
-         *
-         * 종합운 또는 PAST_LUCK / FUTURE_LUCK이
-         * 선택된 요청에서만 21차 Range 계산을 실행한다.
-         */
         Optional<ConsultationRequestScopeAnalysis>
                 consultationRequestScopeAnalysis =
                 analyzeConsultationRequestScopeIfAvailable(
@@ -842,11 +784,6 @@ public class SajuAnalysisService {
             );
         }
 
-        /*
-         * =================================================
-         * 21차 과거/미래 Timeline Range
-         * =================================================
-         */
         Optional<ConsultationTimelineRangeAnalysis>
                 consultationTimelineRangeAnalysis =
                 analyzeConsultationTimelineRangeIfRequested(
@@ -1104,12 +1041,6 @@ public class SajuAnalysisService {
         );
     }
 
-    /*
-     * =================================================
-     * 19차 요청 범위
-     * =================================================
-     */
-
     private Optional<ConsultationRequestScopeAnalysis>
     analyzeConsultationRequestScopeIfAvailable(
 
@@ -1150,19 +1081,6 @@ public class SajuAnalysisService {
                 requestScope
         );
     }
-
-    /*
-     * =================================================
-     * 21차 과거/미래 Timeline Range
-     * =================================================
-     *
-     * PAST_LUCK 또는 FUTURE_LUCK이
-     * 실제 요청 범위에 포함된 경우에만 실행한다.
-     *
-     * 일반 성향/관계/재물 등 일부 Category만
-     * 조회하는 요청에서 10년 Range 계산을
-     * 불필요하게 수행하지 않는다.
-     */
 
     private Optional<ConsultationTimelineRangeAnalysis>
     analyzeConsultationTimelineRangeIfRequested(
@@ -1319,12 +1237,6 @@ public class SajuAnalysisService {
                 analysis
         );
     }
-
-    /*
-     * =================================================
-     * 19차 Category / Request Evidence
-     * =================================================
-     */
 
     private Optional<ConsultationRequestEvidenceAnalysis>
     analyzeConsultationRequestEvidenceIfAvailable(
@@ -2489,6 +2401,13 @@ public class SajuAnalysisService {
                         consultationStoryGeneration
                 );
 
+        List<String> storyEmphasis =
+                resolveStoryEmphasis(
+                        section,
+                        interpretationPromptContext,
+                        consultationStoryGeneration
+                );
+
         return new ConsultationSectionResponse(
                 section.order(),
                 section.category(),
@@ -2501,6 +2420,7 @@ public class SajuAnalysisService {
                 section.guidanceMessage(),
                 section.narrationText(),
                 storyText,
+                storyEmphasis,
                 section.basisLabels(),
                 section.evidenceCount()
         );
@@ -2568,6 +2488,99 @@ public class SajuAnalysisService {
                 .orElse(
                         section.narrationText()
                 );
+    }
+
+    private List<String> resolveStoryEmphasis(
+
+            ConsultationSection section,
+
+            Optional<ConsultationInterpretationPromptContext>
+                    interpretationPromptContext,
+
+            Optional<ConsultationStoryGeneration>
+                    consultationStoryGeneration
+
+    ) {
+
+        Objects.requireNonNull(
+                section,
+                "ConsultationSection은 필수입니다."
+        );
+
+        Objects.requireNonNull(
+                interpretationPromptContext,
+                "ConsultationInterpretationPromptContext Optional은 필수입니다."
+        );
+
+        Objects.requireNonNull(
+                consultationStoryGeneration,
+                "ConsultationStoryGeneration Optional은 필수입니다."
+        );
+
+        if (
+                interpretationPromptContext.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        ConsultationCategory category =
+                section.category();
+
+        ConsultationInterpretationPromptContext promptContext =
+                interpretationPromptContext
+                        .orElseThrow();
+
+        Optional<ConsultationInterpretationPromptSection> promptSection =
+                promptContext
+                        .findSection(
+                                category
+                        );
+
+        if (
+                promptSection.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        if (
+                promptSection
+                        .orElseThrow()
+                        .unavailable()
+        ) {
+
+            return List.of();
+        }
+
+        if (
+                consultationStoryGeneration.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        ConsultationStoryGeneration generation =
+                consultationStoryGeneration
+                        .orElseThrow();
+
+        /*
+         * 실제 생성 Story가 없는 경우에는
+         * resolveStoryText()가 legacy narrationText를 사용하므로
+         * LLM emphasis를 붙이지 않는다.
+         */
+        if (
+                !generation.hasStory(
+                        category
+                )
+        ) {
+
+            return List.of();
+        }
+
+        return generation.storyEmphasisOf(
+                category
+        );
     }
 
     private List<String> toElementNames(

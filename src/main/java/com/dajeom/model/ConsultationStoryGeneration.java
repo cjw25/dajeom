@@ -32,7 +32,8 @@ import java.util.Optional;
  * emphasisByCategory
  *
  * - 사용자 화면에서 진한 글씨로 보여줄 실제 상담문 일부
- * - 반드시 해당 storyText에 실제로 존재하는 문자열만 허용한다.
+ * - 해당 storyText에 실제 존재하는 문자열만 보존한다.
+ * - 잘못된 강조 후보 하나 때문에 정상 상담문을 실패시키지 않는다.
  * - 사주 계산값이나 새로운 판단이 아니다.
  */
 public record ConsultationStoryGeneration(
@@ -184,14 +185,18 @@ public record ConsultationStoryGeneration(
                                 category
                         );
 
+                /*
+                 * Story가 없는 Category의 강조값은
+                 * 사용자 출력에 의미가 없으므로 보존하지 않는다.
+                 *
+                 * 강조 메타데이터 때문에
+                 * 정상 Story Generation 전체를 실패시키지 않는다.
+                 */
                 if (
                         storyText == null
                 ) {
 
-                    throw new IllegalArgumentException(
-                            "Story가 없는 Category에는 Emphasis를 넣을 수 없습니다: "
-                                    + category
-                    );
+                    continue;
                 }
 
                 List<String> emphasis =
@@ -340,16 +345,31 @@ public record ConsultationStoryGeneration(
                 continue;
             }
 
+            /*
+             * 강조는 문단 하나 안에서 표현하도록 한다.
+             */
+            if (
+                    phrase.contains(
+                            "\n"
+                    )
+            ) {
+
+                continue;
+            }
+
+            /*
+             * 실제 Story 안에 없는 강조 후보는
+             * 해당 후보만 버린다.
+             *
+             * 이것 때문에 상담문 전체를 실패시키지 않는다.
+             */
             if (
                     !storyText.contains(
                             phrase
                     )
             ) {
 
-                throw new IllegalArgumentException(
-                        "Story Emphasis는 실제 storyText에 존재하는 문자열이어야 합니다: "
-                                + phrase
-                );
+                continue;
             }
 
             normalized.add(

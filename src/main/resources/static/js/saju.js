@@ -3675,6 +3675,13 @@ function renderStoryBook(
         "현재 이 장의 상담문을 표시할 수 없습니다.";
 
 
+    const storyEmphasis =
+        normalizeStoryEmphasis(
+            consultation.storyEmphasis,
+            storyText
+        );
+
+
     const paragraphs =
         splitParagraphs(
             storyText
@@ -3769,6 +3776,10 @@ function renderStoryBook(
             `;
 
 
+    const consumedEmphasis =
+        new Set();
+
+
     resultStoryList.innerHTML =
         `
 
@@ -3832,10 +3843,35 @@ function renderStoryBook(
                                 .map(
                                     paragraph => {
 
+                                        const paragraphEmphasis =
+                                            storyEmphasis
+                                                .filter(
+                                                    phrase =>
+                                                        !consumedEmphasis.has(
+                                                            phrase
+                                                        )
+                                                        &&
+                                                        paragraph.includes(
+                                                            phrase
+                                                        )
+                                                );
+
+
+                                        paragraphEmphasis.forEach(
+                                            phrase => {
+
+                                                consumedEmphasis.add(
+                                                    phrase
+                                                );
+
+                                            }
+                                        );
+
+
                                         const hasEmphasis =
-                                            paragraph.includes(
-                                                "**"
-                                            );
+                                            paragraphEmphasis.length
+                                            >
+                                            0;
 
 
                                         return `
@@ -3843,7 +3879,12 @@ function renderStoryBook(
                                                 ${unavailable ? "story-unavailable" : ""}
                                                 ${hasEmphasis ? "has-emphasis" : ""}
                                             ">
-                                                ${renderStoryParagraph(paragraph)}
+                                                ${
+                                                    renderStoryParagraph(
+                                                        paragraph,
+                                                        paragraphEmphasis
+                                                    )
+                                                }
                                             </p>
                                         `;
 
@@ -3925,22 +3966,25 @@ function renderStoryBook(
 
 /*
  * =========================================================
- * Safe emphasis renderer
+ * Safe strong renderer
  * =========================================================
  *
- * OpenAI가 HTML을 직접 생성하지 않는다.
+ * OpenAI HTML을 실행하지 않는다.
  *
- * 우리가 허용하는 문법은:
+ * storyText와 storyEmphasis 모두
+ * 일반 문자열로만 전달받는다.
  *
- * **문장**
+ * 실제 storyText에 존재하는
+ * 검증된 강조 구절 위치에만
+ * Frontend가 직접 <strong>을 만든다.
  *
- * 하나뿐이다.
- *
- * 모든 일반 텍스트는 escapeHtml 후 렌더링한다.
+ * 모든 사용자/모델 텍스트는
+ * escapeHtml()을 먼저 거친다.
  */
 
 function renderStoryParagraph(
-    paragraph
+    paragraph,
+    emphasisSource
 ) {
 
     const source =
@@ -3951,68 +3995,173 @@ function renderStoryParagraph(
         );
 
 
-    const pattern =
-        /(\*\*[\s\S]+?\*\*)/g;
+    if (
+        !source
+    ) {
+
+        return "";
+
+    }
 
 
-    return source
-        .split(
-            pattern
-        )
-        .filter(
-            part =>
-                part !== ""
-        )
-        .map(
-            part => {
-
-                if (
-                    part.startsWith(
-                        "**"
-                    )
-                    &&
-                    part.endsWith(
-                        "**"
-                    )
-                    &&
-                    part.length
-                    >= 4
-                ) {
-
-                    const inner =
-                        part
-                            .slice(
-                                2,
-                                -2
-                            )
-                            .trim();
+    const phrases =
+        normalizeStoryEmphasis(
+            emphasisSource,
+            source
+        );
 
 
-                    if (
-                        !inner
-                    ) {
+    if (
+        phrases.length
+        === 0
+    ) {
 
-                        return "";
+        return escapeHtml(
+            source
+        );
 
-                    }
-
-
-                    return `
-                        <strong class="story-emphasis">${escapeHtml(inner)}</strong>
-                    `;
-
-                }
+    }
 
 
-                return escapeHtml(
-                    part
+    const matches =
+        [];
+
+
+    phrases.forEach(
+        phrase => {
+
+            const start =
+                source.indexOf(
+                    phrase
                 );
 
+
+            if (
+                start < 0
+            ) {
+
+                return;
+
             }
-        )
-        .join(
-            ""
+
+
+            const end =
+                start
+                +
+                phrase.length;
+
+
+            const overlaps =
+                matches.some(
+                    match =>
+                        start < match.end
+                        &&
+                        match.start < end
+                );
+
+
+            if (
+                overlaps
+            ) {
+
+                return;
+
+            }
+
+
+            matches.push(
+                {
+                    start:
+                        start,
+
+                    end:
+                        end
+                }
+            );
+
+        }
+    );
+
+
+    if (
+        matches.length
+        === 0
+    ) {
+
+        return escapeHtml(
+            source
         );
+
+    }
+
+
+    matches.sort(
+        (
+            left,
+            right
+        ) =>
+            left.start
+            -
+            right.start
+    );
+
+
+    let cursor =
+        0;
+
+
+    let html =
+        "";
+
+
+    matches.forEach(
+        match => {
+
+            html +=
+                escapeHtml(
+                    source.slice(
+                        cursor,
+                        match.start
+                    )
+                );
+
+
+            html +=
+                `
+                    <strong
+                            class="story-emphasis"
+                            style="
+                                color: inherit !important;
+                                font-weight: 800 !important;
+                                font-style: normal !important;
+                                background: none !important;
+                                text-shadow: none !important;
+                            "
+                    >${escapeHtml(
+                        source.slice(
+                            match.start,
+                            match.end
+                        )
+                    )}</strong>
+                `;
+
+
+            cursor =
+                match.end;
+
+        }
+    );
+
+
+    html +=
+        escapeHtml(
+            source.slice(
+                cursor
+            )
+        );
+
+
+    return html;
 
 }
 
@@ -4686,6 +4835,12 @@ function normalizeResult(
                         {};
 
 
+                    const storyText =
+                        normalizeStoryText(
+                            source.storyText
+                        );
+
+
                     return {
 
                         ...source,
@@ -4694,8 +4849,12 @@ function normalizeResult(
                             category,
 
                         storyText:
-                            normalizeStoryText(
-                                source.storyText
+                            storyText,
+
+                        storyEmphasis:
+                            normalizeStoryEmphasis(
+                                source.storyEmphasis,
+                                storyText
                             )
 
                     };
@@ -4727,6 +4886,84 @@ function normalizeStoryText(
             "\n"
         )
         .trim();
+
+}
+
+
+
+function normalizeStoryEmphasis(
+    value,
+    storyText
+) {
+
+    if (
+        !Array.isArray(
+            value
+        )
+        ||
+        !storyText
+    ) {
+
+        return [];
+
+    }
+
+
+    const seen =
+        new Set();
+
+
+    const result =
+        [];
+
+
+    value.forEach(
+        raw => {
+
+            const phrase =
+                String(
+                    raw
+                    ??
+                    ""
+                )
+                    .trim();
+
+
+            if (
+                !phrase
+                ||
+                phrase.includes(
+                    "\n"
+                )
+                ||
+                seen.has(
+                    phrase
+                )
+                ||
+                !storyText.includes(
+                    phrase
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            seen.add(
+                phrase
+            );
+
+
+            result.push(
+                phrase
+            );
+
+        }
+    );
+
+
+    return result;
 
 }
 
