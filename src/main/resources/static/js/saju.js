@@ -17,18 +17,6 @@ const RESULT_STORAGE_KEY =
     "sajuAnalysisResult";
 
 
-const MINIMUM_ANALYSIS_TIME =
-    4200;
-
-
-const FACT_DISPLAY_TIME =
-    900;
-
-
-const WAIT_PROGRESS_LIMIT =
-    94;
-
-
 const VIDEO_PATH = {
 
     opening:
@@ -54,128 +42,435 @@ const VIDEO_PATH = {
 
 
 /* =========================================================
+   LOADING
+   ========================================================= */
+
+const LOADING_WAIT_ROTATION_MS =
+    3400;
+
+
+const LOADING_STAGES = [
+
+    {
+
+        until:
+            20,
+
+        label:
+            "분석중",
+
+        message:
+            "태어난 순간의 네 기둥을 하나씩 맞춰보고 있어."
+
+    },
+
+    {
+
+        until:
+            40,
+
+        label:
+            "흐름을 읽는 중",
+
+        message:
+            "타고난 성향과 사람을 대하는 방식을 살펴보고 있어."
+
+    },
+
+    {
+
+        until:
+            60,
+
+        label:
+            "천명록을 구성하는 중",
+
+        message:
+            "관계와 인연, 재물의 흐름을 하나씩 이어보고 있어."
+
+    },
+
+    {
+
+        until:
+            80,
+
+        label:
+            "조금만 기다려줘",
+
+        message:
+            "일과 책임, 생활의 흐름까지 함께 정리하고 있어."
+
+    },
+
+    {
+
+        until:
+            94,
+
+        label:
+            "마지막 기록을 정리하는 중",
+
+        message:
+            "현재의 흐름과 앞으로 이어질 시간을 살펴보고 있어."
+
+    }
+
+];
+
+
+const LOADING_WAIT_MESSAGES = [
+
+    {
+
+        label:
+            "거의 다 왔어",
+
+        message:
+            "네 이야기를 한 장씩 정리하고 있어. 조금만 더 기다려줘."
+
+    },
+
+    {
+
+        label:
+            "마지막 확인 중",
+
+        message:
+            "지금까지 읽은 흐름을 마지막으로 한 번 더 맞춰보고 있어."
+
+    },
+
+    {
+
+        label:
+            "천명록을 완성하는 중",
+
+        message:
+            "네게 보여줄 기록을 차례대로 정돈하고 있어."
+
+    },
+
+    {
+
+        label:
+            "조금만 더 기다려줘",
+
+        message:
+            "마지막 내용을 확인하고 있어."
+
+    }
+
+];
+
+
+const LOADING_ACTOR_LINES = [
+
+    "잠시만.\n지금 네 흐름을 읽고 있어.",
+
+    "조금만.\n아직 확인할 게 남았어.",
+
+    "생각보다\n이어지는 게 많네.",
+
+    "거의 다 봤어.\n한 장씩 정리하고 있어.",
+
+    "조금만 더 기다려.\n마지막 흐름을 맞춰보고 있어.",
+
+    "이제 거의 끝났어.\n곧 네 기록을 보여줄게."
+
+];
+
+
+
+/* =========================================================
    CATEGORY
    ========================================================= */
 
 const CATEGORY_META = {
 
+
     PERSONALITY: {
 
-        number: 1,
-        chapter: "제1장",
-        label: "타고난 성향",
-        title: "나는 어떤 사람인가",
-        analyzing: "당신이 타고난 성향과 기질을 풀어보고 있습니다."
+        number:
+            1,
+
+        chapter:
+            "제1장",
+
+        label:
+            "타고난 성향",
+
+        title:
+            "나는 어떤 사람인가",
+
+        intro:
+            "첫 번째 기록은 네가 어떤 사람인지부터 시작할게.",
+
+        visual:
+            "image",
+
+        source:
+            "/img/category_bg.png"
 
     },
 
 
     PAST_LUCK: {
 
-        number: 2,
-        chapter: "제2장",
-        label: "지나온 운",
-        title: "지나온 시간의 흐름",
-        analyzing: "지금까지 지나온 삶의 흐름을 살펴보고 있습니다."
+        number:
+            2,
+
+        chapter:
+            "제2장",
+
+        label:
+            "지나온 운",
+
+        title:
+            "지나온 시간의 흐름",
+
+        intro:
+            "이번에는 지금까지 네가 지나온 시간의 흐름을 돌아보자.",
+
+        visual:
+            "image",
+
+        source:
+            "/img/loading_bg.png"
 
     },
 
 
     SOCIAL_RELATIONSHIP: {
 
-        number: 3,
-        chapter: "제3장",
-        label: "대인관계",
-        title: "사람과 관계를 맺는 방식",
-        analyzing: "사람을 만나고 관계를 이어가는 흐름을 살펴보고 있습니다."
+        number:
+            3,
+
+        chapter:
+            "제3장",
+
+        label:
+            "대인관계",
+
+        title:
+            "사람과 관계를 맺는 방식",
+
+        intro:
+            "이제 사람을 만나고 관계를 이어가는 네 방식을 볼게.",
+
+        visual:
+            "video",
+
+        source:
+            VIDEO_PATH.network
 
     },
 
 
     LOVE_STYLE: {
 
-        number: 4,
-        chapter: "제4장",
-        label: "연애 성향",
-        title: "마음을 주고받는 방식",
-        analyzing: "사랑에서 마음을 표현하고 받아들이는 방식을 살펴보고 있습니다."
+        number:
+            4,
+
+        chapter:
+            "제4장",
+
+        label:
+            "연애 성향",
+
+        title:
+            "마음을 주고받는 방식",
+
+        intro:
+            "이번 장은 사랑에 관한 이야기야. 마음을 주고받는 방식을 살펴보자.",
+
+        visual:
+            "video",
+
+        source:
+            VIDEO_PATH.love
 
     },
 
 
     PARTNER_LUCK: {
 
-        number: 5,
-        chapter: "제5장",
-        label: "배우자운",
-        title: "인연과 동반자의 흐름",
-        analyzing: "인연과 동반자 관계의 흐름을 살펴보고 있습니다."
+        number:
+            5,
+
+        chapter:
+            "제5장",
+
+        label:
+            "배우자운",
+
+        title:
+            "인연과 동반자의 흐름",
+
+        intro:
+            "사랑 다음에는 오래 함께할 인연의 흐름을 읽어볼게.",
+
+        visual:
+            "video",
+
+        source:
+            VIDEO_PATH.love
 
     },
 
 
     WEALTH: {
 
-        number: 6,
-        chapter: "제6장",
-        label: "재물운",
-        title: "재물을 다루는 흐름",
-        analyzing: "재물을 만들고 지키고 운용하는 흐름을 살펴보고 있습니다."
+        number:
+            6,
+
+        chapter:
+            "제6장",
+
+        label:
+            "재물운",
+
+        title:
+            "재물을 다루는 흐름",
+
+        intro:
+            "이제 돈을 만들고 지키고 움직이는 네 흐름을 살펴보자.",
+
+        visual:
+            "video",
+
+        source:
+            VIDEO_PATH.wealth
 
     },
 
 
     CAREER: {
 
-        number: 7,
-        chapter: "제7장",
-        label: "직업운",
-        title: "일과 성취를 향하는 방식",
-        analyzing: "일과 책임, 성취를 향하는 흐름을 살펴보고 있습니다."
+        number:
+            7,
+
+        chapter:
+            "제7장",
+
+        label:
+            "직업운",
+
+        title:
+            "일과 성취를 향하는 방식",
+
+        intro:
+            "이번에는 일과 책임, 그리고 네가 성취를 만들어가는 방식을 볼게.",
+
+        visual:
+            "video",
+
+        source:
+            VIDEO_PATH.network
 
     },
 
 
     LEGAL_RISK: {
 
-        number: 8,
-        chapter: "제8장",
-        label: "분쟁과 주의",
-        title: "갈등과 책임을 다루는 흐름",
-        analyzing: "갈등이나 책임이 생길 때의 흐름을 살펴보고 있습니다."
+        number:
+            8,
+
+        chapter:
+            "제8장",
+
+        label:
+            "분쟁과 주의",
+
+        title:
+            "갈등과 책임을 다루는 흐름",
+
+        intro:
+            "조금 더 조심해서 봐야 할 부분이야. 갈등과 책임의 흐름을 살펴볼게.",
+
+        visual:
+            "image",
+
+        source:
+            "/img/category_bg.png"
 
     },
 
 
     HEALTH_TENDENCY: {
 
-        number: 9,
-        chapter: "제9장",
-        label: "건강 경향",
-        title: "균형과 회복의 흐름",
-        analyzing: "생활의 균형과 회복 리듬을 살펴보고 있습니다."
+        number:
+            9,
+
+        chapter:
+            "제9장",
+
+        label:
+            "건강 경향",
+
+        title:
+            "균형과 회복의 흐름",
+
+        intro:
+            "이번 장에서는 생활의 균형과 회복 리듬을 살펴보자.",
+
+        visual:
+            "image",
+
+        source:
+            "/img/loading_bg.png"
 
     },
 
 
     CURRENT_YEAR_LUCK: {
 
-        number: 10,
-        chapter: "제10장",
-        label: "올해의 운",
-        title: "지금 흐르는 운의 방향",
-        analyzing: "현재 시점에 들어와 있는 운의 흐름을 살펴보고 있습니다."
+        number:
+            10,
+
+        chapter:
+            "제10장",
+
+        label:
+            "올해의 운",
+
+        title:
+            "지금 흐르는 운의 방향",
+
+        intro:
+            "이제 현재로 돌아오자. 지금 네 앞에 흐르고 있는 운을 볼게.",
+
+        visual:
+            "image",
+
+        source:
+            "/img/category_bg.png"
 
     },
 
 
     FUTURE_LUCK: {
 
-        number: 11,
-        chapter: "제11장",
-        label: "앞으로의 운",
-        title: "다가오는 흐름을 바라보는 법",
-        analyzing: "앞으로 이어질 흐름을 살펴보고 있습니다."
+        number:
+            11,
+
+        chapter:
+            "제11장",
+
+        label:
+            "앞으로의 운",
+
+        title:
+            "다가오는 흐름을 바라보는 법",
+
+        intro:
+            "마지막 장이야. 이제 앞으로 이어질 흐름을 천천히 바라보자.",
+
+        visual:
+            "image",
+
+        source:
+            "/img/category_bg.png"
 
     }
 
@@ -200,11 +495,102 @@ const CATEGORY_ORDER =
 
 
 /* =========================================================
+   FIVE ELEMENT
+   ========================================================= */
+
+const FIVE_ELEMENT_META = {
+
+    WOOD: {
+
+        order:
+            1,
+
+        hanja:
+            "木",
+
+        korean:
+            "목"
+
+    },
+
+    FIRE: {
+
+        order:
+            2,
+
+        hanja:
+            "火",
+
+        korean:
+            "화"
+
+    },
+
+    EARTH: {
+
+        order:
+            3,
+
+        hanja:
+            "土",
+
+        korean:
+            "토"
+
+    },
+
+    METAL: {
+
+        order:
+            4,
+
+        hanja:
+            "金",
+
+        korean:
+            "금"
+
+    },
+
+    WATER: {
+
+        order:
+            5,
+
+        hanja:
+            "水",
+
+        korean:
+            "수"
+
+    }
+
+};
+
+
+const FIVE_ELEMENT_ORDER =
+    Object
+        .keys(
+            FIVE_ELEMENT_META
+        )
+        .sort(
+            (
+                left,
+                right
+            ) =>
+                FIVE_ELEMENT_META[left].order
+                -
+                FIVE_ELEMENT_META[right].order
+        );
+
+
+
+/* =========================================================
    STATE
    ========================================================= */
 
 let currentScreen =
-    "intro";
+    "start";
 
 
 let currentResult =
@@ -215,11 +601,7 @@ let currentStoryIndex =
     0;
 
 
-let introFinished =
-    false;
-
-
-let skipFactsRequested =
+let bookOpened =
     false;
 
 
@@ -227,7 +609,59 @@ let analysisRunning =
     false;
 
 
+let analysisRequestPromise =
+    null;
+
+
+let loadingTimer =
+    null;
+
+
+let loadingWaitTimer =
+    null;
+
+
+let loadingProgress =
+    0;
+
+
+let loadingDialogueStage =
+    -1;
+
+
+let loadingWaitMessageIndex =
+    0;
+
+
+let loadingActorRunId =
+    0;
+
+
+let loadingActorTimer =
+    null;
+
+
+let loadingActorLineIndex =
+    0;
+
+
+let toastTimer =
+    null;
+
+
 let touchStartX =
+    null;
+
+
+let currentStoryVideo =
+    null;
+
+
+let guideRunId =
+    0;
+
+
+let guideHideTimer =
     null;
 
 
@@ -243,7 +677,7 @@ let formState = {
         false,
 
     gender:
-        "MALE",
+        "",
 
     birthYear:
         "",
@@ -279,350 +713,140 @@ const screens =
     );
 
 
-const backButton =
-    required(
-        "backButton"
-    );
-
-
-const homeButton =
-    required(
-        "homeButton"
-    );
-
-
-const headerSubtitle =
-    required(
-        "headerSubtitle"
-    );
-
-
-/* NAME */
-
-const nameForm =
-    required(
-        "nameForm"
-    );
-
-
-const nameInput =
-    required(
-        "nameInput"
-    );
-
-
-const nameError =
-    required(
-        "nameError"
-    );
-
-
-const nameNextButton =
-    required(
-        "nameNextButton"
-    );
-
-
-/* BIRTH */
-
-const birthForm =
-    required(
-        "birthForm"
-    );
-
-
-const birthYear =
-    required(
-        "birthYear"
-    );
-
-
-const birthMonth =
-    required(
-        "birthMonth"
-    );
-
-
-const birthDay =
-    required(
-        "birthDay"
-    );
-
-
-const birthHour =
-    required(
-        "birthHour"
-    );
-
-
-const birthMinute =
-    required(
-        "birthMinute"
-    );
-
-
-const birthTimeUnknown =
-    required(
-        "birthTimeUnknown"
-    );
-
-
-const timeInputArea =
-    required(
-        "timeInputArea"
-    );
-
-
-const lunarLeapArea =
-    required(
-        "lunarLeapArea"
-    );
-
-
-const lunarLeapMonth =
-    required(
-        "lunarLeapMonth"
-    );
-
-
-const birthError =
-    required(
-        "birthError"
-    );
-
-
-const birthNextButton =
-    required(
-        "birthNextButton"
-    );
-
-
-/* REVIEW */
-
-const reviewCompleteButton =
-    required(
-        "reviewCompleteButton"
-    );
-
-
-/* COMPLETE */
-
-const startAnalysisButton =
-    required(
-        "startAnalysisButton"
-    );
-
-
-/* ANALYSIS */
-
-const analysisStatus =
-    required(
-        "analysisStatus"
-    );
-
-
-const analysisTitle =
-    required(
-        "analysisTitle"
-    );
-
-
-const analysisMessage =
-    required(
-        "analysisMessage"
-    );
-
-
-const analysisProgressPercent =
-    required(
-        "analysisProgressPercent"
-    );
-
-
-const analysisProgressBar =
-    required(
-        "analysisProgressBar"
-    );
-
-
-const analysisElements =
-    Array.from(
-        document.querySelectorAll(
-            "[data-analysis-element]"
-        )
-    );
-
-
-/* ANALYSIS CATEGORY */
-
-const analysisFactOverlay =
-    required(
-        "analysisFactOverlay"
-    );
-
-
-const factCategoryIndex =
-    required(
-        "factCategoryIndex"
-    );
-
-
-const factCategoryKicker =
-    required(
-        "factCategoryKicker"
-    );
-
-
-const factCategoryTitle =
-    required(
-        "factCategoryTitle"
-    );
-
-
-const factCategoryMessage =
-    required(
-        "factCategoryMessage"
-    );
-
-
-const skipFactsButton =
-    required(
-        "skipFactsButton"
-    );
-
-
-/* RESULT */
-
-const resultTitle =
-    required(
-        "resultTitle"
-    );
-
-
-const resultSummary =
-    required(
-        "resultSummary"
-    );
-
-
-const resultPillars =
-    required(
-        "resultPillars"
-    );
-
-
-const resultStoryList =
-    required(
-        "resultStoryList"
-    );
-
-
-const resultHomeButton =
-    required(
-        "resultHomeButton"
-    );
-
-
-const toast =
-    required(
-        "toast"
-    );
-
-
-/* OPTIONAL INTRO */
+const startButton =
+    required("startButton");
 
 const openingVideo =
-    optional(
-        "openingVideo"
-    );
+    required("openingVideo");
 
+const skipOpeningButton =
+    required("skipOpeningButton");
 
-const introWorldLine1 =
-    optional(
-        "introWorldLine1"
-    );
+const nameInput =
+    required("nameInput");
 
+const nameNextButton =
+    required("nameNextButton");
 
-const introWorldLine2 =
-    optional(
-        "introWorldLine2"
-    );
+const nameError =
+    required("nameError");
 
+const birthYear =
+    required("birthYear");
 
-const introWorldLine3 =
-    optional(
-        "introWorldLine3"
-    );
+const birthMonth =
+    required("birthMonth");
 
+const birthDay =
+    required("birthDay");
 
-const introWorldEmblem =
-    optional(
-        "introWorldEmblem"
-    );
+const solarButton =
+    required("solarButton");
 
+const lunarButton =
+    required("lunarButton");
 
-const introWorldFinal =
-    optional(
-        "introWorldFinal"
-    );
+const leapMonthButton =
+    required("leapMonthButton");
 
+const birthError =
+    required("birthError");
 
-const introStartButton =
-    optional(
-        "introStartButton"
-    );
+const birthNextButton =
+    required("birthNextButton");
 
+const timeRaw =
+    required("timeRaw");
 
-const introWorldSkip =
-    optional(
-        "introWorldSkip"
-    );
+const timeMaskWrap =
+    required("timeMaskWrap");
 
+const unknownTimeButton =
+    required("unknownTimeButton");
 
-/* OPTIONAL VIDEO */
+const timeError =
+    required("timeError");
+
+const timeNextButton =
+    required("timeNextButton");
+
+const femaleButton =
+    required("femaleButton");
+
+const maleButton =
+    required("maleButton");
+
+const genderError =
+    required("genderError");
+
+const analyzeButton =
+    required("analyzeButton");
 
 const analysisVideo1 =
-    optional(
-        "analysisVideo1"
-    );
+    required("analysisVideo1");
 
+const skipAnalysisButton =
+    required("skipAnalysisButton");
+
+const loadingLabel =
+    required("loadingLabel");
+
+const loadingPercent =
+    required("loadingPercent");
+
+const loadingMessage =
+    required("loadingMessage");
+
+const loadingActorDialogue =
+    required("loadingActorDialogue");
+
+const loadingActorText =
+    required("loadingActorText");
 
 const analysisVideo2 =
-    optional(
-        "analysisVideo2"
-    );
+    required("analysisVideo2");
 
+const skipAnalysisFinishButton =
+    required("skipAnalysisFinishButton");
 
-const factMotionVideo =
-    optional(
-        "factMotionVideo"
-    );
+const resultIntro =
+    required("resultIntro");
 
+const resultName =
+    required("resultName");
 
-/* OPTIONAL REVEAL */
+const pillarGrid =
+    required("pillarGrid");
 
-const revealOpening =
-    optional(
-        "revealOpening"
-    );
+const fiveElementGrid =
+    required("fiveElementGrid");
 
+const fiveElementNote =
+    required("fiveElementNote");
 
-const revealPillarGrid =
-    optional(
-        "revealPillarGrid"
-    );
+const openBookButton =
+    required("openBookButton");
 
+const resultStoryList =
+    required("resultStoryList");
 
-const revealFinal =
-    optional(
-        "revealFinal"
-    );
+const resultScrollArea =
+    required("resultScrollArea");
 
+const resultHomeTopButton =
+    required("resultHomeTopButton");
 
-const revealSkipButton =
-    optional(
-        "revealSkipButton"
-    );
+const toast =
+    required("toast");
+
+const guideLayer =
+    required("guideLayer");
+
+const guideText =
+    required("guideText");
+
+const guideSpeaker =
+    required("guideSpeaker");
 
 
 
@@ -630,15 +854,14 @@ const revealSkipButton =
    INITIALIZE
    ========================================================= */
 
-document.addEventListener(
-    "DOMContentLoaded",
-    initialize
-);
+initialize();
 
 
 function initialize() {
 
     loadStoredForm();
+
+    restoreFormState();
 
     bindNavigation();
 
@@ -648,84 +871,229 @@ function initialize() {
 
     bindBirth();
 
-    bindReview();
+    bindTime();
+
+    bindGender();
 
     bindAnalysis();
 
+    bindResult();
+
     bindStoryNavigation();
-
-    restoreFormInputs();
-
-    updateNameValidation();
-
-    updateBirthValidation();
-
-    updateHeader();
 
     prepareVideoPaths();
 
-    playIntroWorld();
+    updateCalendarUI();
+
+    updateTimeMask();
+
+    updateTimeUI();
+
+    updateGenderUI();
 
 }
 
 
 
 /* =========================================================
-   VIDEO PATH
+   GUIDE
    ========================================================= */
 
-function prepareVideoPaths() {
+function cancelGuide() {
 
-    setVideoSource(
-        openingVideo,
-        VIDEO_PATH.opening
-    );
+    guideRunId++;
 
 
-    setVideoSource(
-        analysisVideo1,
-        VIDEO_PATH.analysis1
-    );
+    if (
+        guideHideTimer
+    ) {
+
+        clearTimeout(
+            guideHideTimer
+        );
 
 
-    setVideoSource(
-        analysisVideo2,
-        VIDEO_PATH.analysis2
-    );
+        guideHideTimer =
+            null;
+
+    }
+
+
+    guideLayer
+        .classList
+        .remove(
+            "visible"
+        );
 
 }
 
 
-function setVideoSource(
-    video,
-    path
+
+async function say(
+    text,
+    options = {}
 ) {
 
-    if (
-        !video
+    const runId =
+        ++guideRunId;
+
+
+    const placement =
+        options.placement
         ||
-        !path
+        "bottom";
+
+
+    const speed =
+        options.speed
+        ??
+        24;
+
+
+    const hold =
+        options.hold
+        ??
+        1300;
+
+
+    guideSpeaker.textContent =
+        options.speaker
+        ||
+        "천명 안내자";
+
+
+    guideText.textContent =
+        "";
+
+
+    guideLayer
+        .classList
+        .remove(
+            "top",
+            "middle"
+        );
+
+
+    if (
+        placement
+        === "top"
     ) {
 
-        return;
+        guideLayer
+            .classList
+            .add(
+                "top"
+            );
+
+    }
+
+
+    guideLayer
+        .classList
+        .add(
+            "visible"
+        );
+
+
+    for (
+        const character
+        of Array.from(
+            String(text ?? "")
+        )
+    ) {
+
+        if (
+            runId
+            !== guideRunId
+        ) {
+
+            return false;
+
+        }
+
+
+        guideText.textContent +=
+            character;
+
+
+        await delay(
+            speed
+        );
+
+    }
+
+
+    await delay(
+        hold
+    );
+
+
+    if (
+        runId
+        !== guideRunId
+    ) {
+
+        return false;
 
     }
 
 
     if (
-        video.getAttribute(
-            "src"
-        )
-        !== path
+        options.keep
+        !== true
     ) {
 
-        video.src =
-            path;
+        guideLayer
+            .classList
+            .remove(
+                "visible"
+            );
 
     }
 
 
-    video.load();
+    return true;
+
+}
+
+
+
+async function guideSequence(
+    lines,
+    options = {}
+) {
+
+    for (
+        const line
+        of lines
+    ) {
+
+        const completed =
+            await say(
+                line,
+                options
+            );
+
+
+        if (
+            !completed
+        ) {
+
+            return false;
+
+        }
+
+
+        await delay(
+            options.gap
+            ??
+            180
+        );
+
+    }
+
+
+    return true;
 
 }
 
@@ -741,14 +1109,16 @@ function bindNavigation() {
         "click",
         event => {
 
-            const target =
-                event.target.closest(
-                    "[data-go]"
-                );
+            const back =
+                event
+                    .target
+                    .closest(
+                        "[data-back]"
+                    );
 
 
             if (
-                !target
+                !back
             ) {
 
                 return;
@@ -756,215 +1126,148 @@ function bindNavigation() {
             }
 
 
-            const screen =
-                target.dataset.go;
-
-
-            if (
-                screen
-            ) {
-
-                showScreen(
-                    screen
-                );
-
-            }
+            showScreen(
+                back.dataset.back
+            );
 
         }
     );
 
-
-    backButton.addEventListener(
-        "click",
-        handleBack
-    );
-
-
-    homeButton.addEventListener(
-        "click",
-        goHome
-    );
-
-
-    resultHomeButton.addEventListener(
-        "click",
-        goHome
-    );
-
 }
 
-
-function handleBack() {
-
-    if (
-        currentScreen
-        === "result"
-        &&
-        currentStoryIndex
-        > 0
-    ) {
-
-        goPreviousStory();
-
-        return;
-
-    }
-
-
-    const backMap = {
-
-        name:
-            "intro",
-
-        birth:
-            "name",
-
-        review:
-            "birth",
-
-        complete:
-            "review",
-
-        analysis:
-            "complete",
-
-        reveal:
-            "complete",
-
-        result:
-            "complete"
-
-    };
-
-
-    const destination =
-        backMap[currentScreen];
-
-
-    if (
-        destination
-    ) {
-
-        showScreen(
-            destination
-        );
-
-    }
-
-}
-
-
-function goHome() {
-
-    currentResult =
-        null;
-
-
-    currentStoryIndex =
-        0;
-
-
-    analysisRunning =
-        false;
-
-
-    skipFactsRequested =
-        false;
-
-
-    sessionStorage.removeItem(
-        RESULT_STORAGE_KEY
-    );
-
-
-    showScreen(
-        "intro"
-    );
-
-
-    showIntroFinal();
-
-}
 
 
 function showScreen(
-    screenName
+    name,
+    options = {}
 ) {
+
+    cancelGuide();
+
+
+    if (
+        name
+        !== "loading"
+    ) {
+
+        stopLoadingActorDialogue();
+
+    }
+
 
     screens.forEach(
         screen => {
 
-            screen.classList.toggle(
-                "is-active",
-                screen.dataset.screen
-                === screenName
-            );
+            screen
+                .classList
+                .toggle(
+                    "active",
+                    screen.dataset.screen
+                    === name
+                );
 
         }
     );
 
 
     currentScreen =
-        screenName;
+        name;
 
 
-    updateHeader();
+    if (
+        options.dialogue
+        === false
+    ) {
+
+        return;
+
+    }
 
 
-    window.scrollTo({
+    window.setTimeout(
+        () => {
 
-        top:
-            0,
+            if (
+                currentScreen
+                === name
+            ) {
 
-        behavior:
-            "smooth"
+                runSceneDialogue(
+                    name
+                );
 
-    });
+            }
+
+        },
+        220
+    );
 
 }
 
 
-function updateHeader() {
 
-    const subtitles = {
+function runSceneDialogue(
+    screen
+) {
 
-        intro:
-            "천명사주",
+    switch (
+        screen
+    ) {
 
-        name:
-            "이름 입력",
+        case "name":
 
-        birth:
-            "생년월일 입력",
+            say(
+                "먼저, 내가 널 뭐라고 부르면 될까?",
+                {
+                    placement:
+                        "top"
+                }
+            );
 
-        review:
-            "입력 확인",
-
-        complete:
-            "분석 준비",
-
-        analysis:
-            "천명 분석",
-
-        reveal:
-            "사주팔자",
-
-        result:
-            "천명록"
-
-    };
+            break;
 
 
-    headerSubtitle.textContent =
-        subtitles[currentScreen]
-        || "천명사주";
+        case "birth":
+
+            say(
+                formState.name
+                    ? `좋아, ${formState.name}. 이제 네가 태어난 날을 알려줘.`
+                    : "이제 네가 태어난 날을 알려줘.",
+                {
+                    placement:
+                        "top"
+                }
+            );
+
+            break;
 
 
-    backButton.style.visibility =
-        currentScreen
-        === "intro"
-            ? "hidden"
-            : "visible";
+        case "time":
+
+            say(
+                "그리고 태어난 시간을 알고 있다면 더 깊이 살펴볼 수 있어.",
+                {
+                    placement:
+                        "top"
+                }
+            );
+
+            break;
+
+
+        case "gender":
+
+            say(
+                "거의 다 왔어. 마지막으로 성별을 알려줘.",
+                {
+                    placement:
+                        "top"
+                }
+            );
+
+            break;
+
+    }
 
 }
 
@@ -976,178 +1279,80 @@ function updateHeader() {
 
 function bindIntro() {
 
-    introWorldSkip
-        ?.addEventListener(
-            "click",
-            () => {
+    startButton.addEventListener(
+        "click",
+        async () => {
 
-                stopVideo(
-                    openingVideo
+            showScreen(
+                "opening",
+                {
+                    dialogue:
+                        false
+                }
+            );
+
+
+            guideSequence(
+                [
+                    "왔구나. 네가 태어난 순간부터 이미 하나의 기록이 시작되고 있었어.",
+                    "그 기록을 찾으려면 먼저 몇 가지를 알려줘."
+                ],
+                {
+                    placement:
+                        "bottom",
+                    hold:
+                        1000
+                }
+            );
+
+
+            const played =
+                await playVideo(
+                    openingVideo,
+                    VIDEO_PATH.opening,
+                    true
                 );
 
 
-                showIntroFinal();
-
-            }
-        );
-
-
-    introStartButton
-        ?.addEventListener(
-            "click",
-            () => {
+            if (
+                played
+                &&
+                currentScreen
+                === "opening"
+            ) {
 
                 showScreen(
                     "name"
                 );
 
             }
-        );
-
-}
-
-
-async function playIntroWorld() {
-
-    if (
-        introFinished
-    ) {
-
-        showIntroFinal();
-
-        return;
-
-    }
-
-
-    hideIntroFinal();
-
-
-    if (
-        openingVideo
-    ) {
-
-        const played =
-            await playVideo(
-                openingVideo,
-                VIDEO_PATH.opening,
-                true
-            );
-
-
-        if (
-            played
-        ) {
-
-            showIntroFinal();
-
-            return;
 
         }
-
-    }
-
-
-    await playIntroTextFallback();
-
-
-    showIntroFinal();
-
-}
-
-
-async function playIntroTextFallback() {
-
-    const lines = [
-
-        introWorldLine1,
-
-        introWorldLine2,
-
-        introWorldLine3
-
-    ].filter(
-        Boolean
     );
 
 
-    for (
-        const line
-        of lines
-    ) {
+    skipOpeningButton.addEventListener(
+        "click",
+        () => {
 
-        line.classList.remove(
-            "is-hidden"
-        );
-
-
-        line.classList.add(
-            "is-visible"
-        );
+            finishVideoImmediately(
+                openingVideo
+            );
 
 
-        await delay(
-            1500
-        );
+            if (
+                currentScreen
+                === "opening"
+            ) {
 
+                showScreen(
+                    "name"
+                );
 
-        line.classList.remove(
-            "is-visible"
-        );
+            }
 
-
-        line.classList.add(
-            "is-hidden"
-        );
-
-
-        await delay(
-            350
-        );
-
-    }
-
-}
-
-
-function showIntroFinal() {
-
-    introFinished =
-        true;
-
-
-    introWorldEmblem
-        ?.classList.add(
-            "is-visible"
-        );
-
-
-    introWorldFinal
-        ?.classList.add(
-            "is-visible"
-        );
-
-
-    introWorldSkip
-        ?.classList.add(
-            "hidden"
-        );
-
-}
-
-
-function hideIntroFinal() {
-
-    introWorldEmblem
-        ?.classList.remove(
-            "is-visible"
-        );
-
-
-    introWorldFinal
-        ?.classList.remove(
-            "is-visible"
-        );
+        }
+    );
 
 }
 
@@ -1164,12 +1369,10 @@ function bindName() {
         () => {
 
             formState.name =
-                nameInput
-                    .value
-                    .trim();
+                nameInput.value.trim();
 
-
-            updateNameValidation();
+            nameError.textContent =
+                "";
 
             saveForm();
 
@@ -1177,86 +1380,66 @@ function bindName() {
     );
 
 
-    nameForm.addEventListener(
-        "submit",
+    nameInput.addEventListener(
+        "keydown",
         event => {
 
-            event.preventDefault();
-
-
             if (
-                !validateName()
+                event.key
+                === "Enter"
             ) {
 
-                return;
+                event.preventDefault();
+
+                moveNameNext();
 
             }
 
-
-            saveForm();
-
-            showScreen(
-                "birth"
-            );
-
         }
+    );
+
+
+    nameNextButton.addEventListener(
+        "click",
+        moveNameNext
     );
 
 }
 
 
-function validateName() {
 
-    const name =
+function moveNameNext() {
+
+    formState.name =
         nameInput
             .value
             .trim();
 
 
     if (
-        name.length
-        < 1
+        !formState.name
     ) {
 
         nameError.textContent =
             "이름을 입력해주세요.";
 
-        return false;
+        return;
 
     }
 
 
-    nameError.textContent =
-        "";
+    saveForm();
+
+    showScreen(
+        "birth"
+    );
 
 
-    return true;
-
-}
-
-
-function updateNameValidation() {
-
-    const valid =
-        nameInput
-            .value
-            .trim()
-            .length
-        > 0;
-
-
-    nameNextButton.disabled =
-        !valid;
-
-
-    if (
-        valid
-    ) {
-
-        nameError.textContent =
-            "";
-
-    }
+    setTimeout(
+        () =>
+            birthYear.focus(),
+        200
+    );
 
 }
 
@@ -1268,161 +1451,163 @@ function updateNameValidation() {
 
 function bindBirth() {
 
-    document
-        .querySelectorAll(
-            "[data-calendar]"
-        )
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        formState.calendarType =
-                            button.dataset.calendar;
-
-
-                        document
-                            .querySelectorAll(
-                                "[data-calendar]"
-                            )
-                            .forEach(
-                                item => {
-
-                                    item.classList.toggle(
-                                        "is-active",
-                                        item === button
-                                    );
-
-                                }
-                            );
-
-
-                        updateCalendarUI();
-
-                        updateBirthValidation();
-
-                        saveForm();
-
-                    }
-                );
-
-            }
-        );
-
-
-    document
-        .querySelectorAll(
-            "[data-gender]"
-        )
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        formState.gender =
-                            button.dataset.gender;
-
-
-                        document
-                            .querySelectorAll(
-                                "[data-gender]"
-                            )
-                            .forEach(
-                                item => {
-
-                                    item.classList.toggle(
-                                        "is-active",
-                                        item === button
-                                    );
-
-                                }
-                            );
-
-
-                        saveForm();
-
-                    }
-                );
-
-            }
-        );
-
-
-    [
+    bindNumericInput(
         birthYear,
+        4
+    );
+
+    bindNumericInput(
         birthMonth,
+        2
+    );
+
+    bindNumericInput(
         birthDay,
-        birthHour,
-        birthMinute
-    ]
-        .forEach(
-            input => {
-
-                input.addEventListener(
-                    "input",
-                    () => {
-
-                        syncBirthFormState();
-
-                        updateBirthValidation();
-
-                        saveForm();
-
-                    }
-                );
-
-            }
-        );
-
-
-    birthTimeUnknown.addEventListener(
-        "change",
-        () => {
-
-            formState.birthTimeUnknown =
-                birthTimeUnknown.checked;
-
-
-            updateTimeUI();
-
-            updateBirthValidation();
-
-            saveForm();
-
-        }
+        2
     );
 
 
-    lunarLeapMonth.addEventListener(
-        "change",
+    birthYear.addEventListener(
+        "input",
         () => {
 
-            formState.leapMonth =
-                lunarLeapMonth.checked;
-
+            syncDateStateFromInputs();
 
             saveForm();
-
-        }
-    );
-
-
-    birthForm.addEventListener(
-        "submit",
-        event => {
-
-            event.preventDefault();
-
-
-            syncBirthFormState();
 
 
             if (
-                !validateBirth()
+                birthYear.value.length
+                === 4
+            ) {
+
+                birthMonth.focus();
+
+            }
+
+        }
+    );
+
+
+    birthMonth.addEventListener(
+        "input",
+        () => {
+
+            syncDateStateFromInputs();
+
+            saveForm();
+
+
+            if (
+                birthMonth.value.length
+                === 2
+            ) {
+
+                birthDay.focus();
+
+            }
+
+        }
+    );
+
+
+    birthMonth.addEventListener(
+        "blur",
+        () => {
+
+            normalizeMonthInput();
+
+            syncDateStateFromInputs();
+
+            saveForm();
+
+        }
+    );
+
+
+    birthDay.addEventListener(
+        "input",
+        () => {
+
+            syncDateStateFromInputs();
+
+            saveForm();
+
+        }
+    );
+
+
+    birthDay.addEventListener(
+        "blur",
+        () => {
+
+            normalizeDayInput();
+
+            syncDateStateFromInputs();
+
+            saveForm();
+
+        }
+    );
+
+
+    solarButton.addEventListener(
+        "click",
+        () =>
+            setCalendar(
+                "SOLAR"
+            )
+    );
+
+
+    lunarButton.addEventListener(
+        "click",
+        () =>
+            setCalendar(
+                "LUNAR"
+            )
+    );
+
+
+    leapMonthButton.addEventListener(
+        "click",
+        () => {
+
+            if (
+                formState.calendarType
+                !== "LUNAR"
+            ) {
+
+                return;
+
+            }
+
+
+            formState.leapMonth =
+                !formState.leapMonth;
+
+
+            updateCalendarUI();
+
+            saveForm();
+
+        }
+    );
+
+
+    birthNextButton.addEventListener(
+        "click",
+        () => {
+
+            normalizeMonthInput();
+
+            normalizeDayInput();
+
+            syncDateStateFromInputs();
+
+
+            if (
+                !validateBirthDate()
             ) {
 
                 return;
@@ -1432,10 +1617,8 @@ function bindBirth() {
 
             saveForm();
 
-            renderReview();
-
             showScreen(
-                "review"
+                "time"
             );
 
         }
@@ -1444,42 +1627,2839 @@ function bindBirth() {
 }
 
 
-function syncBirthFormState() {
 
-    formState.birthYear =
-        birthYear.value.trim();
+function bindNumericInput(
+    input,
+    maxLength
+) {
 
+    input.addEventListener(
+        "input",
+        () => {
 
-    formState.birthMonth =
-        birthMonth.value.trim();
+            input.value =
+                onlyDigits(
+                    input.value
+                )
+                    .slice(
+                        0,
+                        maxLength
+                    );
 
-
-    formState.birthDay =
-        birthDay.value.trim();
-
-
-    formState.birthHour =
-        birthHour.value.trim();
-
-
-    formState.birthMinute =
-        birthMinute.value.trim();
-
-
-    formState.birthTimeUnknown =
-        birthTimeUnknown.checked;
-
-
-    formState.leapMonth =
-        lunarLeapMonth.checked;
+        }
+    );
 
 }
 
 
-function validateBirth() {
 
-    syncBirthFormState();
+function normalizeMonthInput() {
 
+    const value =
+        onlyDigits(
+            birthMonth.value
+        );
+
+
+    if (
+        value.length
+        === 1
+    ) {
+
+        birthMonth.value =
+            value.padStart(
+                2,
+                "0"
+            );
+
+    }
+
+}
+
+
+
+function normalizeDayInput() {
+
+    const value =
+        onlyDigits(
+            birthDay.value
+        );
+
+
+    if (
+        value.length
+        === 1
+    ) {
+
+        birthDay.value =
+            value.padStart(
+                2,
+                "0"
+            );
+
+    }
+
+}
+
+
+
+function syncDateStateFromInputs() {
+
+    formState.birthYear =
+        onlyDigits(
+            birthYear.value
+        );
+
+    formState.birthMonth =
+        onlyDigits(
+            birthMonth.value
+        );
+
+    formState.birthDay =
+        onlyDigits(
+            birthDay.value
+        );
+
+}
+
+
+
+function setCalendar(
+    type
+) {
+
+    formState.calendarType =
+        type;
+
+
+    if (
+        type
+        !== "LUNAR"
+    ) {
+
+        formState.leapMonth =
+            false;
+
+    }
+
+
+    updateCalendarUI();
+
+    saveForm();
+
+}
+
+
+
+function updateCalendarUI() {
+
+    solarButton
+        .classList
+        .toggle(
+            "active",
+            formState.calendarType
+            === "SOLAR"
+        );
+
+
+    lunarButton
+        .classList
+        .toggle(
+            "active",
+            formState.calendarType
+            === "LUNAR"
+        );
+
+
+    leapMonthButton
+        .classList
+        .toggle(
+            "hidden",
+            formState.calendarType
+            !== "LUNAR"
+        );
+
+
+    leapMonthButton
+        .classList
+        .toggle(
+            "active",
+            formState.leapMonth
+        );
+
+
+    leapMonthButton.textContent =
+        formState.leapMonth
+            ? "윤달"
+            : "평달";
+
+}
+
+
+
+/* =========================================================
+   TIME
+   ========================================================= */
+
+function bindTime() {
+
+    timeRaw.addEventListener(
+        "input",
+        () => {
+
+            timeRaw.value =
+                onlyDigits(
+                    timeRaw.value
+                )
+                    .slice(
+                        0,
+                        4
+                    );
+
+
+            formState.birthTimeUnknown =
+                false;
+
+
+            syncTimeStateFromRaw();
+
+            updateTimeMask();
+
+            updateTimeUI();
+
+            saveForm();
+
+        }
+    );
+
+
+    unknownTimeButton.addEventListener(
+        "click",
+        () => {
+
+            formState.birthTimeUnknown =
+                !formState.birthTimeUnknown;
+
+
+            if (
+                formState.birthTimeUnknown
+            ) {
+
+                formState.birthHour =
+                    "";
+
+                formState.birthMinute =
+                    "";
+
+                timeRaw.value =
+                    "";
+
+
+                say(
+                    "괜찮아. 알고 있는 기록만으로도 볼 수 있는 데까지 살펴볼게.",
+                    {
+                        placement:
+                            "top"
+                    }
+                );
+
+            }
+
+
+            updateTimeMask();
+
+            updateTimeUI();
+
+            saveForm();
+
+        }
+    );
+
+
+    timeNextButton.addEventListener(
+        "click",
+        () => {
+
+            syncTimeStateFromRaw();
+
+
+            if (
+                !validateBirthTime()
+            ) {
+
+                return;
+
+            }
+
+
+            saveForm();
+
+            showScreen(
+                "gender"
+            );
+
+        }
+    );
+
+}
+
+
+
+function syncTimeStateFromRaw() {
+
+    if (
+        formState.birthTimeUnknown
+    ) {
+
+        return;
+
+    }
+
+
+    const value =
+        onlyDigits(
+            timeRaw.value
+        )
+            .slice(
+                0,
+                4
+            );
+
+
+    formState.birthHour =
+        value.slice(
+            0,
+            2
+        );
+
+    formState.birthMinute =
+        value.slice(
+            2,
+            4
+        );
+
+}
+
+
+
+function updateTimeMask() {
+
+    const digits =
+        formState.birthTimeUnknown
+            ? ""
+            : onlyDigits(
+                timeRaw.value
+            );
+
+
+    for (
+        let index = 0;
+        index < 4;
+        index++
+    ) {
+
+        updateMaskChar(
+            `t${index}`,
+            digits[index]
+        );
+
+    }
+
+}
+
+
+
+function updateMaskChar(
+    id,
+    value
+) {
+
+    const element =
+        document.getElementById(
+            id
+        );
+
+
+    element.textContent =
+        value
+        ||
+        "0";
+
+
+    element
+        .classList
+        .toggle(
+            "placeholder",
+            !value
+        );
+
+}
+
+
+
+function updateTimeUI() {
+
+    timeMaskWrap
+        .classList
+        .toggle(
+            "disabled",
+            formState.birthTimeUnknown
+        );
+
+
+    timeRaw.disabled =
+        formState.birthTimeUnknown;
+
+
+    unknownTimeButton
+        .classList
+        .toggle(
+            "active",
+            formState.birthTimeUnknown
+        );
+
+}
+
+
+
+/* =========================================================
+   GENDER
+   ========================================================= */
+
+function bindGender() {
+
+    femaleButton.addEventListener(
+        "click",
+        () =>
+            setGender(
+                "FEMALE"
+            )
+    );
+
+
+    maleButton.addEventListener(
+        "click",
+        () =>
+            setGender(
+                "MALE"
+            )
+    );
+
+
+    analyzeButton.addEventListener(
+        "click",
+        startAnalysis
+    );
+
+}
+
+
+
+function setGender(
+    gender
+) {
+
+    formState.gender =
+        gender;
+
+
+    updateGenderUI();
+
+    saveForm();
+
+
+    say(
+        formState.name
+            ? `좋아, ${formState.name}. 이제 필요한 기록은 모두 모였어.`
+            : "좋아. 이제 필요한 기록은 모두 모였어.",
+        {
+            placement:
+                "top"
+        }
+    );
+
+}
+
+
+
+function updateGenderUI() {
+
+    femaleButton
+        .classList
+        .toggle(
+            "active",
+            formState.gender
+            === "FEMALE"
+        );
+
+
+    maleButton
+        .classList
+        .toggle(
+            "active",
+            formState.gender
+            === "MALE"
+        );
+
+}
+
+
+
+/* =========================================================
+   ANALYSIS
+   ========================================================= */
+
+function bindAnalysis() {
+
+    skipAnalysisButton.addEventListener(
+        "click",
+        () => {
+
+            finishVideoImmediately(
+                analysisVideo1
+            );
+
+
+            if (
+                currentScreen
+                === "analysis-video"
+            ) {
+
+                showLoadingScreen();
+
+            }
+
+        }
+    );
+
+
+    skipAnalysisFinishButton.addEventListener(
+        "click",
+        () => {
+
+            finishVideoImmediately(
+                analysisVideo2
+            );
+
+
+            if (
+                currentResult
+                &&
+                currentScreen
+                === "analysis-finish"
+            ) {
+
+                showResult();
+
+            }
+
+        }
+    );
+
+}
+
+
+
+async function startAnalysis() {
+
+    if (
+        analysisRunning
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        !formState.gender
+    ) {
+
+        genderError.textContent =
+            "성별을 선택해주세요.";
+
+        return;
+
+    }
+
+
+    if (
+        !validateAllForm()
+    ) {
+
+        return;
+
+    }
+
+
+    analysisRunning =
+        true;
+
+
+    saveForm();
+
+
+    loadingProgress =
+        0;
+
+    loadingDialogueStage =
+        -1;
+
+    loadingWaitMessageIndex =
+        0;
+
+
+    try {
+
+        analysisRequestPromise =
+            requestAnalysis();
+
+
+        showScreen(
+            "analysis-video",
+            {
+                dialogue:
+                    false
+            }
+        );
+
+
+        guideSequence(
+            [
+                "이제 네가 태어난 순간의 네 기둥을 찾고 있어.",
+                "그 안에서 성향과 관계, 재물과 일의 흐름을 하나씩 읽어볼게."
+            ],
+            {
+                placement:
+                    "bottom",
+                hold:
+                    900
+            }
+        );
+
+
+        await Promise.race(
+            [
+
+                playVideo(
+                    analysisVideo1,
+                    VIDEO_PATH.analysis1,
+                    true
+                ),
+
+                delay(
+                    4500
+                )
+
+            ]
+        );
+
+
+        if (
+            currentScreen
+            === "analysis-video"
+        ) {
+
+            stopVideo(
+                analysisVideo1
+            );
+
+
+            showLoadingScreen();
+
+        }
+
+
+        currentResult =
+            await analysisRequestPromise;
+
+
+        sessionStorage.setItem(
+            RESULT_STORAGE_KEY,
+            JSON.stringify(
+                currentResult
+            )
+        );
+
+
+        finishLoadingProgress();
+
+
+        await delay(
+            950
+        );
+
+
+        stopLoadingTimer();
+
+
+        showScreen(
+            "analysis-finish",
+            {
+                dialogue:
+                    false
+            }
+        );
+
+
+        guideSequence(
+            [
+                "다 읽었어.",
+                "이제부터는 네 이야기야. 한 장씩 천천히 펼쳐보자."
+            ],
+            {
+                placement:
+                    "bottom",
+                hold:
+                    900
+            }
+        );
+
+
+        await playVideo(
+            analysisVideo2,
+            VIDEO_PATH.analysis2,
+            true
+        );
+
+
+        if (
+            currentScreen
+            === "analysis-finish"
+        ) {
+
+            showResult();
+
+        }
+
+    }
+    catch (
+        error
+    ) {
+
+        console.error(
+            error
+        );
+
+
+        stopLoadingTimer();
+
+
+        showToast(
+            error.message
+            ||
+            "사주 분석 중 오류가 발생했습니다."
+        );
+
+
+        showScreen(
+            "gender"
+        );
+
+    }
+    finally {
+
+        analysisRunning =
+            false;
+
+        analysisRequestPromise =
+            null;
+
+    }
+
+}
+
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+function showLoadingScreen() {
+
+    if (
+        currentScreen
+        === "loading"
+    ) {
+
+        return;
+
+    }
+
+
+    cancelGuide();
+
+
+    showScreen(
+        "loading",
+        {
+            dialogue:
+                false
+        }
+    );
+
+
+    startLoadingTimer();
+
+    startLoadingActorDialogue();
+
+}
+
+
+
+function startLoadingTimer() {
+
+    stopLoadingTimer(
+        false
+    );
+
+
+    loadingProgress =
+        Math.max(
+            0,
+            Math.min(
+                loadingProgress,
+                94
+            )
+        );
+
+
+    loadingDialogueStage =
+        -1;
+
+
+    updateLoadingProgress(
+        loadingProgress
+    );
+
+
+    updateLoadingStatus(
+        loadingProgress
+    );
+
+
+    loadingTimer =
+        setInterval(
+            () => {
+
+                if (
+                    loadingProgress
+                    >= 94
+                ) {
+
+                    loadingProgress =
+                        94;
+
+
+                    updateLoadingProgress(
+                        94
+                    );
+
+
+                    startLoadingWaitRotation();
+
+                    return;
+
+                }
+
+
+                const step =
+                    loadingProgress < 30
+                        ? 1.35
+                        : loadingProgress < 55
+                            ? 0.90
+                            : loadingProgress < 75
+                                ? 0.52
+                                : loadingProgress < 88
+                                    ? 0.25
+                                    : 0.10;
+
+
+                loadingProgress =
+                    Math.min(
+                        94,
+                        loadingProgress
+                        +
+                        step
+                    );
+
+
+                updateLoadingProgress(
+                    loadingProgress
+                );
+
+
+                updateLoadingStatus(
+                    loadingProgress
+                );
+
+            },
+            90
+        );
+
+}
+
+
+
+function updateLoadingStatus(
+    progress
+) {
+
+    if (
+        progress
+        >= 100
+    ) {
+
+        stopLoadingWaitRotation();
+
+
+        applyLoadingCopy(
+            "분석 완료",
+            "천명록이 완성됐어. 이제 결과를 펼칠게."
+        );
+
+
+        return;
+
+    }
+
+
+    if (
+        progress
+        >= 94
+    ) {
+
+        startLoadingWaitRotation();
+
+        return;
+
+    }
+
+
+    stopLoadingWaitRotation();
+
+
+    const stageIndex =
+        LOADING_STAGES
+            .findIndex(
+                stage =>
+                    progress
+                    <
+                    stage.until
+            );
+
+
+    const normalizedIndex =
+        stageIndex >= 0
+            ? stageIndex
+            : LOADING_STAGES.length - 1;
+
+
+    if (
+        loadingDialogueStage
+        === normalizedIndex
+    ) {
+
+        return;
+
+    }
+
+
+    loadingDialogueStage =
+        normalizedIndex;
+
+
+    const stage =
+        LOADING_STAGES[
+            normalizedIndex
+        ];
+
+
+    applyLoadingCopy(
+        stage.label,
+        stage.message
+    );
+
+}
+
+
+
+function applyLoadingCopy(
+    label,
+    message
+) {
+
+    loadingLabel.textContent =
+        label;
+
+
+    loadingMessage.textContent =
+        message;
+
+
+    restartCssAnimation(
+        loadingLabel,
+        "copy-change"
+    );
+
+
+    restartCssAnimation(
+        loadingMessage,
+        "copy-change"
+    );
+
+}
+
+
+
+function startLoadingWaitRotation() {
+
+    if (
+        loadingWaitTimer
+    ) {
+
+        return;
+
+    }
+
+
+    loadingWaitMessageIndex =
+        0;
+
+
+    applyCurrentLoadingWaitMessage();
+
+
+    loadingWaitTimer =
+        setInterval(
+            () => {
+
+                loadingWaitMessageIndex =
+                    (
+                        loadingWaitMessageIndex
+                        +
+                        1
+                    )
+                    %
+                    LOADING_WAIT_MESSAGES.length;
+
+
+                applyCurrentLoadingWaitMessage();
+
+            },
+            LOADING_WAIT_ROTATION_MS
+        );
+
+}
+
+
+
+function applyCurrentLoadingWaitMessage() {
+
+    const item =
+        LOADING_WAIT_MESSAGES[
+            loadingWaitMessageIndex
+        ];
+
+
+    applyLoadingCopy(
+        item.label,
+        item.message
+    );
+
+}
+
+
+
+function stopLoadingWaitRotation() {
+
+    if (
+        loadingWaitTimer
+    ) {
+
+        clearInterval(
+            loadingWaitTimer
+        );
+
+
+        loadingWaitTimer =
+            null;
+
+    }
+
+}
+
+
+
+function updateLoadingProgress(
+    value
+) {
+
+    loadingPercent.textContent =
+        `${Math.round(value)}%`;
+
+}
+
+
+
+function finishLoadingProgress() {
+
+    loadingProgress =
+        100;
+
+
+    stopLoadingWaitRotation();
+
+
+    updateLoadingProgress(
+        100
+    );
+
+
+    applyLoadingCopy(
+        "분석 완료",
+        "천명록이 완성됐어. 이제 결과를 펼칠게."
+    );
+
+
+    showLoadingActorFinalLine();
+
+}
+
+
+
+function stopLoadingTimer(
+    stopActor = true
+) {
+
+    if (
+        loadingTimer
+    ) {
+
+        clearInterval(
+            loadingTimer
+        );
+
+
+        loadingTimer =
+            null;
+
+    }
+
+
+    stopLoadingWaitRotation();
+
+
+    if (
+        stopActor
+    ) {
+
+        stopLoadingActorDialogue();
+
+    }
+
+}
+
+
+
+/* =========================================================
+   LOADING ACTOR
+   ========================================================= */
+
+function startLoadingActorDialogue() {
+
+    stopLoadingActorDialogue();
+
+
+    const runId =
+        ++loadingActorRunId;
+
+
+    loadingActorLineIndex =
+        0;
+
+
+    loadingActorDialogue
+        .classList
+        .add(
+            "visible"
+        );
+
+
+    const run =
+        async () => {
+
+            if (
+                runId
+                !== loadingActorRunId
+                ||
+                currentScreen
+                !== "loading"
+            ) {
+
+                return;
+
+            }
+
+
+            const line =
+                LOADING_ACTOR_LINES[
+                    loadingActorLineIndex
+                    %
+                    LOADING_ACTOR_LINES.length
+                ];
+
+
+            await typeLoadingActorText(
+                line,
+                runId
+            );
+
+
+            if (
+                runId
+                !== loadingActorRunId
+                ||
+                currentScreen
+                !== "loading"
+            ) {
+
+                return;
+
+            }
+
+
+            loadingActorLineIndex++;
+
+
+            loadingActorTimer =
+                setTimeout(
+                    run,
+                    2300
+                );
+
+        };
+
+
+    run();
+
+}
+
+
+
+async function typeLoadingActorText(
+    text,
+    runId
+) {
+
+    loadingActorText.textContent =
+        "";
+
+
+    for (
+        const character
+        of Array.from(
+            text
+        )
+    ) {
+
+        if (
+            runId
+            !== loadingActorRunId
+        ) {
+
+            return;
+
+        }
+
+
+        loadingActorText.textContent +=
+            character;
+
+
+        await delay(
+            character
+            === "\n"
+                ? 110
+                : 34
+        );
+
+    }
+
+}
+
+
+
+function showLoadingActorFinalLine() {
+
+    stopLoadingActorDialogue(
+        false
+    );
+
+
+    loadingActorDialogue
+        .classList
+        .add(
+            "visible"
+        );
+
+
+    loadingActorText.textContent =
+        "다 봤어.\n이제 네 기록을 보여줄게.";
+
+}
+
+
+
+function stopLoadingActorDialogue(
+    hide = true
+) {
+
+    loadingActorRunId++;
+
+
+    if (
+        loadingActorTimer
+    ) {
+
+        clearTimeout(
+            loadingActorTimer
+        );
+
+
+        loadingActorTimer =
+            null;
+
+    }
+
+
+    if (
+        hide
+    ) {
+
+        loadingActorDialogue
+            .classList
+            .remove(
+                "visible"
+            );
+
+    }
+
+}
+
+
+
+/* =========================================================
+   API
+   ========================================================= */
+
+async function requestAnalysis() {
+
+    const response =
+        await fetch(
+            API_URL,
+            {
+
+                method:
+                    "POST",
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json"
+
+                },
+
+                body:
+                    JSON.stringify(
+                        createAnalysisRequest()
+                    )
+
+            }
+        );
+
+
+    if (
+        !response.ok
+    ) {
+
+        throw new Error(
+            `사주 분석 요청 실패 (${response.status}) ${
+                await safeErrorBody(
+                    response
+                )
+            }`
+        );
+
+    }
+
+
+    return normalizeResult(
+        await response.json()
+    );
+
+}
+
+
+
+function createAnalysisRequest() {
+
+    const now =
+        new Date();
+
+
+    return {
+
+        calendarType:
+            formState.calendarType,
+
+        birthDate:
+            `${formState.birthYear}-${pad2(formState.birthMonth)}-${pad2(formState.birthDay)}`,
+
+        birthTime:
+            formState.birthTimeUnknown
+                ? null
+                : `${pad2(formState.birthHour)}:${pad2(formState.birthMinute)}`,
+
+        birthTimeUnknown:
+            formState.birthTimeUnknown,
+
+        gender:
+            formState.gender,
+
+        leapMonth:
+            formState.calendarType
+            === "LUNAR"
+                ? formState.leapMonth
+                : false,
+
+        targetYear:
+            now.getFullYear(),
+
+        luckReferenceDate:
+            `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`,
+
+        consultationCategories:
+            CATEGORY_ORDER,
+
+        consultationQuestion:
+            null
+
+    };
+
+}
+
+
+
+/* =========================================================
+   RESULT
+   ========================================================= */
+
+function bindResult() {
+
+    resultHomeTopButton.addEventListener(
+        "click",
+        goHome
+    );
+
+
+    openBookButton.addEventListener(
+        "click",
+        openBook
+    );
+
+}
+
+
+
+async function showResult() {
+
+    if (
+        !currentResult
+    ) {
+
+        return;
+
+    }
+
+
+    currentStoryIndex =
+        0;
+
+    bookOpened =
+        false;
+
+
+    resultName.textContent =
+        formState.name
+            ? `${formState.name}님의 명식`
+            : "천명사주 명식";
+
+
+    renderResultPillars();
+
+    renderFiveElements();
+
+
+    resultIntro
+        .classList
+        .remove(
+            "hidden"
+        );
+
+
+    resultStoryList
+        .classList
+        .add(
+            "hidden"
+        );
+
+
+    resultStoryList.innerHTML =
+        "";
+
+
+    showScreen(
+        "result",
+        {
+            dialogue:
+                false
+        }
+    );
+
+
+    resultScrollArea.scrollTop =
+        0;
+
+
+    await delay(
+        380
+    );
+
+
+    if (
+        currentScreen
+        !== "result"
+    ) {
+
+        return;
+
+    }
+
+
+    await guideSequence(
+        [
+
+            formState.name
+                ? `${formState.name}, 이게 네가 태어난 순간의 네 기둥이야.`
+                : "이게 네가 태어난 순간의 네 기둥이야.",
+
+            "다섯 흐름이 어떻게 자리하고 있는지도 함께 볼 수 있어."
+
+        ],
+        {
+            placement:
+                "bottom",
+            hold:
+                900
+        }
+    );
+
+}
+
+
+
+function openBook() {
+
+    if (
+        !currentResult
+    ) {
+
+        return;
+
+    }
+
+
+    cancelGuide();
+
+
+    bookOpened =
+        true;
+
+    currentStoryIndex =
+        0;
+
+
+    resultIntro
+        .classList
+        .add(
+            "hidden"
+        );
+
+
+    resultStoryList
+        .classList
+        .remove(
+            "hidden"
+        );
+
+
+    renderCurrentStory(
+        true
+    );
+
+
+    resultScrollArea.scrollTop =
+        0;
+
+}
+
+
+
+/* =========================================================
+   PILLARS
+   ========================================================= */
+
+function renderResultPillars() {
+
+    const pillars =
+        extractPillars(
+            currentResult
+        );
+
+
+    const ordered =
+        [
+
+            {
+                label:
+                    "시주",
+                pillar:
+                    pillars.hour
+            },
+
+            {
+                label:
+                    "일주",
+                pillar:
+                    pillars.day,
+                focus:
+                    true
+            },
+
+            {
+                label:
+                    "월주",
+                pillar:
+                    pillars.month
+            },
+
+            {
+                label:
+                    "년주",
+                pillar:
+                    pillars.year
+            }
+
+        ];
+
+
+    pillarGrid.innerHTML =
+
+        ordered
+            .map(
+                item =>
+                    `
+                        <div class="pillar-head ${item.focus ? "focus" : ""}">
+                            ${escapeHtml(item.label)}
+                        </div>
+                    `
+            )
+            .join(
+                ""
+            )
+
+        +
+
+        ordered
+            .map(
+                item =>
+                    `
+                        <div class="pillar-cell ${item.focus ? "focus" : ""}">
+                            ${escapeHtml(item.pillar.stem)}
+                        </div>
+                    `
+            )
+            .join(
+                ""
+            )
+
+        +
+
+        ordered
+            .map(
+                item =>
+                    `
+                        <div class="pillar-cell ${item.focus ? "focus" : ""}">
+                            ${escapeHtml(item.pillar.branch)}
+                        </div>
+                    `
+            )
+            .join(
+                ""
+            );
+
+}
+
+
+
+/* =========================================================
+   FIVE ELEMENTS
+   ========================================================= */
+
+function renderFiveElements() {
+
+    const result =
+        extractFiveElementCounts(
+            currentResult
+        );
+
+
+    fiveElementGrid.innerHTML =
+        FIVE_ELEMENT_ORDER
+            .map(
+                element => {
+
+                    const meta =
+                        FIVE_ELEMENT_META[
+                            element
+                        ];
+
+
+                    const count =
+                        result.counts[
+                            element
+                        ]
+                        ??
+                        0;
+
+
+                    const dots =
+                        count > 0
+                            ?
+
+                            Array
+                                .from(
+                                    {
+                                        length:
+                                            count
+                                    }
+                                )
+                                .map(
+                                    () =>
+                                        `<span class="five-element-dot"></span>`
+                                )
+                                .join(
+                                    ""
+                                )
+
+                            :
+
+                            `<span class="five-element-zero">—</span>`;
+
+
+                    return `
+                        <div class="five-element-item">
+
+                            <span class="five-element-hanja">
+                                ${escapeHtml(meta.hanja)}
+                            </span>
+
+                            <span class="five-element-korean">
+                                ${escapeHtml(meta.korean)}
+                            </span>
+
+                            <span class="five-element-dots">
+                                ${dots}
+                            </span>
+
+                            <span class="five-element-count">
+                                <strong>${count}</strong>개
+                            </span>
+
+                        </div>
+                    `;
+
+                }
+            )
+            .join(
+                ""
+            );
+
+
+    fiveElementNote.textContent =
+        result.characterCount >= 8
+            ? "네 기둥의 여덟 글자에 드러난 오행의 개수입니다. 실제 세력 강약과는 별개의 표시입니다."
+            : `확인 가능한 ${result.characterCount}글자 기준의 오행 구성입니다. 실제 세력 강약과는 별개의 표시입니다.`;
+
+}
+
+
+
+function extractFiveElementCounts(
+    result
+) {
+
+    const counts = {
+
+        WOOD:
+            0,
+
+        FIRE:
+            0,
+
+        EARTH:
+            0,
+
+        METAL:
+            0,
+
+        WATER:
+            0
+
+    };
+
+
+    const sourcePillars =
+        [
+
+            result?.yearPillar,
+
+            result?.monthPillar,
+
+            result?.dayPillar,
+
+            result?.hourPillar
+
+        ];
+
+
+    let characterCount =
+        0;
+
+
+    sourcePillars.forEach(
+        pillar => {
+
+            if (
+                !pillar
+            ) {
+
+                return;
+
+            }
+
+
+            [
+                pillar.stemElement,
+                pillar.branchElement
+            ]
+                .map(
+                    normalizeElementName
+                )
+                .forEach(
+                    element => {
+
+                        if (
+                            element
+                            &&
+                            Object.hasOwn(
+                                counts,
+                                element
+                            )
+                        ) {
+
+                            counts[
+                                element
+                            ]++;
+
+                            characterCount++;
+
+                        }
+
+                    }
+                );
+
+        }
+    );
+
+
+    return {
+
+        counts:
+            counts,
+
+        characterCount:
+            characterCount
+
+    };
+
+}
+
+
+
+function normalizeElementName(
+    value
+) {
+
+    const normalized =
+        String(
+            value
+            ??
+            ""
+        )
+            .trim()
+            .toUpperCase();
+
+
+    return Object.hasOwn(
+        FIVE_ELEMENT_META,
+        normalized
+    )
+        ? normalized
+        : null;
+
+}
+
+
+
+/* =========================================================
+   STORY
+   ========================================================= */
+
+function renderCurrentStory(
+    announce = true
+) {
+
+    if (
+        !bookOpened
+    ) {
+
+        return;
+
+    }
+
+
+    stopCurrentStoryVideo();
+
+
+    const consultations =
+        currentResult?.consultations
+        ||
+        [];
+
+
+    if (
+        currentStoryIndex
+        >= consultations.length
+    ) {
+
+        renderStoryComplete();
+
+        return;
+
+    }
+
+
+    const consultation =
+        consultations[
+            currentStoryIndex
+        ];
+
+
+    renderStoryBook(
+        consultation,
+        currentStoryIndex,
+        consultations.length
+    );
+
+
+    if (
+        announce
+    ) {
+
+        setTimeout(
+            announceCurrentStory,
+            260
+        );
+
+    }
+
+}
+
+
+
+function announceCurrentStory() {
+
+    const consultation =
+        currentResult
+            ?.consultations
+            ?.[currentStoryIndex];
+
+
+    if (
+        !consultation
+    ) {
+
+        return;
+
+    }
+
+
+    const meta =
+        CATEGORY_META[
+            consultation.category
+        ];
+
+
+    if (
+        meta
+    ) {
+
+        say(
+            meta.intro,
+            {
+                placement:
+                    "bottom",
+                hold:
+                    1000
+            }
+        );
+
+    }
+
+}
+
+
+
+/* =========================================================
+   STORY RENDER
+   ========================================================= */
+
+function renderStoryBook(
+    consultation,
+    index,
+    total
+) {
+
+    const meta =
+        CATEGORY_META[
+            consultation.category
+        ];
+
+
+    if (
+        !meta
+    ) {
+
+        return;
+
+    }
+
+
+    const storyText =
+        normalizeStoryText(
+            consultation.storyText
+        )
+        ||
+        "현재 이 장의 상담문을 표시할 수 없습니다.";
+
+
+    const paragraphs =
+        splitParagraphs(
+            storyText
+        );
+
+
+    const unavailable =
+        isUnavailableConsultation(
+            consultation
+        );
+
+
+    const progress =
+        (
+            (
+                index
+                +
+                1
+            )
+            /
+            total
+        )
+        *
+        100;
+
+
+    const visual =
+        meta.visual
+        === "video"
+            ?
+
+            `
+                <section class="story-visual">
+
+                    <video
+                            class="story-visual-video"
+                            data-current-story-video
+                            playsinline
+                            muted
+                            loop
+                            preload="metadata"
+                    >
+                        <source
+                                src="${escapeHtml(meta.source)}"
+                                type="video/mp4"
+                        >
+                    </video>
+
+                    <div class="story-visual-shade"></div>
+
+                    <div class="story-visual-copy">
+
+                        <small>
+                            ${pad2(meta.number)} · ${escapeHtml(meta.chapter)}
+                        </small>
+
+                        <strong>
+                            ${escapeHtml(meta.label)}
+                        </strong>
+
+                    </div>
+
+                </section>
+            `
+
+            :
+
+            `
+                <section class="story-visual">
+
+                    <img
+                            class="story-visual-image"
+                            src="${escapeHtml(meta.source)}"
+                            alt=""
+                    >
+
+                    <div class="story-visual-shade"></div>
+
+                    <div class="story-visual-copy">
+
+                        <small>
+                            ${pad2(meta.number)} · ${escapeHtml(meta.chapter)}
+                        </small>
+
+                        <strong>
+                            ${escapeHtml(meta.label)}
+                        </strong>
+
+                    </div>
+
+                </section>
+            `;
+
+
+    resultStoryList.innerHTML =
+        `
+
+            <div class="story-book">
+
+
+                <div class="story-progress">
+
+                    <div class="story-progress-head">
+
+                        <span>
+                            ${escapeHtml(meta.chapter)}
+                        </span>
+
+                        <strong>
+                            ${pad2(index + 1)} / ${pad2(total)}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="story-progress-track">
+
+                        <div
+                                class="story-progress-bar"
+                                style="width:${progress}%"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+
+                ${visual}
+
+
+                <section class="story-reading">
+
+
+                    <span class="story-book-label">
+                        天命錄
+                    </span>
+
+
+                    <h2>
+                        ${escapeHtml(meta.title)}
+                    </h2>
+
+
+                    <div class="story-reading-subtitle">
+                        ${escapeHtml(meta.chapter)}
+                        ·
+                        ${escapeHtml(meta.label)}
+                    </div>
+
+
+                    <div class="story-paragraphs">
+
+                        ${
+                            paragraphs
+                                .map(
+                                    paragraph => {
+
+                                        const hasEmphasis =
+                                            paragraph.includes(
+                                                "**"
+                                            );
+
+
+                                        return `
+                                            <p class="
+                                                ${unavailable ? "story-unavailable" : ""}
+                                                ${hasEmphasis ? "has-emphasis" : ""}
+                                            ">
+                                                ${renderStoryParagraph(paragraph)}
+                                            </p>
+                                        `;
+
+                                    }
+                                )
+                                .join(
+                                    ""
+                                )
+                        }
+
+                    </div>
+
+                </section>
+
+
+                <div class="story-navigation">
+
+
+                    <button
+                            class="story-nav-button"
+                            type="button"
+                            data-story-prev
+                            ${index === 0 ? "disabled" : ""}
+                    >
+                        ‹ 이전 장
+                    </button>
+
+
+                    <button
+                            class="story-nav-button next"
+                            type="button"
+                            data-story-next
+                    >
+                        ${
+                            index === total - 1
+                                ? "천명록 마치기"
+                                : "다음 장 ›"
+                        }
+                    </button>
+
+                </div>
+
+
+                <p class="story-swipe-hint">
+                    좌우로 넘겨 다음 장을 읽을 수 있습니다.
+                </p>
+
+
+            </div>
+
+        `;
+
+
+    resultStoryList
+        .querySelector(
+            "[data-story-prev]"
+        )
+        ?.addEventListener(
+            "click",
+            goPreviousStory
+        );
+
+
+    resultStoryList
+        .querySelector(
+            "[data-story-next]"
+        )
+        ?.addEventListener(
+            "click",
+            goNextStory
+        );
+
+
+    startCurrentStoryVideo();
+
+}
+
+
+
+/*
+ * =========================================================
+ * Safe emphasis renderer
+ * =========================================================
+ *
+ * OpenAI가 HTML을 직접 생성하지 않는다.
+ *
+ * 우리가 허용하는 문법은:
+ *
+ * **문장**
+ *
+ * 하나뿐이다.
+ *
+ * 모든 일반 텍스트는 escapeHtml 후 렌더링한다.
+ */
+
+function renderStoryParagraph(
+    paragraph
+) {
+
+    const source =
+        String(
+            paragraph
+            ??
+            ""
+        );
+
+
+    const pattern =
+        /(\*\*[\s\S]+?\*\*)/g;
+
+
+    return source
+        .split(
+            pattern
+        )
+        .filter(
+            part =>
+                part !== ""
+        )
+        .map(
+            part => {
+
+                if (
+                    part.startsWith(
+                        "**"
+                    )
+                    &&
+                    part.endsWith(
+                        "**"
+                    )
+                    &&
+                    part.length
+                    >= 4
+                ) {
+
+                    const inner =
+                        part
+                            .slice(
+                                2,
+                                -2
+                            )
+                            .trim();
+
+
+                    if (
+                        !inner
+                    ) {
+
+                        return "";
+
+                    }
+
+
+                    return `
+                        <strong class="story-emphasis">${escapeHtml(inner)}</strong>
+                    `;
+
+                }
+
+
+                return escapeHtml(
+                    part
+                );
+
+            }
+        )
+        .join(
+            ""
+        );
+
+}
+
+
+
+/* =========================================================
+   STORY NAV
+   ========================================================= */
+
+function goPreviousStory() {
+
+    if (
+        currentStoryIndex
+        <= 0
+    ) {
+
+        return;
+
+    }
+
+
+    currentStoryIndex--;
+
+    renderCurrentStory();
+
+    scrollStoryTop();
+
+}
+
+
+
+function goNextStory() {
+
+    if (
+        !currentResult
+        ||
+        !bookOpened
+    ) {
+
+        return;
+
+    }
+
+
+    const total =
+        currentResult
+            ?.consultations
+            ?.length
+        ||
+        0;
+
+
+    if (
+        currentStoryIndex
+        >= total
+    ) {
+
+        return;
+
+    }
+
+
+    currentStoryIndex++;
+
+    renderCurrentStory();
+
+    scrollStoryTop();
+
+}
+
+
+
+function scrollStoryTop() {
+
+    setTimeout(
+        () => {
+
+            resultScrollArea.scrollTo(
+                {
+                    top:
+                        0,
+                    behavior:
+                        "smooth"
+                }
+            );
+
+        },
+        20
+    );
+
+}
+
+
+
+/* =========================================================
+   COMPLETE
+   ========================================================= */
+
+function renderStoryComplete() {
+
+    cancelGuide();
+
+    stopCurrentStoryVideo();
+
+
+    resultStoryList.innerHTML =
+        `
+
+            <section class="story-complete">
+
+                <div class="story-complete-seal">
+                    錄
+                </div>
+
+                <span>
+                    天命十一章 完
+                </span>
+
+                <h2>
+                    천명록 완독
+                </h2>
+
+                <p>
+                    열한 장의 기록을 모두 펼쳤습니다.
+                    사주는 삶을 대신 결정하는 답이 아니라,
+                    자신의 흐름을 이해하고 선택을 준비하기 위한
+                    하나의 지도입니다.
+                </p>
+
+                <div class="story-complete-actions">
+
+                    <button
+                            class="story-complete-button restart"
+                            type="button"
+                            data-story-restart
+                    >
+                        처음부터 다시 읽기
+                    </button>
+
+                    <button
+                            class="story-complete-button home"
+                            type="button"
+                            data-story-home
+                    >
+                        천명록 마치기
+                    </button>
+
+                </div>
+
+            </section>
+
+        `;
+
+
+    resultStoryList
+        .querySelector(
+            "[data-story-restart]"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                currentStoryIndex =
+                    0;
+
+                renderCurrentStory();
+
+                scrollStoryTop();
+
+            }
+        );
+
+
+    resultStoryList
+        .querySelector(
+            "[data-story-home]"
+        )
+        ?.addEventListener(
+            "click",
+            goHome
+        );
+
+
+    say(
+        formState.name
+            ? `${formState.name}, 여기까지가 지금 네게 펼쳐진 천명록이야.`
+            : "여기까지가 지금 네게 펼쳐진 천명록이야.",
+        {
+            placement:
+                "bottom",
+            hold:
+                1800
+        }
+    );
+
+}
+
+
+
+/* =========================================================
+   SWIPE / KEYBOARD
+   ========================================================= */
+
+function bindStoryNavigation() {
+
+    resultStoryList.addEventListener(
+        "touchstart",
+        event => {
+
+            if (
+                !bookOpened
+            ) {
+
+                return;
+
+            }
+
+
+            touchStartX =
+                event
+                    .changedTouches[0]
+                    .clientX;
+
+        },
+        {
+            passive:
+                true
+        }
+    );
+
+
+    resultStoryList.addEventListener(
+        "touchend",
+        event => {
+
+            if (
+                touchStartX
+                === null
+            ) {
+
+                return;
+
+            }
+
+
+            const delta =
+                event
+                    .changedTouches[0]
+                    .clientX
+                -
+                touchStartX;
+
+
+            touchStartX =
+                null;
+
+
+            if (
+                Math.abs(
+                    delta
+                )
+                <
+                60
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                delta < 0
+            ) {
+
+                goNextStory();
+
+            }
+            else {
+
+                goPreviousStory();
+
+            }
+
+        },
+        {
+            passive:
+                true
+        }
+    );
+
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                currentScreen
+                !== "result"
+                ||
+                !bookOpened
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                event.key
+                === "ArrowLeft"
+            ) {
+
+                goPreviousStory();
+
+            }
+
+
+            if (
+                event.key
+                === "ArrowRight"
+            ) {
+
+                goNextStory();
+
+            }
+
+        }
+    );
+
+}
+
+
+
+/* =========================================================
+   STORY VIDEO
+   ========================================================= */
+
+function startCurrentStoryVideo() {
+
+    currentStoryVideo =
+        resultStoryList
+            .querySelector(
+                "[data-current-story-video]"
+            );
+
+
+    currentStoryVideo
+        ?.play()
+        .catch(
+            () => {}
+        );
+
+}
+
+
+
+function stopCurrentStoryVideo() {
+
+    if (
+        !currentStoryVideo
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        currentStoryVideo.pause();
+
+    }
+    catch (
+        ignored
+    ) {
+
+    }
+
+
+    currentStoryVideo =
+        null;
+
+}
+
+
+
+/* =========================================================
+   VALIDATION
+   ========================================================= */
+
+function validateAllForm() {
+
+    normalizeMonthInput();
+
+    normalizeDayInput();
+
+    syncDateStateFromInputs();
+
+    syncTimeStateFromRaw();
+
+
+    if (
+        !formState.name
+    ) {
+
+        showScreen(
+            "name"
+        );
+
+        return false;
+
+    }
+
+
+    if (
+        !validateBirthDate()
+    ) {
+
+        showScreen(
+            "birth"
+        );
+
+        return false;
+
+    }
+
+
+    if (
+        !validateBirthTime()
+    ) {
+
+        showScreen(
+            "time"
+        );
+
+        return false;
+
+    }
+
+
+    return true;
+
+}
+
+
+
+function validateBirthDate() {
 
     const year =
         Number(
@@ -1500,13 +4480,8 @@ function validateBirth() {
 
 
     if (
-        !Number.isInteger(
-            year
-        )
-        ||
-        year < 1900
-        ||
-        year > 2100
+        formState.birthYear.length
+        !== 4
     ) {
 
         birthError.textContent =
@@ -1518,10 +4493,6 @@ function validateBirth() {
 
 
     if (
-        !Number.isInteger(
-            month
-        )
-        ||
         month < 1
         ||
         month > 12
@@ -1536,10 +4507,6 @@ function validateBirth() {
 
 
     if (
-        !Number.isInteger(
-            day
-        )
-        ||
         day < 1
         ||
         day > 31
@@ -1587,1941 +4554,86 @@ function validateBirth() {
     }
 
 
-    if (
-        !formState.birthTimeUnknown
-    ) {
-
-        const hour =
-            Number(
-                formState.birthHour
-            );
-
-
-        const minute =
-            Number(
-                formState.birthMinute
-            );
-
-
-        if (
-            !Number.isInteger(
-                hour
-            )
-            ||
-            hour < 0
-            ||
-            hour > 23
-        ) {
-
-            birthError.textContent =
-                "태어난 시간을 확인해주세요.";
-
-            return false;
-
-        }
-
-
-        if (
-            !Number.isInteger(
-                minute
-            )
-            ||
-            minute < 0
-            ||
-            minute > 59
-        ) {
-
-            birthError.textContent =
-                "태어난 분을 확인해주세요.";
-
-            return false;
-
-        }
-
-    }
-
-
     birthError.textContent =
         "";
-
 
     return true;
 
 }
 
 
-function updateBirthValidation() {
 
-    syncBirthFormState();
-
-
-    const hasDate =
-        formState.birthYear
-        &&
-        formState.birthMonth
-        &&
-        formState.birthDay;
-
-
-    const hasTime =
-        formState.birthTimeUnknown
-        ||
-        (
-            formState.birthHour
-            !== ""
-            &&
-            formState.birthMinute
-            !== ""
-        );
-
-
-    birthNextButton.disabled =
-        !(
-            hasDate
-            &&
-            hasTime
-        );
-
+function validateBirthTime() {
 
     if (
-        hasDate
-        &&
-        hasTime
+        formState.birthTimeUnknown
     ) {
 
-        birthError.textContent =
+        timeError.textContent =
             "";
 
-    }
-
-}
-
-
-function updateCalendarUI() {
-
-    const lunar =
-        formState.calendarType
-        === "LUNAR";
-
-
-    lunarLeapArea.classList.toggle(
-        "hidden",
-        !lunar
-    );
-
-
-    if (
-        !lunar
-    ) {
-
-        lunarLeapMonth.checked =
-            false;
-
-
-        formState.leapMonth =
-            false;
+        return true;
 
     }
 
-}
+
+    const hour =
+        Number(
+            formState.birthHour
+        );
 
 
-function updateTimeUI() {
-
-    const unknown =
-        birthTimeUnknown.checked;
-
-
-    timeInputArea.classList.toggle(
-        "is-disabled",
-        unknown
-    );
-
-
-    birthHour.disabled =
-        unknown;
-
-
-    birthMinute.disabled =
-        unknown;
-
-}
-
-
-
-/* =========================================================
-   REVIEW
-   ========================================================= */
-
-function bindReview() {
-
-    reviewCompleteButton.addEventListener(
-        "click",
-        () => {
-
-            saveForm();
-
-            showScreen(
-                "complete"
-            );
-
-        }
-    );
-
-}
-
-
-function renderReview() {
-
-    setText(
-        "reviewName",
-        formState.name
-    );
-
-
-    setText(
-        "reviewGender",
-        formState.gender
-        === "MALE"
-            ? "남성"
-            : "여성"
-    );
-
-
-    setText(
-        "reviewCalendar",
-        formState.calendarType
-        === "SOLAR"
-            ? "양력"
-            : "음력"
-    );
-
-
-    const leapRow =
-        optional(
-            "reviewLeapRow"
+    const minute =
+        Number(
+            formState.birthMinute
         );
 
 
     if (
-        formState.calendarType
-        === "LUNAR"
-    ) {
-
-        leapRow
-            ?.classList.remove(
-                "hidden"
-            );
-
-
-        setText(
-            "reviewLeap",
-            formState.leapMonth
-                ? "윤달"
-                : "평달"
-        );
-
-    }
-    else {
-
-        leapRow
-            ?.classList.add(
-                "hidden"
-            );
-
-    }
-
-
-    setText(
-        "reviewBirthDate",
-        `${formState.birthYear}년 ${Number(formState.birthMonth)}월 ${Number(formState.birthDay)}일`
-    );
-
-
-    setText(
-        "reviewBirthTime",
-        formState.birthTimeUnknown
-            ? "태어난 시간 모름"
-            : `${pad2(formState.birthHour)}:${pad2(formState.birthMinute)}`
-    );
-
-}
-
-
-
-/* =========================================================
-   ANALYSIS
-   ========================================================= */
-
-function bindAnalysis() {
-
-    startAnalysisButton.addEventListener(
-        "click",
-        startAnalysis
-    );
-
-
-    skipFactsButton.addEventListener(
-        "click",
-        () => {
-
-            skipFactsRequested =
-                true;
-
-
-            analysisFactOverlay
-                .classList.remove(
-                    "is-show"
-                );
-
-
-            stopVideo(
-                factMotionVideo
-            );
-
-        }
-    );
-
-
-    revealSkipButton
-        ?.addEventListener(
-            "click",
-            showResult
-        );
-
-}
-
-
-async function startAnalysis() {
-
-    if (
-        analysisRunning
-    ) {
-
-        return;
-
-    }
-
-
-    analysisRunning =
-        true;
-
-
-    skipFactsRequested =
-        false;
-
-
-    showScreen(
-        "analysis"
-    );
-
-
-    resetAnalysisUI();
-
-
-    const startedAt =
-        Date.now();
-
-
-    const progressController =
-        startProgressAnimation();
-
-
-    try {
-
-        if (
-            analysisVideo1
-        ) {
-
-            analysisVideo1
-                .classList.remove(
-                    "hidden"
-                );
-
-
-            analysisVideo2
-                ?.classList.add(
-                    "hidden"
-                );
-
-
-            await playVideo(
-                analysisVideo1,
-                VIDEO_PATH.analysis1,
-                false
-            );
-
-        }
-
-
-        analysisStatus.textContent =
-            "사주 분석 중";
-
-
-        analysisTitle.textContent =
-            "당신의 천명록을 만들고 있습니다";
-
-
-        analysisMessage.textContent =
-            "타고난 명과 현재의 흐름을 분야별로 풀어가고 있습니다.";
-
-
-        const response =
-            await fetch(
-                API_URL,
-                {
-
-                    method:
-                        "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json"
-
-                    },
-
-                    body:
-                        JSON.stringify(
-                            createAnalysisRequest()
-                        )
-
-                }
-            );
-
-
-        if (
-            !response.ok
-        ) {
-
-            const message =
-                await safeErrorBody(
-                    response
-                );
-
-
-            throw new Error(
-                `사주 분석 요청 실패 (${response.status}) ${message}`
-            );
-
-        }
-
-
-        const rawResult =
-            await response.json();
-
-
-        currentResult =
-            normalizeResult(
-                rawResult
-            );
-
-
-        sessionStorage.setItem(
-            RESULT_STORAGE_KEY,
-            JSON.stringify(
-                currentResult
-            )
-        );
-
-
-        const elapsed =
-            Date.now()
-            -
-            startedAt;
-
-
-        if (
-            elapsed
-            < MINIMUM_ANALYSIS_TIME
-        ) {
-
-            await delay(
-                MINIMUM_ANALYSIS_TIME
-                -
-                elapsed
-            );
-
-        }
-
-
-        if (
-            analysisVideo2
-        ) {
-
-            analysisVideo1
-                ?.classList.add(
-                    "hidden"
-                );
-
-
-            analysisVideo2
-                .classList.remove(
-                    "hidden"
-                );
-
-
-            await playVideo(
-                analysisVideo2,
-                VIDEO_PATH.analysis2,
-                false
-            );
-
-        }
-
-
-        finishProgress(
-            progressController
-        );
-
-
-        await showCategoryFlow(
-            currentResult.consultations
-        );
-
-
-        await playReveal();
-
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            error
-        );
-
-
-        finishProgress(
-            progressController
-        );
-
-
-        showToast(
-            error.message
-            || "사주 분석 중 오류가 발생했습니다."
-        );
-
-
-        showScreen(
-            "complete"
-        );
-
-    } finally {
-
-        analysisRunning =
-            false;
-
-    }
-
-}
-
-
-function createAnalysisRequest() {
-
-    const now =
-        new Date();
-
-
-    const targetYear =
-        now.getFullYear();
-
-
-    const luckReferenceDate =
-        [
-            now.getFullYear(),
-            pad2(
-                now.getMonth()
-                +
-                1
-            ),
-            pad2(
-                now.getDate()
-            )
-        ].join(
-            "-"
-        );
-
-
-    const birthDate =
-        [
-            formState.birthYear,
-            pad2(
-                formState.birthMonth
-            ),
-            pad2(
-                formState.birthDay
-            )
-        ].join(
-            "-"
-        );
-
-
-    const birthTime =
-        formState.birthTimeUnknown
-            ? null
-            : `${pad2(formState.birthHour)}:${pad2(formState.birthMinute)}`;
-
-
-    return {
-
-        calendarType:
-            formState.calendarType,
-
-        birthDate:
-            birthDate,
-
-        birthTime:
-            birthTime,
-
-        birthTimeUnknown:
-            formState.birthTimeUnknown,
-
-        gender:
-            formState.gender,
-
-        leapMonth:
-            formState.calendarType
-            === "LUNAR"
-                ? formState.leapMonth
-                : false,
-
-        targetYear:
-            targetYear,
-
-        luckReferenceDate:
-            luckReferenceDate,
-
-        consultationCategories:
-            CATEGORY_ORDER,
-
-        consultationQuestion:
-            null
-
-    };
-
-}
-
-
-function resetAnalysisUI() {
-
-    analysisStatus.textContent =
-        "천명 분석 중";
-
-
-    analysisTitle.textContent =
-        "사주팔자를 계산하고 있습니다";
-
-
-    analysisMessage.textContent =
-        "타고난 명과 흐르는 운을 하나씩 풀어가고 있습니다.";
-
-
-    analysisProgressPercent.textContent =
-        "0%";
-
-
-    analysisProgressBar.style.width =
-        "0%";
-
-
-    analysisElements.forEach(
-        element => {
-
-            element.classList.remove(
-                "hidden"
-            );
-
-        }
-    );
-
-
-    analysisFactOverlay.classList.remove(
-        "is-show"
-    );
-
-
-    document
-        .querySelectorAll(
-            ".element-grid span"
-        )
-        .forEach(
-            element => {
-
-                element.classList.remove(
-                    "is-active"
-                );
-
-            }
-        );
-
-}
-
-
-function startProgressAnimation() {
-
-    let progress =
-        0;
-
-
-    const fiveElements =
-        Array.from(
-            document.querySelectorAll(
-                ".element-grid span"
-            )
-        );
-
-
-    const interval =
-        window.setInterval(
-            () => {
-
-                if (
-                    progress
-                    >= WAIT_PROGRESS_LIMIT
-                ) {
-
-                    return;
-
-                }
-
-
-                progress +=
-                    progress < 60
-                        ? 1.4
-                        : 0.35;
-
-
-                progress =
-                    Math.min(
-                        progress,
-                        WAIT_PROGRESS_LIMIT
-                    );
-
-
-                setAnalysisProgress(
-                    progress
-                );
-
-
-                if (
-                    fiveElements.length
-                    > 0
-                ) {
-
-                    const activeCount =
-                        Math.min(
-                            fiveElements.length,
-                            Math.ceil(
-                                (
-                                    progress
-                                    /
-                                    WAIT_PROGRESS_LIMIT
-                                )
-                                *
-                                fiveElements.length
-                            )
-                        );
-
-
-                    fiveElements.forEach(
-                        (
-                            element,
-                            index
-                        ) => {
-
-                            element.classList.toggle(
-                                "is-active",
-                                index
-                                < activeCount
-                            );
-
-                        }
-                    );
-
-                }
-
-            },
-            80
-        );
-
-
-    return {
-
-        interval
-
-    };
-
-}
-
-
-function finishProgress(
-    controller
-) {
-
-    if (
-        controller
-        ?.interval
-    ) {
-
-        clearInterval(
-            controller.interval
-        );
-
-    }
-
-
-    setAnalysisProgress(
-        100
-    );
-
-}
-
-
-function setAnalysisProgress(
-    value
-) {
-
-    const normalized =
-        Math.max(
-            0,
-            Math.min(
-                100,
-                Math.round(
-                    value
-                )
-            )
-        );
-
-
-    analysisProgressPercent.textContent =
-        `${normalized}%`;
-
-
-    analysisProgressBar.style.width =
-        `${normalized}%`;
-
-}
-
-
-
-/* =========================================================
-   CATEGORY FLOW
-   ========================================================= */
-
-async function showCategoryFlow(
-    consultations
-) {
-
-    if (
-        !Array.isArray(
-            consultations
-        )
+        formState.birthHour.length
+        !== 2
         ||
-        consultations.length
-        === 0
+        formState.birthMinute.length
+        !== 2
     ) {
 
-        return;
+        timeError.textContent =
+            "시간을 4자리로 입력해주세요.";
+
+        return false;
 
     }
 
 
-    skipFactsRequested =
-        false;
-
-
-    for (
-        let index = 0;
-        index < consultations.length;
-        index++
-    ) {
-
-        if (
-            skipFactsRequested
-        ) {
-
-            break;
-
-        }
-
-
-        const consultation =
-            consultations[index];
-
-
-        renderCategoryFlow(
-            consultation,
-            index,
-            consultations.length
-        );
-
-
-        analysisFactOverlay
-            .classList.add(
-                "is-show"
-            );
-
-
-        await delay(
-            FACT_DISPLAY_TIME
-        );
-
-    }
-
-
-    analysisFactOverlay
-        .classList.remove(
-            "is-show"
-        );
-
-
-    stopVideo(
-        factMotionVideo
-    );
-
-}
-
-
-function renderCategoryFlow(
-    consultation,
-    index,
-    total
-) {
-
-    const category =
-        consultation.category;
-
-
-    const meta =
-        CATEGORY_META[category]
+    if (
+        hour < 0
         ||
-        {
-
-            number:
-                index + 1,
-
-            chapter:
-                `제${index + 1}장`,
-
-            label:
-                category,
-
-            analyzing:
-                "당신의 흐름을 살펴보고 있습니다."
-
-        };
-
-
-    factCategoryIndex.textContent =
-        `${pad2(index + 1)} / ${pad2(total)}`;
-
-
-    factCategoryKicker.textContent =
-        meta.chapter;
-
-
-    factCategoryTitle.textContent =
-        meta.label;
-
-
-    factCategoryMessage.textContent =
-        meta.analyzing;
-
-
-    playCategoryMotion(
-        category
-    );
-
-}
-
-
-function playCategoryMotion(
-    category
-) {
-
-    if (
-        !factMotionVideo
+        hour > 23
+        ||
+        minute < 0
+        ||
+        minute > 59
     ) {
 
-        return;
+        timeError.textContent =
+            "태어난 시간을 확인해주세요.";
+
+        return false;
 
     }
 
 
-    let path =
-        null;
-
-
-    switch (
-        category
-    ) {
-
-        case "SOCIAL_RELATIONSHIP":
-
-            path =
-                VIDEO_PATH.network;
-
-            break;
-
-
-        case "LOVE_STYLE":
-
-        case "PARTNER_LUCK":
-
-            path =
-                VIDEO_PATH.love;
-
-            break;
-
-
-        case "WEALTH":
-
-        case "CAREER":
-
-            path =
-                VIDEO_PATH.wealth;
-
-            break;
-
-
-        default:
-
-            path =
-                null;
-
-    }
-
-
-    if (
-        !path
-    ) {
-
-        stopVideo(
-            factMotionVideo
-        );
-
-
-        factMotionVideo
-            .removeAttribute(
-                "src"
-            );
-
-
-        return;
-
-    }
-
-
-    factMotionVideo.src =
-        path;
-
-
-    factMotionVideo.load();
-
-
-    factMotionVideo
-        .play()
-        .catch(
-            () => {
-
-            }
-        );
-
-}
-
-
-
-/* =========================================================
-   REVEAL
-   ========================================================= */
-
-async function playReveal() {
-
-    showScreen(
-        "reveal"
-    );
-
-
-    renderRevealPillars();
-
-
-    revealOpening
-        ?.classList.remove(
-            "is-visible",
-            "is-hidden"
-        );
-
-
-    revealPillarGrid
-        ?.classList.remove(
-            "is-visible"
-        );
-
-
-    revealFinal
-        ?.classList.remove(
-            "is-visible"
-        );
-
-
-    revealOpening
-        ?.classList.add(
-            "is-visible"
-        );
-
-
-    await delay(
-        1300
-    );
-
-
-    revealOpening
-        ?.classList.add(
-            "is-hidden"
-        );
-
-
-    await delay(
-        450
-    );
-
-
-    revealPillarGrid
-        ?.classList.add(
-            "is-visible"
-        );
-
-
-    const pillars =
-        Array.from(
-            document.querySelectorAll(
-                "[data-reveal-pillar]"
-            )
-        );
-
-
-    for (
-        const pillar
-        of pillars
-    ) {
-
-        pillar.classList.add(
-            "is-visible"
-        );
-
-
-        await delay(
-            260
-        );
-
-    }
-
-
-    await delay(
-        1500
-    );
-
-
-    revealPillarGrid
-        ?.classList.remove(
-            "is-visible"
-        );
-
-
-    await delay(
-        300
-    );
-
-
-    revealFinal
-        ?.classList.add(
-            "is-visible"
-        );
-
-
-    await delay(
-        1600
-    );
-
-
-    showResult();
-
-}
-
-
-function renderRevealPillars() {
-
-    const pillars =
-        extractPillars(
-            currentResult
-        );
-
-
-    setPillarText(
-        "revealYearChinese",
-        "revealYearKorean",
-        pillars[0]
-    );
-
-
-    setPillarText(
-        "revealMonthChinese",
-        "revealMonthKorean",
-        pillars[1]
-    );
-
-
-    setPillarText(
-        "revealDayChinese",
-        "revealDayKorean",
-        pillars[2]
-    );
-
-
-    setPillarText(
-        "revealHourChinese",
-        "revealHourKorean",
-        pillars[3]
-    );
-
-}
-
-
-function setPillarText(
-    chineseId,
-    koreanId,
-    pillar
-) {
-
-    setText(
-        chineseId,
-        pillar?.chinese
-        || "-"
-    );
-
-
-    setText(
-        koreanId,
-        pillar?.korean
-        || "-"
-    );
-
-}
-
-
-
-/* =========================================================
-   RESULT
-   ========================================================= */
-
-function showResult() {
-
-    if (
-        !currentResult
-    ) {
-
-        const stored =
-            sessionStorage.getItem(
-                RESULT_STORAGE_KEY
-            );
-
-
-        if (
-            stored
-        ) {
-
-            try {
-
-                currentResult =
-                    JSON.parse(
-                        stored
-                    );
-
-            } catch (
-                ignored
-            ) {
-
-                currentResult =
-                    null;
-
-            }
-
-        }
-
-    }
-
-
-    if (
-        !currentResult
-    ) {
-
-        showToast(
-            "분석 결과를 찾을 수 없습니다."
-        );
-
-
-        showScreen(
-            "complete"
-        );
-
-
-        return;
-
-    }
-
-
-    currentStoryIndex =
-        0;
-
-
-    renderResultHeader();
-
-    renderResultPillars();
-
-    renderCurrentStory();
-
-
-    showScreen(
-        "result"
-    );
-
-}
-
-
-function renderResultHeader() {
-
-    resultTitle.textContent =
-        formState.name
-            ? `${formState.name}님의 천명록`
-            : "천명록";
-
-
-    resultSummary.textContent =
-        "타고난 명과 흐르는 운을 열한 장의 기록으로 정리했습니다.";
-
-}
-
-
-function renderResultPillars() {
-
-    const pillars =
-        extractPillars(
-            currentResult
-        );
-
-
-    const labels = [
-
-        "年柱",
-
-        "月柱",
-
-        "日柱",
-
-        "時柱"
-
-    ];
-
-
-    const koreanLabels = [
-
-        "년주",
-
-        "월주",
-
-        "일주",
-
-        "시주"
-
-    ];
-
-
-    resultPillars.innerHTML =
+    timeError.textContent =
         "";
 
-
-    pillars.forEach(
-        (
-            pillar,
-            index
-        ) => {
-
-            const article =
-                document.createElement(
-                    "article"
-                );
-
-
-            article.className =
-                "pillar-card";
-
-
-            article.innerHTML =
-                `
-                    <span>
-                        ${escapeHtml(labels[index])}
-                    </span>
-
-                    <strong>
-                        ${escapeHtml(pillar.chinese || "-")}
-                    </strong>
-
-                    <small>
-                        ${escapeHtml(koreanLabels[index])}
-                        ${pillar.korean ? ` · ${escapeHtml(pillar.korean)}` : ""}
-                    </small>
-                `;
-
-
-            resultPillars.appendChild(
-                article
-            );
-
-        }
-    );
+    return true;
 
 }
 
 
 
 /* =========================================================
-   STORY BOOK
-   ========================================================= */
-
-function renderCurrentStory() {
-
-    if (
-        !currentResult
-        ||
-        !Array.isArray(
-            currentResult.consultations
-        )
-    ) {
-
-        return;
-
-    }
-
-
-    const consultations =
-        currentResult.consultations;
-
-
-    if (
-        currentStoryIndex
-        >= consultations.length
-    ) {
-
-        renderStoryComplete();
-
-        return;
-
-    }
-
-
-    const consultation =
-        consultations[currentStoryIndex];
-
-
-    renderStoryBook(
-        consultation,
-        currentStoryIndex,
-        consultations.length
-    );
-
-}
-
-
-function renderStoryBook(
-    consultation,
-    index,
-    total
-) {
-
-    const meta =
-        CATEGORY_META[
-            consultation.category
-        ]
-        ||
-        {
-
-            number:
-                index + 1,
-
-            chapter:
-                `제${index + 1}장`,
-
-            label:
-                consultation.category,
-
-            title:
-                consultation.category
-
-        };
-
-
-    const progress =
-        (
-            (
-                index + 1
-            )
-            /
-            total
-        )
-        *
-        100;
-
-
-    const unavailable =
-        isUnavailableConsultation(
-            consultation
-        );
-
-
-    /*
-     * =================================================
-     * 중요
-     * =================================================
-     *
-     * 최종 화면은 storyText만 사용한다.
-     *
-     * narrationText를 fallback으로 사용하지 않는다.
-     *
-     * OpenAI 문장화가 실패한 경우
-     * Legacy 백엔드 문장이 사용자에게 다시 노출되는 것을
-     * 방지한다.
-     */
-
-    const storyText =
-        consultation.storyText
-        ||
-        "현재 이 장의 상담문을 표시할 수 없습니다.";
-
-
-    const paragraphs =
-        splitParagraphs(
-            storyText
-        );
-
-
-    resultStoryList.innerHTML =
-        `
-            <div class="cheonmyeong-book">
-
-                <div class="cheonmyeong-book-progress">
-
-                    <div class="cheonmyeong-book-progress-head">
-
-                        <span>
-                            ${escapeHtml(meta.chapter)}
-                        </span>
-
-                        <strong>
-                            ${pad2(index + 1)} / ${pad2(total)}
-                        </strong>
-
-                    </div>
-
-                    <div class="cheonmyeong-book-progress-track">
-
-                        <div
-                            class="cheonmyeong-book-progress-bar"
-                            style="width:${progress}%"
-                        ></div>
-
-                    </div>
-
-                </div>
-
-
-                <article class="story-page">
-
-                    <header class="story-page-header">
-
-                        <span class="story-page-book-label">
-                            天命錄
-                        </span>
-
-                        <span class="story-page-chapter">
-                            ${escapeHtml(meta.chapter)}
-                        </span>
-
-                        <h2>
-                            ${escapeHtml(meta.title)}
-                        </h2>
-
-                        <p>
-                            ${escapeHtml(meta.label)}
-                        </p>
-
-                    </header>
-
-
-                    <div class="story-page-seal">
-                        命
-                    </div>
-
-
-                    <div class="story-page-body">
-
-                        ${
-                            paragraphs
-                                .map(
-                                    paragraph =>
-                                        `
-                                            <p class="${unavailable ? "story-unavailable" : ""}">
-                                                ${escapeHtml(paragraph)}
-                                            </p>
-                                        `
-                                )
-                                .join("")
-                        }
-
-                    </div>
-
-                </article>
-
-
-                <div class="cheonmyeong-book-navigation">
-
-                    <button
-                        class="cheonmyeong-book-nav-button"
-                        type="button"
-                        data-story-prev
-                        ${index === 0 ? "disabled" : ""}
-                    >
-                        ‹ 이전 장
-                    </button>
-
-
-                    <button
-                        class="cheonmyeong-book-nav-button is-next ${index === total - 1 ? "is-finish" : ""}"
-                        type="button"
-                        data-story-next
-                    >
-                        ${
-                            index === total - 1
-                                ? "천명록 마치기"
-                                : "다음 장 ›"
-                        }
-                    </button>
-
-                </div>
-
-
-                <p class="cheonmyeong-book-swipe-hint">
-                    좌우로 넘겨 다음 장을 읽을 수 있습니다.
-                </p>
-
-            </div>
-        `;
-
-
-    bindRenderedStoryButtons();
-
-}
-
-
-function bindRenderedStoryButtons() {
-
-    resultStoryList
-        .querySelector(
-            "[data-story-prev]"
-        )
-        ?.addEventListener(
-            "click",
-            goPreviousStory
-        );
-
-
-    resultStoryList
-        .querySelector(
-            "[data-story-next]"
-        )
-        ?.addEventListener(
-            "click",
-            goNextStory
-        );
-
-
-    resultStoryList
-        .querySelector(
-            "[data-story-restart]"
-        )
-        ?.addEventListener(
-            "click",
-            () => {
-
-                currentStoryIndex =
-                    0;
-
-
-                renderCurrentStory();
-
-                scrollStoryTop();
-
-            }
-        );
-
-
-    resultStoryList
-        .querySelector(
-            "[data-story-finish]"
-        )
-        ?.addEventListener(
-            "click",
-            goHome
-        );
-
-}
-
-
-function goPreviousStory() {
-
-    if (
-        !currentResult
-        ||
-        currentStoryIndex
-        <= 0
-    ) {
-
-        return;
-
-    }
-
-
-    currentStoryIndex--;
-
-
-    renderCurrentStory();
-
-    scrollStoryTop();
-
-}
-
-
-function goNextStory() {
-
-    if (
-        !currentResult
-    ) {
-
-        return;
-
-    }
-
-
-    currentStoryIndex++;
-
-
-    renderCurrentStory();
-
-    scrollStoryTop();
-
-}
-
-
-function renderStoryComplete() {
-
-    resultStoryList.innerHTML =
-        `
-            <div class="cheonmyeong-book-complete">
-
-                <div class="cheonmyeong-book-complete-seal">
-                    錄
-                </div>
-
-                <p class="cheonmyeong-book-complete-kicker">
-                    天命十一章 完
-                </p>
-
-                <h2>
-                    천명록 완독
-                </h2>
-
-                <p class="cheonmyeong-book-complete-copy">
-                    열한 장의 기록을 모두 펼쳤습니다.
-                </p>
-
-                <p class="cheonmyeong-book-complete-subcopy">
-                    사주는 삶을 대신 결정하는 답이 아니라,
-                    자신이 가진 흐름을 이해하는 하나의 지도입니다.
-                </p>
-
-                <div class="cheonmyeong-book-complete-actions">
-
-                    <button
-                        class="cheonmyeong-book-complete-button is-secondary"
-                        type="button"
-                        data-story-restart
-                    >
-                        처음부터 다시 읽기
-                    </button>
-
-                    <button
-                        class="cheonmyeong-book-complete-button is-primary"
-                        type="button"
-                        data-story-finish
-                    >
-                        천명록 마치기
-                    </button>
-
-                </div>
-
-            </div>
-        `;
-
-
-    bindRenderedStoryButtons();
-
-}
-
-
-function scrollStoryTop() {
-
-    resultStoryList.scrollIntoView({
-
-        behavior:
-            "smooth",
-
-        block:
-            "start"
-
-    });
-
-}
-
-
-
-/* =========================================================
-   SWIPE / KEYBOARD
-   ========================================================= */
-
-function bindStoryNavigation() {
-
-    resultStoryList.addEventListener(
-        "touchstart",
-        event => {
-
-            touchStartX =
-                event
-                    .changedTouches[0]
-                    .clientX;
-
-        },
-        {
-            passive:
-                true
-        }
-    );
-
-
-    resultStoryList.addEventListener(
-        "touchend",
-        event => {
-
-            if (
-                touchStartX
-                === null
-            ) {
-
-                return;
-
-            }
-
-
-            const endX =
-                event
-                    .changedTouches[0]
-                    .clientX;
-
-
-            const delta =
-                endX
-                -
-                touchStartX;
-
-
-            touchStartX =
-                null;
-
-
-            if (
-                Math.abs(
-                    delta
-                )
-                < 55
-            ) {
-
-                return;
-
-            }
-
-
-            if (
-                delta < 0
-            ) {
-
-                goNextStory();
-
-            }
-            else {
-
-                goPreviousStory();
-
-            }
-
-        },
-        {
-            passive:
-                true
-        }
-    );
-
-
-    document.addEventListener(
-        "keydown",
-        event => {
-
-            if (
-                currentScreen
-                !== "result"
-            ) {
-
-                return;
-
-            }
-
-
-            if (
-                event.key
-                === "ArrowLeft"
-            ) {
-
-                goPreviousStory();
-
-            }
-
-
-            if (
-                event.key
-                === "ArrowRight"
-            ) {
-
-                goNextStory();
-
-            }
-
-        }
-    );
-
-}
-
-
-
-/* =========================================================
-   NORMALIZE RESULT
+   RESULT NORMALIZE
    ========================================================= */
 
 function normalizeResult(
@@ -3541,15 +4653,15 @@ function normalizeResult(
 
 
     consultations.forEach(
-        consultation => {
+        item => {
 
             if (
-                consultation?.category
+                item?.category
             ) {
 
                 byCategory.set(
-                    consultation.category,
-                    consultation
+                    item.category,
+                    item
                 );
 
             }
@@ -3558,76 +4670,62 @@ function normalizeResult(
     );
 
 
-    const normalizedConsultations =
-        CATEGORY_ORDER.map(
-            category => {
-
-                const source =
-                    byCategory.get(
-                        category
-                    )
-                    ||
-                    {};
-
-
-                return {
-
-                    ...source,
-
-                    category:
-                        category,
-
-                    /*
-                     * 중요:
-                     *
-                     * storyText만 사용한다.
-                     *
-                     * 기존 narrationText는
-                     * 사용자 화면용 fallback으로 사용하지 않는다.
-                     */
-                    storyText:
-                        normalizeStoryText(
-                            source.storyText
-                            ||
-                            ""
-                        )
-
-                };
-
-            }
-        );
-
-
     return {
 
         ...raw,
 
         consultations:
-            normalizedConsultations
+            CATEGORY_ORDER.map(
+                category => {
+
+                    const source =
+                        byCategory.get(
+                            category
+                        )
+                        ||
+                        {};
+
+
+                    return {
+
+                        ...source,
+
+                        category:
+                            category,
+
+                        storyText:
+                            normalizeStoryText(
+                                source.storyText
+                            )
+
+                    };
+
+                }
+            )
 
     };
 
 }
 
 
+
 function normalizeStoryText(
     value
 ) {
 
-    if (
-        value === null
-        ||
-        value === undefined
-    ) {
-
-        return "";
-
-    }
-
-
     return String(
         value
+        ??
+        ""
     )
+        .replace(
+            /\r\n/g,
+            "\n"
+        )
+        .replace(
+            /\r/g,
+            "\n"
+        )
         .trim();
 
 }
@@ -3642,205 +4740,48 @@ function extractPillars(
     result
 ) {
 
-    const empty = {
+    return {
 
-        chinese:
-            "-",
+        year:
+            normalizeSinglePillar(
+                firstDefined(
+                    result?.yearPillar,
+                    result?.pillars?.year,
+                    result?.saju?.yearPillar
+                )
+            ),
 
-        korean:
-            ""
+        month:
+            normalizeSinglePillar(
+                firstDefined(
+                    result?.monthPillar,
+                    result?.pillars?.month,
+                    result?.saju?.monthPillar
+                )
+            ),
+
+        day:
+            normalizeSinglePillar(
+                firstDefined(
+                    result?.dayPillar,
+                    result?.pillars?.day,
+                    result?.saju?.dayPillar
+                )
+            ),
+
+        hour:
+            normalizeSinglePillar(
+                firstDefined(
+                    result?.hourPillar,
+                    result?.pillars?.hour,
+                    result?.saju?.hourPillar
+                )
+            )
 
     };
 
-
-    if (
-        !result
-    ) {
-
-        return [
-            {...empty},
-            {...empty},
-            {...empty},
-            {...empty}
-        ];
-
-    }
-
-
-    /*
-     * =================================================
-     * 현재 Dajeom SajuAnalysisResponse 공식 구조
-     * =================================================
-     *
-     * 백엔드 응답 최상위:
-     *
-     * yearPillar
-     * monthPillar
-     * dayPillar
-     * hourPillar
-     */
-
-    if (
-        result.yearPillar
-        ||
-        result.monthPillar
-        ||
-        result.dayPillar
-        ||
-        result.hourPillar
-    ) {
-
-        return [
-
-            normalizeSinglePillar(
-                result.yearPillar
-            ),
-
-            normalizeSinglePillar(
-                result.monthPillar
-            ),
-
-            normalizeSinglePillar(
-                result.dayPillar
-            ),
-
-            normalizeSinglePillar(
-                result.hourPillar
-            )
-
-        ];
-
-    }
-
-
-    /*
-     * =================================================
-     * 이전 구조 호환
-     * =================================================
-     */
-
-    const candidates = [
-
-        result.pillars,
-
-        result.fourPillars,
-
-        result.saju?.pillars,
-
-        result.saju?.fourPillars,
-
-        result.chart?.pillars
-
-    ];
-
-
-    for (
-        const candidate
-        of candidates
-    ) {
-
-        const parsed =
-            normalizePillarCandidate(
-                candidate
-            );
-
-
-        if (
-            parsed
-        ) {
-
-            return parsed;
-
-        }
-
-    }
-
-
-    return [
-        {...empty},
-        {...empty},
-        {...empty},
-        {...empty}
-    ];
-
 }
 
-
-function normalizePillarCandidate(
-    candidate
-) {
-
-    if (
-        !candidate
-    ) {
-
-        return null;
-
-    }
-
-
-    if (
-        Array.isArray(
-            candidate
-        )
-        &&
-        candidate.length
-        >= 4
-    ) {
-
-        return candidate
-            .slice(
-                0,
-                4
-            )
-            .map(
-                normalizeSinglePillar
-            );
-
-    }
-
-
-    if (
-        typeof candidate
-        === "object"
-    ) {
-
-        const values = [
-
-            candidate.year
-            || candidate.yearPillar,
-
-            candidate.month
-            || candidate.monthPillar,
-
-            candidate.day
-            || candidate.dayPillar,
-
-            candidate.hour
-            || candidate.time
-            || candidate.hourPillar
-
-        ];
-
-
-        if (
-            values.some(
-                Boolean
-            )
-        ) {
-
-            return values.map(
-                normalizeSinglePillar
-            );
-
-        }
-
-    }
-
-
-    return null;
-
-}
 
 
 function normalizeSinglePillar(
@@ -3852,154 +4793,46 @@ function normalizeSinglePillar(
     ) {
 
         return {
-
-            chinese:
+            stem:
                 "-",
-
-            korean:
-                ""
-
+            branch:
+                "-"
         };
 
     }
-
-
-    if (
-        typeof pillar
-        === "string"
-    ) {
-
-        return {
-
-            chinese:
-                pillar,
-
-            korean:
-                ""
-
-        };
-
-    }
-
-
-    /*
-     * =================================================
-     * 현재 PillarResponse 공식 필드
-     * =================================================
-     *
-     * koreanName
-     * chineseName
-     * stemKoreanName
-     * stemChineseCharacter
-     * branchKoreanName
-     * branchChineseCharacter
-     */
-
-    const directChinese =
-        pillar.chineseName
-        ||
-        pillar.chinese
-        ||
-        pillar.ganzhi
-        ||
-        pillar.ganji
-        ||
-        pillar.display
-        ||
-        "";
-
-
-    const directKorean =
-        pillar.koreanName
-        ||
-        pillar.korean
-        ||
-        pillar.reading
-        ||
-        pillar.hangul
-        ||
-        "";
-
-
-    if (
-        directChinese
-        ||
-        directKorean
-    ) {
-
-        return {
-
-            chinese:
-                directChinese
-                || "-",
-
-            korean:
-                directKorean
-
-        };
-
-    }
-
-
-    /*
-     * =================================================
-     * Stem / Branch 별도 필드 호환
-     * =================================================
-     */
-
-    const stemChinese =
-        pillar.stemChineseCharacter
-        ||
-        pillar.heavenlyStem
-        ||
-        pillar.stem
-        ||
-        pillar.gan
-        ||
-        "";
-
-
-    const branchChinese =
-        pillar.branchChineseCharacter
-        ||
-        pillar.earthlyBranch
-        ||
-        pillar.branch
-        ||
-        pillar.ji
-        ||
-        "";
-
-
-    const stemKorean =
-        pillar.stemKoreanName
-        ||
-        "";
-
-
-    const branchKorean =
-        pillar.branchKoreanName
-        ||
-        "";
 
 
     const chinese =
-        `${stemChinese}${branchChinese}`;
+        firstNonBlank(
+            pillar.chineseName,
+            pillar.chinese,
+            pillar.nameChinese
+        );
 
 
-    const korean =
-        `${stemKorean}${branchKorean}`;
+    const chars =
+        Array.from(
+            chinese
+        );
 
 
     return {
 
-        chinese:
-            chinese
-            ||
-            "-",
+        stem:
+            firstNonBlank(
+                pillar.stemChineseCharacter,
+                pillar.stemChineseName,
+                chars[0],
+                "-"
+            ),
 
-        korean:
-            korean
+        branch:
+            firstNonBlank(
+                pillar.branchChineseCharacter,
+                pillar.branchChineseName,
+                chars[1],
+                "-"
+            )
 
     };
 
@@ -4008,7 +4841,7 @@ function normalizeSinglePillar(
 
 
 /* =========================================================
-   UNAVAILABLE
+   STORY UTIL
    ========================================================= */
 
 function isUnavailableConsultation(
@@ -4025,50 +4858,32 @@ function isUnavailableConsultation(
     }
 
 
-    /*
-     * narrationText는 검사하지 않는다.
-     *
-     * 최종 사용자 화면은 storyText만 기준으로 한다.
-     */
-
-    const text =
-        String(
+    const story =
+        normalizeStoryText(
             consultation?.storyText
-            ||
-            ""
         );
 
 
-    return text.includes(
-        "현재 계산 근거만으로는 이 분야의 독립적인 해석을 확정하지 않습니다"
+    return story.includes(
+        "현재 계산 근거만으로는 이 분야의 독립적인 해석을 확정하지 않습니다."
     )
     ||
-    text.includes(
-        "근거가 없는 내용을 추정해서 채우지 않았습니다"
+    story.includes(
+        "근거가 없는 내용을 추정해서 채우지 않았습니다."
     );
 
 }
 
 
 
-/* =========================================================
-   STORY PARAGRAPH
-   ========================================================= */
-
 function splitParagraphs(
     text
 ) {
 
     const normalized =
-        String(
+        normalizeStoryText(
             text
-            || ""
-        )
-        .replace(
-            /\r\n/g,
-            "\n"
-        )
-        .trim();
+        );
 
 
     if (
@@ -4082,14 +4897,14 @@ function splitParagraphs(
     }
 
 
-    const directParagraphs =
+    const direct =
         normalized
             .split(
-                /\n{2,}/
+                /\n\s*\n+/
             )
             .map(
-                paragraph =>
-                    paragraph.trim()
+                item =>
+                    item.trim()
             )
             .filter(
                 Boolean
@@ -4097,27 +4912,29 @@ function splitParagraphs(
 
 
     if (
-        directParagraphs.length
+        direct.length
         > 1
     ) {
 
-        return directParagraphs;
+        return direct;
 
     }
 
 
     const sentences =
         normalized
-            .split(
-                /(?<=[.!?。])\s+/
+            .match(
+                /[^.!?。！？]+[.!?。！？]?/g
             )
-            .map(
-                sentence =>
-                    sentence.trim()
+            ?.map(
+                value =>
+                    value.trim()
             )
             .filter(
                 Boolean
-            );
+            )
+        ||
+        [];
 
 
     if (
@@ -4132,52 +4949,49 @@ function splitParagraphs(
     }
 
 
+    const target =
+        Math.min(
+            6,
+            Math.max(
+                3,
+                Math.ceil(
+                    sentences.length
+                    /
+                    3
+                )
+            )
+        );
+
+
+    const perParagraph =
+        Math.ceil(
+            sentences.length
+            /
+            target
+        );
+
+
     const paragraphs =
         [];
 
 
-    let current =
-        [];
-
-
-    sentences.forEach(
-        sentence => {
-
-            current.push(
-                sentence
-            );
-
-
-            if (
-                current.length
-                >= 3
-            ) {
-
-                paragraphs.push(
-                    current.join(
-                        " "
-                    )
-                );
-
-
-                current =
-                    [];
-
-            }
-
-        }
-    );
-
-
-    if (
-        current.length
-        > 0
+    for (
+        let index = 0;
+        index < sentences.length;
+        index += perParagraph
     ) {
 
         paragraphs.push(
-            current.join(
-                " "
-            )
+            sentences
+                .slice(
+                    index,
+                    index
+                    +
+                    perParagraph
+                )
+                .join(
+                    " "
+                )
         );
 
     }
@@ -4193,37 +5007,62 @@ function splitParagraphs(
    VIDEO
    ========================================================= */
 
-async function playVideo(
-    element,
-    source,
-    restart
+function prepareVideoPaths() {
+
+    setVideoSource(
+        openingVideo,
+        VIDEO_PATH.opening
+    );
+
+    setVideoSource(
+        analysisVideo1,
+        VIDEO_PATH.analysis1
+    );
+
+    setVideoSource(
+        analysisVideo2,
+        VIDEO_PATH.analysis2
+    );
+
+}
+
+
+
+function setVideoSource(
+    video,
+    source
 ) {
 
     if (
-        !element
-    ) {
-
-        return false;
-
-    }
-
-
-    if (
-        source
-        &&
-        element.getAttribute(
+        video.getAttribute(
             "src"
         )
         !== source
     ) {
 
-        element.src =
-            source;
+        video.setAttribute(
+            "src",
+            source
+        );
 
-
-        element.load();
+        video.load();
 
     }
+
+}
+
+
+
+async function playVideo(
+    video,
+    source,
+    restart
+) {
+
+    setVideoSource(
+        video,
+        source
+    );
 
 
     if (
@@ -4232,10 +5071,11 @@ async function playVideo(
 
         try {
 
-            element.currentTime =
+            video.currentTime =
                 0;
 
-        } catch (
+        }
+        catch (
             ignored
         ) {
 
@@ -4244,48 +5084,18 @@ async function playVideo(
     }
 
 
-    try {
-
-        const playPromise =
-            element.play();
-
-
-        if (
-            playPromise
-        ) {
-
-            await playPromise;
-
-        }
-
-    } catch (
-        error
-    ) {
-
-        console.warn(
-            "Video play failed:",
-            source,
-            error
-        );
-
-
-        return false;
-
-    }
-
-
     return new Promise(
-        resolve => {
+        async resolve => {
 
-            let finished =
+            let settled =
                 false;
 
 
             const finish =
-                () => {
+                result => {
 
                     if (
-                        finished
+                        settled
                     ) {
 
                         return;
@@ -4293,62 +5103,67 @@ async function playVideo(
                     }
 
 
-                    finished =
+                    settled =
                         true;
 
 
-                    cleanup();
+                    video.removeEventListener(
+                        "ended",
+                        onEnded
+                    );
+
+
+                    video.removeEventListener(
+                        "error",
+                        onError
+                    );
 
 
                     resolve(
+                        result
+                    );
+
+                };
+
+
+            const onEnded =
+                () =>
+                    finish(
                         true
                     );
 
-                };
 
-
-            const cleanup =
-                () => {
-
-                    element.removeEventListener(
-                        "ended",
-                        finish
+            const onError =
+                () =>
+                    finish(
+                        false
                     );
 
 
-                    element.removeEventListener(
-                        "error",
-                        finish
-                    );
-
-                };
-
-
-            element.addEventListener(
+            video.addEventListener(
                 "ended",
-                finish,
-                {
-                    once:
-                        true
-                }
+                onEnded
             );
 
 
-            element.addEventListener(
+            video.addEventListener(
                 "error",
-                finish,
-                {
-                    once:
-                        true
-                }
+                onError
             );
 
 
-            if (
-                element.ended
+            try {
+
+                await video.play();
+
+            }
+            catch (
+                ignored
             ) {
 
-                finish();
+                finish(
+                    false
+                );
 
             }
 
@@ -4358,28 +5173,98 @@ async function playVideo(
 }
 
 
+
 function stopVideo(
-    element
+    video
 ) {
-
-    if (
-        !element
-    ) {
-
-        return;
-
-    }
-
 
     try {
 
-        element.pause();
+        video.pause();
 
-    } catch (
+    }
+    catch (
         ignored
     ) {
 
     }
+
+}
+
+
+
+function finishVideoImmediately(
+    video
+) {
+
+    stopVideo(
+        video
+    );
+
+
+    video.dispatchEvent(
+        new Event(
+            "ended"
+        )
+    );
+
+}
+
+
+
+/* =========================================================
+   HOME
+   ========================================================= */
+
+function goHome() {
+
+    cancelGuide();
+
+    stopCurrentStoryVideo();
+
+    stopLoadingTimer();
+
+
+    currentResult =
+        null;
+
+    currentStoryIndex =
+        0;
+
+    bookOpened =
+        false;
+
+
+    sessionStorage.removeItem(
+        RESULT_STORAGE_KEY
+    );
+
+
+    resultStoryList.innerHTML =
+        "";
+
+
+    resultStoryList
+        .classList
+        .add(
+            "hidden"
+        );
+
+
+    resultIntro
+        .classList
+        .remove(
+            "hidden"
+        );
+
+
+    showScreen(
+        "start",
+        {
+            dialogue:
+                false
+        }
+    );
 
 }
 
@@ -4401,40 +5286,32 @@ function saveForm() {
 }
 
 
+
 function loadStoredForm() {
-
-    const stored =
-        sessionStorage.getItem(
-            FORM_STORAGE_KEY
-        );
-
-
-    if (
-        !stored
-    ) {
-
-        return;
-
-    }
-
 
     try {
 
-        const parsed =
+        const stored =
             JSON.parse(
-                stored
+                sessionStorage.getItem(
+                    FORM_STORAGE_KEY
+                )
             );
 
 
-        formState = {
+        if (
+            stored
+        ) {
 
-            ...formState,
+            formState = {
+                ...formState,
+                ...stored
+            };
 
-            ...parsed
+        }
 
-        };
-
-    } catch (
+    }
+    catch (
         ignored
     ) {
 
@@ -4443,87 +5320,37 @@ function loadStoredForm() {
 }
 
 
-function restoreFormInputs() {
+
+function restoreFormState() {
 
     nameInput.value =
-        formState.name
-        || "";
+        formState.name;
 
 
     birthYear.value =
-        formState.birthYear
-        || "";
+        formState.birthYear;
 
 
     birthMonth.value =
         formState.birthMonth
-        || "";
+            ? pad2(
+                formState.birthMonth
+            )
+            : "";
 
 
     birthDay.value =
         formState.birthDay
-        || "";
+            ? pad2(
+                formState.birthDay
+            )
+            : "";
 
 
-    birthHour.value =
-        formState.birthHour
-        || "";
-
-
-    birthMinute.value =
-        formState.birthMinute
-        || "";
-
-
-    birthTimeUnknown.checked =
-        Boolean(
-            formState.birthTimeUnknown
-        );
-
-
-    lunarLeapMonth.checked =
-        Boolean(
-            formState.leapMonth
-        );
-
-
-    document
-        .querySelectorAll(
-            "[data-calendar]"
-        )
-        .forEach(
-            button => {
-
-                button.classList.toggle(
-                    "is-active",
-                    button.dataset.calendar
-                    === formState.calendarType
-                );
-
-            }
-        );
-
-
-    document
-        .querySelectorAll(
-            "[data-gender]"
-        )
-        .forEach(
-            button => {
-
-                button.classList.toggle(
-                    "is-active",
-                    button.dataset.gender
-                    === formState.gender
-                );
-
-            }
-        );
-
-
-    updateCalendarUI();
-
-    updateTimeUI();
+    timeRaw.value =
+        formState.birthTimeUnknown
+            ? ""
+            : `${formState.birthHour}${formState.birthMinute}`;
 
 }
 
@@ -4539,28 +5366,16 @@ async function safeErrorBody(
 
     try {
 
-        const text =
-            await response.text();
-
-
-        if (
-            !text
-        ) {
-
-            return "";
-
-        }
-
-
-        return text.length
-        > 500
-            ? text.substring(
+        return (
+            await response.text()
+        )
+            .substring(
                 0,
                 500
-            )
-            : text;
+            );
 
-    } catch (
+    }
+    catch (
         ignored
     ) {
 
@@ -4576,52 +5391,32 @@ async function safeErrorBody(
    TOAST
    ========================================================= */
 
-let toastTimer =
-    null;
-
-
 function showToast(
     message
 ) {
-
-    if (
-        !message
-    ) {
-
-        return;
-
-    }
-
 
     toast.textContent =
         message;
 
 
     toast.classList.add(
-        "is-show"
+        "show"
     );
 
 
-    if (
+    clearTimeout(
         toastTimer
-    ) {
-
-        clearTimeout(
-            toastTimer
-        );
-
-    }
+    );
 
 
     toastTimer =
         setTimeout(
-            () => {
-
-                toast.classList.remove(
-                    "is-show"
-                );
-
-            },
+            () =>
+                toast
+                    .classList
+                    .remove(
+                        "show"
+                    ),
             3500
         );
 
@@ -4632,6 +5427,31 @@ function showToast(
 /* =========================================================
    UTILITY
    ========================================================= */
+
+function restartCssAnimation(
+    element,
+    className
+) {
+
+    element
+        .classList
+        .remove(
+            className
+        );
+
+
+    void element.offsetWidth;
+
+
+    element
+        .classList
+        .add(
+            className
+        );
+
+}
+
+
 
 function required(
     id
@@ -4648,7 +5468,7 @@ function required(
     ) {
 
         throw new Error(
-            `필수 DOM을 찾을 수 없습니다: #${id}`
+            `필수 DOM 없음: #${id}`
         );
 
     }
@@ -4659,39 +5479,23 @@ function required(
 }
 
 
-function optional(
-    id
-) {
 
-    return document.getElementById(
-        id
-    );
-
-}
-
-
-function setText(
-    id,
+function onlyDigits(
     value
 ) {
 
-    const element =
-        optional(
-            id
+    return String(
+        value
+        ||
+        ""
+    )
+        .replace(
+            /\D/g,
+            ""
         );
 
-
-    if (
-        element
-    ) {
-
-        element.textContent =
-            value
-            ?? "";
-
-    }
-
 }
+
 
 
 function pad2(
@@ -4709,6 +5513,7 @@ function pad2(
 }
 
 
+
 function delay(
     milliseconds
 ) {
@@ -4724,13 +5529,87 @@ function delay(
 }
 
 
+
+function firstDefined(
+    ...values
+) {
+
+    for (
+        const value
+        of values
+    ) {
+
+        if (
+            value !== undefined
+            &&
+            value !== null
+        ) {
+
+            return value;
+
+        }
+
+    }
+
+
+    return null;
+
+}
+
+
+
+function firstNonBlank(
+    ...values
+) {
+
+    for (
+        const value
+        of values
+    ) {
+
+        if (
+            value === undefined
+            ||
+            value === null
+        ) {
+
+            continue;
+
+        }
+
+
+        const normalized =
+            String(
+                value
+            )
+                .trim();
+
+
+        if (
+            normalized
+        ) {
+
+            return normalized;
+
+        }
+
+    }
+
+
+    return "";
+
+}
+
+
+
 function escapeHtml(
     value
 ) {
 
     return String(
         value
-        ?? ""
+        ??
+        ""
     )
         .replaceAll(
             "&",

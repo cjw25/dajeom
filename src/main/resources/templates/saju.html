@@ -23,174 +23,49 @@
 
 <body>
 
+
 <div class="saju-app">
-
-
-    <!-- =====================================================
-         HEADER
-         ===================================================== -->
-
-    <header class="saju-header">
-
-        <button
-                id="backButton"
-                class="header-button"
-                type="button"
-                aria-label="뒤로가기"
-        >
-            ‹
-        </button>
-
-
-        <div class="header-title">
-
-            <strong>
-                天命四柱
-            </strong>
-
-            <span id="headerSubtitle">
-                천명사주
-            </span>
-
-        </div>
-
-
-        <button
-                id="homeButton"
-                class="header-button"
-                type="button"
-                aria-label="홈"
-        >
-            ⌂
-        </button>
-
-    </header>
 
 
     <main>
 
 
         <!-- =================================================
-             INTRO
+             START
              ================================================= -->
 
         <section
-                class="screen is-active"
-                data-screen="intro"
+                class="scene active start-scene"
+                data-screen="start"
         >
 
-            <div class="intro-world">
+            <div class="start-cover"></div>
+
+            <div class="start-shade"></div>
 
 
-                <video
-                        id="openingVideo"
-                        class="world-video"
-                        muted
-                        playsinline
-                        preload="auto"
-                >
+            <div class="start-copy">
 
-                    <source
-                            src="/video/opening.mp4"
-                            type="video/mp4"
-                    >
+                <span>
+                    天命四柱
+                </span>
 
-                </video>
+                <h1>
+                    천명사주
+                </h1>
 
-
-                <div class="world-video-shade"></div>
-
-                <div class="world-vignette"></div>
-
-
-                <div class="intro-world-story">
-
-                    <p
-                            id="introWorldLine1"
-                            class="intro-world-line is-hidden"
-                    >
-                        태어난 순간,
-                        하늘과 땅의 기운은
-                        하나의 명을 기록합니다.
-                    </p>
-
-
-                    <p
-                            id="introWorldLine2"
-                            class="intro-world-line is-hidden"
-                    >
-                        그 기록 속에는
-                        타고난 성향과 관계,
-                        삶의 흐름이 담겨 있습니다.
-                    </p>
-
-
-                    <p
-                            id="introWorldLine3"
-                            class="intro-world-line is-hidden"
-                    >
-                        이제 당신의
-                        천명을 펼쳐봅니다.
-                    </p>
-
-                </div>
-
-
-                <div
-                        id="introWorldEmblem"
-                        class="intro-world-emblem"
-                >
-
-                    <span class="intro-world-ring ring-one"></span>
-
-                    <span class="intro-world-ring ring-two"></span>
-
-                    <span class="intro-world-ring ring-three"></span>
-
-                    <strong>
-                        命
-                    </strong>
-
-                </div>
-
-
-                <div
-                        id="introWorldFinal"
-                        class="intro-world-final"
-                >
-
-                    <span class="world-eyebrow">
-                        天命四柱
-                    </span>
-
-                    <h1>
-                        천명사주
-                    </h1>
-
-                    <p>
-                        타고난 명과 흐르는 운을 읽어<br>
-                        당신만의 천명록을 펼칩니다.
-                    </p>
-
-
-                    <button
-                            id="introStartButton"
-                            class="primary-button intro-start-button"
-                            type="button"
-                            data-go="name"
-                    >
-                        천명록 열기
-                    </button>
-
-                </div>
+                <p>
+                    태어난 순간의 명과 흐르는 운을 읽어<br>
+                    당신만의 사주 종합운을 펼칩니다.
+                </p>
 
 
                 <button
-                        id="introWorldSkip"
-                        class="world-skip-button"
+                        id="startButton"
+                        class="start-button"
                         type="button"
                 >
-                    건너뛰기
+                    ▶ 시작하기
                 </button>
 
             </div>
@@ -198,110 +73,98 @@
         </section>
 
 
+
+        <!-- =================================================
+             OPENING
+             ================================================= -->
+
+        <section
+                class="scene video-scene"
+                data-screen="opening"
+        >
+
+            <video
+                    id="openingVideo"
+                    class="full-video"
+                    playsinline
+                    muted
+                    preload="auto"
+            ></video>
+
+
+            <div class="video-vignette"></div>
+
+
+            <button
+                    id="skipOpeningButton"
+                    class="skip-video-button"
+                    type="button"
+            >
+                영상 스킵하기
+            </button>
+
+        </section>
+
+
+
         <!-- =================================================
              NAME
              ================================================= -->
 
         <section
-                class="screen"
+                class="scene form-scene"
                 data-screen="name"
         >
 
-            <div class="form-screen">
+            <div class="form-background"></div>
+
+            <div class="form-shade"></div>
 
 
-                <div class="form-visual">
-
-                    <div class="form-visual-background"></div>
-
-                    <div class="form-visual-shade"></div>
+            <div class="form-ui">
 
 
-                    <div class="mini-symbol">
+                <div class="form-bottom">
 
-                        <span></span>
-
-                        <strong>
-                            命
-                        </strong>
-
+                    <div class="prompt">
+                        이름이 뭐야?
                     </div>
 
 
-                    <div class="form-visual-copy">
-
-                        <small>
-                            天命錄
-                        </small>
-
-                        <p>
-                            누구의 천명록을<br>
-                            펼쳐볼까요?
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <div class="form-content">
-
-                    <span class="step-label">
-                        첫 번째 기록
-                    </span>
-
-                    <h1>
-                        이름을 알려주세요
-                    </h1>
-
-                    <p class="description">
-                        이름은 결과 화면에서
-                        당신을 부르기 위해 사용합니다.
-                    </p>
-
-
-                    <form id="nameForm">
-
-                        <label
-                                class="field-label"
-                                for="nameInput"
-                        >
-                            이름
-                        </label>
-
+                    <div class="name-row">
 
                         <input
                                 id="nameInput"
-                                class="text-input"
+                                class="line-input"
                                 type="text"
                                 maxlength="30"
                                 autocomplete="name"
-                                placeholder="이름을 입력하세요"
+                                placeholder="이름 입력"
                         >
-
-
-                        <p
-                                id="nameError"
-                                class="error-message"
-                        ></p>
 
 
                         <button
                                 id="nameNextButton"
-                                class="primary-button"
-                                type="submit"
-                                disabled
+                                class="mini-button"
+                                type="button"
                         >
-                            다음
+                            확인
                         </button>
 
-                    </form>
+                    </div>
+
+
+                    <p
+                            id="nameError"
+                            class="form-error"
+                    ></p>
 
                 </div>
 
             </div>
 
         </section>
+
 
 
         <!-- =================================================
@@ -309,383 +172,184 @@
              ================================================= -->
 
         <section
-                class="screen"
+                class="scene form-scene"
                 data-screen="birth"
         >
 
-            <div class="form-screen">
+            <div class="form-background"></div>
+
+            <div class="form-shade"></div>
 
 
-                <div class="form-visual">
-
-                    <div class="form-visual-background"></div>
-
-                    <div class="form-visual-shade"></div>
+            <div class="form-ui">
 
 
-                    <div class="birth-visual-copy">
+                <button
+                        class="back-button"
+                        type="button"
+                        data-back="name"
+                        aria-label="뒤로가기"
+                >
+                    ‹
+                </button>
 
-                        <span>
-                            生時之命
-                        </span>
 
-                        <strong>
-                            生
-                        </strong>
+                <div class="form-bottom">
 
-                        <p>
-                            태어난 순간의 기록
-                        </p>
 
+                    <div class="prompt">
+                        생년월일 알려줘
                     </div>
 
-                </div>
+
+                    <div class="input-card">
 
 
-                <div class="form-content">
-
-                    <span class="step-label">
-                        두 번째 기록
-                    </span>
-
-                    <h1>
-                        태어난 순간을 알려주세요
-                    </h1>
-
-                    <p class="description">
-                        생년월일과 태어난 시간을 기준으로
-                        사주팔자를 계산합니다.
-                    </p>
-
-
-                    <form id="birthForm">
-
-
-                        <!-- =====================================
-                             달력
-                             ===================================== -->
-
-                        <fieldset class="form-fieldset">
-
-                            <legend>
-                                달력
-                            </legend>
-
-
-                            <div
-                                    class="segment-control"
-                                    data-segment="calendar"
-                            >
-
-                                <button
-                                        class="segment-button is-active"
-                                        type="button"
-                                        data-calendar="SOLAR"
-                                >
-                                    양력
-                                </button>
-
-
-                                <button
-                                        class="segment-button"
-                                        type="button"
-                                        data-calendar="LUNAR"
-                                >
-                                    음력
-                                </button>
-
-                            </div>
-
-                        </fieldset>
-
-
-                        <!-- =====================================
-                             윤달
-                             ===================================== -->
-
-                        <div
-                                id="lunarLeapArea"
-                                class="option-box hidden"
-                        >
-
-                            <label>
-
-                                <input
-                                        id="lunarLeapMonth"
-                                        type="checkbox"
-                                >
-
-                                윤달로 입력합니다
-
-                            </label>
-
+                        <div class="field-title">
+                            생년월일
                         </div>
 
 
-                        <!-- =====================================
-                             성별
-                             ===================================== -->
-
-                        <fieldset class="form-fieldset">
-
-                            <legend>
-                                성별
-                            </legend>
+                        <div class="birth-date-row">
 
 
-                            <div
-                                    class="segment-control"
-                                    data-segment="gender"
-                            >
+                            <label class="birth-date-field year-field">
 
-                                <button
-                                        class="segment-button is-active"
-                                        type="button"
-                                        data-gender="MALE"
-                                >
-                                    남성
-                                </button>
+                                <span>
+                                    년
+                                </span>
 
 
-                                <button
-                                        class="segment-button"
-                                        type="button"
-                                        data-gender="FEMALE"
-                                >
-                                    여성
-                                </button>
-
-                            </div>
-
-                        </fieldset>
-
-
-                        <!-- =====================================
-                             생년월일
-
-                             type="number" 사용하지 않음.
-                             브라우저 위/아래 스핀 버튼 제거.
-
-                             inputmode="numeric":
-                             모바일 숫자 키패드 표시.
-
-                             oninput:
-                             숫자 외 문자 즉시 제거.
-                             ===================================== -->
-
-                        <fieldset class="form-fieldset">
-
-                            <legend>
-                                생년월일
-                            </legend>
-
-
-                            <div class="date-input-grid">
-
-
-                                <!-- 년 -->
-
-                                <label>
-
-                                    <span>
-                                        년
-                                    </span>
+                                <div class="birth-date-input-wrap">
 
                                     <input
                                             id="birthYear"
-                                            class="text-input"
+                                            class="birth-date-input"
                                             type="text"
                                             inputmode="numeric"
                                             pattern="[0-9]*"
                                             maxlength="4"
                                             autocomplete="off"
                                             placeholder="1990"
-                                            oninput="
-                                                this.value =
-                                                    this.value
-                                                        .replace(/[^0-9]/g, '')
-                                                        .slice(0, 4);
-                                            "
                                     >
 
-                                </label>
+                                    <small>
+                                        년
+                                    </small>
+
+                                </div>
+
+                            </label>
 
 
-                                <!-- 월 -->
+                            <label class="birth-date-field">
 
-                                <label>
+                                <span>
+                                    월
+                                </span>
 
-                                    <span>
-                                        월
-                                    </span>
+
+                                <div class="birth-date-input-wrap">
 
                                     <input
                                             id="birthMonth"
-                                            class="text-input"
+                                            class="birth-date-input"
                                             type="text"
                                             inputmode="numeric"
                                             pattern="[0-9]*"
                                             maxlength="2"
                                             autocomplete="off"
-                                            placeholder="1"
-                                            oninput="
-                                                this.value =
-                                                    this.value
-                                                        .replace(/[^0-9]/g, '')
-                                                        .slice(0, 2);
-                                            "
+                                            placeholder="03"
                                     >
 
-                                </label>
+                                    <small>
+                                        월
+                                    </small>
+
+                                </div>
+
+                            </label>
 
 
-                                <!-- 일 -->
+                            <label class="birth-date-field">
 
-                                <label>
+                                <span>
+                                    일
+                                </span>
 
-                                    <span>
-                                        일
-                                    </span>
+
+                                <div class="birth-date-input-wrap">
 
                                     <input
                                             id="birthDay"
-                                            class="text-input"
+                                            class="birth-date-input"
                                             type="text"
                                             inputmode="numeric"
                                             pattern="[0-9]*"
                                             maxlength="2"
                                             autocomplete="off"
-                                            placeholder="1"
-                                            oninput="
-                                                this.value =
-                                                    this.value
-                                                        .replace(/[^0-9]/g, '')
-                                                        .slice(0, 2);
-                                            "
+                                            placeholder="07"
                                     >
 
-                                </label>
+                                    <small>
+                                        일
+                                    </small>
 
-                            </div>
+                                </div>
 
-                        </fieldset>
+                            </label>
 
-
-                        <!-- =====================================
-                             태어난 시간
-                             ===================================== -->
-
-                        <fieldset class="form-fieldset">
+                        </div>
 
 
-                            <div class="legend-row">
 
-                                <legend>
-                                    태어난 시간
-                                </legend>
+                        <div class="segment-control">
 
 
-                                <label class="unknown-label">
-
-                                    <input
-                                            id="birthTimeUnknown"
-                                            type="checkbox"
-                                    >
-
-                                    모름
-
-                                </label>
-
-                            </div>
-
-
-                            <div
-                                    id="timeInputArea"
-                                    class="time-input-grid"
+                            <button
+                                    id="solarButton"
+                                    class="segment-button active"
+                                    type="button"
                             >
+                                양력
+                            </button>
 
 
-                                <!-- 시 -->
+                            <button
+                                    id="lunarButton"
+                                    class="segment-button"
+                                    type="button"
+                            >
+                                음력
+                            </button>
 
-                                <label>
-
-                                    <span>
-                                        시
-                                    </span>
-
-                                    <input
-                                            id="birthHour"
-                                            class="text-input"
-                                            type="text"
-                                            inputmode="numeric"
-                                            pattern="[0-9]*"
-                                            maxlength="2"
-                                            autocomplete="off"
-                                            placeholder="12"
-                                            oninput="
-                                                this.value =
-                                                    this.value
-                                                        .replace(/[^0-9]/g, '')
-                                                        .slice(0, 2);
-                                            "
-                                    >
-
-                                </label>
-
-
-                                <strong>
-                                    :
-                                </strong>
-
-
-                                <!-- 분 -->
-
-                                <label>
-
-                                    <span>
-                                        분
-                                    </span>
-
-                                    <input
-                                            id="birthMinute"
-                                            class="text-input"
-                                            type="text"
-                                            inputmode="numeric"
-                                            pattern="[0-9]*"
-                                            maxlength="2"
-                                            autocomplete="off"
-                                            placeholder="00"
-                                            oninput="
-                                                this.value =
-                                                    this.value
-                                                        .replace(/[^0-9]/g, '')
-                                                        .slice(0, 2);
-                                            "
-                                    >
-
-                                </label>
-
-                            </div>
-
-                        </fieldset>
-
-
-                        <p
-                                id="birthError"
-                                class="error-message"
-                        ></p>
+                        </div>
 
 
                         <button
-                                id="birthNextButton"
-                                class="primary-button"
-                                type="submit"
-                                disabled
+                                id="leapMonthButton"
+                                class="leap-button hidden"
+                                type="button"
                         >
-                            입력 내용 확인
+                            평달
                         </button>
 
-                    </form>
+                    </div>
+
+
+                    <p
+                            id="birthError"
+                            class="form-error"
+                    ></p>
+
+
+                    <button
+                            id="birthNextButton"
+                            class="next-button"
+                            type="button"
+                    >
+                        다음으로
+                    </button>
 
                 </div>
 
@@ -694,145 +358,140 @@
         </section>
 
 
+
         <!-- =================================================
-             REVIEW
+             TIME
              ================================================= -->
 
         <section
-                class="screen"
-                data-screen="review"
+                class="scene form-scene"
+                data-screen="time"
         >
 
-            <div class="review-page">
+            <div class="form-background"></div>
+
+            <div class="form-shade"></div>
 
 
-                <div class="review-symbol">
-
-                    <span></span>
-
-                    <strong>
-                        錄
-                    </strong>
-
-                </div>
+            <div class="form-ui">
 
 
-                <span class="step-label">
-                    기록 확인
-                </span>
-
-                <h1>
-                    입력한 내용을 확인해주세요
-                </h1>
-
-                <p class="description">
-                    분석을 시작하기 전에
-                    입력한 정보를 다시 확인합니다.
-                </p>
+                <button
+                        class="back-button"
+                        type="button"
+                        data-back="birth"
+                        aria-label="뒤로가기"
+                >
+                    ‹
+                </button>
 
 
-                <div class="review-card">
+                <div class="form-bottom">
 
-                    <div>
 
-                        <span>
-                            이름
-                        </span>
-
-                        <strong id="reviewName">
-                            -
-                        </strong>
-
+                    <div class="prompt">
+                        태어난 시간은?
                     </div>
 
 
-                    <div>
-
-                        <span>
-                            성별
-                        </span>
-
-                        <strong id="reviewGender">
-                            -
-                        </strong>
-
-                    </div>
+                    <div class="input-card">
 
 
-                    <div>
-
-                        <span>
-                            달력
-                        </span>
-
-                        <strong id="reviewCalendar">
-                            -
-                        </strong>
-
-                    </div>
-
-
-                    <div
-                            id="reviewLeapRow"
-                            class="hidden"
-                    >
-
-                        <span>
-                            윤달
-                        </span>
-
-                        <strong id="reviewLeap">
-                            -
-                        </strong>
-
-                    </div>
-
-
-                    <div>
-
-                        <span>
-                            생년월일
-                        </span>
-
-                        <strong id="reviewBirthDate">
-                            -
-                        </strong>
-
-                    </div>
-
-
-                    <div>
-
-                        <span>
+                        <div class="field-title">
                             태어난 시간
-                        </span>
+                        </div>
 
-                        <strong id="reviewBirthTime">
-                            -
-                        </strong>
+
+                        <div
+                                id="timeMaskWrap"
+                                class="mask-wrap"
+                        >
+
+
+                            <div
+                                    class="time-mask"
+                                    aria-hidden="true"
+                            >
+
+                                <span
+                                        class="mask-char placeholder"
+                                        id="t0"
+                                >
+                                    0
+                                </span>
+
+                                <span
+                                        class="mask-char placeholder"
+                                        id="t1"
+                                >
+                                    0
+                                </span>
+
+
+                                <span class="mask-unit">
+                                    시
+                                </span>
+
+
+                                <span
+                                        class="mask-char placeholder"
+                                        id="t2"
+                                >
+                                    0
+                                </span>
+
+                                <span
+                                        class="mask-char placeholder"
+                                        id="t3"
+                                >
+                                    0
+                                </span>
+
+
+                                <span class="mask-unit">
+                                    분
+                                </span>
+
+                            </div>
+
+
+                            <input
+                                    id="timeRaw"
+                                    class="mask-raw"
+                                    type="text"
+                                    inputmode="numeric"
+                                    pattern="[0-9]*"
+                                    maxlength="4"
+                                    autocomplete="off"
+                                    aria-label="태어난 시간 4자리"
+                            >
+
+                        </div>
+
+
+                        <button
+                                id="unknownTimeButton"
+                                class="unknown-button"
+                                type="button"
+                        >
+                            시간을 모르겠어요
+                        </button>
 
                     </div>
 
-                </div>
 
-
-                <div class="button-stack">
-
-                    <button
-                            id="reviewCompleteButton"
-                            class="primary-button"
-                            type="button"
-                    >
-                        이 정보로 진행
-                    </button>
+                    <p
+                            id="timeError"
+                            class="form-error"
+                    ></p>
 
 
                     <button
-                            class="secondary-button"
+                            id="timeNextButton"
+                            class="next-button"
                             type="button"
-                            data-go="birth"
                     >
-                        다시 입력
+                        다음으로
                     </button>
 
                 </div>
@@ -842,60 +501,84 @@
         </section>
 
 
+
         <!-- =================================================
-             COMPLETE
+             GENDER
              ================================================= -->
 
         <section
-                class="screen"
-                data-screen="complete"
+                class="scene form-scene"
+                data-screen="gender"
         >
 
-            <div class="complete-page">
+            <div class="form-background"></div>
+
+            <div class="form-shade"></div>
 
 
-                <div class="complete-background"></div>
-
-                <div class="complete-shade"></div>
+            <div class="form-ui">
 
 
-                <div class="complete-content">
+                <button
+                        class="back-button"
+                        type="button"
+                        data-back="time"
+                        aria-label="뒤로가기"
+                >
+                    ‹
+                </button>
 
 
-                    <div class="complete-emblem">
+                <div class="form-bottom">
 
-                        <span class="complete-ring ring-one"></span>
 
-                        <span class="complete-ring ring-two"></span>
+                    <div class="prompt">
+                        성별은?
+                    </div>
 
-                        <strong>
-                            命
-                        </strong>
+
+                    <div class="input-card">
+
+
+                        <div class="field-title">
+                            성별
+                        </div>
+
+
+                        <div class="segment-control gender-segment">
+
+
+                            <button
+                                    id="femaleButton"
+                                    class="segment-button"
+                                    type="button"
+                            >
+                                여성
+                            </button>
+
+
+                            <button
+                                    id="maleButton"
+                                    class="segment-button"
+                                    type="button"
+                            >
+                                남성
+                            </button>
+
+                        </div>
 
                     </div>
 
 
-                    <span class="eyebrow">
-                        天命分析
-                    </span>
-
-
-                    <h1>
-                        천명의 기록을<br>
-                        분석할 준비가 되었습니다
-                    </h1>
-
-
-                    <p>
-                        타고난 성향부터 관계와 재물,
-                        직업과 현재의 흐름까지
-                        하나씩 풀어봅니다.
-                    </p>
+                    <p
+                            id="genderError"
+                            class="form-error"
+                    ></p>
 
 
                     <button
-                            id="startAnalysisButton"
-                            class="primary-button"
+                            id="analyzeButton"
+                            class="next-button"
                             type="button"
                     >
                         사주 분석 시작
@@ -908,441 +591,135 @@
         </section>
 
 
+
         <!-- =================================================
-             ANALYSIS
+             ANALYSIS 1
              ================================================= -->
 
         <section
-                class="screen"
-                data-screen="analysis"
+                class="scene video-scene"
+                data-screen="analysis-video"
         >
 
-            <div class="analysis-page">
+            <video
+                    id="analysisVideo1"
+                    class="full-video"
+                    playsinline
+                    muted
+                    preload="auto"
+            ></video>
 
 
-                <video
-                        id="analysisVideo1"
-                        class="analysis-video analysis-video-one"
-                        muted
-                        playsinline
-                        preload="auto"
-                >
+            <div class="video-vignette"></div>
 
-                    <source
-                            src="/video/analysis1.mp4"
-                            type="video/mp4"
-                    >
 
-                </video>
+            <button
+                    id="skipAnalysisButton"
+                    class="skip-video-button"
+                    type="button"
+            >
+                분석 영상 건너뛰기
+            </button>
 
+        </section>
 
-                <video
-                        id="analysisVideo2"
-                        class="analysis-video analysis-video-two hidden"
-                        muted
-                        playsinline
-                        preload="auto"
-                >
 
-                    <source
-                            src="/video/analysis2.mp4"
-                            type="video/mp4"
-                    >
 
-                </video>
+        <!-- =================================================
+             LOADING
+             ================================================= -->
 
+        <section
+                class="scene loading-scene"
+                data-screen="loading"
+        >
 
-                <div class="analysis-background"></div>
+            <img
+                    src="/img/loading_bg.png"
+                    alt=""
+                    class="safe-stage-image"
+            >
 
-                <div class="analysis-shade"></div>
 
+            <div class="loading-shade"></div>
 
-                <div
-                        class="analysis-orbit-stage"
-                        data-analysis-element
-                >
 
-                    <span class="analysis-orbit analysis-orbit-one"></span>
+            <div class="loading-scan-light"></div>
 
-                    <span class="analysis-orbit analysis-orbit-two"></span>
 
-                    <span class="analysis-orbit analysis-orbit-three"></span>
+            <!-- 분석가의 동적 대사 -->
 
-                    <strong>
-                        命
-                    </strong>
+            <div
+                    id="loadingActorDialogue"
+                    class="loading-actor-dialogue"
+            >
 
-                </div>
+                <div class="loading-actor-ring"></div>
 
 
-                <div
-                        class="analysis-copy"
-                        data-analysis-element
-                >
+                <p id="loadingActorText">
+                    잠시만.
+                </p>
 
-                    <span id="analysisStatus">
-                        천명 분석 중
-                    </span>
 
+                <span class="loading-actor-cursor"></span>
 
-                    <h1 id="analysisTitle">
-                        사주팔자를 계산하고 있습니다
-                    </h1>
+            </div>
 
 
-                    <p id="analysisMessage">
-                        타고난 명과 흐르는 운을
-                        하나씩 풀어가고 있습니다.
-                    </p>
+            <div class="loading-copy">
 
-                </div>
+                <b id="loadingLabel">
+                    분석중
+                </b>
 
 
-                <div
-                        class="element-grid"
-                        data-analysis-element
-                >
+                <strong id="loadingPercent">
+                    0%
+                </strong>
 
-                    <span>
-                        木
-                    </span>
 
-                    <span>
-                        火
-                    </span>
-
-                    <span>
-                        土
-                    </span>
-
-                    <span>
-                        金
-                    </span>
-
-                    <span>
-                        水
-                    </span>
-
-                </div>
-
-
-                <div
-                        class="analysis-progress"
-                        data-analysis-element
-                >
-
-                    <div class="progress-heading">
-
-                        <span>
-                            분석 진행
-                        </span>
-
-                        <strong id="analysisProgressPercent">
-                            0%
-                        </strong>
-
-                    </div>
-
-
-                    <div class="progress-track">
-
-                        <div
-                                id="analysisProgressBar"
-                                class="progress-bar"
-                        ></div>
-
-                    </div>
-
-                </div>
-
-
-                <!-- =========================================
-                     분석 분야 연출
-                     백엔드 근거/상태값은 노출하지 않는다.
-                     ========================================= -->
-
-                <div
-                        id="analysisFactOverlay"
-                        class="fact-overlay"
-                >
-
-
-                    <video
-                            id="factMotionVideo"
-                            class="fact-motion-video"
-                            muted
-                            playsinline
-                            loop
-                    ></video>
-
-
-                    <div class="fact-motion-shade"></div>
-
-
-                    <div class="fact-content">
-
-
-                        <div class="fact-top">
-
-                            <span id="factCategoryIndex">
-                                01 / 11
-                            </span>
-
-                            <span>
-                                天命十一章
-                            </span>
-
-                        </div>
-
-
-                        <article class="fact-card">
-
-
-                            <span
-                                    id="factCategoryKicker"
-                                    class="fact-card-label"
-                            >
-                                제1장
-                            </span>
-
-
-                            <h2 id="factCategoryTitle">
-                                타고난 성향
-                            </h2>
-
-
-                            <p
-                                    id="factCategoryMessage"
-                                    class="description"
-                            >
-                                당신의 타고난 흐름을 풀어보고 있습니다.
-                            </p>
-
-                        </article>
-
-
-                        <button
-                                id="skipFactsButton"
-                                class="skip-facts-button"
-                                type="button"
-                        >
-                            분석 과정 건너뛰기
-                        </button>
-
-                    </div>
-
-                </div>
+                <p id="loadingMessage">
+                    태어난 순간의 흐름을 하나씩 맞춰보고 있어.
+                </p>
 
             </div>
 
         </section>
 
 
+
         <!-- =================================================
-             REVEAL
+             ANALYSIS 2
              ================================================= -->
 
         <section
-                class="screen"
-                data-screen="reveal"
+                class="scene video-scene"
+                data-screen="analysis-finish"
         >
 
-            <div class="reveal-page">
+            <video
+                    id="analysisVideo2"
+                    class="full-video"
+                    playsinline
+                    muted
+                    preload="auto"
+            ></video>
 
 
-                <div class="reveal-background"></div>
-
-                <div class="reveal-shade"></div>
+            <div class="video-vignette"></div>
 
 
-                <button
-                        id="revealSkipButton"
-                        class="reveal-skip-button"
-                        type="button"
-                >
-                    건너뛰기
-                </button>
-
-
-                <div
-                        id="revealOpening"
-                        class="reveal-opening"
-                >
-
-                    <span class="reveal-eyebrow">
-                        四柱八字
-                    </span>
-
-
-                    <div class="reveal-opening-symbol">
-
-                        <span></span>
-
-                        <strong>
-                            命
-                        </strong>
-
-                    </div>
-
-
-                    <h1>
-                        당신이 태어난 순간의<br>
-                        네 기둥을 펼칩니다
-                    </h1>
-
-                </div>
-
-
-                <div
-                        id="revealPillarGrid"
-                        class="reveal-pillar-stage"
-                >
-
-
-                    <div class="reveal-pillar-heading">
-
-                        <span>
-                            四柱八字
-                        </span>
-
-                        <h2>
-                            당신의 사주팔자
-                        </h2>
-
-                    </div>
-
-
-                    <div class="reveal-pillar-grid">
-
-
-                        <article
-                                class="reveal-pillar"
-                                data-reveal-pillar
-                        >
-
-                            <span>
-                                年柱
-                            </span>
-
-                            <small>
-                                년주
-                            </small>
-
-                            <strong id="revealYearChinese">
-                                -
-                            </strong>
-
-                            <p id="revealYearKorean">
-                                -
-                            </p>
-
-                        </article>
-
-
-                        <article
-                                class="reveal-pillar"
-                                data-reveal-pillar
-                        >
-
-                            <span>
-                                月柱
-                            </span>
-
-                            <small>
-                                월주
-                            </small>
-
-                            <strong id="revealMonthChinese">
-                                -
-                            </strong>
-
-                            <p id="revealMonthKorean">
-                                -
-                            </p>
-
-                        </article>
-
-
-                        <article
-                                class="reveal-pillar is-day"
-                                data-reveal-pillar
-                        >
-
-                            <span>
-                                日柱
-                            </span>
-
-                            <small>
-                                일주
-                            </small>
-
-                            <strong id="revealDayChinese">
-                                -
-                            </strong>
-
-                            <p id="revealDayKorean">
-                                -
-                            </p>
-
-                        </article>
-
-
-                        <article
-                                class="reveal-pillar"
-                                data-reveal-pillar
-                        >
-
-                            <span>
-                                時柱
-                            </span>
-
-                            <small>
-                                시주
-                            </small>
-
-                            <strong id="revealHourChinese">
-                                -
-                            </strong>
-
-                            <p id="revealHourKorean">
-                                -
-                            </p>
-
-                        </article>
-
-                    </div>
-
-                </div>
-
-
-                <div
-                        id="revealFinal"
-                        class="reveal-final"
-                >
-
-                    <div class="reveal-final-seal">
-                        錄
-                    </div>
-
-                    <span>
-                        天命錄
-                    </span>
-
-                    <h1>
-                        이제 당신의<br>
-                        천명록을 펼칩니다
-                    </h1>
-
-                    <p>
-                        열한 장의 기록을 통해
-                        당신의 흐름을 하나씩 읽어봅니다.
-                    </p>
-
-                </div>
-
-            </div>
+            <button
+                    id="skipAnalysisFinishButton"
+                    class="skip-video-button"
+                    type="button"
+            >
+                결과 바로 보기
+            </button>
 
         </section>
+
 
 
         <!-- =================================================
@@ -1350,125 +727,178 @@
              ================================================= -->
 
         <section
-                class="screen"
+                class="scene result-scene"
                 data-screen="result"
         >
 
 
-            <div class="result-cover">
+            <button
+                    id="resultHomeTopButton"
+                    class="result-home-top"
+                    type="button"
+                    aria-label="처음으로"
+            >
+                ‹
+            </button>
 
 
-                <div class="result-cover-background"></div>
-
-                <div class="result-cover-shade"></div>
-
-
-                <div class="result-symbol">
-
-                    <span></span>
-
-                    <strong>
-                        命
-                    </strong>
-
-                </div>
+            <div
+                    id="resultScrollArea"
+                    class="result-scroll-area"
+            >
 
 
-                <div class="result-cover-copy">
-
-                    <span class="eyebrow">
-                        天命錄
-                    </span>
-
-                    <p class="result-cover-kicker">
-                        당신만의 사주 종합운 분석
-                    </p>
-
-                    <h1 id="resultTitle">
-                        천명록
-                    </h1>
-
-                    <p id="resultSummary">
-                        타고난 명과 흐르는 운을
-                        열한 장의 기록으로 정리했습니다.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div class="result-content">
-
-
-                <section class="pillar-section">
-
-                    <div class="section-heading">
-
-                        <span>
-                            四柱八字
-                        </span>
-
-                        <h2>
-                            사주팔자
-                        </h2>
-
-                        <p>
-                            태어난 순간을 이루는 네 개의 기둥입니다.
-                        </p>
-
-                    </div>
-
-
-                    <div
-                            id="resultPillars"
-                            class="result-pillars"
-                    ></div>
-
-                </section>
-
-
-                <section class="story-section">
-
-                    <div class="section-heading">
-
-                        <span>
-                            天命十一章
-                        </span>
-
-                        <h2>
-                            열한 장의 천명록
-                        </h2>
-
-                        <p>
-                            한 장씩 천천히 읽어보세요.
-                        </p>
-
-                    </div>
-
-
-                    <div
-                            id="resultStoryList"
-                            class="story-list"
-                    ></div>
-
-                </section>
-
-
-                <div class="result-disclaimer">
-                    본 해석은 사주 명리 계산 결과를
-                    상담 형식으로 정리한 참고 정보입니다.
-                    실제 삶의 결정은 개인의 상황과 선택을 함께 고려해주세요.
-                </div>
-
-
-                <button
-                        id="resultHomeButton"
-                        class="secondary-button result-home-button"
-                        type="button"
+                <section
+                        id="resultIntro"
+                        class="result-intro"
                 >
-                    처음으로 돌아가기
-                </button>
+
+
+                    <div class="result-ambient ambient-one"></div>
+
+                    <div class="result-ambient ambient-two"></div>
+
+
+                    <div class="result-intro-content">
+
+
+                        <header class="result-heading">
+
+
+                            <span class="result-heading-hanja">
+                                天命四柱
+                            </span>
+
+
+                            <span class="result-heading-line"></span>
+
+
+                            <h1>
+                                당신의 사주팔자
+                            </h1>
+
+
+                            <p
+                                    id="resultName"
+                                    class="result-name"
+                            ></p>
+
+
+                        </header>
+
+
+
+                        <section class="result-section pillars-section">
+
+
+                            <div class="result-section-head">
+
+                                <span>
+                                    四柱
+                                </span>
+
+                                <strong>
+                                    태어난 순간의 네 기둥
+                                </strong>
+
+                            </div>
+
+
+                            <div
+                                    id="pillarGrid"
+                                    class="pillars-grid"
+                            ></div>
+
+
+                            <p class="pillars-note">
+                                일주는 본인을 나타내는 중심 기둥으로 표시합니다.
+                            </p>
+
+
+                        </section>
+
+
+
+                        <section class="result-section elements-section">
+
+
+                            <div class="result-section-head">
+
+                                <span>
+                                    五行
+                                </span>
+
+                                <strong>
+                                    오행의 구성
+                                </strong>
+
+                            </div>
+
+
+                            <div
+                                    id="fiveElementGrid"
+                                    class="five-element-grid"
+                            ></div>
+
+
+                            <p
+                                    id="fiveElementNote"
+                                    class="five-element-note"
+                            >
+                                네 기둥의 여덟 글자에 드러난 오행을 셉니다.
+                            </p>
+
+
+                        </section>
+
+
+
+                        <section class="result-opening">
+
+
+                            <div class="result-opening-seal">
+                                命
+                            </div>
+
+
+                            <p>
+                                이 여덟 글자가 네가 태어난 순간의 기록이야.<br>
+                                이제 여기서부터 네 이야기를 하나씩 펼쳐볼게.
+                            </p>
+
+
+                            <button
+                                    id="openBookButton"
+                                    class="open-book-button"
+                                    type="button"
+                            >
+
+                                <span>
+                                    天命錄
+                                </span>
+
+                                <strong>
+                                    제1장 펼치기
+                                </strong>
+
+                            </button>
+
+
+                        </section>
+
+
+                    </div>
+
+
+                </section>
+
+
+
+                <div
+                        id="resultStoryList"
+                        class="result-story-list hidden"
+                ></div>
+
 
             </div>
 
@@ -1476,6 +906,59 @@
 
 
     </main>
+
+
+
+    <!-- =====================================================
+         GUIDE
+         ===================================================== -->
+
+    <div
+            id="guideLayer"
+            class="guide-layer"
+            aria-live="polite"
+    >
+
+
+        <div class="guide-bubble">
+
+
+            <div class="guide-orb">
+
+                <span class="guide-orb-ring"></span>
+
+                <strong>
+                    命
+                </strong>
+
+            </div>
+
+
+            <div class="guide-message">
+
+
+                <span
+                        id="guideSpeaker"
+                        class="guide-speaker"
+                >
+                    천명 안내자
+                </span>
+
+
+                <p
+                        id="guideText"
+                        class="guide-text"
+                ></p>
+
+
+                <span class="guide-cursor"></span>
+
+            </div>
+
+        </div>
+
+    </div>
+
 
 
     <div
@@ -1490,6 +973,7 @@
 
 
 <script src="/js/saju.js"></script>
+
 
 </body>
 

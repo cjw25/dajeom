@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 정밀화 20차 / 21차 Range 확장.
+ * 정밀화 20차 / 21차 Range / 22차 Prominence 확장.
  *
  * ConsultationGroundingPolicyAnalysis를
  * 외부 LLM 공식 Prompt Context로 조립한다.
@@ -30,12 +30,25 @@ import java.util.Objects;
  * - Constraint
  * - 원국 Evidence
  * - 현재 Timeline Scenario
+ * - PAST/FUTURE Timeline Year Range
  *
  * =================================================
  *
- * 추가:
+ * 22차 추가:
  *
- * - PAST/FUTURE Timeline Year Range
+ * ConsultationGroundingEvidence 내부에
+ * deterministic prominence가 포함된다.
+ *
+ * prominence는:
+ *
+ * - 정확도 확률
+ * - 길흉 점수
+ * - 성공 확률
+ *
+ * 이 아니다.
+ *
+ * 실제 Source provenance를 근거로
+ * 상담문 서술 순서를 정하는 내부 정보다.
  *
  * =================================================
  *
@@ -49,7 +62,7 @@ import java.util.Objects;
 public class ConsultationInterpretationPromptContextAnalyzer {
 
     public static final String GROUNDING_VERSION =
-            "DAJEOM_AI_GROUNDING_21";
+            "DAJEOM_AI_GROUNDING_22";
 
     private static final List<String>
             GLOBAL_INSTRUCTIONS =
@@ -61,7 +74,19 @@ public class ConsultationInterpretationPromptContextAnalyzer {
 
                     "SUPPORTIVE, PRESSURE, MIXED, CONTEXTUAL은 성공·실패 확률이나 절대적인 길흉 점수가 아니다.",
 
+                    "Evidence의 narrativePriority와 Source 개수 정보는 실제 deterministic provenance를 이용한 내부 서술 우선순위이며 적중 확률, 신뢰 확률, 길흉 점수로 해석하지 않는다.",
+
+                    "narrativePriority 숫자는 사용자에게 설명하지 않고 상담문에서 어떤 근거를 먼저 깊게 설명할지 결정하는 용도로만 사용한다.",
+
+                    "비보조 Source Type이 다양하거나 독립 SourceKey가 여러 개 사용된 Evidence는 상담문의 핵심 특징 후보로 먼저 검토하되 그 사실 자체를 사용자에게 숫자로 노출하지 않는다.",
+
+                    "같은 Domain과 같은 Status가 여러 Rule에서 반복되더라도 이를 성공 확률이나 사건 발생 확률로 변환하지 않는다.",
+
+                    "같은 방향의 Evidence가 반복되어도 반대 방향 Evidence가 존재하면 반대 방향을 삭제하거나 약화시키지 않는다.",
+
                     "서로 다른 방향의 Evidence가 동시에 존재하면 하나를 제거하거나 평균내지 말고 각각의 의미와 조건을 함께 설명한다.",
+
+                    "낮은 narrativePriority는 Evidence가 틀리거나 불필요하다는 뜻이 아니며 높은 우선순위 Evidence를 설명한 뒤 필요한 경우 보충적으로 사용한다.",
 
                     "현재 Timeline Scenario가 여러 개이면 하나를 실제 Scenario로 임의 선택하지 않고 가능한 흐름이 복수임을 보존한다.",
 
@@ -184,7 +209,8 @@ public class ConsultationInterpretationPromptContextAnalyzer {
 
         if (
                 groundingSection.category()
-                        != policy.category()
+                        !=
+                        policy.category()
         ) {
 
             throw new IllegalStateException(

@@ -2,82 +2,154 @@ package com.dajeom.adapter;
 
 import com.dajeom.diagnostic.StoryGenerationDiagnosticLogger;
 import com.dajeom.model.ConsultationGroundingEvidence;
+import com.dajeom.model.ConsultationGroundingProminence;
 import com.dajeom.model.ConsultationGroundingTimelineScenario;
 import com.dajeom.model.ConsultationGroundingTimelineYear;
 import com.dajeom.model.ConsultationInterpretationPromptContext;
 import com.dajeom.model.ConsultationInterpretationPromptSection;
 import com.dajeom.model.ConsultationStoryGeneration;
 import com.dajeom.type.ConsultationCategory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 /**
- * OpenAI Responses API 기반
- * ConsultationStoryGenerator.
+ * 정밀화 23차.
  *
- * =================================================
- * 역할
- * =================================================
+ * OpenAI Responses API 기반 Consultation Story Generator.
  *
- * Java deterministic 명리엔진이 생성한
- * ConsultationInterpretationPromptContext를
- * 사용자용 한국어 장문 풀이로 문장화한다.
+ * =========================================================
+ * 전체 구조
+ * =========================================================
  *
- * =================================================
- * 중요
- * =================================================
+ * deterministic Java Grounding
  *
- * Java 내부 Grounding 전체를
- * OpenAI에 그대로 직렬화하지 않는다.
+ * ↓
  *
- * 이유:
+ * 22차 prominence
  *
- * PAST_LUCK / FUTURE_LUCK처럼
- * 다중 연도 × 월별 계산이 존재하는 Category에서는
- * Source / Reason까지 모두 전달하면
- * 모델 Context Window를 초과할 수 있다.
+ * ↓
  *
- * 따라서:
+ * Writer용 Compact Grounding
  *
- * Java deterministic Grounding
- *        ↓
- * LLM Compact Projection
- *        ↓
- * OpenAI
+ * ↓
  *
- * 구조를 사용한다.
+ * Writer 1회
  *
- * =================================================
+ * ↓
  *
- * Compact Projection은 계산이 아니다.
+ * Reviewer용 더 작은 Core Grounding
  *
- * 기존 Grounding을:
+ * ↓
  *
- * - domain
- * - status
- * - summary
- * - timeline 구조
+ * Reviewer 1회
  *
- * 중심으로 축약할 뿐이다.
+ * ↓
  *
- * Java Grounding 원본은 변경하지 않는다.
+ * Hard Safety
+ *
+ * ↓
+ *
+ * 정말 필요한 경우에만 Repair 1회
+ *
+ * =========================================================
+ * 23차 핵심 변경
+ * =========================================================
+ *
+ * 1.
+ * Prompt Diet.
+ *
+ * Source 전체 / Reason 전체 / 중복 provenance 숫자를
+ * OpenAI에 반복 전송하지 않는다.
+ *
+ * 2.
+ * Reviewer Diet.
+ *
+ * Reviewer는 Writer와 동일한 거대 Grounding을
+ * 다시 받지 않는다.
+ *
+ * 핵심 Evidence만 다시 확인한다.
+ *
+ * 3.
+ * Rate Limit Recovery.
+ *
+ * HTTP 429는 콘텐츠 실패가 아니다.
+ *
+ * 해당 HTTP 요청만:
+ *
+ * 약 2초
+ * 약 4초
+ * 약 8초
+ *
+ * 순서로 재시도한다.
+ *
+ * API가 retry 시간을 알려주면
+ * 그 시간도 함께 반영한다.
+ *
+ * 4.
+ * Writer Survival.
+ *
+ * Writer가 Hard Safety를 통과했는데
+ * Reviewer 요청만 외부 장애로 실패하면
+ * 정상 Writer를 버리지 않는다.
+ *
+ * 5.
+ * Category Isolation.
+ *
+ * 한 Category의 외부 LLM 실패 때문에
+ * 앞에서 성공한 10개 Category를 버리지 않는다.
+ *
+ * 해당 Category만 안전한 기술적 fallback을 넣는다.
+ *
+ * =========================================================
+ * 하지 않는 것
+ * =========================================================
+ *
+ * - 새로운 사주 계산
+ * - prominence를 정확도 확률로 변환
+ * - prominence를 길흉 점수로 변환
+ * - 없는 과거 사건 생성
+ * - 미래 사건 예언
+ * - 특정 사람/직업/장소 임의 생성
+ * - 의료 진단
+ * - 법률 결과 예측
  */
 @Component
 public class OpenAiConsultationStoryGenerator
         implements ConsultationStoryGenerator {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(
+                    OpenAiConsultationStoryGenerator.class
+            );
+
+
+    /*
+     * =========================================================
+     * API
+     * =========================================================
+     */
 
     private static final String PROVIDER =
             "OPENAI";
@@ -88,23 +160,268 @@ public class OpenAiConsultationStoryGenerator
     private static final String RESPONSES_PATH =
             "/v1/responses";
 
-    private static final String COMPACT_GROUNDING_VERSION =
-            "DAJEOM_LLM_USER_FACING_2";
+    private static final String HUMAN_GROUNDING_VERSION =
+            "DAJEOM_HUMAN_COMPACT_REVIEW_23";
+
 
     /*
-     * Category별 목표 한국어 글자 수.
+     * =========================================================
+     * Story Soft Target
+     * =========================================================
+     *
+     * 길이 때문에 재생성하지 않는다.
      */
+
     private static final int STORY_TARGET_MIN_LENGTH =
-            1800;
+            1200;
 
     private static final int STORY_TARGET_MAX_LENGTH =
-            2200;
+            1900;
+
 
     /*
-     * GPT-4o-mini 최대 출력 토큰 상한.
+     * =========================================================
+     * Request Output Limit
+     * =========================================================
+     *
+     * application 설정이 6000이어도
+     * 실제 개별 호출에서는 더 작은 상한을 사용한다.
+     */
+
+    private static final int WRITER_OUTPUT_TOKEN_LIMIT =
+            3000;
+
+    private static final int REVIEWER_OUTPUT_TOKEN_LIMIT =
+            3000;
+
+
+    /*
+     * gpt-4o-mini 자체 상한 검증용.
      */
     private static final int GPT_4O_MINI_MAX_OUTPUT_TOKENS =
             16_384;
+
+
+    /*
+     * =========================================================
+     * Prompt Diet
+     * =========================================================
+     */
+
+    private static final int WRITER_NATAL_EVIDENCE_LIMIT =
+            6;
+
+    private static final int WRITER_SCENARIO_EVIDENCE_LIMIT =
+            3;
+
+    private static final int WRITER_YEAR_EVIDENCE_LIMIT =
+            3;
+
+    private static final int REVIEWER_NATAL_EVIDENCE_LIMIT =
+            3;
+
+    private static final int REVIEWER_SCENARIO_EVIDENCE_LIMIT =
+            2;
+
+    private static final int REVIEWER_YEAR_EVIDENCE_LIMIT =
+            2;
+
+    private static final int WRITER_REASON_LIMIT =
+            2;
+
+
+    /*
+     * =========================================================
+     * 429 Retry
+     * =========================================================
+     */
+
+    private static final int MAX_RATE_LIMIT_RETRIES =
+            3;
+
+    private static final long[] RATE_LIMIT_BACKOFF_MILLIS = {
+            2_000L,
+            4_000L,
+            8_000L
+    };
+
+    private static final long MAX_RATE_LIMIT_WAIT_MILLIS =
+            15_000L;
+
+    private static final Pattern RETRY_SECONDS_PATTERN =
+            Pattern.compile(
+                    "try\\s+again\\s+in\\s+([0-9]+(?:\\.[0-9]+)?)s",
+                    Pattern.CASE_INSENSITIVE
+            );
+
+
+    /*
+     * =========================================================
+     * Technical Fallback
+     * =========================================================
+     *
+     * 이것은 deterministic 근거 부족 fallback과 다르다.
+     *
+     * 계산 근거가 없다는 거짓말을 하지 않는다.
+     */
+
+    private static final String TECHNICAL_STORY_FALLBACK =
+            "이 장의 계산 근거는 준비되어 있지만 상담문을 정리하는 과정에서 "
+                    +
+                    "일시적인 오류가 발생했습니다. "
+                    +
+                    "계산되지 않은 내용을 임의로 추정해서 채우지 않았습니다.";
+
+
+    /*
+     * =========================================================
+     * Hard Safety
+     * =========================================================
+     */
+
+    private static final Pattern YEAR_PATTERN =
+            Pattern.compile(
+                    "(?<!\\d)(?:19|20)\\d{2}년"
+            );
+
+    private static final Pattern LATIN_TOKEN_PATTERN =
+            Pattern.compile(
+                    "[A-Za-z_][A-Za-z0-9_-]*"
+            );
+
+    private static final Pattern HTML_TAG_PATTERN =
+            Pattern.compile(
+                    "<\\s*/?\\s*[A-Za-z][^>]*>"
+            );
+
+
+    /*
+     * =========================================================
+     * 사용자 출력 금지 사주 전문용어
+     * =========================================================
+     *
+     * 단순 contains() 대신
+     * 한국어 단어 중간에 포함된 경우를 피하기 위해
+     * 앞쪽 경계를 검사한다.
+     *
+     * 예:
+     *
+     * 관성
+     *
+     * 은 잡되
+     *
+     * 일관성
+     *
+     * 의 중간 "관성"은 잡지 않는다.
+     */
+
+    private static final List<String>
+            FORBIDDEN_SAJU_TERMS =
+            List.of(
+                    "칠살",
+                    "편관",
+                    "정관",
+                    "관살",
+                    "관성",
+
+                    "정재",
+                    "편재",
+                    "재성",
+
+                    "비견",
+                    "겁재",
+                    "비겁",
+
+                    "식신",
+                    "식상",
+
+                    "정인",
+                    "편인",
+                    "인성",
+
+                    "일간",
+
+                    "신강",
+                    "신약",
+
+                    "용신",
+                    "희신",
+                    "기신",
+
+                    "격국",
+
+                    "통근",
+                    "투간",
+                    "지장간",
+                    "천간",
+
+                    "합화",
+                    "삼합",
+                    "방합",
+                    "육합",
+
+                    "신살",
+
+                    "대운",
+                    "세운",
+                    "월운",
+
+                    "오행",
+
+                    "십성",
+                    "십신",
+
+                    "십이운성",
+                    "12운성",
+
+                    "득령",
+                    "득지",
+                    "득세"
+            );
+
+    private static final String FORBIDDEN_SAJU_TERMS_PROMPT =
+            String.join(
+                    ", ",
+                    FORBIDDEN_SAJU_TERMS
+            );
+
+
+    private static final List<String>
+            FORBIDDEN_ADDRESS_PHRASES =
+            List.of(
+                    "귀하",
+                    "여러분"
+            );
+
+
+    private static final List<String>
+            FORBIDDEN_LEGAL_RESULT_PHRASES =
+            List.of(
+                    "승소할",
+                    "승소합니다",
+                    "승소하게",
+                    "패소할",
+                    "패소합니다",
+                    "패소하게",
+                    "처벌받을",
+                    "처벌받습니다",
+                    "처벌받게"
+            );
+
+
+    private static final List<String>
+            FORBIDDEN_MEDICAL_ASSERTION_PHRASES =
+            List.of(
+                    "질병이 생길",
+                    "질병이 생깁니다",
+                    "병이 생길",
+                    "병이 생깁니다",
+                    "진단받을",
+                    "진단받습니다",
+                    "치료가 필요합니다",
+                    "치료를 받아야"
+            );
+
 
     private final JsonMapper jsonMapper;
 
@@ -174,15 +491,20 @@ public class OpenAiConsultationStoryGenerator
                 isGpt4oMiniModel(
                         this.model
                 )
-                        && maxOutputTokens
-                        > GPT_4O_MINI_MAX_OUTPUT_TOKENS
+                        &&
+                        maxOutputTokens
+                                >
+                                GPT_4O_MINI_MAX_OUTPUT_TOKENS
         ) {
 
             throw new IllegalArgumentException(
                     "GPT-4o-mini의 OPENAI_MAX_OUTPUT_TOKENS는 "
-                            + GPT_4O_MINI_MAX_OUTPUT_TOKENS
-                            + " 이하이어야 합니다. current="
-                            + maxOutputTokens
+                            +
+                            GPT_4O_MINI_MAX_OUTPUT_TOKENS
+                            +
+                            " 이하이어야 합니다. current="
+                            +
+                            maxOutputTokens
             );
         }
 
@@ -200,9 +522,9 @@ public class OpenAiConsultationStoryGenerator
 
 
     /*
-     * =================================================
-     * 공식 Story Generation
-     * =================================================
+     * =========================================================
+     * Generation
+     * =========================================================
      */
 
     @Override
@@ -270,8 +592,7 @@ public class OpenAiConsultationStoryGenerator
                         .stream()
                         .filter(
                                 section ->
-                                        !section
-                                                .unavailable()
+                                        !section.unavailable()
                         )
                         .map(
                                 ConsultationInterpretationPromptSection
@@ -279,32 +600,23 @@ public class OpenAiConsultationStoryGenerator
                         )
                         .distinct()
                         .sorted(
-                                (
-                                        left,
-                                        right
-                                ) ->
-                                        Integer.compare(
-                                                left.getOrder(),
-                                                right.getOrder()
-                                        )
+                                Comparator.comparingInt(
+                                        ConsultationCategory
+                                                ::getOrder
+                                )
                         )
                         .toList();
-
-        int availableCount =
-                expectedCategories
-                        .size();
 
         diagnosticLogger
                 .generationStarted(
                         generationId,
                         model,
-                        availableCount,
+                        expectedCategories.size(),
                         unavailableCount
                 );
 
         if (
-                expectedCategories
-                        .isEmpty()
+                expectedCategories.isEmpty()
         ) {
 
             diagnosticLogger
@@ -338,32 +650,23 @@ public class OpenAiConsultationStoryGenerator
                 );
 
         /*
-         * =================================================
-         * Category별 독립 생성
-         * =================================================
+         * =====================================================
+         * Category Isolation
+         * =====================================================
+         *
+         * 하나 실패했다고
+         * 앞에서 생성한 Story를 버리지 않는다.
          */
-
         for (
                 ConsultationCategory category
                 : expectedCategories
         ) {
 
-            ConsultationInterpretationPromptSection
-                    section =
+            ConsultationInterpretationPromptSection section =
                     findSection(
                             promptContext,
                             category
                     );
-
-            if (
-                    section.unavailable()
-            ) {
-
-                throw new IllegalStateException(
-                        "available Category 목록에 unavailable Section이 포함되었습니다: "
-                                + category
-                );
-            }
 
             long categoryStartedAt =
                     System.nanoTime();
@@ -378,7 +681,7 @@ public class OpenAiConsultationStoryGenerator
             try {
 
                 String storyText =
-                        generateSingleCategoryStory(
+                        generateHumanReviewedStory(
                                 generationId,
                                 section,
                                 category,
@@ -390,29 +693,25 @@ public class OpenAiConsultationStoryGenerator
                         storyText
                 );
 
-                long elapsedMillis =
-                        elapsedMillis(
-                                categoryStartedAt
-                        );
-
                 diagnosticLogger
                         .categorySucceeded(
                                 generationId,
                                 model,
                                 category,
                                 storyText.length(),
-                                elapsedMillis
+                                elapsedMillis(
+                                        categoryStartedAt
+                                )
                         );
 
-                /*
-                 * 분량은 품질 목표일 뿐
-                 * 생성 실패 조건은 아니다.
-                 */
                 if (
                         storyText.length()
-                                < STORY_TARGET_MIN_LENGTH
-                                || storyText.length()
-                                > STORY_TARGET_MAX_LENGTH
+                                <
+                                STORY_TARGET_MIN_LENGTH
+                                ||
+                                storyText.length()
+                                        >
+                                        STORY_TARGET_MAX_LENGTH
                 ) {
 
                     diagnosticLogger
@@ -426,37 +725,34 @@ public class OpenAiConsultationStoryGenerator
                             );
                 }
 
-            } catch (
+            }
+            catch (
                     Exception exception
             ) {
-
-                long elapsedMillis =
-                        elapsedMillis(
-                                categoryStartedAt
-                        );
 
                 diagnosticLogger
                         .categoryFailed(
                                 generationId,
                                 model,
                                 category,
-                                elapsedMillis,
+                                elapsedMillis(
+                                        categoryStartedAt
+                                ),
                                 exception
                         );
 
                 /*
-                 * 현재 Generation 계약은
-                 * all-or-nothing 그대로 유지한다.
+                 * 중요:
+                 *
+                 * 다른 10개 성공 결과는 유지한다.
+                 *
+                 * Legacy narrationText로 빠지지 않게
+                 * 이 Category에도 명시적인 안전 fallback을 넣는다.
                  */
-                diagnosticLogger
-                        .generationFallback(
-                                generationId,
-                                model,
-                                "CATEGORY_GENERATION_FAILED:"
-                                        + category.name()
-                        );
-
-                return Optional.empty();
+                stories.put(
+                        category,
+                        TECHNICAL_STORY_FALLBACK
+                );
             }
         }
 
@@ -474,17 +770,14 @@ public class OpenAiConsultationStoryGenerator
             return Optional.empty();
         }
 
-        long totalElapsedMillis =
-                elapsedMillis(
-                        generationStartedAt
-                );
-
         diagnosticLogger
                 .generationSucceeded(
                         generationId,
                         model,
                         stories.size(),
-                        totalElapsedMillis
+                        elapsedMillis(
+                                generationStartedAt
+                        )
                 );
 
         return Optional.of(
@@ -499,17 +792,16 @@ public class OpenAiConsultationStoryGenerator
 
 
     /*
-     * =================================================
-     * Single Category Generation
-     * =================================================
+     * =========================================================
+     * Category Human Review Pipeline
+     * =========================================================
      */
 
-    private String generateSingleCategoryStory(
+    private String generateHumanReviewedStory(
 
             String generationId,
 
-            ConsultationInterpretationPromptSection
-                    section,
+            ConsultationInterpretationPromptSection section,
 
             ConsultationCategory category,
 
@@ -518,30 +810,29 @@ public class OpenAiConsultationStoryGenerator
     ) throws Exception {
 
         Objects.requireNonNull(
-                generationId,
-                "generationId가 필요합니다."
-        );
-
-        Objects.requireNonNull(
                 section,
-                "OpenAI Story Generation에는 Prompt Section이 필요합니다."
+                "Prompt Section이 필요합니다."
         );
 
         Objects.requireNonNull(
                 category,
-                "OpenAI Story Generation에는 ConsultationCategory가 필요합니다."
+                "ConsultationCategory가 필요합니다."
         );
 
         if (
                 section.category()
-                        != category
+                        !=
+                        category
         ) {
 
             throw new IllegalArgumentException(
-                    "Prompt Section Category가 요청 Category와 일치하지 않습니다. expected="
-                            + category
-                            + ", actual="
-                            + section.category()
+                    "Prompt Section Category가 일치하지 않습니다. expected="
+                            +
+                            category
+                            +
+                            ", actual="
+                            +
+                            section.category()
             );
         }
 
@@ -550,178 +841,274 @@ public class OpenAiConsultationStoryGenerator
         ) {
 
             throw new IllegalArgumentException(
-                    "unavailable Section은 OpenAI Story Generation 대상이 아닙니다: "
-                            + category
+                    "unavailable Section은 Story Generation 대상이 아닙니다: "
+                            +
+                            category
             );
         }
+
 
         /*
-         * =================================================
-         * 핵심 변경
-         * =================================================
-         *
-         * 기존:
-         *
-         * jsonMapper.writeValueAsString(section)
-         *
-         * ↓
-         *
-         * Grounding의 sources / reasons까지
-         * 전부 전달되어 Timeline Range에서
-         * Context Window가 과도하게 커졌다.
-         *
-         * 현재:
-         *
-         * createCompactSectionPayload(section)
-         *
-         * ↓
-         *
-         * LLM 문장화에 필요한 최소 Grounding만 전달한다.
+         * =====================================================
+         * Writer Grounding
+         * =====================================================
          */
 
-        Map<String, Object> compactPayload =
-                createCompactSectionPayload(
-                        section
+        String writerGroundingJson =
+                jsonMapper.writeValueAsString(
+                        createWriterGroundingPayload(
+                                section
+                        )
                 );
 
-        String sectionJson =
-                jsonMapper
-                        .writeValueAsString(
-                                compactPayload
-                        );
 
-        Map<String, Object>
-                requestBody =
-                createRequestBody(
-                        sectionJson,
-                        category
+        /*
+         * =====================================================
+         * Writer
+         * =====================================================
+         */
+
+        String writerStory =
+                requestWriterStory(
+                        generationId,
+                        writerGroundingJson,
+                        category,
+                        categoryStartedAt,
+                        ""
                 );
 
-        String responseBody =
-                restClient
-                        .post()
-                        .uri(
-                                RESPONSES_PATH
-                        )
-                        .header(
-                                HttpHeaders.AUTHORIZATION,
-                                "Bearer "
-                                        + apiKey
-                        )
-                        .contentType(
-                                MediaType.APPLICATION_JSON
-                        )
-                        .body(
-                                requestBody
-                        )
-                        .retrieve()
-                        .body(
-                                String.class
-                        );
+        StoryValidationResult writerValidation =
+                validateHardSafety(
+                        category,
+                        writerStory
+                );
 
-        if (
-                responseBody == null
-                        || responseBody.isBlank()
+
+        /*
+         * =====================================================
+         * Reviewer Grounding
+         * =====================================================
+         *
+         * Writer Grounding을 그대로 다시 전송하지 않는다.
+         */
+
+        String reviewerGroundingJson =
+                jsonMapper.writeValueAsString(
+                        createReviewerGroundingPayload(
+                                section
+                        )
+                );
+
+
+        /*
+         * =====================================================
+         * Reviewer
+         * =====================================================
+         *
+         * Reviewer API 자체가 실패하더라도
+         * Writer가 정상이라면 Writer를 살린다.
+         */
+
+        ReviewResult reviewResult;
+
+        try {
+
+            reviewResult =
+                    requestReview(
+                            generationId,
+                            reviewerGroundingJson,
+                            category,
+                            writerStory,
+                            writerValidation.valid()
+                                    ? ""
+                                    : writerValidation.message(),
+                            categoryStartedAt
+                    );
+
+        }
+        catch (
+                Exception reviewerException
         ) {
 
-            throw new IllegalStateException(
-                    "OpenAI Responses API가 빈 응답을 반환했습니다. category="
-                            + category
+            if (
+                    writerValidation.valid()
+            ) {
+
+                log.warn(
+                        "Story Reviewer 호출 실패. 정상 Writer를 사용합니다. category={}, reason={}",
+                        category,
+                        safeExceptionMessage(
+                                reviewerException
+                        )
+                );
+
+                return normalizeGeneratedStoryText(
+                        writerStory
+                );
+            }
+
+            throw reviewerException;
+        }
+
+
+        String reviewedStory =
+                normalizeGeneratedStoryText(
+                        reviewResult.finalStoryText()
+                );
+
+        StoryValidationResult reviewedValidation =
+                validateHardSafety(
+                        category,
+                        reviewedStory
+                );
+
+
+        if (
+                reviewedValidation.valid()
+        ) {
+
+            return reviewedStory;
+        }
+
+
+        /*
+         * Reviewer가 Hard Safety를 깨뜨렸지만
+         * Writer는 정상이라면
+         * Writer를 보존한다.
+         */
+        if (
+                writerValidation.valid()
+        ) {
+
+            return normalizeGeneratedStoryText(
+                    writerStory
             );
         }
 
-        diagnosticLogger
-                .responseReceived(
-                        generationId,
-                        model,
-                        category,
-                        responseBody.length(),
-                        elapsedMillis(
-                                categoryStartedAt
-                        )
+
+        /*
+         * =====================================================
+         * Repair
+         * =====================================================
+         *
+         * Writer와 Reviewer 모두
+         * 명백한 사용자 출력 오류가 있을 때만 실행한다.
+         */
+
+        String repairReason =
+                firstNonBlank(
+                        reviewedValidation.message(),
+                        writerValidation.message(),
+                        reviewResult.reviewSummary()
                 );
 
-        return parseSingleStory(
-                generationId,
-                responseBody,
-                category
+        String repairedStory =
+                requestWriterStory(
+                        generationId,
+                        writerGroundingJson,
+                        category,
+                        categoryStartedAt,
+                        """
+                        직전 작성문과 검토문 모두 최종 출력 안전조건을 통과하지 못했습니다.
+
+                        문제:
+                        %s
+
+                        같은 계산 근거만 사용해서 처음부터 다시 작성하세요.
+
+                        새로운 사주 판단,
+                        새로운 과거 사건,
+                        새로운 미래 사건,
+                        새로운 생활 사례를 만들지 마세요.
+
+                        위 문제만 제거하면서 핵심 행동 패턴은 유지하세요.
+                        """
+                                .formatted(
+                                        repairReason
+                                )
+                );
+
+        StoryValidationResult repairedValidation =
+                validateHardSafety(
+                        category,
+                        repairedStory
+                );
+
+        if (
+                repairedValidation.valid()
+        ) {
+
+            return normalizeGeneratedStoryText(
+                    repairedStory
+            );
+        }
+
+        throw new IllegalStateException(
+                "Writer/Reviewer/Repair 모두 Hard Safety를 통과하지 못했습니다. category="
+                        +
+                        category
+                        +
+                        ", reason="
+                        +
+                        repairedValidation.message()
         );
     }
 
 
     /*
-     * =================================================
-     * LLM Compact Projection
-     * =================================================
-     *
-     * Java Grounding 원본은 변경하지 않는다.
-     *
-     * OpenAI로 전송할 때만:
-     *
-     * - Source
-     * - Source Key
-     * - Tier
-     * - 내부 Reason
-     * - Rule Code
-     *
-     * 를 제거한다.
-     *
-     * 문장화에 필요한:
-     *
-     * - Domain
-     * - Status
-     * - Summary
-     * - Timeline
-     *
-     * 만 유지한다.
+     * =========================================================
+     * Writer Grounding
+     * =========================================================
      */
 
-    private Map<String, Object>
-    createCompactSectionPayload(
+    private Map<String, Object> createWriterGroundingPayload(
 
-            ConsultationInterpretationPromptSection
-                    section
+            ConsultationInterpretationPromptSection section
 
     ) {
-
-        Objects.requireNonNull(
-                section,
-                "사용자용 해석 자료 생성에는 Prompt Section이 필요합니다."
-        );
 
         Map<String, Object> result =
                 new LinkedHashMap<>();
 
-        /*
-         * 내부 식별자 / Enum / Constraint는
-         * OpenAI 입력에 노출하지 않는다.
-         *
-         * LLM이 보는 것은 오직
-         * 사용자용 주제와 생활언어 의미뿐이다.
-         */
         result.put(
-                "주제",
-                section.title()
+                "자료버전",
+                HUMAN_GROUNDING_VERSION
         );
 
         result.put(
-                "기본적으로 드러나는 흐름",
-                compactEvidences(
-                        section.natalEvidences()
+                "상담주제",
+                categoryDisplayName(
+                        section.category()
                 )
         );
 
         result.put(
-                "현재 시점에 추가되는 흐름",
-                compactTimelineScenarios(
-                        section.timelineScenarios()
+                "타고난핵심",
+                createCompactEvidencePayload(
+                        section.natalEvidences(),
+                        section.category(),
+                        WRITER_NATAL_EVIDENCE_LIMIT,
+                        true
                 )
         );
 
         result.put(
-                "연도별 흐름",
-                compactTimelineYears(
-                        section.timelineYears()
+                "현재흐름",
+                createScenarioPayload(
+                        section.timelineScenarios(),
+                        section.category(),
+                        WRITER_SCENARIO_EVIDENCE_LIMIT,
+                        true
+                )
+        );
+
+        result.put(
+                "연도흐름",
+                createYearPayload(
+                        section.timelineYears(),
+                        section.category(),
+                        WRITER_YEAR_EVIDENCE_LIMIT,
+                        true
                 )
         );
 
@@ -730,35 +1117,226 @@ public class OpenAiConsultationStoryGenerator
 
 
     /*
-     * =================================================
-     * Compact Natal / Evidence
-     * =================================================
+     * =========================================================
+     * Reviewer Grounding
+     * =========================================================
      *
-     * 동일:
-     *
-     * domain
-     * +
-     * status
-     * +
-     * summary
-     *
-     * 조합은 한 번만 전달한다.
-     *
-     * Source가 여러 개였다는 이유만으로
-     * LLM에게 같은 의미를 반복해서 보내지 않는다.
+     * Reviewer에게는 핵심만 준다.
+     */
+
+    private Map<String, Object> createReviewerGroundingPayload(
+
+            ConsultationInterpretationPromptSection section
+
+    ) {
+
+        Map<String, Object> result =
+                new LinkedHashMap<>();
+
+        result.put(
+                "상담주제",
+                categoryDisplayName(
+                        section.category()
+                )
+        );
+
+        result.put(
+                "핵심타고난근거",
+                createCompactEvidencePayload(
+                        section.natalEvidences(),
+                        section.category(),
+                        REVIEWER_NATAL_EVIDENCE_LIMIT,
+                        false
+                )
+        );
+
+        result.put(
+                "핵심현재근거",
+                createScenarioPayload(
+                        section.timelineScenarios(),
+                        section.category(),
+                        REVIEWER_SCENARIO_EVIDENCE_LIMIT,
+                        false
+                )
+        );
+
+        result.put(
+                "핵심연도근거",
+                createYearPayload(
+                        section.timelineYears(),
+                        section.category(),
+                        REVIEWER_YEAR_EVIDENCE_LIMIT,
+                        false
+                )
+        );
+
+        return result;
+    }
+
+
+    /*
+     * =========================================================
+     * Compact Evidence
+     * =========================================================
      */
 
     private List<Map<String, Object>>
-    compactEvidences(
+    createCompactEvidencePayload(
 
-            List<ConsultationGroundingEvidence>
-                    evidences
+            List<ConsultationGroundingEvidence> evidences,
+
+            ConsultationCategory category,
+
+            int limit,
+
+            boolean includeReasons
+
+    ) {
+
+        List<ConsultationGroundingEvidence> selected =
+                selectImportantEvidences(
+                        evidences,
+                        limit
+                );
+
+        if (
+                selected.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<Map<String, Object>> result =
+                new ArrayList<>(
+                        selected.size()
+                );
+
+        for (
+                ConsultationGroundingEvidence evidence
+                : selected
+        ) {
+
+            Map<String, Object> item =
+                    new LinkedHashMap<>();
+
+            ConsultationGroundingProminence prominence =
+                    evidence.prominence();
+
+            item.put(
+                    "서술역할",
+                    narrativeRole(
+                            prominence
+                    )
+            );
+
+            /*
+             * PERSONALITY에서는
+             * Domain 이름이 여러 미니 장을 만들 수 있으므로 숨긴다.
+             */
+            if (
+                    category
+                            !=
+                            ConsultationCategory.PERSONALITY
+            ) {
+
+                item.put(
+                        "생활주제",
+                        userFacingArea(
+                                evidence
+                                        .domain()
+                                        .name()
+                        )
+                );
+            }
+
+            item.put(
+                    "반응방향",
+                    userFacingDirection(
+                            evidence
+                                    .status()
+                                    .name()
+                    )
+            );
+
+            item.put(
+                    "근거형태",
+                    prominenceSignal(
+                            prominence
+                    )
+            );
+
+            item.put(
+                    "판단메모",
+                    evidence.summary()
+            );
+
+            /*
+             * Writer에게만,
+             * 상위 Evidence의 Reason 일부만 전달한다.
+             *
+             * 전체 Reasons를 반복 전송하지 않는다.
+             */
+            if (
+                    includeReasons
+                            &&
+                            prominence != null
+                            &&
+                            prominence.narrativePriority()
+                                    <= 2
+                            &&
+                            !evidence.reasons().isEmpty()
+            ) {
+
+                item.put(
+                        "핵심이유",
+                        evidence
+                                .reasons()
+                                .stream()
+                                .limit(
+                                        WRITER_REASON_LIMIT
+                                )
+                                .toList()
+                );
+            }
+
+            result.add(
+                    item
+            );
+        }
+
+        return List.copyOf(
+                result
+        );
+    }
+
+
+    /*
+     * =========================================================
+     * Evidence Selection
+     * =========================================================
+     *
+     * 단순 top-N만 하지 않는다.
+     *
+     * prominence 상위 Evidence를 먼저 선택하면서
+     * 서로 다른 Status가 존재하면
+     * 가능한 범위 안에서 반대 방향도 보존한다.
+     */
+
+    private List<ConsultationGroundingEvidence>
+    selectImportantEvidences(
+
+            List<ConsultationGroundingEvidence> source,
+
+            int limit
 
     ) {
 
         if (
-                evidences == null
-                        || evidences.isEmpty()
+                source == null
+                        ||
+                        source.isEmpty()
+                        ||
+                        limit < 1
         ) {
 
             return List.of();
@@ -766,116 +1344,185 @@ public class OpenAiConsultationStoryGenerator
 
         LinkedHashMap<
                 String,
-                Map<String, Object>
+                ConsultationGroundingEvidence
                 > unique =
                 new LinkedHashMap<>();
 
-        for (
-                ConsultationGroundingEvidence evidence
-                : evidences
+        source
+                .stream()
+                .filter(
+                        Objects::nonNull
+                )
+                .sorted(
+                        Comparator.comparingInt(
+                                evidence ->
+                                        normalizedNarrativePriority(
+                                                evidence.prominence()
+                                        )
+                        )
+                )
+                .forEach(
+                        evidence -> {
+
+                            String signature =
+                                    evidence.domain().name()
+                                            +
+                                            "\u001F"
+                                            +
+                                            evidence.status().name()
+                                            +
+                                            "\u001F"
+                                            +
+                                            evidence.summary();
+
+                            unique.putIfAbsent(
+                                    signature,
+                                    evidence
+                            );
+                        }
+                );
+
+        List<ConsultationGroundingEvidence> ordered =
+                new ArrayList<>(
+                        unique.values()
+                );
+
+        if (
+                ordered.size()
+                        <=
+                        limit
         ) {
 
-            Objects.requireNonNull(
-                    evidence,
-                    "사용자용 해석 Evidence는 null일 수 없습니다."
-            );
-
-            String domainName =
-                    evidence
-                            .domain()
-                            .name();
-
-            String statusName =
-                    evidence
-                            .status()
-                            .name();
-
-            String area =
-                    userFacingArea(
-                            domainName
-                    );
-
-            String direction =
-                    userFacingDirection(
-                            statusName
-                    );
-
-            String meaning =
-                    userFacingMeaning(
-                            domainName,
-                            statusName,
-                            evidence.summary()
-                    );
-
-            /*
-             * OpenAI에는 backend summary 자체를 보내지 않는다.
-             *
-             * 동일한 생활영역 / 흐름 / 생활언어 의미만
-             * 중복 제거한다.
-             */
-            String signature =
-                    area
-                            + "\u001F"
-                            + direction
-                            + "\u001F"
-                            + meaning;
-
-            if (
-                    unique.containsKey(
-                            signature
-                    )
-            ) {
-
-                continue;
-            }
-
-            Map<String, Object> compact =
-                    new LinkedHashMap<>();
-
-            compact.put(
-                    "생활에서 살펴볼 부분",
-                    area
-            );
-
-            compact.put(
-                    "흐름의 방향",
-                    direction
-            );
-
-            compact.put(
-                    "생활에서의 의미",
-                    meaning
-            );
-
-            unique.put(
-                    signature,
-                    compact
+            return List.copyOf(
+                    ordered
             );
         }
 
+        List<ConsultationGroundingEvidence> selected =
+                new ArrayList<>(
+                        limit
+                );
+
+        Set<String> selectedStatuses =
+                new LinkedHashSet<>();
+
+
+        /*
+         * 가장 높은 prominence 먼저.
+         */
+        ConsultationGroundingEvidence first =
+                ordered.get(0);
+
+        selected.add(
+                first
+        );
+
+        selectedStatuses.add(
+                first.status().name()
+        );
+
+
+        /*
+         * 서로 다른 방향이 존재하면
+         * 반대 방향을 가능한 한 보존.
+         */
+        for (
+                ConsultationGroundingEvidence evidence
+                : ordered
+        ) {
+
+            if (
+                    selected.size()
+                            >=
+                            limit
+            ) {
+
+                break;
+            }
+
+            String status =
+                    evidence.status().name();
+
+            if (
+                    selectedStatuses.add(
+                            status
+                    )
+            ) {
+
+                selected.add(
+                        evidence
+                );
+            }
+        }
+
+
+        /*
+         * 남은 자리는 prominence 순서대로.
+         */
+        for (
+                ConsultationGroundingEvidence evidence
+                : ordered
+        ) {
+
+            if (
+                    selected.size()
+                            >=
+                            limit
+            ) {
+
+                break;
+            }
+
+            if (
+                    !selected.contains(
+                            evidence
+                    )
+            ) {
+
+                selected.add(
+                        evidence
+                );
+            }
+        }
+
+        selected.sort(
+                Comparator.comparingInt(
+                        evidence ->
+                                normalizedNarrativePriority(
+                                        evidence.prominence()
+                                )
+                )
+        );
+
         return List.copyOf(
-                unique.values()
+                selected
         );
     }
 
 
     /*
-     * =================================================
-     * Current Timeline Scenario Compact
-     * =================================================
+     * =========================================================
+     * Scenario Payload
+     * =========================================================
      */
 
     private List<Map<String, Object>>
-    compactTimelineScenarios(
+    createScenarioPayload(
 
-            List<ConsultationGroundingTimelineScenario>
-                    scenarios
+            List<ConsultationGroundingTimelineScenario> scenarios,
+
+            ConsultationCategory category,
+
+            int evidenceLimit,
+
+            boolean includeReasons
 
     ) {
 
         if (
                 scenarios == null
-                        || scenarios.isEmpty()
+                        ||
+                        scenarios.isEmpty()
         ) {
 
             return List.of();
@@ -891,41 +1538,41 @@ public class OpenAiConsultationStoryGenerator
                 : scenarios
         ) {
 
-            Objects.requireNonNull(
-                    scenario,
-                    "사용자용 현재 흐름은 null일 수 없습니다."
-            );
-
-            Map<String, Object> compact =
+            Map<String, Object> item =
                     new LinkedHashMap<>();
 
-            compact.put(
-                    "가능한 흐름 순서",
+            item.put(
+                    "순서",
                     scenario.scenarioOrder()
             );
 
-            compact.put(
+            item.put(
                     "연도",
                     scenario.sajuYear()
             );
 
-            compact.put(
-                    "시점 안내",
-                    userFacingTimelineNotice(
-                            scenario.fullyDefinite(),
-                            scenario.timelineUncertaintyExists()
-                    )
-            );
+            if (
+                    scenario.timelineUncertaintyExists()
+            ) {
 
-            compact.put(
-                    "생활 흐름",
-                    compactEvidences(
-                            scenario.evidences()
+                item.put(
+                        "시점",
+                        "경계 불확실성 있음"
+                );
+            }
+
+            item.put(
+                    "패턴",
+                    createCompactEvidencePayload(
+                            scenario.evidences(),
+                            category,
+                            evidenceLimit,
+                            includeReasons
                     )
             );
 
             result.add(
-                    compact
+                    item
             );
         }
 
@@ -936,33 +1583,28 @@ public class OpenAiConsultationStoryGenerator
 
 
     /*
-     * =================================================
-     * PAST / FUTURE Timeline Year Compact
-     * =================================================
-     *
-     * monthIndices는 OpenAI에 보내지 않는다.
-     *
-     * 이유:
-     *
-     * PAST_LUCK / FUTURE_LUCK의 출력 목적은
-     * 연도별 전체 흐름 설명이며,
-     * 내부 월 인덱스는 문장화를 위해 필요하지 않다.
-     *
-     * 또한 LLM이 monthIndex를 달력 월로
-     * 잘못 해석하는 문제도 막는다.
+     * =========================================================
+     * Timeline Year Payload
+     * =========================================================
      */
 
     private List<Map<String, Object>>
-    compactTimelineYears(
+    createYearPayload(
 
-            List<ConsultationGroundingTimelineYear>
-                    timelineYears
+            List<ConsultationGroundingTimelineYear> years,
+
+            ConsultationCategory category,
+
+            int evidenceLimit,
+
+            boolean includeReasons
 
     ) {
 
         if (
-                timelineYears == null
-                        || timelineYears.isEmpty()
+                years == null
+                        ||
+                        years.isEmpty()
         ) {
 
             return List.of();
@@ -970,43 +1612,44 @@ public class OpenAiConsultationStoryGenerator
 
         List<Map<String, Object>> result =
                 new ArrayList<>(
-                        timelineYears.size()
+                        years.size()
                 );
 
         for (
-                ConsultationGroundingTimelineYear timelineYear
-                : timelineYears
+                ConsultationGroundingTimelineYear year
+                : years
         ) {
 
-            Objects.requireNonNull(
-                    timelineYear,
-                    "사용자용 연도 흐름은 null일 수 없습니다."
-            );
-
-            Map<String, Object> compact =
+            Map<String, Object> item =
                     new LinkedHashMap<>();
 
-            compact.put(
+            item.put(
                     "연도",
-                    timelineYear.sajuYear()
+                    year.sajuYear()
             );
 
-            compact.put(
-                    "시점 안내",
-                    timelineYear.timelineUncertaintyExists()
-                            ? "시점 경계에 불확실성이 있어 하나의 결과로 단정하지 않습니다."
-                            : "해당 연도의 전체적인 생활 흐름으로 참고합니다."
-            );
+            if (
+                    year.timelineUncertaintyExists()
+            ) {
 
-            compact.put(
-                    "생활 흐름",
-                    compactEvidences(
-                            timelineYear.evidences()
+                item.put(
+                        "시점",
+                        "경계 불확실성 있음"
+                );
+            }
+
+            item.put(
+                    "패턴",
+                    createCompactEvidencePayload(
+                            year.evidences(),
+                            category,
+                            evidenceLimit,
+                            includeReasons
                     )
             );
 
             result.add(
-                    compact
+                    item
             );
         }
 
@@ -1017,239 +1660,1017 @@ public class OpenAiConsultationStoryGenerator
 
 
     /*
-     * =================================================
-     * Request Body
-     * =================================================
+     * =========================================================
+     * Prominence -> Human Internal Label
+     * =========================================================
      */
 
-    private Map<String, Object> createRequestBody(
+    private String narrativeRole(
 
-            String sectionJson,
-
-            ConsultationCategory category
+            ConsultationGroundingProminence prominence
 
     ) {
 
-        Map<String, Object>
-                requestBody =
+        if (
+                prominence == null
+                        ||
+                        prominence.narrativePriority()
+                                <= 0
+        ) {
+
+            return "보완 후보";
+        }
+
+        return switch (
+                prominence.narrativePriority()
+                ) {
+
+            case 1 ->
+                    "최우선 핵심";
+
+            case 2 ->
+                    "두 번째 핵심";
+
+            case 3,
+                 4 ->
+                    "핵심 보완";
+
+            default ->
+                    "필요할 때만 보완";
+        };
+    }
+
+
+    private String prominenceSignal(
+
+            ConsultationGroundingProminence prominence
+
+    ) {
+
+        if (
+                prominence == null
+        ) {
+
+            return "직접 계산 근거";
+        }
+
+        boolean diverse =
+                prominence
+                        .diverseDirectSourceTypes();
+
+        boolean multiple =
+                prominence
+                        .multipleDirectSources();
+
+        boolean repeated =
+                prominence
+                        .repeatedAcrossRules();
+
+        if (
+                diverse
+                        &&
+                        repeated
+        ) {
+
+            return "서로 다른 직접 계산축과 반복 판단이 함께 받침";
+        }
+
+        if (
+                diverse
+        ) {
+
+            return "서로 다른 종류의 직접 계산 근거가 함께 받침";
+        }
+
+        if (
+                multiple
+                        &&
+                        repeated
+        ) {
+
+            return "여러 직접 근거와 반복 판단이 함께 받침";
+        }
+
+        if (
+                multiple
+        ) {
+
+            return "여러 직접 계산 근거가 함께 받침";
+        }
+
+        if (
+                repeated
+        ) {
+
+            return "같은 방향 판단이 반복됨";
+        }
+
+        return "직접 계산 근거";
+    }
+
+
+    /*
+     * =========================================================
+     * Writer Request
+     * =========================================================
+     */
+
+    private String requestWriterStory(
+
+            String generationId,
+
+            String groundingJson,
+
+            ConsultationCategory category,
+
+            long categoryStartedAt,
+
+            String correction
+
+    ) throws Exception {
+
+        Map<String, Object> requestBody =
+                createWriterRequestBody(
+                        groundingJson,
+                        category,
+                        correction
+                );
+
+        String responseBody =
+                callOpenAi(
+                        requestBody,
+                        generationId,
+                        category,
+                        categoryStartedAt
+                );
+
+        return parseWriterStory(
+                generationId,
+                responseBody,
+                category
+        );
+    }
+
+
+    /*
+     * =========================================================
+     * Reviewer Request
+     * =========================================================
+     */
+
+    private ReviewResult requestReview(
+
+            String generationId,
+
+            String reviewerGroundingJson,
+
+            ConsultationCategory category,
+
+            String writerStory,
+
+            String hardValidationIssue,
+
+            long categoryStartedAt
+
+    ) throws Exception {
+
+        Map<String, Object> requestBody =
+                createReviewerRequestBody(
+                        reviewerGroundingJson,
+                        category,
+                        writerStory,
+                        hardValidationIssue
+                );
+
+        String responseBody =
+                callOpenAi(
+                        requestBody,
+                        generationId,
+                        category,
+                        categoryStartedAt
+                );
+
+        return parseReviewResult(
+                generationId,
+                responseBody,
+                category
+        );
+    }
+
+
+    /*
+     * =========================================================
+     * HTTP + 429 Retry
+     * =========================================================
+     */
+
+    private String callOpenAi(
+
+            Map<String, Object> requestBody,
+
+            String generationId,
+
+            ConsultationCategory category,
+
+            long categoryStartedAt
+
+    ) {
+
+        int rateLimitRetry =
+                0;
+
+        while (
+                true
+        ) {
+
+            try {
+
+                String responseBody =
+                        restClient
+                                .post()
+                                .uri(
+                                        RESPONSES_PATH
+                                )
+                                .header(
+                                        HttpHeaders.AUTHORIZATION,
+                                        "Bearer "
+                                                +
+                                                apiKey
+                                )
+                                .contentType(
+                                        MediaType.APPLICATION_JSON
+                                )
+                                .body(
+                                        requestBody
+                                )
+                                .retrieve()
+                                .body(
+                                        String.class
+                                );
+
+                if (
+                        responseBody == null
+                                ||
+                                responseBody.isBlank()
+                ) {
+
+                    throw new IllegalStateException(
+                            "OpenAI Responses API가 빈 응답을 반환했습니다. category="
+                                    +
+                                    category
+                    );
+                }
+
+                diagnosticLogger
+                        .responseReceived(
+                                generationId,
+                                model,
+                                category,
+                                responseBody.length(),
+                                elapsedMillis(
+                                        categoryStartedAt
+                                )
+                        );
+
+                return responseBody;
+
+            }
+            catch (
+                    HttpClientErrorException.TooManyRequests
+                            rateLimitException
+            ) {
+
+                if (
+                        rateLimitRetry
+                                >=
+                                MAX_RATE_LIMIT_RETRIES
+                ) {
+
+                    throw rateLimitException;
+                }
+
+                long waitMillis =
+                        resolveRateLimitWaitMillis(
+                                rateLimitException,
+                                rateLimitRetry
+                        );
+
+                rateLimitRetry++;
+
+                log.warn(
+                        "OpenAI 429 Rate Limit. category={}, retry={}/{}, waitMs={}",
+                        category,
+                        rateLimitRetry,
+                        MAX_RATE_LIMIT_RETRIES,
+                        waitMillis
+                );
+
+                sleepForRateLimit(
+                        waitMillis
+                );
+            }
+        }
+    }
+
+
+    private long resolveRateLimitWaitMillis(
+
+            HttpClientErrorException.TooManyRequests exception,
+
+            int retryIndex
+
+    ) {
+
+        long fallback =
+                RATE_LIMIT_BACKOFF_MILLIS[
+                        Math.min(
+                                retryIndex,
+                                RATE_LIMIT_BACKOFF_MILLIS.length - 1
+                        )
+                        ];
+
+        long retryAfterHeader =
+                parseRetryAfterHeaderMillis(
+                        exception
+                );
+
+        long bodySuggested =
+                parseBodyRetryMillis(
+                        exception
+                );
+
+        long resolved =
+                Math.max(
+                        fallback,
+                        Math.max(
+                                retryAfterHeader,
+                                bodySuggested
+                        )
+                );
+
+        /*
+         * 너무 정확하게 경계에 걸리지 않도록
+         * 작은 여유를 둔다.
+         */
+        resolved +=
+                300L;
+
+        return Math.min(
+                resolved,
+                MAX_RATE_LIMIT_WAIT_MILLIS
+        );
+    }
+
+
+    private long parseRetryAfterHeaderMillis(
+
+            HttpClientErrorException.TooManyRequests exception
+
+    ) {
+
+        try {
+
+            if (
+                    exception.getResponseHeaders()
+                            ==
+                            null
+            ) {
+
+                return 0L;
+            }
+
+            String value =
+                    exception
+                            .getResponseHeaders()
+                            .getFirst(
+                                    "Retry-After"
+                            );
+
+            if (
+                    value == null
+                            ||
+                            value.isBlank()
+            ) {
+
+                return 0L;
+            }
+
+            double seconds =
+                    Double.parseDouble(
+                            value.trim()
+                    );
+
+            if (
+                    seconds <= 0
+            ) {
+
+                return 0L;
+            }
+
+            return (long) Math.ceil(
+                    seconds
+                            *
+                            1000.0
+            );
+
+        }
+        catch (
+                Exception ignored
+        ) {
+
+            return 0L;
+        }
+    }
+
+
+    private long parseBodyRetryMillis(
+
+            HttpClientErrorException.TooManyRequests exception
+
+    ) {
+
+        try {
+
+            String body =
+                    exception
+                            .getResponseBodyAsString();
+
+            if (
+                    body == null
+                            ||
+                            body.isBlank()
+            ) {
+
+                return 0L;
+            }
+
+            Matcher matcher =
+                    RETRY_SECONDS_PATTERN
+                            .matcher(
+                                    body
+                            );
+
+            if (
+                    !matcher.find()
+            ) {
+
+                return 0L;
+            }
+
+            double seconds =
+                    Double.parseDouble(
+                            matcher.group(1)
+                    );
+
+            if (
+                    seconds <= 0
+            ) {
+
+                return 0L;
+            }
+
+            return (long) Math.ceil(
+                    seconds
+                            *
+                            1000.0
+            );
+
+        }
+        catch (
+                Exception ignored
+        ) {
+
+            return 0L;
+        }
+    }
+
+
+    private void sleepForRateLimit(
+
+            long waitMillis
+
+    ) {
+
+        try {
+
+            Thread.sleep(
+                    waitMillis
+            );
+
+        }
+        catch (
+                InterruptedException exception
+        ) {
+
+            Thread
+                    .currentThread()
+                    .interrupt();
+
+            throw new IllegalStateException(
+                    "OpenAI Rate Limit 대기 중 Thread가 중단되었습니다.",
+                    exception
+            );
+        }
+    }
+
+
+    /*
+     * =========================================================
+     * Writer Request Body
+     * =========================================================
+     */
+
+    private Map<String, Object> createWriterRequestBody(
+
+            String groundingJson,
+
+            ConsultationCategory category,
+
+            String correction
+
+    ) {
+
+        Map<String, Object> request =
                 new LinkedHashMap<>();
 
-        requestBody.put(
+        request.put(
                 "model",
                 model
         );
 
-        requestBody.put(
+        request.put(
                 "store",
                 false
         );
 
-        requestBody.put(
+        request.put(
                 "max_output_tokens",
-                maxOutputTokens
+                Math.min(
+                        maxOutputTokens,
+                        WRITER_OUTPUT_TOKEN_LIMIT
+                )
         );
 
-        requestBody.put(
+        request.put(
                 "instructions",
-                createDeveloperInstructions(
+                createWriterInstructions(
                         category
                 )
         );
 
-        requestBody.put(
+        request.put(
                 "input",
-                createUserInput(
-                        sectionJson,
-                        category
+                createWriterInput(
+                        groundingJson,
+                        category,
+                        correction
                 )
         );
 
-        Map<String, Object>
-                text =
+        Map<String, Object> text =
                 new LinkedHashMap<>();
 
         text.put(
                 "format",
-                createStructuredOutputFormat(
+                createWriterOutputFormat(
                         category
                 )
         );
 
-        requestBody.put(
+        request.put(
                 "text",
                 text
         );
 
-        return requestBody;
+        return request;
     }
 
 
     /*
-     * =================================================
-     * Developer Instructions
-     * =================================================
+     * =========================================================
+     * Reviewer Request Body
+     * =========================================================
      */
 
-    private String createDeveloperInstructions(
+    private Map<String, Object> createReviewerRequestBody(
 
-            ConsultationCategory category
+            String groundingJson,
+
+            ConsultationCategory category,
+
+            String draftStory,
+
+            String hardValidationIssue
 
     ) {
 
-        String topic =
-                categoryDisplayName(
+        Map<String, Object> request =
+                new LinkedHashMap<>();
+
+        request.put(
+                "model",
+                model
+        );
+
+        request.put(
+                "store",
+                false
+        );
+
+        request.put(
+                "max_output_tokens",
+                Math.min(
+                        maxOutputTokens,
+                        REVIEWER_OUTPUT_TOKEN_LIMIT
+                )
+        );
+
+        request.put(
+                "instructions",
+                createReviewerInstructions(
                         category
-                );
+                )
+        );
 
-        String categorySafety =
-                categorySafetyInstruction(
+        request.put(
+                "input",
+                createReviewerInput(
+                        groundingJson,
+                        category,
+                        draftStory,
+                        hardValidationIssue
+                )
+        );
+
+        Map<String, Object> text =
+                new LinkedHashMap<>();
+
+        text.put(
+                "format",
+                createReviewerOutputFormat(
                         category
-                );
+                )
+        );
 
-        return """
-                너는 한 사람에게 사주 상담 결과를 설명하는 한국어 상담자다.
+        request.put(
+                "text",
+                text
+        );
 
-                계산과 판단은 이미 끝났다.
-                너는 제공된 자료의 뜻을 바꾸지 말고
-                실제 생활에서 어떻게 느껴질 수 있는지 자연스럽게 풀어 쓴다.
-
-                이번에 설명할 주제는 다음과 같다.
-
-                %s
-
-                반드시 지킬 원칙:
-
-                1. 제공된 자료 밖의 새로운 판단을 만들지 않는다.
-
-                2. 입력에 없는 사건, 사람, 날짜, 나이, 결과를 만들어내지 않는다.
-
-                3. 좋은 흐름과 부담스러운 흐름이 함께 있으면 한쪽을 지우지 않는다.
-
-                4. 시점이 불확실하다고 적혀 있으면 하나의 결과로 확정하지 않는다.
-
-                5. 돈을 번다, 결혼한다, 이혼한다, 합격한다, 취업한다,
-                   소송이 생긴다, 병이 생긴다, 사고가 난다처럼
-                   실제 사건을 예언하지 않는다.
-
-                6. 전문 명리 용어, 개발 용어, 내부 계산 용어를 사용자 문장에 쓰지 않는다.
-                   계산 과정을 설명하지 말고 생활에서 체감되는 의미만 쓴다.
-
-                7. 영어 표현을 한국어 문장 사이에 섞지 않는다.
-
-                8. 사용자를 '귀하', '여러분'이라고 부르지 않는다.
-                   필요하지 않으면 주어를 자연스럽게 생략한다.
-
-                9. 보고서처럼 '분석 결과', '근거에 따르면', '입력 자료에서는'으로 시작하지 않는다.
-                   첫 문장부터 이 주제의 실제 생활 모습으로 들어간다.
-
-                10. 5~8개 문단의 하나로 이어지는 상담 이야기로 작성한다.
-                    소제목, 번호 목록, 표는 사용하지 않는다.
-
-                11. 약 1800~2200자의 충분한 분량을 목표로 한다.
-                    같은 말을 반복해서 분량을 채우지 않는다.
-
-                12. 마지막 문단에서는 운명을 확정하지 말고
-                    현실적으로 어떻게 활용하고 조절하면 좋은지 정리한다.
-
-                이 주제에서 특히 지킬 사항:
-
-                %s
-
-                응답 형식에는 storyText 하나만 넣는다.
-                """
-                .formatted(
-                        topic,
-                        categorySafety
-                );
+        return request;
     }
 
 
     /*
-     * =================================================
-     * User Input
-     * =================================================
+     * =========================================================
+     * Writer Prompt
+     * =========================================================
      */
 
-    private String createUserInput(
-
-            String sectionJson,
+    private String createWriterInstructions(
 
             ConsultationCategory category
 
     ) {
 
         return """
-                아래 자료는 계산이 끝난 결과를
-                사용자가 이해하기 쉬운 생활언어로 바꾸기 위해 정리한 참고 자료다.
+                당신은 한 사람에게 직접 이야기하는 한국어 사주 상담문 작성자입니다.
 
-                설명할 주제:
+                사주 계산은 Java에서 이미 끝났습니다.
+                새로운 계산이나 새로운 명리 판단을 만들지 마세요.
+
+                현재 장:
                 %s
 
-                참고 자료:
+                현재 장의 범위:
+                %s
+
+                입력에는 deterministic 판단이 중요도 순으로 정리되어 있습니다.
+
+                "최우선 핵심"과 "두 번째 핵심"을 먼저 깊게 설명하세요.
+                Evidence를 전부 나열하지 마세요.
+                핵심 행동 패턴 2~4개에 집중하세요.
+
+                적중감은 사건을 맞히는 방식으로 만들지 않습니다.
+
+                가능한 경우 한 특징을:
+
+                평소 반응
+                → 반응이 달라지는 조건
+                → 안쪽 판단 변화
+                → 밖으로 드러나는 행동
+                → 반복되는 습관
+
+                순서로 연결하세요.
+
+                단, 입력에서 실제로 뒷받침되는 연결만 사용하세요.
+
+                서로 다른 반응방향이 함께 있다면
+                한쪽을 삭제하지 마세요.
+                근거가 허용할 때만
+                "평소에는 이렇지만 부담이 커지면 저렇게 달라진다"
+                같은 조건 차이로 설명하세요.
+
+                첫 문단부터 가장 개인적인 핵심 특징을 말하세요.
+                누구에게나 맞는 서론을 쓰지 마세요.
+
+                다음 식의 문장만 반복하지 마세요.
+
+                "신중합니다."
+                "책임감이 있습니다."
+                "균형이 중요합니다."
+                "노력이 필요합니다."
+
+                이런 판단이 필요하면
+                언제, 무엇 때문에, 어떻게 반응이 달라지는지까지 설명하세요.
+
+                절대 만들지 말 것:
+
+                - 실제로 있었다고 확인되지 않은 과거 사건
+                - 미래의 특정 사건
+                - 특정 직업
+                - 특정 사람
+                - 특정 장소
+                - 특정 금전 경험
+                - 특정 연애 경험
+                - 특정 가족 사건
+                - 특정 질병
+                - 특정 소송
+                - 입력에 없는 생활 습관
+                - 입력에 없는 해결책
+
+                "예를 들어"라는 표현 자체는 오류가 아닙니다.
+                다만 없는 사건을 예시로 만들지 마세요.
+
+                최종 storyText에 다음 사주 전문용어를 사용하지 마세요.
 
                 %s
 
-                자료에 적힌 내용만 사용해서
-                자연스러운 한국어 상담문을 작성하라.
+                영어 알파벳, 밑줄, 내부 필드명, 근거 수, 서술 순위도 노출하지 마세요.
 
-                내부 계산 과정이나 자료 구조를 설명하지 않는다.
-                전문용어를 되풀이하지 않는다.
-                생활에서 느껴질 수 있는 생각, 행동, 선택, 부담,
-                관계 방식과 관리 방법으로 풀어 쓴다.
+                HTML은 사용하지 마세요.
 
-                연도가 들어 있다면 그 연도만 언급할 수 있다.
-                지나간 연도는 실제 사건 기록처럼 쓰지 않는다.
-                앞으로의 연도는 확정된 미래 사건처럼 쓰지 않는다.
+                가장 개인적으로 체감될 핵심 문장 2~4곳 정도만
+                **핵심 문장**
+                형태로 강조할 수 있습니다.
 
-                자료에 없는 사실은 보충하거나 추측하지 않는다.
+                평범한 조언은 강조하지 마세요.
+
+                1200~1900자를 우선 목표로 하지만
+                길이를 맞추기 위해 새 내용을 만들거나 반복하지 마세요.
+
+                Category 추가 규칙:
+                %s
+
+                반환값에는 storyText 하나만 넣으세요.
                 """
                 .formatted(
                         categoryDisplayName(
                                 category
                         ),
-                        sectionJson
+                        categoryFocusInstruction(
+                                category
+                        ),
+                        FORBIDDEN_SAJU_TERMS_PROMPT,
+                        categorySafetyInstruction(
+                                category
+                        )
+                );
+    }
+
+
+    private String createWriterInput(
+
+            String groundingJson,
+
+            ConsultationCategory category,
+
+            String correction
+
+    ) {
+
+        String correctionSection =
+                correction == null
+                        ||
+                        correction.isBlank()
+                        ?
+                        ""
+                        :
+                        """
+
+                        이전 출력 교정사항:
+
+                        %s
+                        """
+                                .formatted(
+                                        correction
+                                );
+
+        return """
+                상담 주제:
+                %s
+
+                행동 번역 방향:
+                %s
+
+                공식 계산 Grounding:
+                %s
+
+                %s
+
+                작성 전에 내부적으로만 확인하세요.
+
+                - 최우선 핵심은 무엇인가.
+                - 그 특징이 여러 직접 계산축에서 받쳐지는가.
+                - 반대 방향 판단이 함께 존재하는가.
+                - 행동의 조건과 반응까지 연결할 근거가 있는가.
+
+                이 검토 과정은 사용자에게 말하지 마세요.
+
+                계산 근거의 의미보다 더 강하게 단정하지 마세요.
+                """
+                .formatted(
+                        categoryDisplayName(
+                                category
+                        ),
+                        behavioralTranslationInstruction(
+                                category
+                        ),
+                        groundingJson,
+                        correctionSection
                 );
     }
 
 
     /*
-     * =================================================
-     * Structured Output Schema
-     * =================================================
+     * =========================================================
+     * Reviewer Prompt
+     * =========================================================
      */
 
-    private Map<String, Object>
-    createStructuredOutputFormat(
+    private String createReviewerInstructions(
 
             ConsultationCategory category
 
     ) {
 
-        Objects.requireNonNull(
-                category,
-                "응답 형식 생성에는 ConsultationCategory가 필요합니다."
-        );
+        return """
+                당신은 사주를 새로 계산하지 않는 상담문 편집자입니다.
 
-        Map<String, Object>
-                storyTextSchema =
+                현재 장:
+                %s
+
+                제공되는 핵심 계산 근거와 Writer 초안을 비교하세요.
+
+                단어 하나로 기계적으로 판단하지 마세요.
+                문장의 의미를 봅니다.
+
+                다음만 확인하세요.
+
+                1.
+                핵심 근거가 상담문의 중심에 살아 있는가.
+
+                2.
+                중요한 특징이 단순 형용사가 아니라
+                실제 반응 패턴 수준으로 설명됐는가.
+
+                3.
+                계산 근거에 없는 과거 사건, 미래 사건,
+                사람, 직업, 장소, 경험, 해결책을 만들지 않았는가.
+
+                4.
+                서로 다른 반응방향이 있는데
+                한쪽만 남겨 사람을 단순화하지 않았는가.
+
+                5.
+                현재 장이 다른 상담 분야로 이동하지 않았는가.
+
+                6.
+                **...** 강조가 실제 핵심 패턴에 붙어 있는가.
+
+                "예를 들어", "사람", "돈", "일", "책임" 같은
+                단어의 존재 자체는 오류가 아닙니다.
+
+                입력 Grounding으로 의미가 뒷받침되는지가 중요합니다.
+
+                초안이 충분히 좋다면:
+                decision = KEEP
+
+                finalStoryText에는 초안을 그대로 넣으세요.
+
+                의미상 문제가 있거나 핵심 특징을 제대로 살리지 못했다면:
+                decision = REVISE
+
+                같은 Grounding만 사용하여 직접 다듬으세요.
+
+                새로운 판단이나 사건을 추가하지 마세요.
+
+                영어, 내부 개발용어, HTML,
+                근거 개수나 우선순위 숫자를 사용자에게 노출하지 마세요.
+
+                현재 장의 범위:
+                %s
+                """
+                .formatted(
+                        categoryDisplayName(
+                                category
+                        ),
+                        categoryFocusInstruction(
+                                category
+                        )
+                );
+    }
+
+
+    private String createReviewerInput(
+
+            String groundingJson,
+
+            ConsultationCategory category,
+
+            String draftStory,
+
+            String hardValidationIssue
+
+    ) {
+
+        String hardNotice =
+                hardValidationIssue == null
+                        ||
+                        hardValidationIssue.isBlank()
+                        ?
+                        "명백한 출력 형식 오류는 발견되지 않았습니다."
+                        :
+                        """
+                        Java Hard Safety가 발견한 명백한 출력 오류:
+
+                        %s
+
+                        이 문제는 최종문에서 반드시 제거하세요.
+                        """
+                                .formatted(
+                                        hardValidationIssue
+                                );
+
+        return """
+                상담 주제:
+                %s
+
+                검토에 필요한 핵심 Grounding:
+                %s
+
+                Writer 초안:
+                %s
+
+                추가 확인:
+                %s
+
+                Grounding 전체를 다시 해석하려 하지 말고
+                Writer가 핵심 판단을 정확하게 번역했는지 검토하세요.
+
+                최종적으로 사용자에게 보여도 되는 상담문 하나를
+                finalStoryText에 넣으세요.
+                """
+                .formatted(
+                        categoryDisplayName(
+                                category
+                        ),
+                        groundingJson,
+                        draftStory,
+                        hardNotice
+                );
+    }
+
+
+    /*
+     * =========================================================
+     * Structured Output - Writer
+     * =========================================================
+     */
+
+    private Map<String, Object> createWriterOutputFormat(
+
+            ConsultationCategory category
+
+    ) {
+
+        Map<String, Object> storyText =
                 new LinkedHashMap<>();
 
-        storyTextSchema.put(
+        storyText.put(
                 "type",
                 "string"
         );
 
-        Map<String, Object>
-                properties =
+        Map<String, Object> properties =
                 new LinkedHashMap<>();
 
         properties.put(
                 "storyText",
-                storyTextSchema
+                storyText
         );
 
-        Map<String, Object>
-                schema =
+        Map<String, Object> schema =
                 new LinkedHashMap<>();
 
         schema.put(
@@ -1274,8 +2695,7 @@ public class OpenAiConsultationStoryGenerator
                 false
         );
 
-        Map<String, Object>
-                format =
+        Map<String, Object> format =
                 new LinkedHashMap<>();
 
         format.put(
@@ -1285,13 +2705,16 @@ public class OpenAiConsultationStoryGenerator
 
         format.put(
                 "name",
-                "dajeom_story"
+                "dajeom_writer_story"
         );
 
         format.put(
                 "description",
-                categoryDisplayName(category)
-                        + " 상담문"
+                categoryDisplayName(
+                        category
+                )
+                        +
+                        " 상담문"
         );
 
         format.put(
@@ -1309,41 +2732,310 @@ public class OpenAiConsultationStoryGenerator
 
 
     /*
-     * =================================================
-     * Response Parser
-     * =================================================
+     * =========================================================
+     * Structured Output - Reviewer
+     * =========================================================
      */
 
-    private String parseSingleStory(
+    private Map<String, Object> createReviewerOutputFormat(
+
+            ConsultationCategory category
+
+    ) {
+
+        Map<String, Object> decision =
+                new LinkedHashMap<>();
+
+        decision.put(
+                "type",
+                "string"
+        );
+
+        decision.put(
+                "enum",
+                List.of(
+                        "KEEP",
+                        "REVISE"
+                )
+        );
+
+
+        Map<String, Object> finalStoryText =
+                new LinkedHashMap<>();
+
+        finalStoryText.put(
+                "type",
+                "string"
+        );
+
+
+        Map<String, Object> reviewSummary =
+                new LinkedHashMap<>();
+
+        reviewSummary.put(
+                "type",
+                "string"
+        );
+
+
+        Map<String, Object> properties =
+                new LinkedHashMap<>();
+
+        properties.put(
+                "decision",
+                decision
+        );
+
+        properties.put(
+                "finalStoryText",
+                finalStoryText
+        );
+
+        properties.put(
+                "reviewSummary",
+                reviewSummary
+        );
+
+
+        Map<String, Object> schema =
+                new LinkedHashMap<>();
+
+        schema.put(
+                "type",
+                "object"
+        );
+
+        schema.put(
+                "properties",
+                properties
+        );
+
+        schema.put(
+                "required",
+                List.of(
+                        "decision",
+                        "finalStoryText",
+                        "reviewSummary"
+                )
+        );
+
+        schema.put(
+                "additionalProperties",
+                false
+        );
+
+
+        Map<String, Object> format =
+                new LinkedHashMap<>();
+
+        format.put(
+                "type",
+                "json_schema"
+        );
+
+        format.put(
+                "name",
+                "dajeom_story_review"
+        );
+
+        format.put(
+                "description",
+                categoryDisplayName(
+                        category
+                )
+                        +
+                        " 상담문 검토"
+        );
+
+        format.put(
+                "strict",
+                true
+        );
+
+        format.put(
+                "schema",
+                schema
+        );
+
+        return format;
+    }
+
+
+    /*
+     * =========================================================
+     * Parse Writer
+     * =========================================================
+     */
+
+    private String parseWriterStory(
 
             String generationId,
 
             String responseBody,
 
-            ConsultationCategory expectedCategory
+            ConsultationCategory category
 
     ) throws Exception {
 
-        Objects.requireNonNull(
-                generationId,
-                "generationId가 필요합니다."
-        );
+        JsonNode response =
+                parseCompletedResponse(
+                        generationId,
+                        responseBody,
+                        category
+                );
 
-        Objects.requireNonNull(
-                responseBody,
-                "OpenAI Response Body가 필요합니다."
-        );
+        String structuredText =
+                extractOutputText(
+                        response
+                );
 
-        Objects.requireNonNull(
-                expectedCategory,
-                "검증할 ConsultationCategory가 필요합니다."
+        diagnosticLogger
+                .structuredOutputExtracted(
+                        generationId,
+                        model,
+                        category,
+                        structuredText.length()
+                );
+
+        JsonNode root =
+                jsonMapper.readTree(
+                        structuredText
+                );
+
+        String storyText =
+                root
+                        .path(
+                                "storyText"
+                        )
+                        .asString(
+                                ""
+                        )
+                        .trim();
+
+        if (
+                storyText.isBlank()
+        ) {
+
+            throw new IllegalStateException(
+                    "Writer storyText가 비어 있습니다. category="
+                            +
+                            category
+            );
+        }
+
+        return normalizeGeneratedStoryText(
+                storyText
         );
+    }
+
+
+    /*
+     * =========================================================
+     * Parse Reviewer
+     * =========================================================
+     */
+
+    private ReviewResult parseReviewResult(
+
+            String generationId,
+
+            String responseBody,
+
+            ConsultationCategory category
+
+    ) throws Exception {
 
         JsonNode response =
-                jsonMapper
-                        .readTree(
-                                responseBody
-                        );
+                parseCompletedResponse(
+                        generationId,
+                        responseBody,
+                        category
+                );
+
+        String structuredText =
+                extractOutputText(
+                        response
+                );
+
+        diagnosticLogger
+                .structuredOutputExtracted(
+                        generationId,
+                        model,
+                        category,
+                        structuredText.length()
+                );
+
+        JsonNode root =
+                jsonMapper.readTree(
+                        structuredText
+                );
+
+        String decisionText =
+                requireText(
+                        root
+                                .path(
+                                        "decision"
+                                )
+                                .asString(
+                                        ""
+                                ),
+                        "Reviewer decision이 필요합니다."
+                );
+
+        String finalStoryText =
+                requireText(
+                        root
+                                .path(
+                                        "finalStoryText"
+                                )
+                                .asString(
+                                        ""
+                                ),
+                        "Reviewer finalStoryText가 필요합니다."
+                );
+
+        String reviewSummary =
+                root
+                        .path(
+                                "reviewSummary"
+                        )
+                        .asString(
+                                ""
+                        )
+                        .trim();
+
+        return new ReviewResult(
+                ReviewDecision.valueOf(
+                        decisionText
+                ),
+                normalizeGeneratedStoryText(
+                        finalStoryText
+                ),
+                reviewSummary
+        );
+    }
+
+
+    /*
+     * =========================================================
+     * Completed Response
+     * =========================================================
+     */
+
+    private JsonNode parseCompletedResponse(
+
+            String generationId,
+
+            String responseBody,
+
+            ConsultationCategory category
+
+    ) throws Exception {
+
+        JsonNode response =
+                jsonMapper.readTree(
+                        responseBody
+                );
 
         String status =
                 response
@@ -1359,112 +3051,65 @@ public class OpenAiConsultationStoryGenerator
                 .responseStatus(
                         generationId,
                         model,
-                        expectedCategory,
+                        category,
                         status
                 );
 
         if (
-                !"completed"
-                        .equals(
-                                status
-                        )
+                !"completed".equals(
+                        status
+                )
         ) {
-
-            String incompleteReason =
-                    response
-                            .path(
-                                    "incomplete_details"
-                            )
-                            .path(
-                                    "reason"
-                            )
-                            .asString(
-                                    ""
-                            )
-                            .trim();
-
-            String errorMessage =
-                    response
-                            .path(
-                                    "error"
-                            )
-                            .path(
-                                    "message"
-                            )
-                            .asString(
-                                    ""
-                            )
-                            .trim();
 
             String detail =
                     firstNonBlank(
-                            errorMessage,
-                            incompleteReason,
+                            response
+                                    .path(
+                                            "error"
+                                    )
+                                    .path(
+                                            "message"
+                                    )
+                                    .asString(
+                                            ""
+                                    ),
+
+                            response
+                                    .path(
+                                            "incomplete_details"
+                                    )
+                                    .path(
+                                            "reason"
+                                    )
+                                    .asString(
+                                            ""
+                                    ),
+
                             "UNKNOWN"
                     );
 
             throw new IllegalStateException(
-                    "OpenAI Responses API가 completed 상태가 아닙니다. "
-                            + "status="
-                            + (
-                            status.isBlank()
-                                    ? "UNKNOWN"
-                                    : status
-                    )
-                            + ", detail="
-                            + detail
+                    "OpenAI Responses API가 completed 상태가 아닙니다. status="
+                            +
+                            firstNonBlank(
+                                    status,
+                                    "UNKNOWN"
+                            )
+                            +
+                            ", detail="
+                            +
+                            detail
             );
         }
 
-        String structuredText =
-                extractOutputText(
-                        response
-                );
-
-        diagnosticLogger
-                .structuredOutputExtracted(
-                        generationId,
-                        model,
-                        expectedCategory,
-                        structuredText.length()
-                );
-
-        JsonNode structuredRoot =
-                jsonMapper
-                        .readTree(
-                                structuredText
-                        );
-
-        String storyText =
-                structuredRoot
-                        .path(
-                                "storyText"
-                        )
-                        .asString(
-                                ""
-                        )
-                        .trim();
-
-        if (
-                storyText.isBlank()
-        ) {
-
-            throw new IllegalStateException(
-                    "OpenAI Story Output에 storyText가 없습니다. category="
-                            + expectedCategory
-            );
-        }
-
-        return sanitizeGeneratedStoryText(
-                storyText
-        );
+        return response;
     }
 
 
     /*
-     * =================================================
-     * Output Text Extractor
-     * =================================================
+     * =========================================================
+     * Output Extract
+     * =========================================================
      */
 
     private String extractOutputText(
@@ -1474,10 +3119,9 @@ public class OpenAiConsultationStoryGenerator
     ) {
 
         JsonNode output =
-                response
-                        .path(
-                                "output"
-                        );
+                response.path(
+                        "output"
+                );
 
         if (
                 !output.isArray()
@@ -1496,31 +3140,26 @@ public class OpenAiConsultationStoryGenerator
                 : output
         ) {
 
-            String outputType =
-                    outputItem
-                            .path(
-                                    "type"
-                            )
-                            .asString(
-                                    ""
-                            )
-                            .trim();
-
             if (
-                    !"message"
-                            .equals(
-                                    outputType
-                            )
+                    !"message".equals(
+                            outputItem
+                                    .path(
+                                            "type"
+                                    )
+                                    .asString(
+                                            ""
+                                    )
+                                    .trim()
+                    )
             ) {
 
                 continue;
             }
 
             JsonNode content =
-                    outputItem
-                            .path(
-                                    "content"
-                            );
+                    outputItem.path(
+                            "content"
+                    );
 
             if (
                     !content.isArray()
@@ -1530,32 +3169,28 @@ public class OpenAiConsultationStoryGenerator
             }
 
             for (
-                    JsonNode contentPart
+                    JsonNode part
                     : content
             ) {
 
-                String contentType =
-                        contentPart
-                                .path(
-                                        "type"
-                                )
-                                .asString(
-                                        ""
-                                )
-                                .trim();
-
                 if (
-                        !"output_text"
-                                .equals(
-                                        contentType
-                                )
+                        !"output_text".equals(
+                                part
+                                        .path(
+                                                "type"
+                                        )
+                                        .asString(
+                                                ""
+                                        )
+                                        .trim()
+                        )
                 ) {
 
                     continue;
                 }
 
                 String text =
-                        contentPart
+                        part
                                 .path(
                                         "text"
                                 )
@@ -1592,363 +3227,646 @@ public class OpenAiConsultationStoryGenerator
 
 
     /*
-     * =================================================
-     * 사용자용 의미 변환
-     * =================================================
+     * =========================================================
+     * Hard Safety
+     * =========================================================
      *
-     * 여기서는 새로운 사주 판단을 하지 않는다.
+     * 의미 판단이 필요한 것은 여기서 검사하지 않는다.
      *
-     * 18차가 이미 확정한:
+     * 예:
      *
-     * - 생활영역
-     * - 방향 상태
-     * - 요약
+     * "예를 들어"
+     * "사람"
+     * "돈"
+     * "일"
+     * "책임"
+     * "균형"
      *
-     * 를 사용자에게 노출 가능한 말로만 바꾼다.
+     * 등은 Hard Fail 대상이 아니다.
      */
 
-    private String userFacingArea(
-            String domainName
+    private StoryValidationResult validateHardSafety(
+
+            ConsultationCategory category,
+
+            String storyText
+
+    ) {
+
+        if (
+                storyText == null
+                        ||
+                        storyText.isBlank()
+        ) {
+
+            return StoryValidationResult.failure(
+                    "상담문이 비어 있습니다."
+            );
+        }
+
+        String normalized =
+                normalizeGeneratedStoryText(
+                        storyText
+                );
+
+        Set<String> violations =
+                new LinkedHashSet<>();
+
+
+        /*
+         * 영어 / 밑줄
+         */
+        Matcher latinMatcher =
+                LATIN_TOKEN_PATTERN
+                        .matcher(
+                                normalized
+                        );
+
+        LinkedHashSet<String> latinTokens =
+                new LinkedHashSet<>();
+
+        while (
+                latinMatcher.find()
+                        &&
+                        latinTokens.size()
+                                <
+                                5
+        ) {
+
+            latinTokens.add(
+                    latinMatcher.group()
+            );
+        }
+
+        if (
+                !latinTokens.isEmpty()
+        ) {
+
+            violations.add(
+                    "영문 또는 밑줄 문자열 '"
+                            +
+                            String.join(
+                                    ", ",
+                                    latinTokens
+                            )
+                            +
+                            "'"
+            );
+        }
+
+
+        /*
+         * HTML
+         */
+        if (
+                HTML_TAG_PATTERN
+                        .matcher(
+                                normalized
+                        )
+                        .find()
+        ) {
+
+            violations.add(
+                    "HTML 태그 포함"
+            );
+        }
+
+
+        /*
+         * 강조 열고 닫힘
+         *
+         * 강조 개수는 Hard Fail이 아니다.
+         */
+        if (
+                hasMalformedEmphasisMarkers(
+                        normalized
+                )
+        ) {
+
+            violations.add(
+                    "강조 마커 '**'가 올바르게 닫히지 않음"
+            );
+        }
+
+
+        /*
+         * 명리 전문용어
+         *
+         * 단순 substring contains가 아니다.
+         */
+        for (
+                String term
+                : FORBIDDEN_SAJU_TERMS
+        ) {
+
+            if (
+                    containsForbiddenKoreanTerm(
+                            normalized,
+                            term
+                    )
+            ) {
+
+                violations.add(
+                        "명리 전문용어 '"
+                                +
+                                term
+                                +
+                                "'"
+                );
+            }
+        }
+
+
+        /*
+         * 사용자 호칭
+         */
+        for (
+                String phrase
+                : FORBIDDEN_ADDRESS_PHRASES
+        ) {
+
+            if (
+                    normalized.contains(
+                            phrase
+                    )
+            ) {
+
+                violations.add(
+                        "사용자 금지 호칭 '"
+                                +
+                                phrase
+                                +
+                                "'"
+                );
+            }
+        }
+
+
+        /*
+         * 비 Timeline Category의 임의 연도
+         */
+        if (
+                !categoryAllowsYear(
+                        category
+                )
+                        &&
+                        YEAR_PATTERN
+                                .matcher(
+                                        normalized
+                                )
+                                .find()
+        ) {
+
+            violations.add(
+                    "현재 상담 장에서 허용되지 않은 연도 표현"
+            );
+        }
+
+
+        /*
+         * 법률 결과 단정
+         */
+        if (
+                category
+                        ==
+                        ConsultationCategory.LEGAL_RISK
+        ) {
+
+            for (
+                    String phrase
+                    : FORBIDDEN_LEGAL_RESULT_PHRASES
+            ) {
+
+                if (
+                        normalized.contains(
+                                phrase
+                        )
+                ) {
+
+                    violations.add(
+                            "법률 결과 단정 '"
+                                    +
+                                    phrase
+                                    +
+                                    "'"
+                    );
+                }
+            }
+        }
+
+
+        /*
+         * 의료 결과 단정
+         */
+        if (
+                category
+                        ==
+                        ConsultationCategory.HEALTH_TENDENCY
+        ) {
+
+            for (
+                    String phrase
+                    : FORBIDDEN_MEDICAL_ASSERTION_PHRASES
+            ) {
+
+                if (
+                        normalized.contains(
+                                phrase
+                        )
+                ) {
+
+                    violations.add(
+                            "의료 결과 단정 '"
+                                    +
+                                    phrase
+                                    +
+                                    "'"
+                    );
+                }
+            }
+        }
+
+        if (
+                violations.isEmpty()
+        ) {
+
+            return StoryValidationResult.success();
+        }
+
+        return StoryValidationResult.failure(
+                String.join(
+                        ", ",
+                        violations
+                )
+        );
+    }
+
+
+    /*
+     * =========================================================
+     * Korean Forbidden Term
+     * =========================================================
+     *
+     * 앞에 다른 한글이 붙어 있으면
+     * 독립 전문용어 시작으로 보지 않는다.
+     *
+     * 관성:
+     *
+     * "관성이 강하다" -> 검출
+     *
+     * "일관성이 있다" -> 검출하지 않음
+     */
+
+    private boolean containsForbiddenKoreanTerm(
+
+            String source,
+
+            String term
+
+    ) {
+
+        Pattern pattern =
+                Pattern.compile(
+                        "(?<![가-힣A-Za-z0-9])"
+                                +
+                                Pattern.quote(
+                                        term
+                                )
+                );
+
+        return pattern
+                .matcher(
+                        source
+                )
+                .find();
+    }
+
+
+    private boolean hasMalformedEmphasisMarkers(
+
+            String source
+
+    ) {
+
+        int markerCount =
+                0;
+
+        int index =
+                0;
+
+        while (
+                true
+        ) {
+
+            index =
+                    source.indexOf(
+                            "**",
+                            index
+                    );
+
+            if (
+                    index < 0
+            ) {
+
+                break;
+            }
+
+            markerCount++;
+
+            index +=
+                    2;
+        }
+
+        return markerCount % 2 != 0;
+    }
+
+
+    /*
+     * =========================================================
+     * Category Focus
+     * =========================================================
+     */
+
+    private String categoryFocusInstruction(
+
+            ConsultationCategory category
+
     ) {
 
         return switch (
-                domainName
+                category
+                ) {
+
+            case PERSONALITY ->
+                    """
+                    재물, 직업, 관계, 학습을 각각 별도 장처럼 나열하지 않습니다.
+                    여러 상황을 관통하는 판단 방식, 선택 습관,
+                    압박을 받을 때의 반응과 겉과 속의 차이를 설명합니다.
+                    """;
+
+            case PAST_LUCK ->
+                    """
+                    과거 특정 사건을 맞히지 않습니다.
+                    지나온 시기마다 수월함과 부담,
+                    선택과 반응의 차이를 설명합니다.
+                    """;
+
+            case SOCIAL_RELATIONSHIP ->
+                    """
+                    사람을 받아들이고 가까워지고,
+                    기대와 책임이 반복될 때
+                    거리와 태도를 조정하는 방식에 집중합니다.
+                    """;
+
+            case LOVE_STYLE ->
+                    """
+                    마음이 생겼을 때 표현하는 방식,
+                    상대 반응을 확인하는 방식,
+                    가까워질수록 달라지는 태도에 집중합니다.
+                    """;
+
+            case PARTNER_LUCK ->
+                    """
+                    오래 함께하는 관계에서 역할과 책임을 나누고,
+                    관계의 안정감을 판단하며,
+                    부담이 반복될 때 반응하는 방식에 집중합니다.
+                    """;
+
+            case WEALTH ->
+                    """
+                    돈과 자원을 선택하고 유지하고 사용하는 판단에 집중합니다.
+                    단순 절약형·소비형 분류보다
+                    무엇을 확인하고 언제 움직이는지를 설명합니다.
+                    """;
+
+            case CAREER ->
+                    """
+                    일을 맡는 방식,
+                    책임을 받아들이는 방식,
+                    성과를 만드는 과정에서 판단하고 움직이는 방식에 집중합니다.
+                    """;
+
+            case LEGAL_RISK ->
+                    """
+                    법적 결과를 예측하지 않습니다.
+                    약속, 계약, 확인, 기록, 책임 범위를 다루는 태도에 집중합니다.
+                    """;
+
+            case HEALTH_TENDENCY ->
+                    """
+                    질병을 예측하지 않습니다.
+                    활동과 휴식, 피로 누적,
+                    자기 페이스와 회복 리듬에 집중합니다.
+                    """;
+
+            case CURRENT_YEAR_LUCK ->
+                    """
+                    올해 특정 사건을 맞히지 않습니다.
+                    현재 시기에 달라지기 쉬운 선택과 반응을 설명합니다.
+                    """;
+
+            case FUTURE_LUCK ->
+                    """
+                    미래 사건을 예언하지 않습니다.
+                    연도별로 달라질 수 있는 선택,
+                    책임, 관계 조율, 자원 운용의 흐름을 설명합니다.
+                    """;
+        };
+    }
+
+
+    /*
+     * =========================================================
+     * Behavioral Translation
+     * =========================================================
+     */
+
+    private String behavioralTranslationInstruction(
+
+            ConsultationCategory category
+
+    ) {
+
+        return switch (
+                category
+                ) {
+
+            case PERSONALITY ->
+                    "성격 형용사보다 중요한 선택과 압박 속에서 무엇을 먼저 판단하고 언제 태도가 바뀌는지 설명합니다.";
+
+            case PAST_LUCK ->
+                    "사건이 아니라 시기별 선택의 속도, 부담 체감과 반응 차이를 설명합니다.";
+
+            case SOCIAL_RELATIONSHIP ->
+                    "관계가 시작되고 가까워지고 부담이 반복되는 과정에 따라 반응이 어떻게 달라지는지 설명합니다.";
+
+            case LOVE_STYLE ->
+                    "마음의 크기와 관계의 거리 변화에 따라 표현과 판단이 달라지는지 설명합니다.";
+
+            case PARTNER_LUCK ->
+                    "장기 관계에서 처음 역할을 받아들이는 모습과 반복된 책임 뒤의 반응 차이를 설명합니다.";
+
+            case WEALTH ->
+                    "돈을 움직이기 전 무엇을 확인하고 어떤 상태를 부담스럽게 느끼며 확신 전후 행동이 어떻게 달라지는지 설명합니다.";
+
+            case CAREER ->
+                    "책임을 맡기 전과 맡은 뒤의 판단과 행동 차이를 설명합니다.";
+
+            case LEGAL_RISK ->
+                    "결과 예측 대신 확인, 기록, 책임 범위를 받아들이는 습관을 설명합니다.";
+
+            case HEALTH_TENDENCY ->
+                    "질병 대신 활동량과 피로가 달라질 때 생활 리듬을 어떻게 다루는지 설명합니다.";
+
+            case CURRENT_YEAR_LUCK ->
+                    "사건 대신 현재 시기의 선택과 반응 방식 변화를 설명합니다.";
+
+            case FUTURE_LUCK ->
+                    "사건 대신 앞으로 시기별로 달라지는 행동과 판단 흐름을 설명합니다.";
+        };
+    }
+
+
+    /*
+     * =========================================================
+     * Category Safety
+     * =========================================================
+     */
+
+    private String categorySafetyInstruction(
+
+            ConsultationCategory category
+
+    ) {
+
+        return switch (
+                category
+                ) {
+
+            case PERSONALITY ->
+                    "다른 열 개 상담 장을 하나씩 미리 설명하지 말고 공통 행동 패턴으로 통합하세요.";
+
+            case PAST_LUCK ->
+                    "특정 과거 사건이 실제로 있었다고 단정하지 마세요.";
+
+            case SOCIAL_RELATIONSHIP ->
+                    "대인관계 장을 연애·결혼·재물·직업 상담으로 바꾸지 마세요.";
+
+            case LOVE_STYLE ->
+                    "결혼 시기나 배우자의 미래를 예언하지 마세요.";
+
+            case PARTNER_LUCK ->
+                    "결혼 시기나 특정 인연의 등장을 예언하지 마세요.";
+
+            case WEALTH ->
+                    "관계나 직업 성공을 별도 상담으로 확장하지 마세요.";
+
+            case CAREER ->
+                    "재물 관리나 연애 이야기를 별도 상담으로 확장하지 마세요.";
+
+            case LEGAL_RISK ->
+                    "승패, 처벌, 구체적인 법적 사건을 예측하지 마세요.";
+
+            case HEALTH_TENDENCY ->
+                    "질병, 장기, 진단, 치료를 예측하거나 입력에 없는 건강 처방을 만들지 마세요.";
+
+            case CURRENT_YEAR_LUCK ->
+                    "올해 특정 사건이 반드시 발생한다고 단정하지 마세요.";
+
+            case FUTURE_LUCK ->
+                    "미래 특정 사건이나 결과를 확정하지 마세요.";
+        };
+    }
+
+
+    /*
+     * =========================================================
+     * User Facing Area
+     * =========================================================
+     */
+
+    private String userFacingArea(
+
+            String domain
+
+    ) {
+
+        return switch (
+                domain
                 ) {
 
             case "WEALTH" ->
-                    "돈과 자원을 계획하고 관리하는 방식";
+                    "돈과 자원을 판단하고 다루는 방식";
 
             case "CAREER" ->
-                    "일과 책임을 맡고 성과를 만들어가는 방식";
+                    "일과 책임을 맡고 성과를 만드는 방식";
 
             case "RELATIONSHIP" ->
                     "사람과 관계를 맺고 거리를 조절하는 방식";
 
             case "LEARNING_GROWTH" ->
-                    "배우고 표현하며 성장하는 방식";
+                    "배우고 이해하고 표현하는 방식";
 
             case "HEALTH_LIFESTYLE" ->
-                    "생활 리듬과 회복을 관리하는 방식";
+                    "생활 리듬과 활동, 회복을 다루는 방식";
 
             default ->
-                    "생활 전반에서 선택하고 대응하는 방식";
+                    "생활에서 선택하고 대응하는 방식";
         };
     }
 
 
+    /*
+     * =========================================================
+     * User Facing Direction
+     * =========================================================
+     */
+
     private String userFacingDirection(
-            String statusName
+
+            String status
+
     ) {
 
         return switch (
-                statusName
+                status
                 ) {
 
             case "SUPPORTIVE" ->
-                    "힘을 쓰기 비교적 수월한 흐름";
+                    "비교적 자연스럽게 힘을 쓰는 방향";
 
             case "PRESSURE" ->
-                    "부담을 조절할 필요가 있는 흐름";
+                    "부담을 더 크게 체감할 수 있는 방향";
 
             case "MIXED" ->
-                    "수월함과 부담이 함께 나타나는 흐름";
+                    "수월함과 부담이 함께 나타나는 방향";
 
             case "CONTEXTUAL" ->
-                    "상황에 따라 체감이 달라질 수 있는 흐름";
+                    "상황에 따라 반응 차이가 커질 수 있는 방향";
 
             case "NEUTRAL" ->
-                    "크게 한쪽으로 치우치지 않는 흐름";
+                    "한 방향으로 크게 치우치지 않는 흐름";
 
             case "CAUTION" ->
-                    "조금 더 신중하게 다루면 좋은 흐름";
+                    "조금 더 신중하게 다뤄야 하는 방향";
 
             default ->
-                    "상황을 살펴가며 조절할 흐름";
+                    "상황에 따라 달라질 수 있는 방향";
         };
     }
 
 
-    private String userFacingMeaning(
-
-            String domainName,
-
-            String statusName,
-
-            String backendSummary
-
-    ) {
-
-        String normalizedSummary =
-                backendSummary == null
-                        ? ""
-                        : backendSummary.trim();
-
-        /*
-         * 이미 생활언어로 작성된 Summary라면
-         * 그 의미를 살릴 수 있다.
-         *
-         * 반대로 backend/명리 용어가 섞여 있으면
-         * OpenAI에 원문을 보내지 않고
-         * Domain + Status 기반의 안전한 생활언어로 대체한다.
-         */
-        if (
-                isUserFacingSummarySafe(
-                        normalizedSummary
-                )
-        ) {
-
-            return normalizedSummary;
-        }
-
-        return fallbackUserFacingMeaning(
-                domainName,
-                statusName
-        );
-    }
-
-
-    private boolean isUserFacingSummarySafe(
-            String value
-    ) {
-
-        if (
-                value == null
-                        || value.isBlank()
-        ) {
-
-            return false;
-        }
-
-        if (
-                value.matches(
-                        ".*[A-Za-z_].*"
-                )
-        ) {
-
-            return false;
-        }
-
-        List<String> backendTerms =
-                List.of(
-                        "원국",
-                        "명리",
-                        "십성",
-                        "재성",
-                        "관성",
-                        "관살",
-                        "정재",
-                        "편재",
-                        "비겁",
-                        "식상",
-                        "인성",
-                        "일간",
-                        "신강",
-                        "신약",
-                        "용신",
-                        "희신",
-                        "기신",
-                        "격국",
-                        "통근",
-                        "투간",
-                        "지장간",
-                        "천간",
-                        "지지",
-                        "합화",
-                        "궁위",
-                        "신살",
-                        "대운",
-                        "세운",
-                        "월운",
-                        "오행",
-                        "음양",
-                        "12운성"
-                );
-
-        for (
-                String backendTerm
-                : backendTerms
-        ) {
-
-            if (
-                    value.contains(
-                            backendTerm
-                    )
-            ) {
-
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-
-    private String fallbackUserFacingMeaning(
-
-            String domainName,
-
-            String statusName
-
-    ) {
-
-        if (
-                "WEALTH".equals(
-                        domainName
-                )
-        ) {
-
-            return switch (
-                    statusName
-                    ) {
-
-                case "SUPPORTIVE" ->
-                        "돈을 계획하고 유지하는 과정에서 가진 선택지를 비교적 안정적으로 활용하기 좋습니다.";
-
-                case "PRESSURE" ->
-                        "기회가 보여도 감당할 범위와 이후의 유지 부담을 함께 따져보는 편이 좋습니다.";
-
-                case "MIXED" ->
-                        "움직일 여지는 있지만 지출이나 책임도 함께 커질 수 있어 확장과 유지 사이의 균형이 중요합니다.";
-
-                default ->
-                        "돈과 자원을 움직일 때 당장의 이익보다 지속해서 감당할 수 있는지를 함께 살펴보는 것이 중요합니다.";
-            };
-        }
-
-        if (
-                "CAREER".equals(
-                        domainName
-                )
-        ) {
-
-            return switch (
-                    statusName
-                    ) {
-
-                case "SUPPORTIVE" ->
-                        "맡은 역할을 정리하고 자신의 방식으로 성과를 만들어가는 데 힘을 쓰기 수월한 편입니다.";
-
-                case "PRESSURE" ->
-                        "책임이나 요구가 늘어날수록 혼자 모두 떠안기보다 우선순위와 역할 범위를 분명히 하는 것이 중요합니다.";
-
-                case "MIXED" ->
-                        "성과를 낼 기회와 책임의 무게가 함께 커질 수 있어 속도보다 역할 조절이 중요합니다.";
-
-                default ->
-                        "일에서는 상황에 맞춰 책임의 범위와 자신의 표현 방식을 조절할수록 안정적으로 힘을 쓰기 좋습니다.";
-            };
-        }
-
-        if (
-                "RELATIONSHIP".equals(
-                        domainName
-                )
-        ) {
-
-            return switch (
-                    statusName
-                    ) {
-
-                case "SUPPORTIVE" ->
-                        "사람들과 주고받는 과정에서 자신의 뜻을 비교적 자연스럽게 표현하고 관계의 균형을 잡기 좋습니다.";
-
-                case "PRESSURE" ->
-                        "상대의 기대나 관계의 책임을 지나치게 떠안지 않도록 거리와 역할을 분명히 하는 것이 중요합니다.";
-
-                case "MIXED" ->
-                        "가까워질 기회와 피로가 함께 생길 수 있어 친밀함과 개인적인 여유 사이의 균형이 필요합니다.";
-
-                default ->
-                        "관계에서는 상대의 반응만 따르기보다 자신의 속도와 경계를 함께 살피는 것이 도움이 됩니다.";
-            };
-        }
-
-        if (
-                "LEARNING_GROWTH".equals(
-                        domainName
-                )
-        ) {
-
-            return switch (
-                    statusName
-                    ) {
-
-                case "SUPPORTIVE" ->
-                        "배우고 익힌 것을 자신의 방식으로 정리하고 표현하는 데 힘을 쓰기 좋은 편입니다.";
-
-                case "PRESSURE" ->
-                        "배우거나 준비해야 할 것이 많아질수록 한꺼번에 완성하려 하기보다 우선순위를 나누는 것이 중요합니다.";
-
-                case "MIXED" ->
-                        "성장할 자극은 충분하지만 동시에 부담도 커질 수 있어 속도보다 꾸준함을 유지하는 것이 중요합니다.";
-
-                default ->
-                        "배움과 표현에서는 주변 속도보다 자신에게 맞는 방식으로 정리하고 반복하는 것이 도움이 됩니다.";
-            };
-        }
-
-        if (
-                "HEALTH_LIFESTYLE".equals(
-                        domainName
-                )
-        ) {
-
-            return switch (
-                    statusName
-                    ) {
-
-                case "SUPPORTIVE" ->
-                        "생활 리듬을 일정하게 유지하면 회복과 일상의 균형을 비교적 안정적으로 가져가기 좋습니다.";
-
-                case "PRESSURE" ->
-                        "일정이나 책임이 몰릴수록 쉬는 시간을 뒤로 미루지 않고 회복 시간을 먼저 확보하는 것이 중요합니다.";
-
-                case "MIXED" ->
-                        "활동량이 늘어날 여지와 피로가 쌓일 가능성이 함께 있어 움직임과 휴식의 균형을 의식하는 편이 좋습니다.";
-
-                default ->
-                        "몸 상태를 단정하기보다 수면, 식사, 휴식 같은 기본 생활 리듬을 꾸준히 점검하는 것이 도움이 됩니다.";
-            };
-        }
-
-        return "상황이 달라질 때 자신의 부담 범위와 선택의 속도를 함께 살피는 것이 도움이 됩니다.";
-    }
-
-
-    private String userFacingTimelineNotice(
-
-            boolean fullyDefinite,
-
-            boolean uncertaintyExists
-
-    ) {
-
-        if (
-                uncertaintyExists
-        ) {
-
-            return "기준 시점에 불확실성이 있어 하나의 결과로 단정하지 않습니다.";
-        }
-
-        if (
-                fullyDefinite
-        ) {
-
-            return "기준 시점이 비교적 명확한 흐름입니다.";
-        }
-
-        return "가능한 흐름 가운데 하나로 참고하며 단정하지 않습니다.";
-    }
-
+    /*
+     * =========================================================
+     * Category Name
+     * =========================================================
+     */
 
     private String categoryDisplayName(
-            ConsultationCategory category
-    ) {
 
-        Objects.requireNonNull(
-                category,
-                "상담 주제가 필요합니다."
-        );
+            ConsultationCategory category
+
+    ) {
 
         return switch (
                 category
@@ -1967,7 +3885,7 @@ public class OpenAiConsultationStoryGenerator
                     "연애 성향";
 
             case PARTNER_LUCK ->
-                    "배우자와 인연의 흐름";
+                    "배우자와 장기 인연";
 
             case WEALTH ->
                     "재물 운용 성향";
@@ -1976,7 +3894,7 @@ public class OpenAiConsultationStoryGenerator
                     "직업과 일의 흐름";
 
             case LEGAL_RISK ->
-                    "계약과 분쟁에서 주의할 점";
+                    "계약과 책임에서 주의할 점";
 
             case HEALTH_TENDENCY ->
                     "건강과 생활 리듬";
@@ -1990,97 +3908,101 @@ public class OpenAiConsultationStoryGenerator
     }
 
 
-    private String categorySafetyInstruction(
-            ConsultationCategory category
+    /*
+     * =========================================================
+     * Priority
+     * =========================================================
+     */
+
+    private int normalizedNarrativePriority(
+
+            ConsultationGroundingProminence prominence
+
     ) {
 
-        return switch (
-                category
-                ) {
+        if (
+                prominence == null
+                        ||
+                        prominence.narrativePriority()
+                                <=
+                                0
+        ) {
 
-            case PAST_LUCK ->
-                    "지나간 시기는 실제로 어떤 사건이 일어났다고 단정하지 말고, 당시 체감할 수 있었던 생활 분위기와 선택의 흐름으로만 설명한다.";
+            return Integer.MAX_VALUE;
+        }
 
-            case FUTURE_LUCK ->
-                    "앞으로의 시기는 특정 사건이 생긴다고 단정하지 말고, 어떤 선택과 부담을 더 세심하게 관리하면 좋은지 중심으로 설명한다.";
-
-            case CURRENT_YEAR_LUCK ->
-                    "올해의 흐름도 결과 예언이 아니라 현재 생활에서 힘을 쓰기 좋은 부분과 조절할 부분으로 설명한다.";
-
-            case SOCIAL_RELATIONSHIP,
-                 LOVE_STYLE,
-                 PARTNER_LUCK ->
-                    "특정 사람과의 만남, 결혼, 이별, 재회를 단정하지 말고 관계를 맺고 감정을 표현하며 거리를 조절하는 방식으로 설명한다.";
-
-            case WEALTH ->
-                    "수입이나 손실을 단정하지 말고 돈을 계획하고 유지하며 부담을 관리하는 방식으로 설명한다.";
-
-            case CAREER ->
-                    "취업, 합격, 승진을 단정하지 말고 역할, 책임, 업무 방식과 조직 안에서 힘을 쓰는 방식으로 설명한다.";
-
-            case LEGAL_RISK ->
-                    "소송이나 처벌의 발생과 결과를 단정하지 말고 계약, 약속, 책임 범위, 기록과 확인을 꼼꼼히 하는 생활 관리 방향으로만 설명한다.";
-
-            case HEALTH_TENDENCY ->
-                    "질병이나 장기 상태를 진단하지 말고 수면, 피로, 활동과 휴식, 회복 같은 생활 관리 수준에서만 설명한다.";
-
-            case PERSONALITY ->
-                    "사람의 성격을 한 문장으로 고정하지 말고 상황에 따라 강점과 부담이 어떻게 다르게 드러날 수 있는지 함께 설명한다.";
-        };
+        return prominence.narrativePriority();
     }
 
 
-    private String sanitizeGeneratedStoryText(
-            String storyText
+    /*
+     * =========================================================
+     * Year
+     * =========================================================
+     */
+
+    private boolean categoryAllowsYear(
+
+            ConsultationCategory category
+
     ) {
 
-        String sanitized =
-                requireText(
-                        storyText,
-                        "생성된 Story Text는 필수입니다."
-                );
+        return category
+                ==
+                ConsultationCategory.PAST_LUCK
 
-        /*
-         * 혹시 모델이 내부 영문 표식을 그대로 사용해도
-         * 사용자에게 노출되지 않도록 Adapter 경계에서 정리한다.
-         *
-         * 한국어 명리 단어를 기계적으로 치환하지는 않는다.
-         * 그런 단어는 애초에 입력 자료에서 제거하고 Prompt로 금지한다.
-         */
-        return sanitized
-                .replace("SUPPORTIVE", "도움이 되는 흐름")
-                .replace("PRESSURE", "부담이 커질 수 있는 흐름")
-                .replace("MIXED", "도움과 부담이 함께 있는 흐름")
-                .replace("CONTEXTUAL", "상황에 따라 달라지는 흐름")
-                .replace("NEUTRAL", "크게 치우치지 않는 흐름")
-                .replace("CAUTION", "조금 더 신중하게 볼 흐름")
-                .replace("Evidence", "근거")
-                .replace("evidence", "근거")
-                .replace("Grounding", "참고 자료")
-                .replace("grounding", "참고 자료")
-                .replace("Context", "상황")
-                .replace("context", "상황")
-                .replace("Domain", "생활 영역")
-                .replace("domain", "생활 영역")
-                .replace("Timeline", "시간 흐름")
-                .replace("timeline", "시간 흐름")
-                .replace("Java", "계산 과정")
-                .replace("JSON", "입력 자료")
+                ||
+
+                category
+                        ==
+                        ConsultationCategory.CURRENT_YEAR_LUCK
+
+                ||
+
+                category
+                        ==
+                        ConsultationCategory.FUTURE_LUCK;
+    }
+
+
+    /*
+     * =========================================================
+     * Normalize
+     * =========================================================
+     */
+
+    private String normalizeGeneratedStoryText(
+
+            String storyText
+
+    ) {
+
+        return requireText(
+                storyText,
+                "Story Text는 필수입니다."
+        )
+                .replace(
+                        "\r\n",
+                        "\n"
+                )
+                .replace(
+                        "\r",
+                        "\n"
+                )
                 .trim();
     }
 
 
     /*
-     * =================================================
-     * Prompt Section Finder
-     * =================================================
+     * =========================================================
+     * Section
+     * =========================================================
      */
 
     private ConsultationInterpretationPromptSection
     findSection(
 
-            ConsultationInterpretationPromptContext
-                    promptContext,
+            ConsultationInterpretationPromptContext promptContext,
 
             ConsultationCategory category
 
@@ -2092,23 +4014,25 @@ public class OpenAiConsultationStoryGenerator
                 .filter(
                         section ->
                                 section.category()
-                                        == category
+                                        ==
+                                        category
                 )
                 .findFirst()
                 .orElseThrow(
                         () ->
                                 new IllegalStateException(
                                         "Prompt Context에서 Category Section을 찾을 수 없습니다: "
-                                                + category
+                                                +
+                                                category
                                 )
                 );
     }
 
 
     /*
-     * =================================================
+     * =========================================================
      * Utility
-     * =================================================
+     * =========================================================
      */
 
     private static boolean isGpt4oMiniModel(
@@ -2117,18 +4041,13 @@ public class OpenAiConsultationStoryGenerator
 
     ) {
 
-        if (
-                model == null
-        ) {
-
-            return false;
-        }
-
-        return model
-                .trim()
-                .startsWith(
-                        "gpt-4o-mini"
-                );
+        return model != null
+                &&
+                model
+                        .trim()
+                        .startsWith(
+                                "gpt-4o-mini"
+                        );
     }
 
 
@@ -2138,19 +4057,21 @@ public class OpenAiConsultationStoryGenerator
 
     ) {
 
-        long elapsedNanos =
+        long elapsed =
                 System.nanoTime()
-                        - startedAtNanos;
+                        -
+                        startedAtNanos;
 
         if (
-                elapsedNanos <= 0L
+                elapsed <= 0L
         ) {
 
             return 0L;
         }
 
-        return elapsedNanos
-                / 1_000_000L;
+        return elapsed
+                /
+                1_000_000L;
     }
 
 
@@ -2203,8 +4124,8 @@ public class OpenAiConsultationStoryGenerator
 
             if (
                     value != null
-                            && !value
-                            .isBlank()
+                            &&
+                            !value.isBlank()
             ) {
 
                 return value.trim();
@@ -2212,5 +4133,141 @@ public class OpenAiConsultationStoryGenerator
         }
 
         return "";
+    }
+
+
+    private static String safeExceptionMessage(
+
+            Exception exception
+
+    ) {
+
+        if (
+                exception == null
+        ) {
+
+            return "UNKNOWN";
+        }
+
+        String message =
+                exception.getMessage();
+
+        if (
+                message == null
+                        ||
+                        message.isBlank()
+        ) {
+
+            return exception
+                    .getClass()
+                    .getSimpleName();
+        }
+
+        /*
+         * API 응답 전문을 로그에 길게 남기지 않는다.
+         */
+        if (
+                message.length()
+                        >
+                        300
+        ) {
+
+            return message.substring(
+                    0,
+                    300
+            );
+        }
+
+        return message;
+    }
+
+
+    /*
+     * =========================================================
+     * Internal Types
+     * =========================================================
+     */
+
+    private enum ReviewDecision {
+
+        KEEP,
+
+        REVISE
+    }
+
+
+    private record ReviewResult(
+
+            ReviewDecision decision,
+
+            String finalStoryText,
+
+            String reviewSummary
+
+    ) {
+
+        private ReviewResult {
+
+            Objects.requireNonNull(
+                    decision,
+                    "ReviewDecision은 필수입니다."
+            );
+
+            finalStoryText =
+                    requireText(
+                            finalStoryText,
+                            "Reviewer finalStoryText는 필수입니다."
+                    );
+
+            reviewSummary =
+                    reviewSummary == null
+                            ?
+                            ""
+                            :
+                            reviewSummary.trim();
+        }
+    }
+
+
+    private record StoryValidationResult(
+
+            boolean valid,
+
+            String message
+
+    ) {
+
+        private StoryValidationResult {
+
+            message =
+                    message == null
+                            ?
+                            ""
+                            :
+                            message.trim();
+        }
+
+        static StoryValidationResult success() {
+
+            return new StoryValidationResult(
+                    true,
+                    ""
+            );
+        }
+
+        static StoryValidationResult failure(
+
+                String message
+
+        ) {
+
+            return new StoryValidationResult(
+                    false,
+                    requireText(
+                            message,
+                            "Story Validation 실패 이유가 필요합니다."
+                    )
+            );
+        }
     }
 }

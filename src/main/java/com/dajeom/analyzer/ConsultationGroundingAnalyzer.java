@@ -12,6 +12,7 @@ import com.dajeom.model.ConsultationGroundingTimelineYear;
 import com.dajeom.model.ConsultationRequestEvidenceAnalysis;
 import com.dajeom.model.LifeDomainEvidenceReference;
 import com.dajeom.model.LifeDomainRuleMatch;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 정밀화 20차 / 21차 Range 확장.
+ * 정밀화 20차 / 21차 Range / 22차 Prominence 확장.
  *
  * 19차 ConsultationRequestEvidenceAnalysis를
  * LLM Interpretation용 Grounding으로 변환한다.
@@ -31,20 +32,34 @@ import java.util.Objects;
  *
  * Natal Match
  * Current Timeline Segment
+ * Timeline Year Range
  *
  * =================================================
  *
- * 추가:
+ * 22차 추가:
  *
- * PAST_LUCK / FUTURE_LUCK용
- * Timeline Year Range
+ * 각 Grounding Slice 안에서
+ * 실제 Source provenance를 기준으로
+ * deterministic 서술 우선순위를 계산한다.
+ *
+ * =================================================
+ *
+ * Slice:
+ *
+ * Natal
+ *
+ * Current Scenario 각각
+ *
+ * Timeline Year 각각
+ *
+ * 은 서로 섞지 않는다.
  *
  * =================================================
  *
  * 하지 않는 것:
  *
  * - 새로운 명리 계산
- * - 점수 계산
+ * - 길흉 점수 계산
  * - polarity 계산
  * - 상태 합산
  * - Timeline 대표 연도 선택
@@ -52,6 +67,36 @@ import java.util.Objects;
  */
 @Component
 public class ConsultationGroundingAnalyzer {
+
+    private final ConsultationGroundingProminenceAnalyzer
+            prominenceAnalyzer;
+
+    /*
+     * 기존 단위테스트 등에서
+     * new ConsultationGroundingAnalyzer()
+     * 를 사용하던 호출 호환.
+     */
+    public ConsultationGroundingAnalyzer() {
+
+        this(
+                new ConsultationGroundingProminenceAnalyzer()
+        );
+    }
+
+    @Autowired
+    public ConsultationGroundingAnalyzer(
+
+            ConsultationGroundingProminenceAnalyzer
+                    prominenceAnalyzer
+
+    ) {
+
+        this.prominenceAnalyzer =
+                Objects.requireNonNull(
+                        prominenceAnalyzer,
+                        "ConsultationGroundingProminenceAnalyzer가 필요합니다."
+                );
+    }
 
     public ConsultationGroundingAnalysis analyze(
 
@@ -141,22 +186,22 @@ public class ConsultationGroundingAnalyzer {
          * =================================================
          * Natal
          * =================================================
+         *
+         * Natal 전체가 하나의 prominence Slice.
          */
 
         List<ConsultationGroundingEvidence>
                 natalEvidences =
-                view
-                        .natalMatches()
-                        .stream()
-                        .map(
-                                this::toEvidence
-                        )
-                        .toList();
+                toEvidences(
+                        view.natalMatches()
+                );
 
         /*
          * =================================================
          * Current Timeline Scenario
          * =================================================
+         *
+         * 각 Scenario마다 독립적으로 prominence를 계산한다.
          */
 
         List<ConsultationGroundingTimelineScenario>
@@ -174,13 +219,9 @@ public class ConsultationGroundingAnalyzer {
 
             List<ConsultationGroundingEvidence>
                     evidences =
-                    segmentEvidence
-                            .matches()
-                            .stream()
-                            .map(
-                                    this::toEvidence
-                            )
-                            .toList();
+                    toEvidences(
+                            segmentEvidence.matches()
+                    );
 
             scenarios.add(
                     new ConsultationGroundingTimelineScenario(
@@ -209,8 +250,7 @@ public class ConsultationGroundingAnalyzer {
         List<ConsultationGroundingTimelineYear>
                 timelineYears =
                 toTimelineYears(
-                        view
-                                .timelineYearEvidences()
+                        view.timelineYearEvidences()
                 );
 
         return new ConsultationGroundingSection(
@@ -222,6 +262,41 @@ public class ConsultationGroundingAnalyzer {
                 timelineYears,
                 view.unavailableReason()
         );
+    }
+
+    /*
+     * =================================================
+     * Evidence Slice
+     * =================================================
+     */
+
+    private List<ConsultationGroundingEvidence> toEvidences(
+
+            List<LifeDomainRuleMatch> matches
+
+    ) {
+
+        if (
+                matches == null
+                        ||
+                        matches.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationGroundingEvidence> raw =
+                matches
+                        .stream()
+                        .map(
+                                this::toEvidence
+                        )
+                        .toList();
+
+        return prominenceAnalyzer
+                .analyze(
+                        raw
+                );
     }
 
     /*
@@ -240,7 +315,8 @@ public class ConsultationGroundingAnalyzer {
 
         if (
                 yearEvidences == null
-                        || yearEvidences.isEmpty()
+                        ||
+                        yearEvidences.isEmpty()
         ) {
 
             return List.of();
@@ -272,15 +348,14 @@ public class ConsultationGroundingAnalyzer {
                 : ordered
         ) {
 
+            /*
+             * 각 Year가 독립 prominence Slice다.
+             */
             List<ConsultationGroundingEvidence>
                     evidences =
-                    yearEvidence
-                            .matches()
-                            .stream()
-                            .map(
-                                    this::toEvidence
-                            )
-                            .toList();
+                    toEvidences(
+                            yearEvidence.matches()
+                    );
 
             result.add(
                     new ConsultationGroundingTimelineYear(
@@ -326,6 +401,16 @@ public class ConsultationGroundingAnalyzer {
                         )
                         .toList();
 
+        /*
+         * 여기서는 아직 prominence 순위를 모른다.
+         *
+         * ConsultationGroundingEvidence의
+         * 호환 Constructor를 사용하여
+         * narrativePriority == 0 상태로 만든 뒤,
+         *
+         * toEvidences()에서 전체 Slice를 보고
+         * 실제 순위를 확정한다.
+         */
         return new ConsultationGroundingEvidence(
                 match.domain(),
                 match.ruleCode(),
