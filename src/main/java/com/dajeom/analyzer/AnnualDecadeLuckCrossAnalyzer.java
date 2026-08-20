@@ -20,6 +20,7 @@ import com.dajeom.rule.HeavenlyStemCombinationCandidateRule;
 import com.dajeom.rule.HeavenlyStemCombinationCompetitionRule;
 import com.dajeom.rule.HeavenlyStemCombinationTransformationRule;
 import com.dajeom.rule.HeavenlyStemControlRule;
+import com.dajeom.type.AnnualDecadeLuckRelationKind;
 import com.dajeom.type.AnnualDecadeLuckRelationLayer;
 import com.dajeom.type.EarthlyBranch;
 import com.dajeom.type.EarthlyBranchCombinationIntegrationRole;
@@ -96,6 +97,38 @@ import java.util.Set;
  *
  * 6.
  * 여러 관계가 동시에 성립하면 모두 보존한다.
+ *
+ * =================================================
+ *
+ * provenance 보강:
+ *
+ * 기존에는 Reference 생성 시:
+ *
+ * - relation kind
+ * - target FiveElement
+ * - target activation state
+ * - original function state
+ *
+ * 를 String / boolean으로 압축했다.
+ *
+ * 이제 계산 단계에서 이미 존재하는
+ * typed 값을 그대로 Reference에 전달한다.
+ *
+ * =================================================
+ *
+ * 현재 OriginalFunctionState는
+ * 기존 Rule이 대운/세운 Pair Candidate에 대해
+ * 하나만 반환한다.
+ *
+ * 따라서 현재는:
+ *
+ * decadeOriginalFunctionState
+ * annualOriginalFunctionState
+ *
+ * 양쪽에 동일 기존 State를 전달한다.
+ *
+ * 없는 Participant별 정밀도를
+ * 새로 계산하지 않는다.
  */
 @Component
 public class AnnualDecadeLuckCrossAnalyzer {
@@ -331,10 +364,19 @@ public class AnnualDecadeLuckCrossAnalyzer {
         );
 
         transformations.sort(
-                Comparator.comparing(
-                        AnnualDecadeLuckTransformationReference
-                                ::transformationCode
-                )
+                Comparator
+                        .comparingInt(
+                                (
+                                        AnnualDecadeLuckTransformationReference reference
+                                ) ->
+                                        reference
+                                                .layer()
+                                                .ordinal()
+                        )
+                        .thenComparing(
+                                AnnualDecadeLuckTransformationReference
+                                        ::transformationCode
+                        )
         );
 
         return new AnnualDecadeLuckCrossResolution(
@@ -372,6 +414,8 @@ public class AnnualDecadeLuckCrossAnalyzer {
                                         relation(
                                                 AnnualDecadeLuckRelationLayer
                                                         .HEAVENLY_STEM,
+                                                AnnualDecadeLuckRelationKind
+                                                        .COMBINATION,
                                                 "COMBINATION",
                                                 "천간합"
                                         )
@@ -402,6 +446,8 @@ public class AnnualDecadeLuckCrossAnalyzer {
                     relation(
                             AnnualDecadeLuckRelationLayer
                                     .HEAVENLY_STEM,
+                            AnnualDecadeLuckRelationKind
+                                    .CLASH,
                             "CLASH",
                             "천간충"
                     )
@@ -426,6 +472,8 @@ public class AnnualDecadeLuckCrossAnalyzer {
                     relation(
                             AnnualDecadeLuckRelationLayer
                                     .HEAVENLY_STEM,
+                            AnnualDecadeLuckRelationKind
+                                    .CONTROL_DECADE_TO_ANNUAL,
                             "CONTROL_DECADE_TO_ANNUAL",
                             "대운 천간이 세운 천간을 극함"
                     )
@@ -446,6 +494,8 @@ public class AnnualDecadeLuckCrossAnalyzer {
                     relation(
                             AnnualDecadeLuckRelationLayer
                                     .HEAVENLY_STEM,
+                            AnnualDecadeLuckRelationKind
+                                    .CONTROL_ANNUAL_TO_DECADE,
                             "CONTROL_ANNUAL_TO_DECADE",
                             "세운 천간이 대운 천간을 극함"
                     )
@@ -485,6 +535,8 @@ public class AnnualDecadeLuckCrossAnalyzer {
                     relation(
                             AnnualDecadeLuckRelationLayer
                                     .EARTHLY_BRANCH,
+                            AnnualDecadeLuckRelationKind
+                                    .SIX_COMBINATION,
                             "SIX_COMBINATION",
                             "육합"
                     )
@@ -503,6 +555,8 @@ public class AnnualDecadeLuckCrossAnalyzer {
                     relation(
                             AnnualDecadeLuckRelationLayer
                                     .EARTHLY_BRANCH,
+                            AnnualDecadeLuckRelationKind
+                                    .CLASH,
                             "CLASH",
                             "충"
                     )
@@ -521,6 +575,8 @@ public class AnnualDecadeLuckCrossAnalyzer {
                     relation(
                             AnnualDecadeLuckRelationLayer
                                     .EARTHLY_BRANCH,
+                            AnnualDecadeLuckRelationKind
+                                    .PUNISHMENT,
                             "PUNISHMENT",
                             "형"
                     )
@@ -541,6 +597,8 @@ public class AnnualDecadeLuckCrossAnalyzer {
                     relation(
                             AnnualDecadeLuckRelationLayer
                                     .EARTHLY_BRANCH,
+                            AnnualDecadeLuckRelationKind
+                                    .SELF_PUNISHMENT,
                             "SELF_PUNISHMENT",
                             "자형"
                     )
@@ -559,6 +617,8 @@ public class AnnualDecadeLuckCrossAnalyzer {
                     relation(
                             AnnualDecadeLuckRelationLayer
                                     .EARTHLY_BRANCH,
+                            AnnualDecadeLuckRelationKind
+                                    .BREAK,
                             "BREAK",
                             "파"
                     )
@@ -577,6 +637,8 @@ public class AnnualDecadeLuckCrossAnalyzer {
                     relation(
                             AnnualDecadeLuckRelationLayer
                                     .EARTHLY_BRANCH,
+                            AnnualDecadeLuckRelationKind
+                                    .HARM,
                             "HARM",
                             "해"
                     )
@@ -603,6 +665,8 @@ public class AnnualDecadeLuckCrossAnalyzer {
                                     relation(
                                             AnnualDecadeLuckRelationLayer
                                                     .EARTHLY_BRANCH,
+                                            AnnualDecadeLuckRelationKind
+                                                    .THREE_COMBINATION,
                                             "THREE_COMBINATION_"
                                                     + form.name(),
                                             form
@@ -635,6 +699,8 @@ public class AnnualDecadeLuckCrossAnalyzer {
                                     relation(
                                             AnnualDecadeLuckRelationLayer
                                                     .EARTHLY_BRANCH,
+                                            AnnualDecadeLuckRelationKind
+                                                    .DIRECTIONAL_COMBINATION,
                                             "DIRECTIONAL_COMBINATION_"
                                                     + form.name(),
                                             form
@@ -737,13 +803,15 @@ public class AnnualDecadeLuckCrossAnalyzer {
 
         return Optional.of(
                 new AnnualDecadeLuckTransformationReference(
+                        AnnualDecadeLuckRelationLayer
+                                .HEAVENLY_STEM,
                         "HEAVENLY_STEM_COMBINATION:"
                                 + target.get().name(),
                         "대운·세운 천간합 합화",
-                        target.get()
-                                .getKoreanName(),
-                        targetActivationState.active(),
-                        originalFunctionState.reduced()
+                        target.get(),
+                        targetActivationState,
+                        originalFunctionState,
+                        originalFunctionState
                 )
         );
     }
@@ -951,24 +1019,35 @@ public class AnnualDecadeLuckCrossAnalyzer {
 
             results.add(
                     new AnnualDecadeLuckTransformationReference(
+                            AnnualDecadeLuckRelationLayer
+                                    .EARTHLY_BRANCH,
                             candidate
                                     .transformationCode(),
                             candidate
                                     .transformationName(),
                             candidate
-                                    .targetElement()
-                                    .getKoreanName(),
-                            targetActivationState.active(),
-                            originalFunctionState.reduced()
+                                    .targetElement(),
+                            targetActivationState,
+                            originalFunctionState,
+                            originalFunctionState
                     )
             );
         }
 
         results.sort(
-                Comparator.comparing(
-                        AnnualDecadeLuckTransformationReference
-                                ::transformationCode
-                )
+                Comparator
+                        .comparingInt(
+                                (
+                                        AnnualDecadeLuckTransformationReference reference
+                                ) ->
+                                        reference
+                                                .layer()
+                                                .ordinal()
+                        )
+                        .thenComparing(
+                                AnnualDecadeLuckTransformationReference
+                                        ::transformationCode
+                        )
         );
 
         return List.copyOf(
@@ -1524,9 +1603,17 @@ public class AnnualDecadeLuckCrossAnalyzer {
         );
     }
 
+    /*
+     * =================================================
+     * Relation Reference
+     * =================================================
+     */
+
     private AnnualDecadeLuckRelationReference relation(
 
             AnnualDecadeLuckRelationLayer layer,
+
+            AnnualDecadeLuckRelationKind relationKind,
 
             String code,
 
@@ -1536,6 +1623,7 @@ public class AnnualDecadeLuckCrossAnalyzer {
 
         return new AnnualDecadeLuckRelationReference(
                 layer,
+                relationKind,
                 code,
                 name
         );

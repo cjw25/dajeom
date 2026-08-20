@@ -12,7 +12,7 @@ import java.util.Set;
 /**
  * 정밀화 18차-2.
  *
- * 3~17차 분석 결과를
+ * 3~17차 및 이후 확장된 deterministic 분석 결과를
  * 18차 생활영역 Evidence 구조로 변환한 결과.
  *
  * =================================================
@@ -33,6 +33,7 @@ import java.util.Set;
  *
  * DECADE_CONTEXT
  * ANNUAL_CONTEXT
+ * ANNUAL_FUNCTIONAL_CONTEXT
  * MONTHLY_CONTEXT
  * 운 SHINSAL
  *
@@ -116,18 +117,22 @@ public record LifeDomainEvidenceResolution(
                             == LifeDomainEvidenceSourceType.ANNUAL_CONTEXT
 
                             || evidence.sourceType()
+                            == LifeDomainEvidenceSourceType
+                            .ANNUAL_FUNCTIONAL_CONTEXT
+
+                            || evidence.sourceType()
                             == LifeDomainEvidenceSourceType.MONTHLY_CONTEXT
             ) {
 
                 throw new IllegalArgumentException(
-                        "natalEvidences에 운 Context Source를 넣을 수 없습니다: "
+                        "natalEvidences에는 시간축 Context Source를 넣을 수 없습니다: "
                                 + evidence.sourceType()
                 );
             }
 
             /*
              * =================================================
-             * PALACE는 현재 원국 객체 Identity 강제.
+             * PALACE
              * =================================================
              */
 
@@ -320,7 +325,7 @@ public record LifeDomainEvidenceResolution(
      *
      * 원국
      * +
-     * 대운/세운/월운
+     * 대운/세운/Annual Functional/월운
      * +
      * 해당 운 신살
      * =================================================

@@ -9,6 +9,7 @@ import com.dajeom.model.ConsultationGroundingSection;
 import com.dajeom.model.ConsultationGroundingSource;
 import com.dajeom.model.ConsultationGroundingTimelineScenario;
 import com.dajeom.model.ConsultationGroundingTimelineYear;
+import com.dajeom.model.NatalPersonalityStatementContract;
 import com.dajeom.type.ConsultationCategory;
 import com.dajeom.type.LifeDomain;
 import org.springframework.stereotype.Component;
@@ -21,19 +22,45 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * 정밀화 20차 / 21차 확장.
+ * 정밀화 20차 / 21차
+ * +
+ * Personality Direct-Natal Contract 확장.
  *
  * Grounding Policy 검증.
  *
  * =================================================
  *
- * 검증:
+ * 기존 검증:
  *
  * - 허용 Domain
  * - Timeline 허용 여부
  * - PAST/FUTURE Range 구조
  * - AUXILIARY 독립 Evidence 금지
  * - LEGAL_RISK Cross-Domain 구조
+ *
+ * =================================================
+ *
+ * PERSONALITY 추가 검증:
+ *
+ * - Contract는 PERSONALITY에만 존재
+ * - 공식 PERSONALITY 실행선에서는 Contract 필수
+ * - completeChart 정합성
+ * - available / output contract 정합성
+ *
+ * =================================================
+ *
+ * 중요한 원칙:
+ *
+ * NatalPersonalityStatementContract는
+ * LifeDomain Evidence가 아니다.
+ *
+ * 따라서:
+ *
+ * - allowsDomain()
+ * - AUXILIARY 검증
+ * - prominence
+ *
+ * 대상으로 변환하지 않는다.
  */
 @Component
 public class ConsultationGroundingPolicyAnalyzer {
@@ -89,7 +116,8 @@ public class ConsultationGroundingPolicyAnalyzer {
 
             validateSection(
                     section,
-                    policy
+                    policy,
+                    groundingAnalysis.completeChart()
             );
 
             policies.add(
@@ -115,7 +143,9 @@ public class ConsultationGroundingPolicyAnalyzer {
 
             ConsultationGroundingSection section,
 
-            ConsultationGroundingPolicy policy
+            ConsultationGroundingPolicy policy,
+
+            boolean completeChart
 
     ) {
 
@@ -129,6 +159,21 @@ public class ConsultationGroundingPolicyAnalyzer {
             );
         }
 
+        /*
+         * =================================================
+         * Personality Contract는
+         * unavailable 여부보다 먼저 검증한다.
+         *
+         * unavailable이어도 내부 Reference Contract는
+         * 보존될 수 있기 때문이다.
+         * =================================================
+         */
+
+        validatePersonalityContract(
+                section,
+                completeChart
+        );
+
         if (
                 section.unavailable()
         ) {
@@ -140,10 +185,6 @@ public class ConsultationGroundingPolicyAnalyzer {
                 section
         );
 
-        /*
-         * LEGAL_RISK는 일반 Evidence 검증 전에
-         * 전용 교차 구조도 확인한다.
-         */
         if (
                 section.category()
                         == ConsultationCategory.LEGAL_RISK
@@ -208,6 +249,163 @@ public class ConsultationGroundingPolicyAnalyzer {
                         policy
                 );
             }
+        }
+    }
+
+    /*
+     * =================================================
+     * PERSONALITY Direct-Natal Contract
+     * =================================================
+     */
+
+    private void validatePersonalityContract(
+
+            ConsultationGroundingSection section,
+
+            boolean completeChart
+
+    ) {
+
+        /*
+         * =================================================
+         * 다른 Category에 Contract 금지.
+         *
+         * ConsultationGroundingSection에서도 검증하지만
+         * Policy 계층에서도 명시적으로 방어한다.
+         * =================================================
+         */
+
+        if (
+                section.category()
+                        != ConsultationCategory.PERSONALITY
+        ) {
+
+            if (
+                    section.hasPersonalityStatementContract()
+            ) {
+
+                throw new IllegalStateException(
+                        "PERSONALITY 이외의 Grounding Section에 "
+                                + "Personality Statement Contract가 존재합니다: "
+                                + section.category()
+                );
+            }
+
+            return;
+        }
+
+        /*
+         * =================================================
+         * 공식 PERSONALITY 실행선에서는
+         * Contract가 반드시 존재해야 한다.
+         * =================================================
+         */
+
+        if (
+                !section.hasPersonalityStatementContract()
+        ) {
+
+            throw new IllegalStateException(
+                    "PERSONALITY Grounding Section에는 "
+                            + "NatalPersonalityStatementContract가 필요합니다."
+            );
+        }
+
+        NatalPersonalityStatementContract contract =
+                section
+                        .requirePersonalityStatementContract();
+
+        /*
+         * =================================================
+         * 원국 완전성 Anchor 정합성.
+         * =================================================
+         */
+
+        if (
+                contract.completeChart()
+                        != completeChart
+        ) {
+
+            throw new IllegalStateException(
+                    "PERSONALITY Statement Contract와 "
+                            + "ConsultationGroundingAnalysis의 "
+                            + "completeChart 상태가 일치하지 않습니다."
+            );
+        }
+
+        boolean hasOutput =
+                contract
+                        .bundleContracts()
+                        .stream()
+                        .anyMatch(
+                                bundleContract ->
+                                        !bundleContract
+                                                .mandatorySelections()
+                                                .isEmpty()
+
+                                                || !bundleContract
+                                                .supportingSelections()
+                                                .isEmpty()
+                        );
+
+        /*
+         * =================================================
+         * available인데 Contract에
+         * 실제 설명할 것이 없는 상태 금지.
+         *
+         * legacy LifeDomain Evidence만으로
+         * PERSONALITY를 살리지 않는다.
+         * =================================================
+         */
+
+        if (
+                section.available()
+                        && !hasOutput
+        ) {
+
+            throw new IllegalStateException(
+                    "사용 가능한 PERSONALITY Section에는 "
+                            + "직접 출력 가능한 Personality Contract가 필요합니다."
+            );
+        }
+
+        /*
+         * =================================================
+         * unavailable인데 Contract에는
+         * 실제 출력 내용이 있는 상태도 금지.
+         * =================================================
+         */
+
+        if (
+                section.unavailable()
+                        && hasOutput
+        ) {
+
+            throw new IllegalStateException(
+                    "출력 가능한 Personality Contract가 존재하는데 "
+                            + "PERSONALITY Section이 unavailable입니다."
+            );
+        }
+
+        /*
+         * =================================================
+         * 기본성향 자체에는
+         * legacy Timeline을 섞지 않는다.
+         *
+         * 운에서 성향이 어떻게 달라지는지는
+         * 향후 Personality Luck Functional Layer의
+         * 별도 책임이다.
+         * =================================================
+         */
+
+        if (
+                section.hasAnyTimeline()
+        ) {
+
+            throw new IllegalStateException(
+                    "PERSONALITY Direct-Natal Grounding에는 "
+                            + "legacy Timeline Evidence를 함께 넣지 않습니다."
+            );
         }
     }
 
@@ -296,10 +494,6 @@ public class ConsultationGroundingPolicyAnalyzer {
             );
         }
 
-        /*
-         * 현재 구현에서는 Legal View가 available이라면
-         * 실제 교차 Evidence가 반드시 존재한다.
-         */
         if (
                 !section.hasAnyEvidence()
         ) {
@@ -309,10 +503,6 @@ public class ConsultationGroundingPolicyAnalyzer {
             );
         }
 
-        /*
-         * 모든 Legal Evidence는
-         * PRESSURE 또는 MIXED 상태여야 한다.
-         */
         for (
                 ConsultationGroundingEvidence evidence
                 : section.natalEvidences()
@@ -323,9 +513,6 @@ public class ConsultationGroundingPolicyAnalyzer {
             );
         }
 
-        /*
-         * 원국 자체로 Cross가 성립할 수도 있다.
-         */
         boolean natalCross =
                 legalCrossEstablished(
                         section.natalEvidences()

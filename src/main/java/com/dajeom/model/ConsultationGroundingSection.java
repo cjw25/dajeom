@@ -8,7 +8,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * 정밀화 20차 / 21차 Range 확장.
+ * 정밀화 20차 / 21차 Range 확장
+ * +
+ * Personality Direct-Natal Grounding 확장.
  *
  * 하나의 ConsultationCategory에 대한
  * LLM Grounding Section.
@@ -17,6 +19,7 @@ import java.util.Optional;
  *
  * natalEvidences
  *
+ * 기존 LifeDomain 기반
  * 원국 Grounding Evidence.
  *
  * =================================================
@@ -34,6 +37,26 @@ import java.util.Optional;
  *
  * =================================================
  *
+ * personalityStatementContract
+ *
+ * PERSONALITY 전용.
+ *
+ * LifeDomain을 우회하여:
+ *
+ * 원국
+ * ↓
+ * Functional
+ * ↓
+ * CrossFunctional
+ * ↓
+ * ConditionalResponse
+ * ↓
+ * Personality
+ *
+ * 로 계산된 직접 원국 Contract.
+ *
+ * =================================================
+ *
  * unavailableReason
  *
  * deterministic 계산 범위에서
@@ -43,9 +66,23 @@ import java.util.Optional;
  *
  * 중요한 원칙:
  *
+ * 1.
  * 현재 Segment Scenario와
  * 과거/미래 Range Year를
  * 같은 개념으로 합치지 않는다.
+ *
+ * 2.
+ * PERSONALITY Contract를
+ * LifeDomainRuleMatch로 위장하지 않는다.
+ *
+ * 3.
+ * 기존 LifeDomain Personality Evidence는
+ * 아직 삭제하지 않는다.
+ *
+ * 4.
+ * 다음 Prompt Grounding 단계에서
+ * PERSONALITY는 이 Contract를
+ * 공식 direct-natal source로 사용한다.
  */
 public record ConsultationGroundingSection(
 
@@ -59,6 +96,9 @@ public record ConsultationGroundingSection(
 
         List<ConsultationGroundingTimelineYear>
         timelineYears,
+
+        Optional<NatalPersonalityStatementContract>
+        personalityStatementContract,
 
         Optional<String> unavailableReason
 
@@ -89,6 +129,40 @@ public record ConsultationGroundingSection(
                 natalEvidences,
                 timelineScenarios,
                 List.of(),
+                Optional.empty(),
+                unavailableReason
+        );
+    }
+
+    /*
+     * =================================================
+     * 기존 21차 Range 호출 호환 Constructor
+     * =================================================
+     */
+
+    public ConsultationGroundingSection(
+
+            ConsultationCategory category,
+
+            List<ConsultationGroundingEvidence>
+                    natalEvidences,
+
+            List<ConsultationGroundingTimelineScenario>
+                    timelineScenarios,
+
+            List<ConsultationGroundingTimelineYear>
+                    timelineYears,
+
+            Optional<String> unavailableReason
+
+    ) {
+
+        this(
+                category,
+                natalEvidences,
+                timelineScenarios,
+                timelineYears,
+                Optional.empty(),
                 unavailableReason
         );
     }
@@ -115,6 +189,11 @@ public record ConsultationGroundingSection(
                         timelineYears
                 );
 
+        personalityStatementContract =
+                normalizePersonalityStatementContract(
+                        personalityStatementContract
+                );
+
         unavailableReason =
                 normalizeUnavailableReason(
                         unavailableReason
@@ -122,12 +201,43 @@ public record ConsultationGroundingSection(
 
         /*
          * =================================================
-         * unavailable View 검증
+         * Personality Contract Category 검증
          * =================================================
          */
 
         if (
+                personalityStatementContract.isPresent()
+
+                        && category
+                        != ConsultationCategory.PERSONALITY
+        ) {
+
+            throw new IllegalArgumentException(
+                    "NatalPersonalityStatementContract는 "
+                            + "PERSONALITY Grounding Section에만 "
+                            + "연결할 수 있습니다: "
+                            + category
+            );
+        }
+
+        /*
+         * =================================================
+         * unavailable View 검증
+         * =================================================
+         *
+         * Personality Contract 자체는
+         * 내부 Reference까지 보존할 수 있으므로
+         * unavailable Section에도 존재할 수 있다.
+         *
+         * 단:
+         *
+         * 기존 LifeDomain/Timeline Evidence와
+         * unavailableReason을 동시에 두지는 않는다.
+         */
+
+        if (
                 unavailableReason.isPresent()
+
                         && (
                         !natalEvidences.isEmpty()
                                 || !timelineScenarios.isEmpty()
@@ -136,7 +246,8 @@ public record ConsultationGroundingSection(
         ) {
 
             throw new IllegalArgumentException(
-                    "사용 불가 Grounding Section에는 Evidence를 함께 넣을 수 없습니다: "
+                    "사용 불가 Grounding Section에는 "
+                            + "기존 Evidence를 함께 넣을 수 없습니다: "
                             + category
             );
         }
@@ -187,6 +298,53 @@ public record ConsultationGroundingSection(
 
         return natalEvidences
                 .size();
+    }
+
+    /*
+     * =================================================
+     * Personality Direct-Natal Contract
+     * =================================================
+     */
+
+    public boolean hasPersonalityStatementContract() {
+
+        return personalityStatementContract
+                .isPresent();
+    }
+
+    /**
+     * 실제 사용자 설명 가능한
+     * Personality Bundle Contract가
+     * 하나라도 존재하는가.
+     *
+     * Contract가 존재하더라도
+     * weak/internal-only 구조만 있다면
+     * false일 수 있다.
+     */
+    public boolean hasPersonalityOutputContract() {
+
+        return personalityStatementContract
+                .map(
+                        contract ->
+                                !contract
+                                        .bundleContracts()
+                                        .isEmpty()
+                )
+                .orElse(
+                        false
+                );
+    }
+
+    public NatalPersonalityStatementContract
+    requirePersonalityStatementContract() {
+
+        return personalityStatementContract
+                .orElseThrow(
+                        () ->
+                                new IllegalStateException(
+                                        "PERSONALITY Statement Contract가 없습니다."
+                                )
+                );
     }
 
     /*
@@ -269,7 +427,7 @@ public record ConsultationGroundingSection(
 
     /*
      * =================================================
-     * 전체 Evidence
+     * 기존 전체 Evidence
      * =================================================
      *
      * 단순 조회용 연결이다.
@@ -281,6 +439,10 @@ public record ConsultationGroundingSection(
      * - 점수화
      *
      * 하지 않는다.
+     *
+     * PersonalityStatementContract는
+     * LifeDomain GroundingEvidence가 아니므로
+     * 이 List에 억지로 변환하여 넣지 않는다.
      */
 
     public List<ConsultationGroundingEvidence>
@@ -324,9 +486,29 @@ public record ConsultationGroundingSection(
                 .size();
     }
 
+    /**
+     * 기존 LifeDomain Grounding Evidence 존재 여부.
+     *
+     * Personality Contract 존재 여부는
+     * 별도 helper로 조회한다.
+     */
     public boolean hasAnyEvidence() {
 
         return evidenceCount() > 0;
+    }
+
+    /**
+     * 기존 Evidence 또는
+     * Personality Direct-Natal Contract 중
+     * 하나라도 존재하는가.
+     *
+     * 다음 Prompt/Policy 연결에서
+     * 사용할 통합 Grounding 여부다.
+     */
+    public boolean hasAnyGroundingInput() {
+
+        return hasAnyEvidence()
+                || hasPersonalityStatementContract();
     }
 
     /*
@@ -461,6 +643,35 @@ public record ConsultationGroundingSection(
 
         return List.copyOf(
                 result
+        );
+    }
+
+    /*
+     * =================================================
+     * Normalize Personality Contract
+     * =================================================
+     */
+
+    private static Optional<NatalPersonalityStatementContract>
+    normalizePersonalityStatementContract(
+
+            Optional<NatalPersonalityStatementContract> source
+
+    ) {
+
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return Optional.empty();
+        }
+
+        return Optional.of(
+                Objects.requireNonNull(
+                        source.orElseThrow(),
+                        "Personality Statement Contract는 null일 수 없습니다."
+                )
         );
     }
 

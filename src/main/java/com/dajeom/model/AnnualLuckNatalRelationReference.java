@@ -1,8 +1,10 @@
 package com.dajeom.model;
 
+import com.dajeom.type.AnnualLuckNatalRelationKind;
 import com.dajeom.type.AnnualLuckNatalRelationLayer;
 import com.dajeom.type.PalacePosition;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -13,40 +15,39 @@ import java.util.Set;
  *
  * =================================================
  *
- * 예:
+ * 기존:
  *
- * 2026 午
- * +
- * 원국 DAY 丑
- *
- * ->
- *
- * EARTHLY_BRANCH
- * natalPositions = [DAY]
- * relationCode = "CHOU_WU_HARM"
- * relationName = "축오해"
+ * layer
+ * natalPositions
+ * relationCode
+ * relationName
  *
  * =================================================
  *
- * natalPositions를 Set으로 둔 이유:
+ * 보강:
  *
- * 세운 지지 하나가 원국의 여러 지지와 함께
+ * relationKind
  *
- * - 삼합
- * - 방합
- * - 기타 다중 관계
+ * =================================================
  *
- * 를 구성할 수 있기 때문이다.
+ * 이제 후속 Functional Layer는
+ * relationCode 문자열을 파싱하지 않고
+ *
+ * AnnualLuckNatalRelationKind
+ *
+ * 를 공식 구조 Source로 사용한다.
  *
  * =================================================
  *
  * relationCode / relationName은
- * 기존 8차 관계 엔진의 결과를
- * Adapter에서 정규화해서 전달한다.
+ * 기존 추적성과 설명 호환성을 위해
+ * 그대로 보존한다.
  */
 public record AnnualLuckNatalRelationReference(
 
         AnnualLuckNatalRelationLayer layer,
+
+        AnnualLuckNatalRelationKind relationKind,
 
         Set<PalacePosition> natalPositions,
 
@@ -58,12 +59,29 @@ public record AnnualLuckNatalRelationReference(
 
     public AnnualLuckNatalRelationReference {
 
+        Objects.requireNonNull(
+                layer,
+                "세운-원국 관계 Layer가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                relationKind,
+                "세운-원국 관계 Kind가 필요합니다."
+        );
+
         if (
-                layer == null
+                !relationKind
+                        .allows(
+                                layer
+                        )
         ) {
 
             throw new IllegalArgumentException(
-                    "세운-원국 관계 Layer가 필요합니다."
+                    "관계 Kind와 Layer가 일치하지 않습니다. "
+                            + "kind="
+                            + relationKind
+                            + ", layer="
+                            + layer
             );
         }
 
@@ -146,5 +164,53 @@ public record AnnualLuckNatalRelationReference(
 
         return layer
                 .earthlyBranch();
+    }
+
+    /*
+     * =================================================
+     * Typed Relation Helpers
+     * =================================================
+     */
+
+    public boolean combinationFamily() {
+
+        return relationKind
+                .combinationFamily();
+    }
+
+    public boolean restrictiveInteraction() {
+
+        return relationKind
+                .restrictiveInteraction();
+    }
+
+    public boolean controlRelation() {
+
+        return relationKind
+                .control();
+    }
+
+    public boolean clashRelation() {
+
+        return relationKind
+                .clash();
+    }
+
+    public boolean punishmentRelation() {
+
+        return relationKind
+                .punishment();
+    }
+
+    public boolean harmRelation() {
+
+        return relationKind
+                .harm();
+    }
+
+    public boolean breakRelation() {
+
+        return relationKind
+                .breakRelation();
     }
 }

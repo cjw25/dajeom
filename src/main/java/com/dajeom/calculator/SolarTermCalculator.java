@@ -2,6 +2,8 @@ package com.dajeom.calculator;
 
 import com.dajeom.config.SajuCalculationPolicy;
 import com.dajeom.model.SolarTermPoint;
+import net.e175.klaus.solarpositioning.DeltaT;
+import net.e175.klaus.solarpositioning.SPA;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -21,54 +23,81 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 /**
- * 사주 명리에서 사용하는 절입 시각을 계산한다.
+ * 사주 명리의 년주/월주 경계에 사용하는
+ * 12절의 실제 절입 시각을 계산한다.
  *
  * 핵심 정책
  *
- * 1. 년주 변경 기준은 실제 입춘 시각이다.
- * 2. 월주 변경 기준은 12개의 절입 시각이다.
- * 3. 단순 날짜 기준으로 월주를 변경하지 않는다.
- * 4. 출생시간이 없는 경우 절입 당일에는 임의의 시간을 넣지 않는다.
- * 5. 모든 계산 기준 시각은 Instant로 계산한 뒤
- *    요청 ZoneId로 변환한다.
+ * 1. 년주 경계
+ *    - 실제 입춘 시각
  *
- * 다점 정책상 기본 사용 시간대는 Asia/Seoul이지만,
- * 이 Calculator 자체는 ZoneId를 명시적으로 받는다.
+ * 2. 월주 경계
+ *    - 입춘
+ *    - 경칩
+ *    - 청명
+ *    - 입하
+ *    - 망종
+ *    - 소서
+ *    - 입추
+ *    - 백로
+ *    - 한로
+ *    - 입동
+ *    - 대설
+ *    - 소한
+ *
+ * 3. 날짜만 보고 월주를 변경하지 않는다.
+ *
+ * 4. 출생시간이 없고 출생일이 절입 당일이면
+ *    임의의 출생시간을 넣어 월주를 확정하지 않는다.
+ *
+ * 5. 천문 계산은 UTC Instant 기준으로 수행하고
+ *    최종 결과만 요청받은 ZoneId로 변환한다.
+ *
+ * 6. 태양 위치는 NREL SPA 계열 계산을 사용한다.
  */
 @Component
 public class SolarTermCalculator {
 
     /**
-     * 이진 탐색 종료 정밀도.
+     * 절입 시각 이진 탐색 정밀도.
      *
-     * 천문 모델 자체의 오차와 별개로,
-     * 수치 탐색 과정에서 초 단위로 값을 잘라내지 않기 위해
-     * 50ms 이하까지 탐색한다.
+     * 50,000,000ns = 0.05초.
+     *
+     * 실제 서비스에서는 절입 초 단위까지
+     * 충분히 안정적으로 수렴시키기 위한 값이다.
      */
     private static final long SEARCH_PRECISION_NANOS =
             50_000_000L;
 
     /**
-     * 절기 예상일 전후 탐색 범위.
-     *
-     * 일반적인 절기 시각은 seed 기준 ±수 일 범위 안에 있으므로
-     * 우선 4일 범위를 잡고 실제 목표 황경이 그 범위에 존재하는지
-     * 검증한다.
+     * 절기 예상일 전후 최초 탐색 범위.
      */
     private static final int INITIAL_SEARCH_DAYS =
             4;
 
     /**
-     * 최대 탐색 범위.
-     *
-     * 예상치 못한 천문 계산 오차가 있더라도
-     * 무한 확장을 막는다.
+     * 예상일에서 절기를 찾지 못했을 경우
+     * 최대 전후 10일까지 탐색한다.
      */
     private static final int MAX_SEARCH_DAYS =
             10;
 
     /**
-     * 명리에서 월주가 바뀌는 12개의 절입.
+     * 사용자에게 허용하는 출생/계산 연도는
+     * SajuCalculationPolicy의 기존 범위를 그대로 사용한다.
+     *
+     * 다만 1900년 1월의 이전 절입이나
+     * 2050년 12월의 다음 절입을 찾으려면
+     * 내부 천문 계산만 앞뒤 1년까지 필요하다.
+     */
+    private static final int INTERNAL_MIN_YEAR =
+            SajuCalculationPolicy.MIN_SUPPORTED_YEAR - 1;
+
+    private static final int INTERNAL_MAX_YEAR =
+            SajuCalculationPolicy.MAX_SUPPORTED_YEAR + 1;
+
+    /**
+     * 명리에서 월주가 변경되는 12개의 절입.
      *
      * monthIndex
      *
@@ -84,6 +113,13 @@ public class SolarTermCalculator {
      * 9  입동 -> 亥월
      * 10 대설 -> 子월
      * 11 소한 -> 丑월
+     *
+     * longitude는 태양 겉보기 지심 황경.
+     *
+     * 입춘 315°
+     * 경칩 345°
+     * 청명  15°
+     * ...
      */
     private static final List<SolarTermDefinition>
             MONTH_BOUNDARY_TERMS = List.of(
@@ -186,30 +222,34 @@ public class SolarTermCalculator {
     );
 
     /**
-     * 지정 연도의 실제 입춘 시각을 계산한다.
+     * 지정 연도의 실제 입춘 시각.
      */
     public ZonedDateTime calculateIpchun(
             int year,
             ZoneId zoneId
     ) {
+
+        validateYear(
+                year
+        );
+
         validateZoneId(
                 zoneId
         );
 
-        SolarTermDefinition definition =
-                getDefinitionByName(
-                        "입춘"
-                );
-
         return calculateSolarTerm(
                 year,
-                definition,
+                getDefinitionByName(
+                        "입춘"
+                ),
                 zoneId
         );
     }
 
     /**
-     * 특정 monthIndex의 절입 시각을 반환한다.
+     * 특정 명리 월 경계의 실제 절입 시각.
+     *
+     * monthIndex:
      *
      * 0 = 입춘
      * 1 = 경칩
@@ -221,35 +261,48 @@ public class SolarTermCalculator {
             int monthIndex,
             ZoneId zoneId
     ) {
+
+        validateYear(
+                year
+        );
+
         validateZoneId(
                 zoneId
         );
 
-        SolarTermDefinition definition =
-                getDefinitionByMonthIndex(
-                        monthIndex
-                );
-
         return calculateSolarTerm(
                 year,
-                definition,
+                getDefinitionByMonthIndex(
+                        monthIndex
+                ),
                 zoneId
         );
     }
 
     /**
-     * 지정 연도의 12개 월주 절입을 반환한다.
-     *
-     * 반환 목록은 실제 시간 순으로 정렬한다.
+     * 지정 달력 연도에 발생한
+     * 12개 월주 절입을 실제 시간순으로 반환한다.
      *
      * 주의:
-     * 소한은 1월이고 입춘은 2월이므로
-     * monthIndex 순서와 실제 달력 시간 순서는 다르다.
+     *
+     * monthIndex 순서는
+     * 입춘 -> ... -> 소한이지만,
+     *
+     * 달력상의 실제 발생 순서는
+     *
+     * 소한(1월)
+     * 입춘(2월)
+     * 경칩(3월)
+     * ...
+     * 대설(12월)
+     *
+     * 이므로 반드시 dateTime으로 다시 정렬한다.
      */
     public List<SolarTermPoint> getMonthBoundaries(
             int year,
             ZoneId zoneId
     ) {
+
         validateYear(
                 year
         );
@@ -259,12 +312,15 @@ public class SolarTermCalculator {
         );
 
         List<SolarTermPoint> result =
-                new ArrayList<>();
+                new ArrayList<>(
+                        12
+                );
 
         for (
                 SolarTermDefinition definition
                 : MONTH_BOUNDARY_TERMS
         ) {
+
             result.add(
                     createPoint(
                             year,
@@ -286,15 +342,21 @@ public class SolarTermCalculator {
     }
 
     /**
-     * 출생 시각이 주어진 경우 사주 년도를 결정한다.
+     * 출생 시각이 존재할 때 사주 년도를 결정한다.
      *
-     * 입춘 직전까지는 전년도,
-     * 입춘 시각부터는 해당 연도이다.
+     * 예:
+     *
+     * 2026년 입춘 직전
+     * -> 사주년도 2025
+     *
+     * 2026년 입춘 시각부터
+     * -> 사주년도 2026
      */
     public int determineSajuYear(
             LocalDateTime birthDateTime,
             ZoneId zoneId
     ) {
+
         validateDateTime(
                 birthDateTime
         );
@@ -325,19 +387,20 @@ public class SolarTermCalculator {
     }
 
     /**
-     * 출생시간을 모르는 경우의 년주 판단.
+     * 출생시간이 없을 때 사주 년도 판정.
      *
-     * 출생일이 입춘일과 다르면 년주를 확정할 수 있다.
+     * 입춘 날짜와 출생 날짜가 다르면
+     * 시간이 없어도 년주 확정 가능.
      *
-     * 출생일이 입춘 당일이면 실제 출생시간에 따라
-     * 년주가 달라질 수 있으므로 OptionalInt.empty()를 반환한다.
-     *
-     * 임의로 00:00 / 12:00를 넣지 않는다.
+     * 출생일 자체가 입춘일이면
+     * 실제 입춘 시각 전/후에 따라 년주가 갈리므로
+     * OptionalInt.empty()를 반환한다.
      */
     public OptionalInt determineSajuYear(
             LocalDate birthDate,
             ZoneId zoneId
     ) {
+
         validateDate(
                 birthDate
         );
@@ -349,20 +412,18 @@ public class SolarTermCalculator {
         int calendarYear =
                 birthDate.getYear();
 
-        ZonedDateTime ipchun =
+        LocalDate ipchunDate =
                 calculateIpchun(
                         calendarYear,
                         zoneId
-                );
-
-        LocalDate ipchunDate =
-                ipchun.toLocalDate();
+                ).toLocalDate();
 
         if (
                 birthDate.equals(
                         ipchunDate
                 )
         ) {
+
             return OptionalInt.empty();
         }
 
@@ -371,6 +432,7 @@ public class SolarTermCalculator {
                         ipchunDate
                 )
         ) {
+
             return OptionalInt.of(
                     calendarYear - 1
             );
@@ -382,12 +444,14 @@ public class SolarTermCalculator {
     }
 
     /**
-     * 출생 시각이 있을 때 사주 월 인덱스를 결정한다.
+     * 출생시간이 존재할 때
+     * 실제 직전 절입을 기준으로 명리 월 인덱스를 결정한다.
      */
     public int determineMonthIndex(
             LocalDateTime birthDateTime,
             ZoneId zoneId
     ) {
+
         validateDateTime(
                 birthDateTime
         );
@@ -403,17 +467,19 @@ public class SolarTermCalculator {
     }
 
     /**
-     * 출생시간을 모르는 경우의 월주 판단.
+     * 출생시간이 없을 때 월주 판정.
      *
-     * 출생일이 절입일이면 월주를 확정하지 않는다.
+     * 출생일에 절입이 존재하면
+     * 실제 출생시간이 필요하므로 확정하지 않는다.
      *
-     * 절입일이 아니면 그 날짜 전체가 같은 월주에 속하므로
-     * 안전하게 월 인덱스를 결정할 수 있다.
+     * 출생일이 절입일이 아니라면
+     * 해당 날짜 전체는 동일한 명리 월에 속한다.
      */
     public OptionalInt determineMonthIndex(
             LocalDate birthDate,
             ZoneId zoneId
     ) {
+
         validateDate(
                 birthDate
         );
@@ -422,36 +488,32 @@ public class SolarTermCalculator {
                 zoneId
         );
 
-        Optional<SolarTermPoint> boundary =
+        if (
                 findMonthBoundaryOnDate(
                         birthDate,
                         zoneId
-                );
-
-        if (
-                boundary.isPresent()
+                ).isPresent()
         ) {
+
             return OptionalInt.empty();
         }
 
-        LocalDateTime startOfDate =
-                birthDate.atStartOfDay();
-
         return OptionalInt.of(
                 determineMonthIndex(
-                        startOfDate,
+                        birthDate.atStartOfDay(),
                         zoneId
                 )
         );
     }
 
     /**
-     * 해당 날짜에 월주 절입이 존재하는지 확인한다.
+     * 해당 날짜가 명리 월 절입일인지 확인한다.
      */
     public boolean isMonthBoundaryDate(
             LocalDate date,
             ZoneId zoneId
     ) {
+
         return findMonthBoundaryOnDate(
                 date,
                 zoneId
@@ -459,14 +521,13 @@ public class SolarTermCalculator {
     }
 
     /**
-     * 해당 날짜에 존재하는 월주 절입을 반환한다.
-     *
-     * 출생시간 미상 처리에서 사용한다.
+     * 해당 날짜에 발생하는 명리 월 절입을 찾는다.
      */
     public Optional<SolarTermPoint> findMonthBoundaryOnDate(
             LocalDate date,
             ZoneId zoneId
     ) {
+
         validateDate(
                 date
         );
@@ -495,15 +556,16 @@ public class SolarTermCalculator {
 
     /**
      * 지정 시점 이전 또는 정확히 같은 시각에
-     * 가장 가깝게 지난 절입을 반환한다.
+     * 존재하는 가장 가까운 절입을 반환한다.
      *
-     * 절입 시각과 정확히 같으면
-     * 새 월주가 이미 시작된 것으로 본다.
+     * 절입 시각과 정확히 같은 경우에는
+     * 이미 새로운 명리 월이 시작된 것으로 처리한다.
      */
     public SolarTermPoint findPreviousMonthBoundary(
             LocalDateTime dateTime,
             ZoneId zoneId
     ) {
+
         validateDateTime(
                 dateTime
         );
@@ -534,22 +596,23 @@ public class SolarTermCalculator {
                 )
                 .orElseThrow(() ->
                         new IllegalStateException(
-                                "이전 절입을 찾을 수 없습니다. "
-                                        + "지원 연도 범위를 확인해주세요."
+                                "이전 절입을 찾을 수 없습니다."
                         )
                 );
     }
 
     /**
-     * 지정 시점 이후의 가장 가까운 절입을 반환한다.
+     * 지정 시점보다 뒤에 존재하는
+     * 가장 가까운 절입을 반환한다.
      *
-     * 정확히 절입 시각인 경우
-     * 현재 절입이 아니라 다음 절입을 찾는다.
+     * 지정 시각이 정확히 절입 시각이라면
+     * 현재 절입이 아니라 다음 절입을 반환한다.
      */
     public SolarTermPoint findNextMonthBoundary(
             LocalDateTime dateTime,
             ZoneId zoneId
     ) {
+
         validateDateTime(
                 dateTime
         );
@@ -580,33 +643,43 @@ public class SolarTermCalculator {
                 )
                 .orElseThrow(() ->
                         new IllegalStateException(
-                                "다음 절입을 찾을 수 없습니다. "
-                                        + "지원 연도 범위를 확인해주세요."
+                                "다음 절입을 찾을 수 없습니다."
                         )
                 );
     }
 
     /**
-     * 해당 연도를 중심으로 전후 절입 발생 시점을 만든다.
+     * 특정 달력 연도를 중심으로
+     * 전년도 / 해당년도 / 다음년도의 절입을 생성한다.
      *
-     * 지원 범위를 넘어가는 연도는 계산하지 않는다.
+     * 이유:
+     *
+     * 예를 들어 2026-01-01의 직전 절입은
+     * 2025-12월 대설이므로 전년도 데이터가 필요하다.
+     *
+     * 2050-12-31의 다음 절입은
+     * 2051년 소한일 수 있으므로
+     * 공개 지원범위 끝에서도 내부적으로 +1년 계산이 필요하다.
      */
     private List<SolarTermPoint> createOccurrences(
             int calendarYear,
             ZoneId zoneId
     ) {
-        List<SolarTermPoint> occurrences =
-                new ArrayList<>();
+
+        List<SolarTermPoint> result =
+                new ArrayList<>(
+                        36
+                );
 
         int startYear =
                 Math.max(
-                        SajuCalculationPolicy.MIN_SUPPORTED_YEAR,
+                        INTERNAL_MIN_YEAR,
                         calendarYear - 1
                 );
 
         int endYear =
                 Math.min(
-                        SajuCalculationPolicy.MAX_SUPPORTED_YEAR,
+                        INTERNAL_MAX_YEAR,
                         calendarYear + 1
                 );
 
@@ -615,12 +688,14 @@ public class SolarTermCalculator {
                 year <= endYear;
                 year++
         ) {
+
             for (
                     SolarTermDefinition definition
                     : MONTH_BOUNDARY_TERMS
             ) {
-                occurrences.add(
-                        createPoint(
+
+                result.add(
+                        createPointInternal(
                                 year,
                                 definition,
                                 zoneId
@@ -629,13 +704,13 @@ public class SolarTermCalculator {
             }
         }
 
-        occurrences.sort(
+        result.sort(
                 Comparator.comparing(
                         SolarTermPoint::dateTime
                 )
         );
 
-        return occurrences;
+        return result;
     }
 
     private SolarTermPoint createPoint(
@@ -643,8 +718,26 @@ public class SolarTermCalculator {
             SolarTermDefinition definition,
             ZoneId zoneId
     ) {
+
+        validateYear(
+                year
+        );
+
+        return createPointInternal(
+                year,
+                definition,
+                zoneId
+        );
+    }
+
+    private SolarTermPoint createPointInternal(
+            int year,
+            SolarTermDefinition definition,
+            ZoneId zoneId
+    ) {
+
         ZonedDateTime dateTime =
-                calculateSolarTerm(
+                calculateSolarTermInternal(
                         year,
                         definition,
                         zoneId
@@ -659,14 +752,42 @@ public class SolarTermCalculator {
     }
 
     /**
-     * 특정 황경에 태양이 도달하는 시각을 계산한다.
+     * 공개 지원연도에 대한 절기 계산.
      */
     private ZonedDateTime calculateSolarTerm(
             int year,
             SolarTermDefinition definition,
             ZoneId zoneId
     ) {
+
         validateYear(
+                year
+        );
+
+        return calculateSolarTermInternal(
+                year,
+                definition,
+                zoneId
+        );
+    }
+
+    /**
+     * 실제 태양 황경이 목표 황경을 통과하는 시각을 찾는다.
+     *
+     * 계산 과정:
+     *
+     * 예상 절기 날짜 주변 탐색
+     * -> 목표 황경 전/후 구간 확인
+     * -> 이진 탐색
+     * -> 약 0.05초 구간까지 수렴
+     */
+    private ZonedDateTime calculateSolarTermInternal(
+            int year,
+            SolarTermDefinition definition,
+            ZoneId zoneId
+    ) {
+
+        validateInternalYear(
                 year
         );
 
@@ -711,12 +832,12 @@ public class SolarTermCalculator {
                         upperDifference
                 )
         ) {
+
             throw new IllegalStateException(
-                    "절기 계산 범위 안에서 목표 황경을 찾지 못했습니다. "
-                            + definition.name()
-                            + " / "
+                    "절기 계산 범위 안에서 목표 황경을 찾지 못했습니다: "
                             + year
-                            + "년"
+                            + "년 "
+                            + definition.name()
             );
         }
 
@@ -727,29 +848,39 @@ public class SolarTermCalculator {
                 ).toNanos()
                         > SEARCH_PRECISION_NANOS
         ) {
+
             Instant middle =
                     midpoint(
                             lower,
                             upper
                     );
 
-            double currentLongitude =
-                    calculateApparentSolarLongitude(
-                            middle
-                    );
-
-            double difference =
+            double middleDifference =
                     signedAngleDifference(
-                            currentLongitude,
+                            calculateApparentSolarLongitude(
+                                    middle
+                            ),
                             targetLongitude
                     );
 
+            /*
+             * 태양 황경은 절기 주변에서 계속 증가한다.
+             *
+             * 목표 황경 이전:
+             * difference < 0
+             *
+             * 목표 황경 이후:
+             * difference >= 0
+             */
             if (
-                    difference < 0.0
+                    middleDifference < 0.0
             ) {
+
                 lower =
                         middle;
+
             } else {
+
                 upper =
                         middle;
             }
@@ -767,13 +898,14 @@ public class SolarTermCalculator {
     }
 
     /**
-     * 절기 예상일을 중심으로
-     * 실제 목표 황경이 포함되는 탐색 범위를 만든다.
+     * 각 절기의 대략적인 발생일을 기준으로
+     * 목표 황경이 실제로 포함되는 탐색 범위를 생성한다.
      */
     private SearchRange createSearchRange(
             int year,
             SolarTermDefinition definition
     ) {
+
         LocalDate seedDate =
                 LocalDate.of(
                         year,
@@ -781,13 +913,12 @@ public class SolarTermCalculator {
                         definition.seedDay()
                 );
 
-        int searchDays =
-                INITIAL_SEARCH_DAYS;
-
-        while (
-                searchDays
-                        <= MAX_SEARCH_DAYS
+        for (
+                int searchDays = INITIAL_SEARCH_DAYS;
+                searchDays <= MAX_SEARCH_DAYS;
+                searchDays++
         ) {
+
             Instant lower =
                     seedDate
                             .minusDays(
@@ -833,42 +964,48 @@ public class SolarTermCalculator {
                             upperDifference
                     )
             ) {
+
                 return new SearchRange(
                         lower,
                         upper
                 );
             }
-
-            searchDays++;
         }
 
         throw new IllegalStateException(
-                "절기 탐색 범위를 생성하지 못했습니다. "
-                        + definition.name()
-                        + " / "
+                "절기 탐색 범위를 생성하지 못했습니다: "
                         + year
-                        + "년"
+                        + "년 "
+                        + definition.name()
         );
     }
 
+    /**
+     * 목표 황경이 lower ~ upper 사이에 존재하는지 확인한다.
+     *
+     * 목표 이전:
+     * 음수
+     *
+     * 목표 이후:
+     * 양수
+     */
     private boolean containsZeroCrossing(
             double lowerDifference,
             double upperDifference
     ) {
+
         return lowerDifference <= 0.0
                 && upperDifference >= 0.0;
     }
 
     /**
-     * Instant 중간값.
-     *
-     * 기존 epochSecond 기반 계산처럼
-     * 소수 초를 버리지 않는다.
+     * 두 Instant의 정확한 중간값.
      */
     private Instant midpoint(
             Instant lower,
             Instant upper
     ) {
+
         long nanos =
                 Duration.between(
                         lower,
@@ -881,122 +1018,222 @@ public class SolarTermCalculator {
     }
 
     /**
-     * 태양의 apparent geocentric ecliptic longitude.
+     * 태양의 apparent geocentric ecliptic longitude
+     * 즉 겉보기 지심 황경을 계산한다.
      *
-     * Julian Ephemeris Century를 사용하기 위해
-     * UT에서 TT로 Delta-T를 보정한다.
+     * 절입 계산에서 필요한 값은
+     * 특정 지역에서 바라본 태양 고도/방위각이 아니라
+     * 태양의 지심 황경이다.
      *
-     * 결과:
-     * 0° <= longitude < 360°
+     * solarpositioning의 SPA가 계산한:
+     *
+     * - apparent geocentric right ascension
+     * - apparent geocentric declination
+     *
+     * 을 같은 시점의 true obliquity로
+     * 다시 황도좌표계로 역변환한다.
+     *
+     * 반환값:
+     *
+     * 0 <= longitude < 360
      */
     private double calculateApparentSolarLongitude(
             Instant instant
     ) {
-        double julianDayUt =
-                toJulianDay(
-                        instant
-                );
 
-        double decimalYear =
-                toDecimalYear(
-                        instant
+        ZonedDateTime utc =
+                instant.atZone(
+                        ZoneOffset.UTC
                 );
 
         double deltaTSeconds =
-                estimateDeltaTSeconds(
-                        decimalYear
+                DeltaT.estimate(
+                        utc.toLocalDate()
                 );
 
-        double julianEphemerisDay =
-                julianDayUt
-                        + deltaTSeconds
-                        / 86_400.0;
-
-        double centuries =
-                (
-                        julianEphemerisDay
-                                - 2451545.0
-                )
-                        / 36525.0;
-
-        double meanLongitude =
-                normalizeDegrees(
-                        280.46646
-                                + 36000.76983
-                                * centuries
-                                + 0.0003032
-                                * centuries
-                                * centuries
+        SPA.SpaTimeDependent timeDependent =
+                SPA.calculateSpaTimeDependentParts(
+                        utc,
+                        deltaTSeconds
                 );
 
-        double meanAnomaly =
-                normalizeDegrees(
-                        357.52911
-                                + 35999.05029
-                                * centuries
-                                - 0.0001537
-                                * centuries
-                                * centuries
-                                + centuries
-                                * centuries
-                                * centuries
-                                / 24_490_000.0
-                );
-
-        double anomalyRadians =
+        /*
+         * SPA가 계산한 지심 적경.
+         */
+        double alpha =
                 Math.toRadians(
-                        meanAnomaly
+                        timeDependent.alphaDegrees()
                 );
 
-        double equationOfCenter =
-                Math.sin(
-                        anomalyRadians
-                )
-                        * (
-                        1.914602
-                                - 0.004817
-                                * centuries
-                                - 0.000014
-                                * centuries
-                                * centuries
-                )
-                        + Math.sin(
-                        2.0
-                                * anomalyRadians
-                )
-                        * (
-                        0.019993
-                                - 0.000101
-                                * centuries
-                )
-                        + Math.sin(
-                        3.0
-                                * anomalyRadians
-                )
-                        * 0.000289;
+        /*
+         * SPA가 계산한 지심 적위.
+         */
+        double delta =
+                Math.toRadians(
+                        timeDependent.deltaDegrees()
+                );
 
-        double trueLongitude =
-                meanLongitude
-                        + equationOfCenter;
+        /*
+         * 같은 시점의 실제 황도경사.
+         */
+        double epsilon =
+                Math.toRadians(
+                        calculateTrueObliquityDegrees(
+                                instant
+                        )
+                );
 
-        double omega =
-                125.04
-                        - 1934.136
-                        * centuries;
-
-        double apparentLongitude =
-                trueLongitude
-                        - 0.00569
-                        - 0.00478
-                        * Math.sin(
-                        Math.toRadians(
-                                omega
+        /*
+         * 적도좌표 -> 황도좌표 역변환.
+         *
+         * λ = atan2(
+         *      sin α cos ε + tan δ sin ε,
+         *      cos α
+         * )
+         */
+        double longitude =
+                Math.atan2(
+                        Math.sin(
+                                alpha
+                        )
+                                * Math.cos(
+                                epsilon
+                        )
+                                + Math.tan(
+                                delta
+                        )
+                                * Math.sin(
+                                epsilon
+                        ),
+                        Math.cos(
+                                alpha
                         )
                 );
 
         return normalizeDegrees(
-                apparentLongitude
+                Math.toDegrees(
+                        longitude
+                )
         );
+    }
+
+    /**
+     * 해당 시점의 true obliquity of the ecliptic,
+     * 즉 실제 황도경사를 계산한다.
+     *
+     * 공개 서비스 범위 1900~2050에서
+     * 충분히 안정적인 평균 황도경사 계산과
+     * 주요 nutation in obliquity 항을 사용한다.
+     */
+    private double calculateTrueObliquityDegrees(
+            Instant instant
+    ) {
+
+        /*
+         * J2000.0부터의 Julian Century.
+         */
+        double t =
+                (
+                        toJulianDay(
+                                instant
+                        )
+                                - 2451545.0
+                )
+                        / 36525.0;
+
+        /*
+         * 평균 황도경사.
+         *
+         * 단위:
+         * arcsecond
+         */
+        double meanObliquityArcSeconds =
+                84381.448
+                        - 46.8150
+                        * t
+                        - 0.00059
+                        * t
+                        * t
+                        + 0.001813
+                        * t
+                        * t
+                        * t;
+
+        /*
+         * 달의 승교점 평균황경.
+         */
+        double omega =
+                Math.toRadians(
+                        normalizeDegrees(
+                                125.04452
+                                        - 1934.136261
+                                        * t
+                                        + 0.0020708
+                                        * t
+                                        * t
+                                        + t
+                                        * t
+                                        * t
+                                        / 450000.0
+                        )
+                );
+
+        /*
+         * 태양 평균황경.
+         */
+        double meanSolarLongitude =
+                Math.toRadians(
+                        normalizeDegrees(
+                                280.4665
+                                        + 36000.7698
+                                        * t
+                        )
+                );
+
+        /*
+         * 달 평균황경.
+         */
+        double meanLunarLongitude =
+                Math.toRadians(
+                        normalizeDegrees(
+                                218.3165
+                                        + 481267.8813
+                                        * t
+                        )
+                );
+
+        /*
+         * 주요 nutation in obliquity 항.
+         *
+         * 단위:
+         * arcsecond
+         */
+        double nutationObliquityArcSeconds =
+                9.20
+                        * Math.cos(
+                        omega
+                )
+                        + 0.57
+                        * Math.cos(
+                        2.0
+                                * meanSolarLongitude
+                )
+                        + 0.10
+                        * Math.cos(
+                        2.0
+                                * meanLunarLongitude
+                )
+                        - 0.09
+                        * Math.cos(
+                        2.0
+                                * omega
+                );
+
+        return (
+                meanObliquityArcSeconds
+                        + nutationObliquityArcSeconds
+        )
+                / 3600.0;
     }
 
     /**
@@ -1005,250 +1242,21 @@ public class SolarTermCalculator {
     private double toJulianDay(
             Instant instant
     ) {
+
         return instant.getEpochSecond()
-                / 86_400.0
+                / 86400.0
                 + instant.getNano()
                 / 86_400_000_000_000.0
                 + 2440587.5;
     }
 
     /**
-     * Delta-T 계산용 소수 연도.
+     * 각도를 0 이상 360 미만으로 정규화한다.
      */
-    private double toDecimalYear(
-            Instant instant
-    ) {
-        ZonedDateTime utc =
-                instant.atZone(
-                        ZoneOffset.UTC
-                );
-
-        int year =
-                utc.getYear();
-
-        int daysInYear =
-                utc.toLocalDate()
-                        .lengthOfYear();
-
-        double dayFraction =
-                (
-                        utc.getHour()
-                                * 3600.0
-                                + utc.getMinute()
-                                * 60.0
-                                + utc.getSecond()
-                                + utc.getNano()
-                                / 1_000_000_000.0
-                )
-                        / 86_400.0;
-
-        return year
-                + (
-                utc.getDayOfYear()
-                        - 1
-                        + dayFraction
-        )
-                / daysInYear;
-    }
-
-    /**
-     * TT - UT1 근사값인 Delta-T를 초 단위로 계산한다.
-     *
-     * 다점의 현대 출생연도 범위에서
-     * 태양 황경 계산 시각의 체계적인 시간 오차를 줄이기 위한 보정이다.
-     *
-     * 장기간 천체력 자체를 대체하는 값은 아니며
-     * 절기 판정 정밀화를 위한 시간척도 보정으로 사용한다.
-     */
-    private double estimateDeltaTSeconds(
-            double year
-    ) {
-        if (
-                year < 1900.0
-        ) {
-            double t =
-                    year
-                            - 1900.0;
-
-            return -2.79
-                    + 1.494119
-                    * t
-                    - 0.0598939
-                    * t
-                    * t
-                    + 0.0061966
-                    * t
-                    * t
-                    * t
-                    - 0.000197
-                    * t
-                    * t
-                    * t
-                    * t;
-        }
-
-        if (
-                year < 1920.0
-        ) {
-            double t =
-                    year
-                            - 1900.0;
-
-            return -2.79
-                    + 1.494119
-                    * t
-                    - 0.0598939
-                    * t
-                    * t
-                    + 0.0061966
-                    * t
-                    * t
-                    * t
-                    - 0.000197
-                    * t
-                    * t
-                    * t
-                    * t;
-        }
-
-        if (
-                year < 1941.0
-        ) {
-            double t =
-                    year
-                            - 1920.0;
-
-            return 21.20
-                    + 0.84493
-                    * t
-                    - 0.076100
-                    * t
-                    * t
-                    + 0.0020936
-                    * t
-                    * t
-                    * t;
-        }
-
-        if (
-                year < 1961.0
-        ) {
-            double t =
-                    year
-                            - 1950.0;
-
-            return 29.07
-                    + 0.407
-                    * t
-                    - t
-                    * t
-                    / 233.0
-                    + t
-                    * t
-                    * t
-                    / 2547.0;
-        }
-
-        if (
-                year < 1986.0
-        ) {
-            double t =
-                    year
-                            - 1975.0;
-
-            return 45.45
-                    + 1.067
-                    * t
-                    - t
-                    * t
-                    / 260.0
-                    - t
-                    * t
-                    * t
-                    / 718.0;
-        }
-
-        if (
-                year < 2005.0
-        ) {
-            double t =
-                    year
-                            - 2000.0;
-
-            return 63.86
-                    + 0.3345
-                    * t
-                    - 0.060374
-                    * t
-                    * t
-                    + 0.0017275
-                    * t
-                    * t
-                    * t
-                    + 0.000651814
-                    * Math.pow(
-                    t,
-                    4
-            )
-                    + 0.00002373599
-                    * Math.pow(
-                    t,
-                    5
-            );
-        }
-
-        if (
-                year < 2050.0
-        ) {
-            double t =
-                    year
-                            - 2000.0;
-
-            return 62.92
-                    + 0.32217
-                    * t
-                    + 0.005589
-                    * t
-                    * t;
-        }
-
-        if (
-                year < 2150.0
-        ) {
-            double u =
-                    (
-                            year
-                                    - 1820.0
-                    )
-                            / 100.0;
-
-            return -20.0
-                    + 32.0
-                    * u
-                    * u
-                    - 0.5628
-                    * (
-                    2150.0
-                            - year
-            );
-        }
-
-        double u =
-                (
-                        year
-                                - 1820.0
-                )
-                        / 100.0;
-
-        return -20.0
-                + 32.0
-                * u
-                * u;
-    }
-
     private double normalizeDegrees(
             double degrees
     ) {
+
         double normalized =
                 degrees
                         % 360.0;
@@ -1256,6 +1264,7 @@ public class SolarTermCalculator {
         if (
                 normalized < 0.0
         ) {
+
             normalized +=
                     360.0;
         }
@@ -1264,16 +1273,26 @@ public class SolarTermCalculator {
     }
 
     /**
-     * 현재 황경과 목표 황경 사이의
-     * -180° ~ +180° 범위 차이를 계산한다.
+     * 현재 황경과 목표 황경 차이를
+     * -180도 ~ +180도 범위로 만든다.
      *
-     * 0°/360° 경계에서도
-     * 이진 탐색 방향이 깨지지 않도록 한다.
+     * 예:
+     *
+     * 목표 = 345°
+     * 현재 = 344°
+     * -> -1°
+     *
+     * 목표 = 345°
+     * 현재 = 346°
+     * -> +1°
+     *
+     * 0° / 360° 경계에서도 연속적으로 비교할 수 있다.
      */
     private double signedAngleDifference(
             double current,
             double target
     ) {
+
         double difference =
                 normalizeDegrees(
                         current
@@ -1283,6 +1302,7 @@ public class SolarTermCalculator {
         if (
                 difference > 180.0
         ) {
+
             difference -=
                     360.0;
         }
@@ -1293,6 +1313,7 @@ public class SolarTermCalculator {
     private SolarTermDefinition getDefinitionByName(
             String name
     ) {
+
         return MONTH_BOUNDARY_TERMS.stream()
                 .filter(definition ->
                         definition.name()
@@ -1312,6 +1333,7 @@ public class SolarTermCalculator {
     private SolarTermDefinition getDefinitionByMonthIndex(
             int monthIndex
     ) {
+
         return MONTH_BOUNDARY_TERMS.stream()
                 .filter(definition ->
                         definition.monthIndex()
@@ -1326,23 +1348,37 @@ public class SolarTermCalculator {
                 );
     }
 
+    /**
+     * 외부 공개 계산 연도 검증.
+     */
     private void validateYear(
             int year
     ) {
-        if (
+
+        SajuCalculationPolicy.validateYear(
                 year
-                        < SajuCalculationPolicy.MIN_SUPPORTED_YEAR
-                        || year
-                        > SajuCalculationPolicy.MAX_SUPPORTED_YEAR
+        );
+    }
+
+    /**
+     * 절입 검색에만 사용하는 내부 연도 검증.
+     */
+    private void validateInternalYear(
+            int year
+    ) {
+
+        if (
+                year < INTERNAL_MIN_YEAR
+                        || year > INTERNAL_MAX_YEAR
         ) {
+
             throw new IllegalArgumentException(
-                    "지원하는 연도는 "
-                            + SajuCalculationPolicy
-                            .MIN_SUPPORTED_YEAR
+                    "내부 절기 계산 가능 연도는 "
+                            + INTERNAL_MIN_YEAR
                             + "년부터 "
-                            + SajuCalculationPolicy
-                            .MAX_SUPPORTED_YEAR
-                            + "년까지입니다."
+                            + INTERNAL_MAX_YEAR
+                            + "년까지입니다: "
+                            + year
             );
         }
     }
@@ -1350,6 +1386,7 @@ public class SolarTermCalculator {
     private void validateDateTime(
             LocalDateTime dateTime
     ) {
+
         Objects.requireNonNull(
                 dateTime,
                 "계산할 날짜와 시간이 필요합니다."
@@ -1363,6 +1400,7 @@ public class SolarTermCalculator {
     private void validateDate(
             LocalDate date
     ) {
+
         Objects.requireNonNull(
                 date,
                 "계산할 날짜가 필요합니다."
@@ -1376,24 +1414,40 @@ public class SolarTermCalculator {
     private void validateZoneId(
             ZoneId zoneId
     ) {
+
         Objects.requireNonNull(
                 zoneId,
                 "시간대가 필요합니다."
         );
     }
 
+    /**
+     * 이진 탐색 범위.
+     */
     private record SearchRange(
+
             Instant lower,
+
             Instant upper
+
     ) {
     }
 
+    /**
+     * 월주 경계를 만드는 절기 정의.
+     */
     private record SolarTermDefinition(
+
             String name,
+
             double longitude,
+
             Month seedMonth,
+
             int seedDay,
+
             int monthIndex
+
     ) {
     }
 }

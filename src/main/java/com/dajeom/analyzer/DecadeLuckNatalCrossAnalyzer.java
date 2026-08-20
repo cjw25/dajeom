@@ -25,6 +25,7 @@ import com.dajeom.rule.HeavenlyStemCombinationCandidateRule;
 import com.dajeom.rule.HeavenlyStemCombinationCompetitionRule;
 import com.dajeom.rule.HeavenlyStemCombinationTransformationRule;
 import com.dajeom.rule.HeavenlyStemControlRule;
+import com.dajeom.type.DecadeLuckNatalRelationKind;
 import com.dajeom.type.DecadeLuckNatalRelationLayer;
 import com.dajeom.type.EarthlyBranch;
 import com.dajeom.type.EarthlyBranchCombinationCandidateKind;
@@ -53,9 +54,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -108,6 +111,36 @@ import java.util.Set;
  * - 원래 기능 감소
  *
  * 판정축을 재사용한다.
+ *
+ * =================================================
+ *
+ * provenance 보강:
+ *
+ * 기존에는:
+ *
+ * relationCode
+ * activated boolean
+ * originalFunctionReduced boolean
+ *
+ * 로 축약했다.
+ *
+ * 현재는:
+ *
+ * - DecadeLuckNatalRelationKind
+ * - FiveElement targetElement
+ * - TransformationTargetActivationState
+ * - luckOriginalFunctionState
+ * - natalOriginalFunctionStates
+ *
+ * 를 그대로 보존한다.
+ *
+ * =================================================
+ *
+ * 이 Analyzer는 여전히:
+ *
+ * - 길흉을 판단하지 않는다.
+ * - 대운 기능효과를 판정하지 않는다.
+ * - 원국 신강신약을 재계산하지 않는다.
  */
 @Component
 public class DecadeLuckNatalCrossAnalyzer {
@@ -326,10 +359,6 @@ public class DecadeLuckNatalCrossAnalyzer {
                 )
         );
 
-        /*
-         * Java generic inference가 첫 람다를 Object로
-         * 추론하지 않도록 타입을 명시한다.
-         */
         relations.sort(
                 Comparator
                         .comparingInt(
@@ -341,13 +370,17 @@ public class DecadeLuckNatalCrossAnalyzer {
                                                 .ordinal()
                         )
                         .thenComparing(
-                                (
-                                        DecadeLuckNatalRelationReference reference
-                                ) ->
+                                reference ->
                                         positionKey(
                                                 reference
                                                         .natalPositions()
                                         )
+                        )
+                        .thenComparing(
+                                reference ->
+                                        reference
+                                                .relationKind()
+                                                .ordinal()
                         )
                         .thenComparing(
                                 DecadeLuckNatalRelationReference
@@ -357,10 +390,16 @@ public class DecadeLuckNatalCrossAnalyzer {
 
         transformations.sort(
                 Comparator
-                        .comparing(
+                        .comparingInt(
                                 (
                                         DecadeLuckNatalTransformationReference reference
                                 ) ->
+                                        reference
+                                                .layer()
+                                                .ordinal()
+                        )
+                        .thenComparing(
+                                reference ->
                                         positionKey(
                                                 reference
                                                         .natalPositions()
@@ -492,10 +531,16 @@ public class DecadeLuckNatalCrossAnalyzer {
                                             relation(
                                                     DecadeLuckNatalRelationLayer
                                                             .HEAVENLY_STEM,
+
+                                                    DecadeLuckNatalRelationKind
+                                                            .COMBINATION,
+
                                                     Set.of(
                                                             natal.position()
                                                     ),
+
                                                     "COMBINATION",
+
                                                     "천간합"
                                             )
                                     )
@@ -525,10 +570,16 @@ public class DecadeLuckNatalCrossAnalyzer {
                         relation(
                                 DecadeLuckNatalRelationLayer
                                         .HEAVENLY_STEM,
+
+                                DecadeLuckNatalRelationKind
+                                        .CLASH,
+
                                 Set.of(
                                         natal.position()
                                 ),
+
                                 "CLASH",
+
                                 "천간충"
                         )
                 );
@@ -539,10 +590,16 @@ public class DecadeLuckNatalCrossAnalyzer {
                         relation(
                                 DecadeLuckNatalRelationLayer
                                         .HEAVENLY_STEM,
+
+                                DecadeLuckNatalRelationKind
+                                        .CONTROL,
+
                                 Set.of(
                                         natal.position()
                                 ),
+
                                 "CONTROL_ONLY",
+
                                 "천간 극제"
                         )
                 );
@@ -589,8 +646,14 @@ public class DecadeLuckNatalCrossAnalyzer {
                         relation(
                                 DecadeLuckNatalRelationLayer
                                         .EARTHLY_BRANCH,
+
+                                DecadeLuckNatalRelationKind
+                                        .SIX_COMBINATION,
+
                                 positions,
+
                                 "SIX_COMBINATION",
+
                                 "육합"
                         )
                 );
@@ -608,8 +671,14 @@ public class DecadeLuckNatalCrossAnalyzer {
                         relation(
                                 DecadeLuckNatalRelationLayer
                                         .EARTHLY_BRANCH,
+
+                                DecadeLuckNatalRelationKind
+                                        .CLASH,
+
                                 positions,
+
                                 "CLASH",
+
                                 "충"
                         )
                 );
@@ -627,8 +696,14 @@ public class DecadeLuckNatalCrossAnalyzer {
                         relation(
                                 DecadeLuckNatalRelationLayer
                                         .EARTHLY_BRANCH,
+
+                                DecadeLuckNatalRelationKind
+                                        .PUNISHMENT,
+
                                 positions,
+
                                 "PUNISHMENT",
+
                                 "형"
                         )
                 );
@@ -648,8 +723,14 @@ public class DecadeLuckNatalCrossAnalyzer {
                         relation(
                                 DecadeLuckNatalRelationLayer
                                         .EARTHLY_BRANCH,
+
+                                DecadeLuckNatalRelationKind
+                                        .SELF_PUNISHMENT,
+
                                 positions,
+
                                 "SELF_PUNISHMENT",
+
                                 "자형"
                         )
                 );
@@ -667,8 +748,14 @@ public class DecadeLuckNatalCrossAnalyzer {
                         relation(
                                 DecadeLuckNatalRelationLayer
                                         .EARTHLY_BRANCH,
+
+                                DecadeLuckNatalRelationKind
+                                        .HARM,
+
                                 positions,
+
                                 "HARM",
+
                                 "해"
                         )
                 );
@@ -686,8 +773,14 @@ public class DecadeLuckNatalCrossAnalyzer {
                         relation(
                                 DecadeLuckNatalRelationLayer
                                         .EARTHLY_BRANCH,
+
+                                DecadeLuckNatalRelationKind
+                                        .BREAK,
+
                                 positions,
+
                                 "BREAK",
+
                                 "파"
                         )
                 );
@@ -713,8 +806,14 @@ public class DecadeLuckNatalCrossAnalyzer {
                                         relation(
                                                 DecadeLuckNatalRelationLayer
                                                         .EARTHLY_BRANCH,
+
+                                                DecadeLuckNatalRelationKind
+                                                        .THREE_COMBINATION,
+
                                                 positions,
+
                                                 "THREE_COMBINATION",
+
                                                 form
                                                         == EarthlyBranchThreeCombinationForm
                                                         .HALF_WITH_CARDINAL
@@ -745,8 +844,14 @@ public class DecadeLuckNatalCrossAnalyzer {
                                         relation(
                                                 DecadeLuckNatalRelationLayer
                                                         .EARTHLY_BRANCH,
+
+                                                DecadeLuckNatalRelationKind
+                                                        .DIRECTIONAL_COMBINATION,
+
                                                 positions,
+
                                                 "DIRECTIONAL_COMBINATION",
+
                                                 form
                                                         == EarthlyBranchDirectionalCombinationForm
                                                         .PARTIAL_WITH_CARDINAL
@@ -819,8 +924,14 @@ public class DecadeLuckNatalCrossAnalyzer {
                             relation(
                                     DecadeLuckNatalRelationLayer
                                             .EARTHLY_BRANCH,
+
+                                    DecadeLuckNatalRelationKind
+                                            .THREE_COMBINATION,
+
                                     positions,
+
                                     "THREE_COMBINATION",
+
                                     "삼합"
                             )
                     );
@@ -840,8 +951,14 @@ public class DecadeLuckNatalCrossAnalyzer {
                             relation(
                                     DecadeLuckNatalRelationLayer
                                             .EARTHLY_BRANCH,
+
+                                    DecadeLuckNatalRelationKind
+                                            .DIRECTIONAL_COMBINATION,
+
                                     positions,
+
                                     "DIRECTIONAL_COMBINATION",
+
                                     "방합"
                             )
                     );
@@ -860,8 +977,14 @@ public class DecadeLuckNatalCrossAnalyzer {
                             relation(
                                     DecadeLuckNatalRelationLayer
                                             .EARTHLY_BRANCH,
+
+                                    DecadeLuckNatalRelationKind
+                                            .PUNISHMENT,
+
                                     positions,
+
                                     "PUNISHMENT",
+
                                     "삼형"
                             )
                     );
@@ -1068,28 +1191,48 @@ public class DecadeLuckNatalCrossAnalyzer {
                                     transformationState
                             );
 
+            PalacePosition natalPosition =
+                    candidate
+                            .natal()
+                            .position();
+
             results.add(
                     new DecadeLuckNatalTransformationReference(
+
+                            DecadeLuckNatalRelationLayer
+                                    .HEAVENLY_STEM,
+
                             Set.of(
-                                    candidate
-                                            .natal()
-                                            .position()
+                                    natalPosition
                             ),
+
                             "HEAVENLY_STEM_COMBINATION:"
-                                    + candidate
-                                    .natal()
-                                    .position()
-                                    .name()
+                                    + natalPosition.name()
                                     + ":"
                                     + candidate
                                     .targetElement()
                                     .name(),
+
                             "천간합 합화",
+
                             candidate
-                                    .targetElement()
-                                    .getKoreanName(),
-                            targetActivationState.active(),
-                            originalFunctionState.reduced()
+                                    .targetElement(),
+
+                            targetActivationState,
+
+                            /*
+                             * 현재 9-9 천간 정책에서는
+                             * 동일 Combination의 각 Member에
+                             * 같은 원기능 상태가 적용된다.
+                             */
+                            originalFunctionState,
+
+                            natalFunctionStates(
+                                    Set.of(
+                                            natalPosition
+                                    ),
+                                    originalFunctionState
+                            )
                     )
             );
         }
@@ -1395,14 +1538,31 @@ public class DecadeLuckNatalCrossAnalyzer {
 
             results.add(
                     new DecadeLuckNatalTransformationReference(
+
+                            DecadeLuckNatalRelationLayer
+                                    .EARTHLY_BRANCH,
+
                             candidate.natalPositions(),
+
                             candidate.transformationCode(),
+
                             candidate.transformationName(),
-                            candidate
-                                    .targetElement()
-                                    .getKoreanName(),
-                            targetActivationState.active(),
-                            originalFunctionState.reduced()
+
+                            candidate.targetElement(),
+
+                            targetActivationState,
+
+                            /*
+                             * 현재 9-9 지지 정책 역시
+                             * Candidate Member 전체에
+                             * 같은 원기능 State를 적용한다.
+                             */
+                            originalFunctionState,
+
+                            natalFunctionStates(
+                                    candidate.natalPositions(),
+                                    originalFunctionState
+                            )
                     )
             );
         }
@@ -2199,10 +2359,9 @@ public class DecadeLuckNatalCrossAnalyzer {
                                                 member.sameMember(
                                                         first
                                                 )
-                                                        || member
-                                                        .sameMember(
-                                                                second
-                                                        )
+                                                        || member.sameMember(
+                                                        second
+                                                )
                                 )
                                 .toList();
 
@@ -2358,14 +2517,12 @@ public class DecadeLuckNatalCrossAnalyzer {
                                                     member.sameMember(
                                                             first
                                                     )
-                                                            || member
-                                                            .sameMember(
-                                                                    second
-                                                            )
-                                                            || member
-                                                            .sameMember(
-                                                                    third
-                                                            )
+                                                            || member.sameMember(
+                                                            second
+                                                    )
+                                                            || member.sameMember(
+                                                            third
+                                                    )
                                     )
                                     .toList();
 
@@ -2904,6 +3061,8 @@ public class DecadeLuckNatalCrossAnalyzer {
 
             DecadeLuckNatalRelationLayer layer,
 
+            DecadeLuckNatalRelationKind relationKind,
+
             Set<PalacePosition> positions,
 
             String code,
@@ -2914,9 +3073,69 @@ public class DecadeLuckNatalCrossAnalyzer {
 
         return new DecadeLuckNatalRelationReference(
                 layer,
+                relationKind,
                 positions,
                 code,
                 name
+        );
+    }
+
+    /*
+     * =================================================
+     * Transformation Participant State helper
+     * =================================================
+     *
+     * 현재 9-9 정책에서는
+     * 동일 Candidate의 각 Member가
+     * 같은 originalFunctionState를 사용한다.
+     *
+     * 하지만 Reference에서는
+     * Participant별로 구조를 분리해 보존한다.
+     */
+
+    private Map<
+            PalacePosition,
+            TransformationOriginalFunctionState
+            >
+    natalFunctionStates(
+
+            Set<PalacePosition> positions,
+
+            TransformationOriginalFunctionState state
+
+    ) {
+
+        Objects.requireNonNull(
+                positions,
+                "Transformation 원국 Palace가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                state,
+                "Transformation 원기능 상태가 필요합니다."
+        );
+
+        EnumMap<
+                PalacePosition,
+                TransformationOriginalFunctionState
+                > result =
+                new EnumMap<>(
+                        PalacePosition.class
+                );
+
+        for (
+                PalacePosition position
+                : positions
+        ) {
+
+            result.put(
+                    position,
+                    state
+            );
+        }
+
+        return Map.copyOf(
+                result
         );
     }
 

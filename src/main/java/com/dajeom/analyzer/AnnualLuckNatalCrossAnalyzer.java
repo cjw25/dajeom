@@ -25,6 +25,7 @@ import com.dajeom.rule.HeavenlyStemCombinationCandidateRule;
 import com.dajeom.rule.HeavenlyStemCombinationCompetitionRule;
 import com.dajeom.rule.HeavenlyStemCombinationTransformationRule;
 import com.dajeom.rule.HeavenlyStemControlRule;
+import com.dajeom.type.AnnualLuckNatalRelationKind;
 import com.dajeom.type.AnnualLuckNatalRelationLayer;
 import com.dajeom.type.EarthlyBranch;
 import com.dajeom.type.EarthlyBranchCombinationCandidateKind;
@@ -53,9 +54,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -79,11 +82,39 @@ import java.util.Set;
  *
  * - 합화 후보
  * - 실제 활성
- * - 원래 기능 감소
+ * - 목표 오행
+ * - 목표 활성 단계
+ * - 세운 Participant 원기능 상태
+ * - 원국 Participant 원기능 상태
  *
  * 를 분리한다.
  *
  * 기존 8차/9차 Rule을 그대로 재사용한다.
+ *
+ * =================================================
+ *
+ * 중요:
+ *
+ * 기존에는 Reference 생성 시:
+ *
+ * - Relation Kind
+ * - FiveElement
+ * - TransformationTargetActivationState
+ * - TransformationOriginalFunctionState
+ *
+ * 를 String / boolean으로 압축했다.
+ *
+ * 이제 계산 단계에서 이미 존재하는
+ * typed provenance를 그대로 Reference까지
+ * 전달한다.
+ *
+ * =================================================
+ *
+ * 새 명리 계산 없음.
+ *
+ * 기존 8차/9차 규칙 변경 없음.
+ *
+ * 문자열 파싱 없음.
  */
 @Component
 public class AnnualLuckNatalCrossAnalyzer {
@@ -309,9 +340,7 @@ public class AnnualLuckNatalCrossAnalyzer {
                                                 .ordinal()
                         )
                         .thenComparing(
-                                (
-                                        AnnualLuckNatalRelationReference reference
-                                ) ->
+                                reference ->
                                         positionKey(
                                                 reference
                                                         .natalPositions()
@@ -325,10 +354,16 @@ public class AnnualLuckNatalCrossAnalyzer {
 
         transformations.sort(
                 Comparator
-                        .comparing(
+                        .comparingInt(
                                 (
                                         AnnualLuckNatalTransformationReference reference
                                 ) ->
+                                        reference
+                                                .layer()
+                                                .ordinal()
+                        )
+                        .thenComparing(
+                                reference ->
                                         positionKey(
                                                 reference
                                                         .natalPositions()
@@ -422,6 +457,12 @@ public class AnnualLuckNatalCrossAnalyzer {
         }
     }
 
+    /*
+     * =================================================
+     * 천간 관계
+     * =================================================
+     */
+
     private void buildStemRelations(
 
             List<NatalStemSlot> natalStems,
@@ -448,6 +489,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                                             relation(
                                                     AnnualLuckNatalRelationLayer
                                                             .HEAVENLY_STEM,
+                                                    AnnualLuckNatalRelationKind
+                                                            .COMBINATION,
                                                     Set.of(
                                                             natal.position()
                                                     ),
@@ -481,6 +524,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                         relation(
                                 AnnualLuckNatalRelationLayer
                                         .HEAVENLY_STEM,
+                                AnnualLuckNatalRelationKind
+                                        .CLASH,
                                 Set.of(
                                         natal.position()
                                 ),
@@ -495,6 +540,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                         relation(
                                 AnnualLuckNatalRelationLayer
                                         .HEAVENLY_STEM,
+                                AnnualLuckNatalRelationKind
+                                        .CONTROL,
                                 Set.of(
                                         natal.position()
                                 ),
@@ -505,6 +552,12 @@ public class AnnualLuckNatalCrossAnalyzer {
             }
         }
     }
+
+    /*
+     * =================================================
+     * 지지 Pair 관계
+     * =================================================
+     */
 
     private void buildBranchPairRelations(
 
@@ -539,6 +592,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                         relation(
                                 AnnualLuckNatalRelationLayer
                                         .EARTHLY_BRANCH,
+                                AnnualLuckNatalRelationKind
+                                        .SIX_COMBINATION,
                                 positions,
                                 "SIX_COMBINATION",
                                 "육합"
@@ -558,6 +613,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                         relation(
                                 AnnualLuckNatalRelationLayer
                                         .EARTHLY_BRANCH,
+                                AnnualLuckNatalRelationKind
+                                        .CLASH,
                                 positions,
                                 "CLASH",
                                 "충"
@@ -577,6 +634,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                         relation(
                                 AnnualLuckNatalRelationLayer
                                         .EARTHLY_BRANCH,
+                                AnnualLuckNatalRelationKind
+                                        .PUNISHMENT,
                                 positions,
                                 "PUNISHMENT",
                                 "형"
@@ -598,6 +657,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                         relation(
                                 AnnualLuckNatalRelationLayer
                                         .EARTHLY_BRANCH,
+                                AnnualLuckNatalRelationKind
+                                        .SELF_PUNISHMENT,
                                 positions,
                                 "SELF_PUNISHMENT",
                                 "자형"
@@ -617,6 +678,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                         relation(
                                 AnnualLuckNatalRelationLayer
                                         .EARTHLY_BRANCH,
+                                AnnualLuckNatalRelationKind
+                                        .HARM,
                                 positions,
                                 "HARM",
                                 "해"
@@ -636,6 +699,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                         relation(
                                 AnnualLuckNatalRelationLayer
                                         .EARTHLY_BRANCH,
+                                AnnualLuckNatalRelationKind
+                                        .BREAK,
                                 positions,
                                 "BREAK",
                                 "파"
@@ -663,6 +728,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                                         relation(
                                                 AnnualLuckNatalRelationLayer
                                                         .EARTHLY_BRANCH,
+                                                AnnualLuckNatalRelationKind
+                                                        .THREE_COMBINATION,
                                                 positions,
                                                 "THREE_COMBINATION",
                                                 form
@@ -695,6 +762,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                                         relation(
                                                 AnnualLuckNatalRelationLayer
                                                         .EARTHLY_BRANCH,
+                                                AnnualLuckNatalRelationKind
+                                                        .DIRECTIONAL_COMBINATION,
                                                 positions,
                                                 "DIRECTIONAL_COMBINATION",
                                                 form
@@ -708,6 +777,12 @@ public class AnnualLuckNatalCrossAnalyzer {
                     );
         }
     }
+
+    /*
+     * =================================================
+     * 지지 Group 관계
+     * =================================================
+     */
 
     private void buildBranchGroupRelations(
 
@@ -762,6 +837,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                             relation(
                                     AnnualLuckNatalRelationLayer
                                             .EARTHLY_BRANCH,
+                                    AnnualLuckNatalRelationKind
+                                            .THREE_COMBINATION,
                                     positions,
                                     "THREE_COMBINATION",
                                     "삼합"
@@ -783,6 +860,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                             relation(
                                     AnnualLuckNatalRelationLayer
                                             .EARTHLY_BRANCH,
+                                    AnnualLuckNatalRelationKind
+                                            .DIRECTIONAL_COMBINATION,
                                     positions,
                                     "DIRECTIONAL_COMBINATION",
                                     "방합"
@@ -803,6 +882,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                             relation(
                                     AnnualLuckNatalRelationLayer
                                             .EARTHLY_BRANCH,
+                                    AnnualLuckNatalRelationKind
+                                            .PUNISHMENT,
                                     positions,
                                     "PUNISHMENT",
                                     "삼형"
@@ -812,6 +893,12 @@ public class AnnualLuckNatalCrossAnalyzer {
             }
         }
     }
+
+    /*
+     * =================================================
+     * 천간 Transformation
+     * =================================================
+     */
 
     private List<AnnualLuckNatalTransformationReference>
     buildHeavenlyTransformations(
@@ -1001,13 +1088,18 @@ public class AnnualLuckNatalCrossAnalyzer {
                                     transformationState
                             );
 
+            Set<PalacePosition> natalPositions =
+                    Set.of(
+                            candidate
+                                    .natal()
+                                    .position()
+                    );
+
             results.add(
                     new AnnualLuckNatalTransformationReference(
-                            Set.of(
-                                    candidate
-                                            .natal()
-                                            .position()
-                            ),
+                            AnnualLuckNatalRelationLayer
+                                    .HEAVENLY_STEM,
+                            natalPositions,
                             "HEAVENLY_STEM_COMBINATION:"
                                     + candidate
                                     .natal()
@@ -1018,11 +1110,13 @@ public class AnnualLuckNatalCrossAnalyzer {
                                     .targetElement()
                                     .name(),
                             "천간합 합화",
-                            candidate
-                                    .targetElement()
-                                    .getKoreanName(),
-                            targetActivationState.active(),
-                            originalFunctionState.reduced()
+                            candidate.targetElement(),
+                            targetActivationState,
+                            originalFunctionState,
+                            participantOriginalFunctionStates(
+                                    natalPositions,
+                                    originalFunctionState
+                            )
                     )
             );
         }
@@ -1120,6 +1214,12 @@ public class AnnualLuckNatalCrossAnalyzer {
                         memberStem
                 );
     }
+
+    /*
+     * =================================================
+     * 지지 Transformation
+     * =================================================
+     */
 
     private List<AnnualLuckNatalTransformationReference>
     buildEarthlyTransformations(
@@ -1319,16 +1419,24 @@ public class AnnualLuckNatalCrossAnalyzer {
                                     candidate.baseCandidateRemains()
                             );
 
+            Set<PalacePosition> natalPositions =
+                    candidate
+                            .natalPositions();
+
             results.add(
                     new AnnualLuckNatalTransformationReference(
-                            candidate.natalPositions(),
+                            AnnualLuckNatalRelationLayer
+                                    .EARTHLY_BRANCH,
+                            natalPositions,
                             candidate.transformationCode(),
                             candidate.transformationName(),
-                            candidate
-                                    .targetElement()
-                                    .getKoreanName(),
-                            targetActivationState.active(),
-                            originalFunctionState.reduced()
+                            candidate.targetElement(),
+                            targetActivationState,
+                            originalFunctionState,
+                            participantOriginalFunctionStates(
+                                    natalPositions,
+                                    originalFunctionState
+                            )
                     )
             );
         }
@@ -1354,7 +1462,7 @@ public class AnnualLuckNatalCrossAnalyzer {
 
         /*
          * =================================================
-         * 六合
+         * 육합
          * =================================================
          */
 
@@ -2015,6 +2123,12 @@ public class AnnualLuckNatalCrossAnalyzer {
         );
     }
 
+    /*
+     * =================================================
+     * 지지 합화 방해
+     * =================================================
+     */
+
     private DynamicBranchCandidate applyObstruction(
 
             NatalChartAdvancedAnalysis advancedAnalysis,
@@ -2431,7 +2545,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                                 ) {
 
                                     result.add(
-                                            EarthlyBranchRelationKind.CLASH
+                                            EarthlyBranchRelationKind
+                                                    .CLASH
                                     );
                                 }
 
@@ -2450,7 +2565,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                                 ) {
 
                                     result.add(
-                                            EarthlyBranchRelationKind.BREAK
+                                            EarthlyBranchRelationKind
+                                                    .BREAK
                                     );
                                 }
 
@@ -2459,7 +2575,8 @@ public class AnnualLuckNatalCrossAnalyzer {
                                 ) {
 
                                     result.add(
-                                            EarthlyBranchRelationKind.HARM
+                                            EarthlyBranchRelationKind
+                                                    .HARM
                                     );
                                 }
                             }
@@ -2483,7 +2600,8 @@ public class AnnualLuckNatalCrossAnalyzer {
         ) {
 
             result.add(
-                    EarthlyBranchRelationKind.CLASH
+                    EarthlyBranchRelationKind
+                            .CLASH
             );
         }
 
@@ -2496,7 +2614,8 @@ public class AnnualLuckNatalCrossAnalyzer {
         ) {
 
             result.add(
-                    EarthlyBranchRelationKind.PUNISHMENT
+                    EarthlyBranchRelationKind
+                            .PUNISHMENT
             );
         }
 
@@ -2511,7 +2630,8 @@ public class AnnualLuckNatalCrossAnalyzer {
         ) {
 
             result.add(
-                    EarthlyBranchRelationKind.PUNISHMENT
+                    EarthlyBranchRelationKind
+                            .PUNISHMENT
             );
         }
 
@@ -2524,7 +2644,8 @@ public class AnnualLuckNatalCrossAnalyzer {
         ) {
 
             result.add(
-                    EarthlyBranchRelationKind.BREAK
+                    EarthlyBranchRelationKind
+                            .BREAK
             );
         }
 
@@ -2537,7 +2658,8 @@ public class AnnualLuckNatalCrossAnalyzer {
         ) {
 
             result.add(
-                    EarthlyBranchRelationKind.HARM
+                    EarthlyBranchRelationKind
+                            .HARM
             );
         }
 
@@ -2545,6 +2667,12 @@ public class AnnualLuckNatalCrossAnalyzer {
                 result
         );
     }
+
+    /*
+     * =================================================
+     * Candidate Priority
+     * =================================================
+     */
 
     private int comparePriority(
 
@@ -2679,6 +2807,12 @@ public class AnnualLuckNatalCrossAnalyzer {
         );
     }
 
+    /*
+     * =================================================
+     * Natal Slots
+     * =================================================
+     */
+
     private List<NatalStemSlot> natalStemSlots(
             PalaceAnalysis natalAnalysis
     ) {
@@ -2753,6 +2887,12 @@ public class AnnualLuckNatalCrossAnalyzer {
         );
     }
 
+    /*
+     * =================================================
+     * Environment
+     * =================================================
+     */
+
     private TargetEnvironment targetEnvironment(
 
             ElementStrengthAnalysis strength,
@@ -2780,9 +2920,17 @@ public class AnnualLuckNatalCrossAnalyzer {
         );
     }
 
+    /*
+     * =================================================
+     * Reference Factory
+     * =================================================
+     */
+
     private AnnualLuckNatalRelationReference relation(
 
             AnnualLuckNatalRelationLayer layer,
+
+            AnnualLuckNatalRelationKind relationKind,
 
             Set<PalacePosition> positions,
 
@@ -2794,9 +2942,70 @@ public class AnnualLuckNatalCrossAnalyzer {
 
         return new AnnualLuckNatalRelationReference(
                 layer,
+                relationKind,
                 positions,
                 code,
                 name
+        );
+    }
+
+    /**
+     * 현재 14-4 동적 합화 계산에서는
+     * 기존 9차 Effect Rule이
+     * Candidate 수준 OriginalFunctionState를
+     * 반환한다.
+     *
+     * 따라서 현재는 관련 원국 Participant에
+     * 같은 State를 명시적으로 배치한다.
+     *
+     * 중요한 점은 Representation에서:
+     *
+     * annualOriginalFunctionState
+     *
+     * 와
+     *
+     * natalOriginalFunctionStates
+     *
+     * 를 분리해 두는 것이다.
+     */
+    private Map<
+            PalacePosition,
+            TransformationOriginalFunctionState
+            >
+    participantOriginalFunctionStates(
+
+            Set<PalacePosition> positions,
+
+            TransformationOriginalFunctionState state
+
+    ) {
+
+        Objects.requireNonNull(
+                state,
+                "Participant OriginalFunctionState가 필요합니다."
+        );
+
+        EnumMap<
+                PalacePosition,
+                TransformationOriginalFunctionState
+                > result =
+                new EnumMap<>(
+                        PalacePosition.class
+                );
+
+        for (
+                PalacePosition position
+                : positions
+        ) {
+
+            result.put(
+                    position,
+                    state
+            );
+        }
+
+        return Map.copyOf(
+                result
         );
     }
 
@@ -2827,6 +3036,12 @@ public class AnnualLuckNatalCrossAnalyzer {
                         "NONE"
                 );
     }
+
+    /*
+     * =================================================
+     * Internal Models
+     * =================================================
+     */
 
     private record NatalStemSlot(
 

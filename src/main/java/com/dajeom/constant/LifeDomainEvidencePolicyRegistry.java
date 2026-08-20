@@ -28,6 +28,18 @@ import java.util.Set;
  *
  * =================================================
  *
+ * Annual Functional Context:
+ *
+ * 신규 세운 Functional Chain의 최종 기준선.
+ *
+ * 모든 Domain에서 참조할 수 있지만,
+ * Function 하나를 Domain 결과 하나로
+ * 기계적으로 변환하지 않는다.
+ *
+ * standaloneOutcomeAllowed=false를 유지한다.
+ *
+ * =================================================
+ *
  * standaloneOutcomeAllowed:
  *
  * 현재 모든 Source = false.
@@ -136,6 +148,24 @@ public class LifeDomainEvidencePolicyRegistry {
         register(
                 map,
                 LifeDomainEvidenceSourceType.ANNUAL_CONTEXT,
+                allDomains()
+        );
+
+        /*
+         * =================================================
+         * Annual Functional
+         * =================================================
+         *
+         * 모든 Domain이 Functional 구조를
+         * 참조할 수 있다.
+         *
+         * 실제 Domain별 판정은
+         * 전용 LifeDomain Rule이 담당한다.
+         */
+        register(
+                map,
+                LifeDomainEvidenceSourceType
+                        .ANNUAL_FUNCTIONAL_CONTEXT,
                 allDomains()
         );
 

@@ -1,5 +1,6 @@
 package com.dajeom.model;
 
+import com.dajeom.type.AnnualDecadeLuckRelationKind;
 import com.dajeom.type.AnnualDecadeLuckRelationLayer;
 
 import java.util.Objects;
@@ -12,28 +13,38 @@ import java.util.Objects;
  *
  * =================================================
  *
- * 예:
+ * 기존:
  *
- * 대운 甲寅
- * 세운 己酉
+ * layer
+ * relationCode
+ * relationName
  *
- * 천간:
+ * =================================================
  *
- * 甲 ↔ 己
- * -> 천간합
+ * 보강:
+ *
+ * relationKind
+ *
+ * =================================================
+ *
+ * 이제 후속 Functional Layer는
+ * relationCode 문자열을 파싱하지 않고
+ *
+ * AnnualDecadeLuckRelationKind
+ *
+ * 를 공식 구조 Source로 사용한다.
  *
  * =================================================
  *
  * relationCode / relationName은
- * 기존 8차 관계 분석 결과를
- * Resolver가 정규화해서 전달한다.
- *
- * 이 클래스 자체가 합·충 공식을
- * 계산하지 않는다.
+ * 추적성과 설명 호환성을 위해
+ * 그대로 보존한다.
  */
 public record AnnualDecadeLuckRelationReference(
 
         AnnualDecadeLuckRelationLayer layer,
+
+        AnnualDecadeLuckRelationKind relationKind,
 
         String relationCode,
 
@@ -47,6 +58,27 @@ public record AnnualDecadeLuckRelationReference(
                 layer,
                 "대운-세운 관계 Layer가 필요합니다."
         );
+
+        Objects.requireNonNull(
+                relationKind,
+                "대운-세운 관계 Kind가 필요합니다."
+        );
+
+        if (
+                !relationKind
+                        .allows(
+                                layer
+                        )
+        ) {
+
+            throw new IllegalArgumentException(
+                    "대운-세운 관계 Kind와 Layer가 일치하지 않습니다. "
+                            + "kind="
+                            + relationKind
+                            + ", layer="
+                            + layer
+            );
+        }
 
         if (
                 relationCode == null
@@ -85,5 +117,65 @@ public record AnnualDecadeLuckRelationReference(
 
         return layer
                 .earthlyBranch();
+    }
+
+    /*
+     * =================================================
+     * Typed Relation
+     * =================================================
+     */
+
+    public boolean combinationFamily() {
+
+        return relationKind
+                .combinationFamily();
+    }
+
+    public boolean restrictiveInteraction() {
+
+        return relationKind
+                .restrictiveInteraction();
+    }
+
+    public boolean controlRelation() {
+
+        return relationKind
+                .control();
+    }
+
+    public boolean decadeControlsAnnual() {
+
+        return relationKind
+                .decadeControlsAnnual();
+    }
+
+    public boolean annualControlsDecade() {
+
+        return relationKind
+                .annualControlsDecade();
+    }
+
+    public boolean clashRelation() {
+
+        return relationKind
+                .clash();
+    }
+
+    public boolean punishmentRelation() {
+
+        return relationKind
+                .punishment();
+    }
+
+    public boolean harmRelation() {
+
+        return relationKind
+                .harm();
+    }
+
+    public boolean breakRelation() {
+
+        return relationKind
+                .breakRelation();
     }
 }

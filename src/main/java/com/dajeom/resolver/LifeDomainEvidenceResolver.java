@@ -1,6 +1,8 @@
 package com.dajeom.resolver;
 
 import com.dajeom.constant.LifeDomainEvidencePolicyRegistry;
+import com.dajeom.model.AnnualFunctionalBaselineAnalysis;
+import com.dajeom.model.AnnualFunctionalLifeDomainContext;
 import com.dajeom.model.AnnualLuckContextAnalysis;
 import com.dajeom.model.LifeDomainEvidenceBundle;
 import com.dajeom.model.LifeDomainEvidenceReference;
@@ -30,7 +32,7 @@ import java.util.Set;
 /**
  * 정밀화 18차-2.
  *
- * 3~17차의 기존 deterministic 결과를
+ * 기존 deterministic 결과를
  * 생활영역 Evidence Source로 연결한다.
  *
  * =================================================
@@ -39,6 +41,7 @@ import java.util.Set;
  *
  * 12차 PalaceAnalysis
  * 14차 AnnualLuckContextAnalysis
+ * Annual Functional Baseline
  * 15차 MonthlyLuckContextAnalysis
  * 17차 ShinsalEvidence
  *
@@ -56,8 +59,26 @@ import java.util.Set;
  * 이 Resolver에서는
  * 기존 명리 분석을 다시 계산하지 않는다.
  *
- * upstream 분석 객체를 그대로
- * LifeDomainEvidenceReference.source에 연결한다.
+ * upstream 분석 객체를
+ * LifeDomainEvidenceReference.source에
+ * typed source로 연결한다.
+ *
+ * =================================================
+ *
+ * 기존 ANNUAL_CONTEXT:
+ *
+ * AnnualLuckContextAnalysis를 그대로 유지한다.
+ *
+ * =================================================
+ *
+ * 신규 ANNUAL_FUNCTIONAL_CONTEXT:
+ *
+ * AnnualFunctionalBaselineAnalysis를
+ * 현재 LuckIntegratedSegmentAnalysis와 함께
+ * AnnualFunctionalLifeDomainContext로 연결한다.
+ *
+ * 두 Source는 역할이 다르며
+ * 서로 대체하지 않는다.
  */
 @Component
 public class LifeDomainEvidenceResolver {
@@ -92,11 +113,17 @@ public class LifeDomainEvidenceResolver {
                 );
     }
 
-    /**
+    /*
      * =================================================
-     * 공식 18-2 API
+     * 기존 공식 18-2 API
      * =================================================
+     *
+     * 기존 호출부를 깨뜨리지 않는다.
+     *
+     * 이 경로에서는 아직
+     * ANNUAL_FUNCTIONAL_CONTEXT를 넣지 않는다.
      */
+
     public LifeDomainEvidenceResolution resolve(
 
             LuckIntegratedAnalysis luckIntegratedAnalysis,
@@ -108,6 +135,39 @@ public class LifeDomainEvidenceResolver {
 
             LifeDomainDecadeContextSourceResolver
                     decadeContextSourceResolver
+
+    ) {
+
+        return resolve(
+                luckIntegratedAnalysis,
+                shinsalAnalysis,
+                natalEvidenceSourceResolver,
+                decadeContextSourceResolver,
+                LifeDomainAnnualFunctionalSourceResolver
+                        .none()
+        );
+    }
+
+    /*
+     * =================================================
+     * Annual Functional 확장 공식 API
+     * =================================================
+     */
+
+    public LifeDomainEvidenceResolution resolve(
+
+            LuckIntegratedAnalysis luckIntegratedAnalysis,
+
+            ShinsalAnalysis shinsalAnalysis,
+
+            LifeDomainNatalEvidenceSourceResolver
+                    natalEvidenceSourceResolver,
+
+            LifeDomainDecadeContextSourceResolver
+                    decadeContextSourceResolver,
+
+            LifeDomainAnnualFunctionalSourceResolver
+                    annualFunctionalSourceResolver
 
     ) {
 
@@ -131,6 +191,11 @@ public class LifeDomainEvidenceResolver {
                 "18-2에는 LifeDomainDecadeContextSourceResolver가 필요합니다."
         );
 
+        Objects.requireNonNull(
+                annualFunctionalSourceResolver,
+                "18-2 Annual Functional 연결에는 LifeDomainAnnualFunctionalSourceResolver가 필요합니다."
+        );
+
         if (
                 shinsalAnalysis
                         .luckIntegratedAnalysis()
@@ -145,12 +210,15 @@ public class LifeDomainEvidenceResolver {
         /*
          * =================================================
          * Temporal Reference Canonicalization
-         *
-         * 같은 Annual/Monthly/Decade Context 객체가
-         * 여러 Timeline Segment에서 재사용된다면
-         * LifeDomainEvidenceReference 역시
-         * 같은 객체를 재사용한다.
          * =================================================
+         *
+         * 기존 Annual / Monthly / Decade Context는
+         * 같은 upstream 객체가 여러 Timeline Segment에
+         * 재사용되면 Reference도 재사용한다.
+         *
+         * AnnualFunctionalLifeDomainContext는
+         * Timeline Segment 자체를 포함하므로
+         * Segment별 객체를 생성한다.
          */
 
         Map<
@@ -208,6 +276,7 @@ public class LifeDomainEvidenceResolver {
                             segmentAnalysis,
                             shinsalAnalysis,
                             decadeContextSourceResolver,
+                            annualFunctionalSourceResolver,
                             temporalReferenceCache,
                             shinsalReferenceCache
                     )
@@ -366,6 +435,9 @@ public class LifeDomainEvidenceResolver {
             LifeDomainDecadeContextSourceResolver
                     decadeContextSourceResolver,
 
+            LifeDomainAnnualFunctionalSourceResolver
+                    annualFunctionalSourceResolver,
+
             Map<
                     Object,
                     LifeDomainEvidenceReference<?>
@@ -431,7 +503,7 @@ public class LifeDomainEvidenceResolver {
 
         /*
          * =================================================
-         * 14차 Annual Context
+         * 기존 14차 Annual Context
          * =================================================
          */
 
@@ -462,6 +534,69 @@ public class LifeDomainEvidenceResolver {
                         annualReference
                 )
         );
+
+        /*
+         * =================================================
+         * 신규 Annual Functional Context
+         * =================================================
+         */
+
+        Optional<AnnualFunctionalBaselineAnalysis>
+                annualFunctionalOptional =
+                annualFunctionalSourceResolver
+                        .resolveAnnualFunctionalBaseline(
+                                segmentAnalysis
+                        );
+
+        if (
+                annualFunctionalOptional == null
+        ) {
+
+            throw new IllegalStateException(
+                    "LifeDomainAnnualFunctionalSourceResolver는 null Optional을 반환할 수 없습니다."
+            );
+        }
+
+        if (
+                annualFunctionalOptional
+                        .isPresent()
+        ) {
+
+            AnnualFunctionalBaselineAnalysis baseline =
+                    annualFunctionalOptional
+                            .orElseThrow();
+
+            AnnualFunctionalLifeDomainContext functionalContext =
+                    new AnnualFunctionalLifeDomainContext(
+                            segmentAnalysis,
+                            baseline
+                    );
+
+            LifeDomainEvidenceReference<
+                    AnnualFunctionalLifeDomainContext
+                    > functionalReference =
+                    new LifeDomainEvidenceReference<>(
+                            LifeDomainEvidenceSourceType
+                                    .ANNUAL_FUNCTIONAL_CONTEXT,
+                            LifeDomainEvidenceTier
+                                    .TEMPORAL_CONTEXT,
+                            annualFunctionalSourceKey(
+                                    segmentAnalysis
+                            ),
+                            functionalContext,
+                            "현재 세운 Functional 기준선",
+                            List.of(
+                                    "AnnualFunctionalBaselineAnalysis의 계산 결과를 현재 16차 Timeline Segment에 typed context로 연결합니다.",
+                                    "기존 14-6 ANNUAL_CONTEXT를 대체하거나 복제하지 않습니다.",
+                                    "Function 활성·CrossFunctional Pattern·Transformation·Natal Capacity·Context Qualification의 provenance를 그대로 보존합니다.",
+                                    "이 Evidence 하나만으로 생활영역의 길흉이나 실제 사건을 확정하지 않습니다."
+                            )
+                    );
+
+            temporalEvidences.add(
+                    functionalReference
+            );
+        }
 
         /*
          * =================================================
@@ -833,6 +968,16 @@ public class LifeDomainEvidenceResolver {
                 .targetYear();
     }
 
+    private String annualFunctionalSourceKey(
+            LuckIntegratedSegmentAnalysis segment
+    ) {
+
+        return "ANNUAL_FUNCTIONAL:"
+                + segment
+                .annualCandidate()
+                .targetYear();
+    }
+
     private String monthlySourceKey(
             LuckIntegratedSegmentAnalysis segment
     ) {
@@ -867,37 +1012,29 @@ public class LifeDomainEvidenceResolver {
                 comparator =
                 Comparator
                         .comparingInt(
-                                (LifeDomainEvidenceReference<?> reference) ->
+                                (
+                                        LifeDomainEvidenceReference<?> reference
+                                ) ->
                                         reference
                                                 .tier()
                                                 .ordinal()
                         )
                         .thenComparingInt(
-                                (LifeDomainEvidenceReference<?> reference) ->
+                                (
+                                        LifeDomainEvidenceReference<?> reference
+                                ) ->
                                         reference
                                                 .sourceType()
                                                 .ordinal()
                         )
                         .thenComparing(
-                                (LifeDomainEvidenceReference<?> reference) ->
+                                (
+                                        LifeDomainEvidenceReference<?> reference
+                                ) ->
                                         reference
                                                 .sourceKey()
                         );
 
-        /*
-         * List<? extends LifeDomainEvidenceReference<?>>
-         *
-         * 를 Stream.map().toList()로 처리하면
-         * wildcard capture가 유지되어:
-         *
-         * List<LifeDomainEvidenceReference<CAP#1>>
-         *
-         * 형태로 추론될 수 있다.
-         *
-         * 따라서 반환 타입과 정확히 동일한
-         * List<LifeDomainEvidenceReference<?>>를
-         * 명시적으로 만든 뒤 복사한다.
-         */
         List<LifeDomainEvidenceReference<?>> result =
                 new ArrayList<>(
                         references.size()

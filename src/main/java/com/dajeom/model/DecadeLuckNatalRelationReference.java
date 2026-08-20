@@ -1,8 +1,10 @@
 package com.dajeom.model;
 
+import com.dajeom.type.DecadeLuckNatalRelationKind;
 import com.dajeom.type.DecadeLuckNatalRelationLayer;
 import com.dajeom.type.PalacePosition;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -13,42 +15,51 @@ import java.util.Set;
  *
  * =================================================
  *
- * 예:
+ * 기존:
  *
- * 대운 未
- * +
- * 원국 DAY 丑
- *
- * ->
- *
- * EARTHLY_BRANCH
- * natalPositions = [DAY]
- * relationCode = "CHOU_WEI_CLASH"
- * relationName = "축미충"
+ * layer
+ * natalPositions
+ * relationCode
+ * relationName
  *
  * =================================================
  *
- * 다중 궁위도 허용한다.
+ * 보강:
  *
- * 예:
- *
- * 대운 지지 하나가 들어오면서
- * 원국의 두 지지와 함께 삼합 구조를 완성한다면:
- *
- * natalPositions = [YEAR, MONTH]
- *
- * 형태가 가능하다.
+ * relationKind
  *
  * =================================================
  *
- * relationCode / relationName의 실제 값은
- * 기존 8차 관계 엔진에서 가져온다.
+ * 이유:
  *
- * 13차에서 관계 공식을 다시 만들지 않는다.
+ * 이후 Functional Layer에서:
+ *
+ * relationCode.contains("CLASH")
+ * relationName.equals("충")
+ *
+ * 같은 문자열 파싱 없이
+ * 관계 종류를 구조적으로 사용할 수 있어야 한다.
+ *
+ * =================================================
+ *
+ * 중요:
+ *
+ * relationKind는:
+ *
+ * - 좋음
+ * - 나쁨
+ * - 성공
+ * - 실패
+ *
+ * 를 의미하지 않는다.
+ *
+ * 관계의 구조 종류만 보존한다.
  */
 public record DecadeLuckNatalRelationReference(
 
         DecadeLuckNatalRelationLayer layer,
+
+        DecadeLuckNatalRelationKind relationKind,
 
         Set<PalacePosition> natalPositions,
 
@@ -60,12 +71,28 @@ public record DecadeLuckNatalRelationReference(
 
     public DecadeLuckNatalRelationReference {
 
+        Objects.requireNonNull(
+                layer,
+                "대운-원국 관계 Layer가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                relationKind,
+                "대운-원국 관계 Kind가 필요합니다."
+        );
+
         if (
-                layer == null
+                !relationKind.allows(
+                        layer
+                )
         ) {
 
             throw new IllegalArgumentException(
-                    "대운-원국 관계 Layer가 필요합니다."
+                    "현재 관계 Kind를 해당 Layer에 사용할 수 없습니다. "
+                            + "layer="
+                            + layer
+                            + ", kind="
+                            + relationKind
             );
         }
 
@@ -89,25 +116,17 @@ public record DecadeLuckNatalRelationReference(
             );
         }
 
-        if (
-                relationCode == null
-                        || relationCode.isBlank()
-        ) {
+        relationCode =
+                requireText(
+                        relationCode,
+                        "대운-원국 관계 Code가 필요합니다."
+                );
 
-            throw new IllegalArgumentException(
-                    "대운-원국 관계 Code가 필요합니다."
-            );
-        }
-
-        if (
-                relationName == null
-                        || relationName.isBlank()
-        ) {
-
-            throw new IllegalArgumentException(
-                    "대운-원국 관계 이름이 필요합니다."
-            );
-        }
+        relationName =
+                requireText(
+                        relationName,
+                        "대운-원국 관계 이름이 필요합니다."
+                );
     }
 
     public boolean involves(
@@ -135,12 +154,88 @@ public record DecadeLuckNatalRelationReference(
     public boolean stemRelation() {
 
         return layer
-                .heavenlyStem();
+                == DecadeLuckNatalRelationLayer.HEAVENLY_STEM;
     }
 
     public boolean branchRelation() {
 
         return layer
-                .earthlyBranch();
+                == DecadeLuckNatalRelationLayer.EARTHLY_BRANCH;
+    }
+
+    /*
+     * =================================================
+     * 관계 Family
+     * =================================================
+     */
+
+    public boolean combinationFamily() {
+
+        return relationKind
+                .combinationFamily();
+    }
+
+    public boolean restrictiveInteraction() {
+
+        return relationKind
+                .restrictiveInteraction();
+    }
+
+    public boolean clash() {
+
+        return relationKind
+                .clash();
+    }
+
+    public boolean control() {
+
+        return relationKind
+                .control();
+    }
+
+    public boolean punishment() {
+
+        return relationKind
+                .punishment();
+    }
+
+    public boolean harm() {
+
+        return relationKind
+                .harm();
+    }
+
+    public boolean breakRelation() {
+
+        return relationKind
+                .breakRelation();
+    }
+
+    private static String requireText(
+
+            String value,
+
+            String message
+
+    ) {
+
+        Objects.requireNonNull(
+                value,
+                message
+        );
+
+        String normalized =
+                value.trim();
+
+        if (
+                normalized.isBlank()
+        ) {
+
+            throw new IllegalArgumentException(
+                    message
+            );
+        }
+
+        return normalized;
     }
 }

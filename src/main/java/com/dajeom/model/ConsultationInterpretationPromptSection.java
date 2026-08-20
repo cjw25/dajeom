@@ -8,42 +8,63 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * 정밀화 20차 / 21차 Range 확장.
+ * 정밀화 20차 / 21차 Range
+ * +
+ * Personality Direct-Natal Prompt 확장.
  *
  * 하나의 ConsultationCategory를
- * LLM에 전달하기 위한 최종 Prompt Section.
+ * 외부 LLM에 전달하기 위한
+ * 최종 deterministic Prompt Section.
  *
  * =================================================
  *
- * 포함:
+ * 기존:
  *
  * - 상담 분야
- * - 사용자용 제목
+ * - 제목
  * - 사용 가능 여부
- * - 사용 불가 사유
- * - Category별 Constraint
+ * - Category Constraint
  * - 원국 Evidence
  * - 현재 Timeline Scenario
- * - 과거/미래 Timeline Year Range
+ * - 과거/미래 Timeline Range
  *
  * =================================================
  *
- * 여기에는 3~17차 원본 계산 객체를
- * 직접 포함하지 않는다.
+ * PERSONALITY 추가:
+ *
+ * personalityStatementContract
  *
  * =================================================
  *
- * 중요한 원칙:
+ * PERSONALITY에서는:
  *
- * 이 객체는 이미 deterministic 계산이 끝난
- * Grounding만 전달한다.
+ * personalityStatementContract
+ * =
+ * 공식 기본성향 의미 Source
  *
- * 여기서:
+ * natalEvidences
+ * =
+ * legacy 보조 검증 Source
+ *
+ * =================================================
+ *
+ * 매우 중요한 원칙:
+ *
+ * Personality Contract와
+ * legacy natalEvidences를
+ * 합산하거나 다수결하지 않는다.
+ *
+ * 둘이 의미상 충돌할 경우
+ * Personality Contract가
+ * 기본성향 표현 범위를 결정한다.
+ *
+ * =================================================
+ *
+ * 여기서는:
  *
  * - 새로운 사주 계산
  * - Evidence 재판정
- * - 대표 polarity 선택
- * - 점수 계산
+ * - Grounding 승격
  * - 사건 예측
  *
  * 을 하지 않는다.
@@ -69,7 +90,10 @@ public record ConsultationInterpretationPromptSection(
         timelineScenarios,
 
         List<ConsultationGroundingTimelineYear>
-        timelineYears
+        timelineYears,
+
+        Optional<NatalPersonalityStatementContract>
+        personalityStatementContract
 
 ) {
 
@@ -77,9 +101,6 @@ public record ConsultationInterpretationPromptSection(
      * =================================================
      * 기존 20차 호출 호환 Constructor
      * =================================================
-     *
-     * 기존 코드 중 아직 timelineYears를 전달하지 않는
-     * 호출부가 있어도 컴파일이 깨지지 않게 유지한다.
      */
 
     public ConsultationInterpretationPromptSection(
@@ -113,7 +134,53 @@ public record ConsultationInterpretationPromptSection(
                 constraints,
                 natalEvidences,
                 timelineScenarios,
-                List.of()
+                List.of(),
+                Optional.empty()
+        );
+    }
+
+    /*
+     * =================================================
+     * 기존 21차 호출 호환 Constructor
+     * =================================================
+     */
+
+    public ConsultationInterpretationPromptSection(
+
+            int order,
+
+            ConsultationCategory category,
+
+            String title,
+
+            boolean available,
+
+            Optional<String> unavailableReason,
+
+            List<String> constraints,
+
+            List<ConsultationGroundingEvidence>
+                    natalEvidences,
+
+            List<ConsultationGroundingTimelineScenario>
+                    timelineScenarios,
+
+            List<ConsultationGroundingTimelineYear>
+                    timelineYears
+
+    ) {
+
+        this(
+                order,
+                category,
+                title,
+                available,
+                unavailableReason,
+                constraints,
+                natalEvidences,
+                timelineScenarios,
+                timelineYears,
+                Optional.empty()
         );
     }
 
@@ -171,6 +238,54 @@ public record ConsultationInterpretationPromptSection(
                         timelineYears
                 );
 
+        personalityStatementContract =
+                normalizePersonalityContract(
+                        personalityStatementContract
+                );
+
+        /*
+         * =================================================
+         * Personality Category 정합성
+         * =================================================
+         */
+
+        if (
+                personalityStatementContract.isPresent()
+
+                        && category
+                        != ConsultationCategory.PERSONALITY
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Personality Statement Contract는 "
+                            + "PERSONALITY Prompt Section에만 "
+                            + "사용할 수 있습니다: "
+                            + category
+            );
+        }
+
+        boolean personalityOutputExists =
+                personalityStatementContract
+                        .map(
+                                contract ->
+                                        contract
+                                                .bundleContracts()
+                                                .stream()
+                                                .anyMatch(
+                                                        bundleContract ->
+                                                                !bundleContract
+                                                                        .mandatorySelections()
+                                                                        .isEmpty()
+
+                                                                        || !bundleContract
+                                                                        .supportingSelections()
+                                                                        .isEmpty()
+                                                )
+                        )
+                        .orElse(
+                                false
+                        );
+
         /*
          * =================================================
          * Availability 정합성
@@ -201,7 +316,11 @@ public record ConsultationInterpretationPromptSection(
 
         /*
          * =================================================
-         * unavailable에는 Evidence 금지
+         * unavailable에는 기존 Evidence 금지.
+         *
+         * Personality Contract 자체는
+         * 내부 Reference/Audit 보존을 위해
+         * 존재할 수 있다.
          * =================================================
          */
 
@@ -215,8 +334,27 @@ public record ConsultationInterpretationPromptSection(
         ) {
 
             throw new IllegalArgumentException(
-                    "사용 불가 Prompt Section에는 Evidence를 함께 넣을 수 없습니다: "
+                    "사용 불가 Prompt Section에는 "
+                            + "기존 Evidence를 함께 넣을 수 없습니다: "
                             + category
+            );
+        }
+
+        /*
+         * =================================================
+         * 출력 가능한 Personality Contract가 있는데
+         * unavailable인 상태 금지.
+         * =================================================
+         */
+
+        if (
+                !available
+                        && personalityOutputExists
+        ) {
+
+            throw new IllegalArgumentException(
+                    "출력 가능한 Personality Statement Contract가 존재하는데 "
+                            + "Prompt Section이 unavailable입니다."
             );
         }
 
@@ -258,6 +396,72 @@ public record ConsultationInterpretationPromptSection(
 
         return !natalEvidences
                 .isEmpty();
+    }
+
+    /*
+     * =================================================
+     * Personality
+     * =================================================
+     */
+
+    public boolean hasPersonalityStatementContract() {
+
+        return personalityStatementContract
+                .isPresent();
+    }
+
+    public NatalPersonalityStatementContract
+    requirePersonalityStatementContract() {
+
+        return personalityStatementContract
+                .orElseThrow(
+                        () ->
+                                new IllegalStateException(
+                                        "Prompt Section에 Personality Statement Contract가 없습니다."
+                                )
+                );
+    }
+
+    /**
+     * PERSONALITY에서
+     * 새 direct-natal Contract가
+     * 공식 의미 Source인지.
+     */
+    public boolean personalityDirectNatalPrimary() {
+
+        return category
+                == ConsultationCategory.PERSONALITY
+
+                && personalityStatementContract
+                .isPresent();
+    }
+
+    /**
+     * Contract에서 실제 사용자 설명 가능한
+     * Bundle이 존재하는지.
+     */
+    public boolean hasPersonalityOutputContract() {
+
+        return personalityStatementContract
+                .map(
+                        contract ->
+                                contract
+                                        .bundleContracts()
+                                        .stream()
+                                        .anyMatch(
+                                                bundleContract ->
+                                                        !bundleContract
+                                                                .mandatorySelections()
+                                                                .isEmpty()
+
+                                                                || !bundleContract
+                                                                .supportingSelections()
+                                                                .isEmpty()
+                                        )
+                )
+                .orElse(
+                        false
+                );
     }
 
     /*
@@ -329,8 +533,11 @@ public record ConsultationInterpretationPromptSection(
 
     /*
      * =================================================
-     * Evidence Count
+     * 기존 Evidence Count
      * =================================================
+     *
+     * Personality Contract를
+     * 가짜 Evidence 개수로 환산하지 않는다.
      */
 
     public int evidenceCount() {
@@ -365,6 +572,17 @@ public record ConsultationInterpretationPromptSection(
     public boolean hasAnyEvidence() {
 
         return evidenceCount() > 0;
+    }
+
+    /**
+     * 기존 Grounding 또는
+     * Personality Contract 중
+     * 하나라도 존재하는가.
+     */
+    public boolean hasAnyGroundingInput() {
+
+        return hasAnyEvidence()
+                || hasPersonalityStatementContract();
     }
 
     /*
@@ -505,6 +723,35 @@ public record ConsultationInterpretationPromptSection(
 
         return List.copyOf(
                 result
+        );
+    }
+
+    /*
+     * =================================================
+     * Personality Contract Normalize
+     * =================================================
+     */
+
+    private static Optional<NatalPersonalityStatementContract>
+    normalizePersonalityContract(
+
+            Optional<NatalPersonalityStatementContract> source
+
+    ) {
+
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return Optional.empty();
+        }
+
+        return Optional.of(
+                Objects.requireNonNull(
+                        source.orElseThrow(),
+                        "Prompt Section의 Personality Statement Contract는 null일 수 없습니다."
+                )
         );
     }
 

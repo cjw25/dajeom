@@ -56,6 +56,46 @@ import java.util.concurrent.atomic.AtomicLong;
  * - Exception Message
  *
  * =================================================
+ * Timeline Year Deterministic Contract 진단
+ * =================================================
+ *
+ * PAST_LUCK / FUTURE_LUCK에 대해서는
+ * OpenAI 요청 직전 다음 구조만 추가로 기록한다.
+ *
+ * - sajuYear
+ * - deterministicContract 존재 여부
+ * - OVERALL_NARRATIVE status
+ * - BIG_FLOW status
+ * - PRIMARY_ACTIVE_DOMAIN 존재 여부
+ * - PRIMARY_PRESSURE_DOMAIN 존재 여부
+ * - CROSS_DOMAIN_PATTERN 존재 여부
+ * - TURNING_POINT 존재 여부
+ * - raw Grounding Evidence 개수
+ * - Timeline uncertainty 존재 여부
+ *
+ * =================================================
+ *
+ * 이 로그 역시:
+ *
+ * - 전체 deterministic summary
+ * - reasons
+ * - Domain 상세
+ * - Prompt JSON
+ * - storyText
+ *
+ * 를 기록하지 않는다.
+ *
+ * 따라서:
+ *
+ * Category Deterministic
+ * ->
+ * Grounding
+ * ->
+ * Writer Payload
+ *
+ * 연결 상태만 안전하게 확인한다.
+ *
+ * =================================================
  * Generation ID
  * =================================================
  *
@@ -163,6 +203,107 @@ public class StoryGenerationDiagnosticLogger {
                 normalizeCategory(
                         category
                 )
+        );
+    }
+
+
+    /**
+     * =================================================
+     * PAST/FUTURE Timeline Year Contract 상태
+     * =================================================
+     *
+     * 실제 OpenAI Writer Payload 생성 직전
+     * 연도별 deterministic contract 연결 상태를
+     * 안전한 메타정보로 기록한다.
+     *
+     * =================================================
+     *
+     * 예:
+     *
+     * [STORY-DIAG]
+     * timeline-year-contract
+     * generationId=STORY-1
+     * model=gpt-4o-mini
+     * category=FUTURE_LUCK
+     * sajuYear=2028
+     * contract=true
+     * overall=MIXED
+     * bigFlow=MIXED
+     * primaryActive=true
+     * primaryPressure=false
+     * crossDomain=true
+     * turningPoint=true
+     * rawEvidenceCount=3
+     * timelineUncertainty=false
+     *
+     * =================================================
+     *
+     * 중요한 제한:
+     *
+     * overall / bigFlow에는
+     * enum 상태명만 들어온다.
+     *
+     * summary/reasons 전체는 절대 받지 않는다.
+     */
+    public void timelineYearContractState(
+
+            String generationId,
+
+            String model,
+
+            ConsultationCategory category,
+
+            int sajuYear,
+
+            boolean contractPresent,
+
+            String overallStatus,
+
+            String bigFlowStatus,
+
+            boolean primaryActivePresent,
+
+            boolean primaryPressurePresent,
+
+            boolean crossDomainPresent,
+
+            boolean turningPointPresent,
+
+            int rawEvidenceCount,
+
+            boolean timelineUncertaintyExists
+
+    ) {
+
+        log.info(
+                "{} timeline-year-contract generationId={}, model={}, category={}, sajuYear={}, contract={}, overall={}, bigFlow={}, primaryActive={}, primaryPressure={}, crossDomain={}, turningPoint={}, rawEvidenceCount={}, timelineUncertainty={}",
+                LOG_PREFIX,
+                normalizeGenerationId(
+                        generationId
+                ),
+                normalizeText(
+                        model
+                ),
+                normalizeCategory(
+                        category
+                ),
+                sajuYear,
+                contractPresent,
+                normalizeText(
+                        overallStatus
+                ),
+                normalizeText(
+                        bigFlowStatus
+                ),
+                primaryActivePresent,
+                primaryPressurePresent,
+                crossDomainPresent,
+                turningPointPresent,
+                Math.max(
+                        rawEvidenceCount,
+                        0
+                ),
+                timelineUncertaintyExists
         );
     }
 

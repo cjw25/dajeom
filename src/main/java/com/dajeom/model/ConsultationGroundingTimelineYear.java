@@ -3,69 +3,96 @@ package com.dajeom.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
- * 정밀화 21차-4.
+ * 정밀화 21차-4
+ * +
+ * Category Deterministic Timeline Contract 확장.
  *
  * PAST_LUCK / FUTURE_LUCK용
  * LLM Grounding Timeline Year.
  *
  * =================================================
+ * 기존 구성
+ * =================================================
  *
- * 19차의
+ * yearOrder
+ * sajuYear
+ * monthIndices
+ * timelineUncertaintyExists
+ * evidences
  *
- * ConsultationCategoryTimelineYearEvidence
+ * =================================================
+ * 추가
+ * =================================================
  *
- * 를 20차 LLM Grounding 경계로 변환한 결과다.
+ * deterministicContract
+ *
+ * 해당 명리연도의:
+ *
+ * BIG_FLOW
+ * PRIMARY_ACTIVE_DOMAIN
+ * PRIMARY_PRESSURE_DOMAIN
+ * CROSS_DOMAIN_PATTERN
+ * TURNING_POINT
+ * OVERALL_NARRATIVE
+ *
+ * 를 LLM Grounding 경계로 변환한
+ * 최종 deterministic 계약.
+ *
+ * =================================================
+ * 중요한 우선순위
+ * =================================================
+ *
+ * deterministicContract
+ *
+ * =
+ * 연도 해석의 공식 상위 Meaning Contract
  *
  * =================================================
  *
- * 이 객체에는 더 이상:
+ * evidences
+ *
+ * =
+ * 그 판단의 세부 LifeDomain Grounding 근거
+ *
+ * =================================================
+ *
+ * 따라서 외부 LLM은:
+ *
+ * raw evidences를 보고
+ * 연도 전체 방향을 다시 계산해서는 안 된다.
+ *
+ * =================================================
+ *
+ * 예:
+ *
+ * deterministicContract
+ * .overallNarrative
+ * .status
+ *
+ * =
+ * MIXED
+ *
+ * 인데
+ *
+ * raw Evidence에 PRESSURE가 많이 보인다고 해서
+ *
+ * "전체 PRESSURE"
+ *
+ * 로 바꿀 수 없다.
+ *
+ * =================================================
+ *
+ * 내부 계산 객체는 노출하지 않는다.
  *
  * - LuckIntegratedSegmentAnalysis
  * - AnnualLuckAnalysis
  * - MonthlyLuckAnalysis
- * - LifeDomain 원본 계산 객체
+ * - LifeDomainRuleMatch
  *
- * 를 직접 노출하지 않는다.
- *
- * =================================================
- *
- * 포함:
- *
- * yearOrder
- * -> Range 내부 연도 순서
- *
- * sajuYear
- * -> 실제 명리연도
- *
- * monthIndices
- * -> 해당 연도 Evidence 생성에 실제 참여한
- *    기존 15/16차의 월 인덱스
- *
- * timelineUncertaintyExists
- * -> 해당 연도 Timeline 불확실성
- *
- * evidences
- * -> 20차 Grounding Evidence
- *
- * =================================================
- *
- * 중요한 원칙:
- *
- * monthIndex의 범위는 여기서 새로 정의하지 않는다.
- *
- * 0-based / 1-based 여부를
- * Grounding 계층이 임의로 재해석하지 않고
- * 기존 MonthlyLuckCandidate가 생성한 값을
- * 그대로 보존한다.
- *
- * =================================================
- *
- * - 월별 상태를 하나의 polarity로 합산하지 않는다.
- * - 대표 월을 선택하지 않는다.
- * - 성공/실패 점수를 계산하지 않는다.
- * - 연도 Evidence는 실제 19차 Match만 포함한다.
+ * 등을 직접 담지 않는다.
  */
 public record ConsultationGroundingTimelineYear(
 
@@ -77,9 +104,49 @@ public record ConsultationGroundingTimelineYear(
 
         boolean timelineUncertaintyExists,
 
-        List<ConsultationGroundingEvidence> evidences
+        List<ConsultationGroundingEvidence> evidences,
+
+        Optional<ConsultationGroundingTimelineYearDeterministicContract>
+        deterministicContract
 
 ) {
+
+    /*
+     * =================================================
+     * 기존 21차 호출 호환
+     * =================================================
+     */
+
+    public ConsultationGroundingTimelineYear(
+
+            int yearOrder,
+
+            int sajuYear,
+
+            List<Integer> monthIndices,
+
+            boolean timelineUncertaintyExists,
+
+            List<ConsultationGroundingEvidence> evidences
+
+    ) {
+
+        this(
+                yearOrder,
+                sajuYear,
+                monthIndices,
+                timelineUncertaintyExists,
+                evidences,
+                Optional.empty()
+        );
+    }
+
+
+    /*
+     * =================================================
+     * Canonical
+     * =================================================
+     */
 
     public ConsultationGroundingTimelineYear {
 
@@ -101,7 +168,13 @@ public record ConsultationGroundingTimelineYear(
                 normalizeEvidences(
                         evidences
                 );
+
+        deterministicContract =
+                normalizeDeterministicContract(
+                        deterministicContract
+                );
     }
+
 
     /*
      * =================================================
@@ -115,11 +188,13 @@ public record ConsultationGroundingTimelineYear(
                 .isEmpty();
     }
 
+
     public int monthCount() {
 
         return monthIndices
                 .size();
     }
+
 
     /*
      * =================================================
@@ -133,35 +208,52 @@ public record ConsultationGroundingTimelineYear(
                 .isEmpty();
     }
 
+
     public int evidenceCount() {
 
         return evidences
                 .size();
     }
 
+
+    /*
+     * =================================================
+     * Deterministic Contract
+     * =================================================
+     */
+
+    public boolean hasDeterministicContract() {
+
+        return deterministicContract
+                .isPresent();
+    }
+
+
+    public ConsultationGroundingTimelineYearDeterministicContract
+    requireDeterministicContract() {
+
+        return deterministicContract
+                .orElseThrow(
+                        () ->
+                                new IllegalStateException(
+                                        "Grounding Timeline Year에 Deterministic Contract가 없습니다. sajuYear="
+                                                + sajuYear
+                                )
+                );
+    }
+
+
     /*
      * =================================================
      * Month Normalize
      * =================================================
-     *
-     * 중요:
-     *
-     * monthIndex는 기존 15/16차의 공식 값이다.
-     *
-     * Grounding 계층에서:
-     *
-     * - 0 ~ 11
-     * - 1 ~ 12
-     *
-     * 같은 별도 범위를 가정하지 않는다.
-     *
-     * 실제 값은 그대로 유지하고
-     * null / 중복만 정리한다.
      */
 
     private static List<Integer>
     normalizeMonthIndices(
+
             List<Integer> source
+
     ) {
 
         if (
@@ -185,13 +277,6 @@ public record ConsultationGroundingTimelineYear(
                     "Grounding Timeline Year monthIndex는 null일 수 없습니다."
             );
 
-            /*
-             * 값의 범위를 여기서 검증하지 않는다.
-             *
-             * 기존 MonthlyLuckCandidate가 결정한
-             * 공식 monthIndex를 그대로 보존한다.
-             */
-
             if (
                     !result.contains(
                             monthIndex
@@ -213,6 +298,7 @@ public record ConsultationGroundingTimelineYear(
         );
     }
 
+
     /*
      * =================================================
      * Evidence Normalize
@@ -221,7 +307,9 @@ public record ConsultationGroundingTimelineYear(
 
     private static List<ConsultationGroundingEvidence>
     normalizeEvidences(
+
             List<ConsultationGroundingEvidence> source
+
     ) {
 
         if (
@@ -252,6 +340,39 @@ public record ConsultationGroundingTimelineYear(
 
         return List.copyOf(
                 result
+        );
+    }
+
+
+    /*
+     * =================================================
+     * Contract Normalize
+     * =================================================
+     */
+
+    private static Optional<
+            ConsultationGroundingTimelineYearDeterministicContract
+            > normalizeDeterministicContract(
+
+            Optional<
+                    ConsultationGroundingTimelineYearDeterministicContract
+                    > source
+
+    ) {
+
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return Optional.empty();
+        }
+
+        return Optional.of(
+                Objects.requireNonNull(
+                        source.orElseThrow(),
+                        "Grounding Timeline Year Deterministic Contract는 null일 수 없습니다."
+                )
         );
     }
 }

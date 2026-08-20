@@ -3,6 +3,7 @@ package com.dajeom.analyzer;
 import com.dajeom.model.ConsultationGroundingEvidence;
 import com.dajeom.model.ConsultationGroundingProminence;
 import com.dajeom.model.ConsultationGroundingSource;
+import com.dajeom.type.LifeDomainEvidenceSourceType;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -40,12 +41,26 @@ import java.util.Set;
  *
  * 다음 기준을 순서대로 비교한다.
  *
- * 1. 비보조 Source Type 다양성
- * 2. 현재 Rule이 직접 사용한 독립 SourceKey 수
- * 3. 같은 방향 Rule 전체의 독립 SourceKey 수
- * 4. 같은 방향이 반복된 서로 다른 Rule 수
- * 5. AUXILIARY Source 의존이 적은 쪽
- * 6. 원래 Evidence 순서
+ * 1.
+ * 비보조 독립 Provenance Family 다양성
+ *
+ * 2.
+ * 현재 Rule이 직접 사용한
+ * 독립 Provenance Anchor 수
+ *
+ * 3.
+ * 같은 방향 Rule 전체의
+ * 독립 Provenance Anchor 수
+ *
+ * 4.
+ * 같은 방향이 반복된
+ * 독립 Provenance Rule Group 수
+ *
+ * 5.
+ * AUXILIARY Source 의존이 적은 쪽
+ *
+ * 6.
+ * 원래 Evidence 순서
  *
  * =================================================
  * 중요한 원칙
@@ -62,9 +77,79 @@ import java.util.Set;
  * 단지 상담문에서
  * 더 먼저 깊게 설명할 가치가 있는
  * deterministic provenance를 나타낸다.
+ *
+ * =================================================
+ * 파생 Evidence 독립성
+ * =================================================
+ *
+ * ANNUAL_CONTEXT
+ *
+ * 와
+ *
+ * ANNUAL_FUNCTIONAL_CONTEXT
+ *
+ * 는 LifeDomain Rule 실행에서는
+ * 서로 다른 typed Evidence로 모두 보존한다.
+ *
+ * 하지만 둘이 동시에 존재한다는 이유만으로
+ * 독립된 세운 근거 두 개로 prominence를
+ * 올리면 안 된다.
+ *
+ * Annual Functional은 동일 AnnualLuckAnalysis /
+ * Annual Context에서 파생된 후속 분석이기 때문이다.
+ *
+ * 따라서 Prominence의 독립성 계산에서만:
+ *
+ * ANNUAL_CONTEXT
+ *
+ * +
+ *
+ * ANNUAL_FUNCTIONAL_CONTEXT
+ *
+ * 를 같은 ANNUAL provenance family로 정규화한다.
+ *
+ * =================================================
+ *
+ * 이 정규화가 하지 않는 것:
+ *
+ * - Match 삭제
+ * - Rule 삭제
+ * - Status 변경
+ * - SUPPORTIVE/PRESSURE 합산
+ * - Annual Functional 정보 삭제
+ * - Annual Context 정보 삭제
+ * - 실제 Grounding Source 목록 변경
+ *
+ * 오직 narrative prominence 계산에서만
+ * 파생 근거의 독립성 중복을 제거한다.
  */
 @Component
 public class ConsultationGroundingProminenceAnalyzer {
+
+    /*
+     * =================================================
+     * Annual Provenance
+     * =================================================
+     */
+
+    private static final String
+            ANNUAL_CONTEXT_KEY_PREFIX =
+            "ANNUAL:";
+
+    private static final String
+            ANNUAL_FUNCTIONAL_KEY_PREFIX =
+            "ANNUAL_FUNCTIONAL:";
+
+    private static final String
+            ANNUAL_PROVENANCE_FAMILY =
+            "ANNUAL_CONTEXT_FAMILY";
+
+
+    /*
+     * =================================================
+     * Analyze
+     * =================================================
+     */
 
     public List<ConsultationGroundingEvidence> analyze(
 
@@ -74,8 +159,7 @@ public class ConsultationGroundingProminenceAnalyzer {
 
         if (
                 source == null
-                        ||
-                        source.isEmpty()
+                        || source.isEmpty()
         ) {
 
             return List.of();
@@ -110,6 +194,12 @@ public class ConsultationGroundingProminenceAnalyzer {
                     )
             );
         }
+
+        /*
+         * =================================================
+         * Priority
+         * =================================================
+         */
 
         List<ProminenceMetrics> ordered =
                 new ArrayList<>(
@@ -184,6 +274,12 @@ public class ConsultationGroundingProminenceAnalyzer {
                     order + 1;
         }
 
+        /*
+         * =================================================
+         * Result
+         * =================================================
+         */
+
         List<ConsultationGroundingEvidence> result =
                 new ArrayList<>(
                         evidences.size()
@@ -215,6 +311,17 @@ public class ConsultationGroundingProminenceAnalyzer {
                             item.auxiliarySourceCount()
                     );
 
+            /*
+             * 실제 Grounding Source는 변경하지 않는다.
+             *
+             * ANNUAL_CONTEXT와
+             * ANNUAL_FUNCTIONAL_CONTEXT 모두
+             * 원래 Source 목록 그대로 외부 Grounding에 남는다.
+             *
+             * 위에서 계산한 숫자만
+             * 독립 Provenance 기준으로 정규화된다.
+             */
+
             result.add(
                     new ConsultationGroundingEvidence(
                             evidence.domain(),
@@ -232,6 +339,13 @@ public class ConsultationGroundingProminenceAnalyzer {
                 result
         );
     }
+
+
+    /*
+     * =================================================
+     * Metrics
+     * =================================================
+     */
 
     private ProminenceMetrics createMetrics(
 
@@ -258,7 +372,13 @@ public class ConsultationGroundingProminenceAnalyzer {
                         evidence
                 );
 
-        Set<String> sameDirectionRules =
+        /*
+         * =================================================
+         * 같은 Domain + 같은 Status
+         * =================================================
+         */
+
+        Set<String> sameDirectionIndependentRuleGroups =
                 new LinkedHashSet<>();
 
         Set<String> sameDirectionSourceKeys =
@@ -271,8 +391,7 @@ public class ConsultationGroundingProminenceAnalyzer {
 
             if (
                     candidate.domain()
-                            !=
-                            evidence.domain()
+                            != evidence.domain()
             ) {
 
                 continue;
@@ -280,16 +399,38 @@ public class ConsultationGroundingProminenceAnalyzer {
 
             if (
                     candidate.status()
-                            !=
-                            evidence.status()
+                            != evidence.status()
             ) {
 
                 continue;
             }
 
-            sameDirectionRules.add(
-                    candidate.ruleCode()
+            /*
+             * =================================================
+             * 독립 Provenance Rule Group
+             * =================================================
+             *
+             * 단순 ruleCode 수를 세지 않는다.
+             *
+             * 같은 독립 Source Anchor 집합에서
+             * 파생된 여러 Rule은
+             *
+             * "독립 근거가 반복됐다"
+             *
+             * 고 계산하지 않는다.
+             */
+
+            sameDirectionIndependentRuleGroups.add(
+                    independentRuleGroupKey(
+                            candidate
+                    )
             );
+
+            /*
+             * =================================================
+             * 독립 Source Anchor
+             * =================================================
+             */
 
             sameDirectionSourceKeys.addAll(
                     nonAuxiliarySourceKeys(
@@ -302,11 +443,18 @@ public class ConsultationGroundingProminenceAnalyzer {
                 originalIndex,
                 currentSourceKeys.size(),
                 currentSourceTypes.size(),
-                sameDirectionRules.size(),
+                sameDirectionIndependentRuleGroups.size(),
                 sameDirectionSourceKeys.size(),
                 auxiliaryCount
         );
     }
+
+
+    /*
+     * =================================================
+     * Non-Auxiliary Source Keys
+     * =================================================
+     */
 
     private Set<String> nonAuxiliarySourceKeys(
 
@@ -330,12 +478,21 @@ public class ConsultationGroundingProminenceAnalyzer {
             }
 
             result.add(
-                    source.sourceKey()
+                    independentSourceKey(
+                            source
+                    )
             );
         }
 
         return result;
     }
+
+
+    /*
+     * =================================================
+     * Non-Auxiliary Source Types
+     * =================================================
+     */
 
     private Set<String> nonAuxiliarySourceTypes(
 
@@ -359,14 +516,307 @@ public class ConsultationGroundingProminenceAnalyzer {
             }
 
             result.add(
-                    String.valueOf(
-                            source.sourceType()
+                    independentSourceType(
+                            source
                     )
             );
         }
 
         return result;
     }
+
+
+    /*
+     * =================================================
+     * Independent Source Type
+     * =================================================
+     */
+
+    private String independentSourceType(
+
+            ConsultationGroundingSource source
+
+    ) {
+
+        Objects.requireNonNull(
+                source,
+                "Independent Source Type 계산에는 ConsultationGroundingSource가 필요합니다."
+        );
+
+        LifeDomainEvidenceSourceType sourceType =
+                source
+                        .sourceType();
+
+        /*
+         * =================================================
+         * Annual Functional은
+         * Annual Context의 derived provenance.
+         * =================================================
+         */
+
+        if (
+                sourceType
+                        == LifeDomainEvidenceSourceType
+                        .ANNUAL_CONTEXT
+
+                        || sourceType
+                        == LifeDomainEvidenceSourceType
+                        .ANNUAL_FUNCTIONAL_CONTEXT
+        ) {
+
+            return ANNUAL_PROVENANCE_FAMILY;
+        }
+
+        return String.valueOf(
+                sourceType
+        );
+    }
+
+
+    /*
+     * =================================================
+     * Independent Source Key
+     * =================================================
+     *
+     * ANNUAL:2026
+     *
+     * ANNUAL_FUNCTIONAL:2026
+     *
+     * 을 prominence 독립성 계산에서는:
+     *
+     * ANNUAL_CONTEXT_FAMILY:2026
+     *
+     * 하나로 본다.
+     *
+     * 실제 SourceKey는 변경하지 않는다.
+     */
+
+    private String independentSourceKey(
+
+            ConsultationGroundingSource source
+
+    ) {
+
+        Objects.requireNonNull(
+                source,
+                "Independent Source Key 계산에는 ConsultationGroundingSource가 필요합니다."
+        );
+
+        String sourceKey =
+                Objects.requireNonNull(
+                        source.sourceKey(),
+                        "Grounding Source Key는 null일 수 없습니다."
+                );
+
+        LifeDomainEvidenceSourceType sourceType =
+                source
+                        .sourceType();
+
+        if (
+                sourceType
+                        == LifeDomainEvidenceSourceType
+                        .ANNUAL_CONTEXT
+        ) {
+
+            return annualIndependentKey(
+                    sourceKey,
+                    ANNUAL_CONTEXT_KEY_PREFIX
+            );
+        }
+
+        if (
+                sourceType
+                        == LifeDomainEvidenceSourceType
+                        .ANNUAL_FUNCTIONAL_CONTEXT
+        ) {
+
+            return annualIndependentKey(
+                    sourceKey,
+                    ANNUAL_FUNCTIONAL_KEY_PREFIX
+            );
+        }
+
+        return sourceKey;
+    }
+
+
+    /*
+     * =================================================
+     * Annual Independent Anchor
+     * =================================================
+     *
+     * 정상 SourceKey:
+     *
+     * ANNUAL:2026
+     *
+     * ANNUAL_FUNCTIONAL:2026
+     *
+     * ->
+     *
+     * ANNUAL_CONTEXT_FAMILY:2026
+     *
+     * =================================================
+     *
+     * 예상하지 못한 SourceKey 형식은
+     * 억지로 다른 Annual Evidence와 합치지 않는다.
+     *
+     * 즉 모르는 provenance를
+     * "같은 근거"라고 추측하지 않는다.
+     */
+
+    private String annualIndependentKey(
+
+            String sourceKey,
+
+            String expectedPrefix
+
+    ) {
+
+        Objects.requireNonNull(
+                sourceKey,
+                "Annual Independent Source Key가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                expectedPrefix,
+                "Annual Independent Source Key Prefix가 필요합니다."
+        );
+
+        if (
+                sourceKey.startsWith(
+                        expectedPrefix
+                )
+        ) {
+
+            String anchor =
+                    sourceKey
+                            .substring(
+                                    expectedPrefix.length()
+                            );
+
+            if (
+                    !anchor.isBlank()
+            ) {
+
+                return ANNUAL_PROVENANCE_FAMILY
+                        + ":"
+                        + anchor;
+            }
+        }
+
+        /*
+         * 예상하지 못한 Key 형식.
+         *
+         * 원본 Key를 그대로 보존해서
+         * 다른 Annual provenance와
+         * 강제로 합치지 않는다.
+         */
+
+        return sourceKey;
+    }
+
+
+    /*
+     * =================================================
+     * Independent Rule Group
+     * =================================================
+     *
+     * 같은 방향의 Rule 수를
+     * 단순 ruleCode 개수로 세지 않는다.
+     *
+     * 실제 독립 Provenance Anchor 집합을
+     * Signature로 사용한다.
+     *
+     * =================================================
+     *
+     * 예:
+     *
+     * WEALTH_ANNUAL_CONTEXT
+     *
+     * sources:
+     *
+     * ANNUAL:2026
+     *
+     * ->
+     *
+     * ANNUAL_CONTEXT_FAMILY:2026
+     *
+     * =================================================
+     *
+     * WEALTH_ANNUAL_FUNCTIONAL
+     *
+     * sources:
+     *
+     * ANNUAL_FUNCTIONAL:2026
+     *
+     * ->
+     *
+     * ANNUAL_CONTEXT_FAMILY:2026
+     *
+     * =================================================
+     *
+     * 따라서 같은 Status라면
+     * independent same-direction group = 1.
+     *
+     * 두 Match 자체는 모두 그대로 남는다.
+     */
+
+    private String independentRuleGroupKey(
+
+            ConsultationGroundingEvidence evidence
+
+    ) {
+
+        Objects.requireNonNull(
+                evidence,
+                "Independent Rule Group 계산에는 Grounding Evidence가 필요합니다."
+        );
+
+        Set<String> sourceKeys =
+                nonAuxiliarySourceKeys(
+                        evidence
+                );
+
+        /*
+         * =================================================
+         * 비보조 Source가 없는 경우
+         * =================================================
+         *
+         * AUXILIARY-only는 앞 계층 Policy에서
+         * 원칙적으로 차단되지만,
+         *
+         * 이 Analyzer는 별도의 명리 정책을
+         * 새로 만들지 않는다.
+         *
+         * 방어적으로 ruleCode를 사용한다.
+         */
+
+        if (
+                sourceKeys.isEmpty()
+        ) {
+
+            return "RULE:"
+                    + evidence.ruleCode();
+        }
+
+        List<String> ordered =
+                sourceKeys
+                        .stream()
+                        .sorted()
+                        .toList();
+
+        return String.join(
+                "\u001F",
+                ordered
+        );
+    }
+
+
+    /*
+     * =================================================
+     * Auxiliary
+     * =================================================
+     */
 
     private int auxiliarySourceCount(
 
@@ -392,6 +842,13 @@ public class ConsultationGroundingProminenceAnalyzer {
 
         return count;
     }
+
+
+    /*
+     * =================================================
+     * Normalize
+     * =================================================
+     */
 
     private List<ConsultationGroundingEvidence> normalize(
 
@@ -421,6 +878,13 @@ public class ConsultationGroundingProminenceAnalyzer {
                 result
         );
     }
+
+
+    /*
+     * =================================================
+     * Metrics
+     * =================================================
+     */
 
     private record ProminenceMetrics(
 

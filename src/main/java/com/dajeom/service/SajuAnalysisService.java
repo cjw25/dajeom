@@ -17,6 +17,7 @@ import com.dajeom.dto.DecadeLuckResponse;
 import com.dajeom.dto.PillarResponse;
 import com.dajeom.dto.SajuAnalysisRequest;
 import com.dajeom.dto.SajuAnalysisResponse;
+import com.dajeom.engine.AnnualFunctionalBaselinePipelineEngine;
 import com.dajeom.engine.AnnualLuckAnalysisEngine;
 import com.dajeom.engine.ConsultationAnalysisEngine;
 import com.dajeom.engine.DecadeLuckAnalysisEngine;
@@ -27,10 +28,12 @@ import com.dajeom.engine.LuckIntegratedAnalysisEngine;
 import com.dajeom.engine.LuckInteractionAnalysisEngine;
 import com.dajeom.engine.NatalChartAdvancedAnalysisEngine;
 import com.dajeom.engine.NatalChartAnalysisEngine;
+import com.dajeom.engine.NatalPersonalityStatementContractPipelineEngine;
 import com.dajeom.engine.PalaceAnalysisEngine;
 import com.dajeom.engine.ShinsalAnalysisEngine;
 import com.dajeom.engine.TenGodCompositeAnalysisEngine;
 import com.dajeom.engine.TwelveLifeStageAnalysisEngine;
+import com.dajeom.model.AnnualFunctionalBaselineAnalysis;
 import com.dajeom.model.AnnualLuckAnalysis;
 import com.dajeom.model.AnnualLuckTenGodEvidence;
 import com.dajeom.model.BirthDateValue;
@@ -57,6 +60,7 @@ import com.dajeom.model.LuckInteractionAnalysis;
 import com.dajeom.model.LuckReferenceContext;
 import com.dajeom.model.NatalChartAdvancedAnalysis;
 import com.dajeom.model.NatalChartAnalysis;
+import com.dajeom.model.NatalPersonalityStatementContract;
 import com.dajeom.model.NormalizedBirthData;
 import com.dajeom.model.PalaceAnalysis;
 import com.dajeom.model.PalaceCrossContext;
@@ -77,6 +81,7 @@ import com.dajeom.resolver.DecadeLuckContextResolverFactory;
 import com.dajeom.resolver.DecadeLuckNatalCrossResolver;
 import com.dajeom.resolver.DecadeLuckNatalCrossResolverFactory;
 import com.dajeom.resolver.DecadeLuckTenGodSourceResolver;
+import com.dajeom.resolver.LifeDomainAnnualFunctionalSourceResolver;
 import com.dajeom.resolver.LifeDomainDecadeContextSourceResolver;
 import com.dajeom.resolver.LifeDomainEvidenceResolver;
 import com.dajeom.resolver.LifeDomainNatalEvidenceSourceResolver;
@@ -89,6 +94,8 @@ import com.dajeom.resolver.ShinsalNatalPointSourceResolver;
 import com.dajeom.type.CalendarType;
 import com.dajeom.type.ConsultationCategory;
 import com.dajeom.type.FiveElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -96,6 +103,7 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -107,6 +115,32 @@ import java.util.Optional;
  * deterministic 실행선:
  *
  * 1 ~ 12차 원국
+ *
+ * ↓
+ *
+ * 원국 Personality Direct-Natal Pipeline
+ *
+ * NatalFunctionalAnalysis
+ * ↓
+ * NatalCrossFunctionalAnalysis
+ * ↓
+ * NatalConditionalResponseAnalysis
+ * ↓
+ * Personality Pattern
+ * ↓
+ * Deterministic Judgment
+ * ↓
+ * Finding
+ * ↓
+ * Synthesis
+ * ↓
+ * Statement Fact
+ * ↓
+ * Selection
+ * ↓
+ * Bundle
+ * ↓
+ * Statement Contract
  *
  * ↓
  *
@@ -126,6 +160,11 @@ import java.util.Optional;
  *
  * ↓
  *
+ * Annual Functional Baseline
+ * (Natal + Decade + Annual Functional)
+ *
+ * ↓
+ *
  * 18차
  * LifeDomain Evidence / Rule Match
  *
@@ -138,6 +177,8 @@ import java.util.Optional;
  *
  * 20차
  * AI Grounding
+ * +
+ * Personality Direct-Natal Contract
  * +
  * Grounding Policy
  * +
@@ -166,6 +207,11 @@ import java.util.Optional;
 @Service
 public class SajuAnalysisService {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(
+                    SajuAnalysisService.class
+            );
+
     private final KoreanLunarCalendarCalculator
             koreanLunarCalendarCalculator;
 
@@ -181,6 +227,9 @@ public class SajuAnalysisService {
     private final TenGodCompositeAnalysisEngine
             tenGodCompositeAnalysisEngine;
 
+    private final NatalPersonalityStatementContractPipelineEngine
+            natalPersonalityStatementContractPipelineEngine;
+
     private final TwelveLifeStageAnalysisEngine
             twelveLifeStageAnalysisEngine;
 
@@ -195,6 +244,9 @@ public class SajuAnalysisService {
 
     private final AnnualLuckAnalysisEngine
             annualLuckAnalysisEngine;
+
+    private final AnnualFunctionalBaselinePipelineEngine
+            annualFunctionalBaselinePipelineEngine;
 
     private final LuckIntegratedAnalysisEngine
             luckIntegratedAnalysisEngine;
@@ -294,6 +346,9 @@ public class SajuAnalysisService {
             TenGodCompositeAnalysisEngine
                     tenGodCompositeAnalysisEngine,
 
+            NatalPersonalityStatementContractPipelineEngine
+                    natalPersonalityStatementContractPipelineEngine,
+
             TwelveLifeStageAnalysisEngine
                     twelveLifeStageAnalysisEngine,
 
@@ -308,6 +363,9 @@ public class SajuAnalysisService {
 
             AnnualLuckAnalysisEngine
                     annualLuckAnalysisEngine,
+
+            AnnualFunctionalBaselinePipelineEngine
+                    annualFunctionalBaselinePipelineEngine,
 
             LuckIntegratedAnalysisEngine
                     luckIntegratedAnalysisEngine,
@@ -417,6 +475,11 @@ public class SajuAnalysisService {
                         tenGodCompositeAnalysisEngine
                 );
 
+        this.natalPersonalityStatementContractPipelineEngine =
+                Objects.requireNonNull(
+                        natalPersonalityStatementContractPipelineEngine
+                );
+
         this.twelveLifeStageAnalysisEngine =
                 Objects.requireNonNull(
                         twelveLifeStageAnalysisEngine
@@ -440,6 +503,11 @@ public class SajuAnalysisService {
         this.annualLuckAnalysisEngine =
                 Objects.requireNonNull(
                         annualLuckAnalysisEngine
+                );
+
+        this.annualFunctionalBaselinePipelineEngine =
+                Objects.requireNonNull(
+                        annualFunctionalBaselinePipelineEngine
                 );
 
         this.luckIntegratedAnalysisEngine =
@@ -582,9 +650,18 @@ public class SajuAnalysisService {
             SajuAnalysisRequest request
     ) {
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] analyze-start thread={}",
+                Thread.currentThread().getName()
+        );
+
         Objects.requireNonNull(
                 request,
                 "사주 분석 요청은 필수입니다."
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] normalize-birth-start"
         );
 
         NormalizedBirthData birthData =
@@ -592,10 +669,18 @@ public class SajuAnalysisService {
                         request
                 );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] normalize-birth-complete"
+        );
+
         BirthTimeContext birthTimeContext =
                 createBirthTimeContext(
                         birthData
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] four-pillars-start"
+        );
 
         FourPillars fourPillars =
                 fourPillarsCalculationEngine
@@ -603,17 +688,41 @@ public class SajuAnalysisService {
                                 birthTimeContext
                         );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] four-pillars-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] natal-chart-start"
+        );
+
         NatalChartAnalysis natalChart =
                 natalChartAnalysisEngine
                         .analyze(
                                 fourPillars
                         );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] natal-chart-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] natal-advanced-start"
+        );
+
         NatalChartAdvancedAnalysis advancedAnalysis =
                 natalChartAdvancedAnalysisEngine
                         .analyze(
                                 natalChart
                         );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] natal-advanced-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] ten-god-composite-start"
+        );
 
         TenGodCompositeAnalysis tenGodCompositeAnalysis =
                 tenGodCompositeAnalysisEngine
@@ -631,11 +740,49 @@ public class SajuAnalysisService {
                                         .combinationTransformationAnalysis()
                         );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] ten-god-composite-complete"
+        );
+
+        /*
+         * =================================================
+         * Personality Direct-Natal Pipeline
+         * =================================================
+         */
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] personality-contract-start"
+        );
+
+        NatalPersonalityStatementContract
+                personalityStatementContract =
+                natalPersonalityStatementContractPipelineEngine
+                        .analyze(
+                                advancedAnalysis,
+                                tenGodCompositeAnalysis
+                        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] personality-contract-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] twelve-life-stage-start"
+        );
+
         TwelveLifeStageAnalysis twelveLifeStageAnalysis =
                 twelveLifeStageAnalysisEngine
                         .analyze(
                                 fourPillars
                         );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] twelve-life-stage-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] palace-cross-context-start"
+        );
 
         PalaceCrossContext palaceCrossContext =
                 palaceCrossContextAdapter
@@ -647,6 +794,14 @@ public class SajuAnalysisService {
                                         .combinationTransformationAnalysis()
                         );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] palace-cross-context-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] palace-analysis-start"
+        );
+
         PalaceAnalysis palaceAnalysis =
                 palaceAnalysisEngine
                         .analyze(
@@ -655,6 +810,14 @@ public class SajuAnalysisService {
                                 palaceTenGodSourceResolver,
                                 palaceCrossContext
                         );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] palace-analysis-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] decade-resolver-start"
+        );
 
         DecadeLuckNatalCrossResolver
                 decadeLuckNatalCrossResolver =
@@ -673,7 +836,16 @@ public class SajuAnalysisService {
                                 palaceAnalysis
                         );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] decade-resolver-complete"
+        );
+
         DecadeLuckAnalysis decadeLuckAnalysis;
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] decade-analysis-start knownBirthTime={}",
+                birthTimeContext.hasKnownBirthTime()
+        );
 
         if (
                 birthTimeContext
@@ -710,6 +882,14 @@ public class SajuAnalysisService {
                             );
         }
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] decade-analysis-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] integrated-luck-start"
+        );
+
         Optional<LuckIntegratedAnalysis>
                 luckIntegratedAnalysis =
                 analyzeIntegratedLuckIfRequested(
@@ -721,11 +901,25 @@ public class SajuAnalysisService {
                         decadeLuckAnalysis
                 );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] integrated-luck-complete present={}",
+                luckIntegratedAnalysis.isPresent()
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] shinsal-start"
+        );
+
         Optional<ShinsalAnalysis>
                 shinsalAnalysis =
                 analyzeShinsalIfIntegrated(
                         luckIntegratedAnalysis
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] shinsal-complete present={}",
+                shinsalAnalysis.isPresent()
+        );
 
         if (
                 luckIntegratedAnalysis.isPresent()
@@ -737,6 +931,10 @@ public class SajuAnalysisService {
             );
         }
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] life-domain-start"
+        );
+
         Optional<LifeDomainAnalysis>
                 lifeDomainAnalysis =
                 analyzeLifeDomainIfIntegrated(
@@ -746,6 +944,11 @@ public class SajuAnalysisService {
                         tenGodCompositeAnalysis,
                         palaceAnalysis
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] life-domain-complete present={}",
+                lifeDomainAnalysis.isPresent()
+        );
 
         if (
                 luckIntegratedAnalysis.isPresent()
@@ -767,12 +970,21 @@ public class SajuAnalysisService {
             );
         }
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] consultation-scope-start"
+        );
+
         Optional<ConsultationRequestScopeAnalysis>
                 consultationRequestScopeAnalysis =
                 analyzeConsultationRequestScopeIfAvailable(
                         request,
                         lifeDomainAnalysis
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] consultation-scope-complete present={}",
+                consultationRequestScopeAnalysis.isPresent()
+        );
 
         if (
                 lifeDomainAnalysis.isPresent()
@@ -783,6 +995,10 @@ public class SajuAnalysisService {
                     "18차 LifeDomainAnalysis와 19차 ConsultationRequestScopeAnalysis 생성 상태가 일치하지 않습니다."
             );
         }
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] timeline-range-start"
+        );
 
         Optional<ConsultationTimelineRangeAnalysis>
                 consultationTimelineRangeAnalysis =
@@ -797,6 +1013,15 @@ public class SajuAnalysisService {
                         consultationRequestScopeAnalysis
                 );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] timeline-range-complete present={}",
+                consultationTimelineRangeAnalysis.isPresent()
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] request-evidence-start"
+        );
+
         Optional<ConsultationRequestEvidenceAnalysis>
                 consultationRequestEvidenceAnalysis =
                 analyzeConsultationRequestEvidenceIfAvailable(
@@ -804,6 +1029,11 @@ public class SajuAnalysisService {
                         lifeDomainAnalysis,
                         consultationTimelineRangeAnalysis
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] request-evidence-complete present={}",
+                consultationRequestEvidenceAnalysis.isPresent()
+        );
 
         if (
                 lifeDomainAnalysis.isPresent()
@@ -815,11 +1045,21 @@ public class SajuAnalysisService {
             );
         }
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] prompt-context-start"
+        );
+
         Optional<ConsultationInterpretationPromptContext>
                 interpretationPromptContext =
                 analyzeInterpretationPromptContextIfAvailable(
-                        consultationRequestEvidenceAnalysis
+                        consultationRequestEvidenceAnalysis,
+                        personalityStatementContract
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] prompt-context-complete present={}",
+                interpretationPromptContext.isPresent()
+        );
 
         if (
                 consultationRequestEvidenceAnalysis.isPresent()
@@ -831,11 +1071,24 @@ public class SajuAnalysisService {
             );
         }
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] story-generation-start"
+        );
+
         Optional<ConsultationStoryGeneration>
                 consultationStoryGeneration =
                 generateConsultationStoriesIfAvailable(
                         interpretationPromptContext
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] story-generation-complete present={}",
+                consultationStoryGeneration.isPresent()
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] annual-response-analysis-start"
+        );
 
         AnnualLuckNatalCrossResolver
                 annualLuckNatalCrossResolver =
@@ -874,11 +1127,19 @@ public class SajuAnalysisService {
                                 annualLuckContextResolver
                         );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] annual-response-analysis-complete"
+        );
+
         ZonedDateTime targetDateTime =
                 resolveLegacyDecadeReferenceDateTime(
                         birthData,
                         luckIntegratedAnalysis
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] legacy-luck-interaction-start"
+        );
 
         LuckInteractionAnalysis luckInteractionAnalysis =
                 luckInteractionAnalysisEngine
@@ -888,12 +1149,28 @@ public class SajuAnalysisService {
                                 annualLuckAnalysis
                         );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] legacy-luck-interaction-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] interpretation-signal-start"
+        );
+
         InterpretationSignalAnalysis signalAnalysis =
                 interpretationSignalAnalysisEngine
                         .analyze(
                                 advancedAnalysis,
                                 luckInteractionAnalysis
                         );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] interpretation-signal-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] consultation-analysis-start"
+        );
 
         ConsultationAnalysis consultationAnalysis =
                 consultationAnalysisEngine
@@ -902,18 +1179,37 @@ public class SajuAnalysisService {
                                 luckInteractionAnalysis
                         );
 
-        return createResponse(
-                birthData,
-                fourPillars,
-                advancedAnalysis,
-                decadeLuckAnalysis,
-                annualLuckAnalysis,
-                consultationAnalysis,
-                interpretationPromptContext,
-                consultationStoryGeneration,
-                request.targetYear(),
-                targetDateTime
+        log.info(
+                "[SAJU-SERVICE-DIAG] consultation-analysis-complete"
         );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] response-create-start"
+        );
+
+        SajuAnalysisResponse response =
+                createResponse(
+                        birthData,
+                        fourPillars,
+                        advancedAnalysis,
+                        decadeLuckAnalysis,
+                        annualLuckAnalysis,
+                        consultationAnalysis,
+                        interpretationPromptContext,
+                        consultationStoryGeneration,
+                        request.targetYear(),
+                        targetDateTime
+                );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] response-create-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] analyze-complete"
+        );
+
+        return response;
     }
 
     private Optional<ConsultationStoryGeneration>
@@ -948,11 +1244,20 @@ public class SajuAnalysisService {
             return Optional.empty();
         }
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] story-generator-adapter-call-start"
+        );
+
         Optional<ConsultationStoryGeneration> generated =
                 consultationStoryGenerator
                         .generate(
                                 promptContext
                         );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] story-generator-adapter-call-complete present={}",
+                generated.isPresent()
+        );
 
         if (
                 generated.isPresent()
@@ -974,13 +1279,21 @@ public class SajuAnalysisService {
     analyzeInterpretationPromptContextIfAvailable(
 
             Optional<ConsultationRequestEvidenceAnalysis>
-                    requestEvidenceAnalysis
+                    requestEvidenceAnalysis,
+
+            NatalPersonalityStatementContract
+                    personalityStatementContract
 
     ) {
 
         Objects.requireNonNull(
                 requestEvidenceAnalysis,
                 "20차에는 ConsultationRequestEvidenceAnalysis Optional이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                personalityStatementContract,
+                "20차 Personality Grounding에는 NatalPersonalityStatementContract가 필요합니다."
         );
 
         if (
@@ -995,15 +1308,28 @@ public class SajuAnalysisService {
                 requestEvidenceAnalysis
                         .orElseThrow();
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] grounding-analyzer-start"
+        );
+
         ConsultationGroundingAnalysis
                 groundingAnalysis =
                 Objects.requireNonNull(
                         consultationGroundingAnalyzer
                                 .analyze(
-                                        resolvedRequestEvidence
+                                        resolvedRequestEvidence,
+                                        personalityStatementContract
                                 ),
                         "ConsultationGroundingAnalyzer가 null을 반환했습니다."
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] grounding-analyzer-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] grounding-policy-start"
+        );
 
         ConsultationGroundingPolicyAnalysis
                 policyAnalysis =
@@ -1014,6 +1340,10 @@ public class SajuAnalysisService {
                                 ),
                         "ConsultationGroundingPolicyAnalyzer가 null을 반환했습니다."
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] grounding-policy-complete"
+        );
 
         if (
                 policyAnalysis
@@ -1026,6 +1356,10 @@ public class SajuAnalysisService {
             );
         }
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] prompt-context-analyzer-start"
+        );
+
         ConsultationInterpretationPromptContext
                 promptContext =
                 Objects.requireNonNull(
@@ -1035,6 +1369,10 @@ public class SajuAnalysisService {
                                 ),
                         "ConsultationInterpretationPromptContextAnalyzer가 null을 반환했습니다."
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] prompt-context-analyzer-complete"
+        );
 
         return Optional.of(
                 promptContext
@@ -1199,6 +1537,10 @@ public class SajuAnalysisService {
                                         )
                         );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] timeline-range-analyzer-start"
+        );
+
         ConsultationTimelineRangeAnalysis analysis =
                 Objects.requireNonNull(
                         consultationTimelineRangeAnalyzer
@@ -1212,6 +1554,10 @@ public class SajuAnalysisService {
                                 ),
                         "ConsultationTimelineRangeAnalyzer가 null을 반환했습니다."
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] timeline-range-analyzer-complete"
+        );
 
         if (
                 pastRequested
@@ -1302,6 +1648,10 @@ public class SajuAnalysisService {
                 lifeDomainAnalysis
                         .orElseThrow();
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] category-evidence-start"
+        );
+
         ConsultationCategoryEvidenceAnalysis
                 categoryEvidenceAnalysis =
                 Objects.requireNonNull(
@@ -1316,6 +1666,14 @@ public class SajuAnalysisService {
                         "ConsultationCategoryEvidenceAnalyzer가 null을 반환했습니다."
                 );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] category-evidence-complete"
+        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] request-evidence-analyzer-start"
+        );
+
         ConsultationRequestEvidenceAnalysis
                 requestEvidenceAnalysis =
                 Objects.requireNonNull(
@@ -1326,6 +1684,10 @@ public class SajuAnalysisService {
                                 ),
                         "ConsultationRequestEvidenceAnalyzer가 null을 반환했습니다."
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] request-evidence-analyzer-complete"
+        );
 
         return Optional.of(
                 requestEvidenceAnalysis
@@ -1431,14 +1793,92 @@ public class SajuAnalysisService {
                                 palaceAnalysis
                         );
 
+        /*
+         * =================================================
+         * Annual Functional Baseline
+         * =================================================
+         */
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] annual-functional-baseline-start"
+        );
+
+        Map<
+                AnnualLuckAnalysis,
+                AnnualFunctionalBaselineAnalysis
+                > annualFunctionalBaselines =
+                annualFunctionalBaselinePipelineEngine
+                        .analyze(
+                                advancedAnalysis,
+                                tenGodCompositeAnalysis,
+                                integratedAnalysis
+                        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] annual-functional-baseline-complete size={}",
+                annualFunctionalBaselines.size()
+        );
+
+        LifeDomainAnnualFunctionalSourceResolver
+                annualFunctionalSourceResolver =
+                segmentAnalysis -> {
+
+                    AnnualLuckAnalysis segmentAnnualLuckAnalysis =
+                            segmentAnalysis
+                                    .annualLuckAnalysis();
+
+                    AnnualFunctionalBaselineAnalysis baseline =
+                            annualFunctionalBaselines
+                                    .get(
+                                            segmentAnnualLuckAnalysis
+                                    );
+
+                    if (
+                            baseline == null
+                    ) {
+
+                        throw new IllegalStateException(
+                                "18차 Annual Functional Baseline이 Timeline Segment에 존재하지 않습니다. "
+                                        + "targetYear="
+                                        + segmentAnnualLuckAnalysis.targetYear()
+                        );
+                    }
+
+                    if (
+                            baseline
+                                    .annualLuckAnalysis()
+                                    != segmentAnnualLuckAnalysis
+                    ) {
+
+                        throw new IllegalStateException(
+                                "18차 Annual Functional Baseline이 Timeline AnnualLuckAnalysis Identity를 보존하지 않았습니다. "
+                                        + "targetYear="
+                                        + segmentAnnualLuckAnalysis.targetYear()
+                        );
+                    }
+
+                    return Optional.of(
+                            baseline
+                    );
+                };
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] life-domain-evidence-resolver-start"
+        );
+
         LifeDomainEvidenceResolution evidenceResolution =
                 lifeDomainEvidenceResolver
                         .resolve(
                                 integratedAnalysis,
                                 resolvedShinsalAnalysis,
                                 natalEvidenceSourceResolver,
-                                lifeDomainDecadeContextSourceResolver
+                                lifeDomainDecadeContextSourceResolver,
+                                annualFunctionalSourceResolver
                         );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] life-domain-evidence-resolver-complete"
+        );
 
         if (
                 evidenceResolution
@@ -1462,6 +1902,10 @@ public class SajuAnalysisService {
             );
         }
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] life-domain-analysis-engine-start"
+        );
+
         LifeDomainAnalysis analysis =
                 Objects.requireNonNull(
                         lifeDomainAnalysisEngine
@@ -1470,6 +1914,10 @@ public class SajuAnalysisService {
                                 ),
                         "LifeDomainAnalysisEngine이 null을 반환했습니다."
                 );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] life-domain-analysis-engine-complete"
+        );
 
         if (
                 analysis
@@ -1606,6 +2054,10 @@ public class SajuAnalysisService {
                                 palaceAnalysis
                         );
 
+        log.info(
+                "[SAJU-SERVICE-DIAG] luck-integrated-engine-start"
+        );
+
         LuckIntegratedAnalysis analysis =
                 luckIntegratedAnalysisEngine
                         .analyze(
@@ -1614,6 +2066,10 @@ public class SajuAnalysisService {
                                 referenceContext,
                                 layerAnalysisResolver
                         );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] luck-integrated-engine-complete"
+        );
 
         if (
                 analysis.natalAnalysis()
