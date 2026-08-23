@@ -27,183 +27,157 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * 정밀화 19차 / 21차 Range 확장.
+ * 정밀화 19차
+ * / 21차 Range
+ * / Category RuleCode 선택 Routing
+ * / LEGAL_RISK 전용 Cross-Domain Analyzer 연결.
  *
  * 18차 LifeDomainAnalysis를
- * 11개 ConsultationCategory Evidence View로
+ * ConsultationCategory Evidence View로
  * deterministic하게 Routing한다.
  *
  * =================================================
- *
- * 일반 Category:
- *
- * 현재 18차 LifeDomainAnalysis를 사용한다.
- *
+ * 일반 Category
  * =================================================
  *
- * PAST_LUCK:
+ * 일반 Category는 정책에 따라:
  *
- * ConsultationTimelineRangeAnalysis.pastAnalyses()
- * 를 사용한다.
+ * - LifeDomain 전체
+ * - 특정 LifeDomain의 특정 RuleCode
  *
- * =================================================
- *
- * FUTURE_LUCK:
- *
- * ConsultationTimelineRangeAnalysis.futureAnalyses()
- * 를 사용한다.
+ * 를 선별할 수 있다.
  *
  * =================================================
- *
- * LEGAL_RISK:
- *
- * 아직 전용 Cross-Domain Rule이 없으므로
- * unavailable을 유지한다.
- *
+ * PAST_LUCK / FUTURE_LUCK
  * =================================================
  *
- * 중요한 원칙:
+ * 실제 Timeline Range Analysis를 사용한다.
  *
- * - 새로운 명리 계산을 하지 않는다.
- * - 월별 LifeDomainRuleMatch를 다시 판정하지 않는다.
- * - SUPPORTIVE/PRESSURE/MIXED/CONTEXTUAL을 합산하지 않는다.
- * - 하나의 대표 월을 선택하지 않는다.
- * - 여러 월 Match를 하나의 Segment인 것처럼 위장하지 않는다.
+ * 명리연도 단위로:
  *
- * =================================================
+ * - month coverage
+ * - timeline uncertainty
+ * - deterministic Match
  *
- * Range 압축:
+ * 를 압축한다.
  *
- * 기존 16 -> 17 -> 18차가 계산한
- * 실제 월별 Segment Match를
- * 명리연도 단위로 그룹화한다.
+ * 기존 Range 계약을 유지한다.
  *
  * =================================================
+ * LEGAL_RISK
+ * =================================================
  *
- * 기존 문제:
+ * LEGAL_RISK는 일반 Domain Routing을 사용하지 않는다.
  *
- * Timeline Range는 하나의 명리연도에 대해
+ * ConsultationCategoryEvidencePolicyRegistry에서:
  *
- * 2월 ~ 12월
- * +
- * 다음 Gregorian 연도 1월
+ * requiresDedicatedCrossDomainRule
+ * =
+ * true
  *
- * 총 12개 대표 시점을 계산한다.
+ * 로 선언되어 있으며,
  *
- * 각 대표 시점은 별도의:
+ * 이 Analyzer는 해당 Category를:
  *
- * LuckIntegratedAnalysis
- * ShinsalAnalysis
- * LifeDomainAnalysis
+ * ConsultationLegalRiskAnalyzer
  *
- * 객체를 생성한다.
+ * 에 위임한다.
  *
- * 따라서 논리적으로 같은:
+ * =================================================
+ * LEGAL_RISK 의미
+ * =================================================
+ *
+ * ConsultationLegalRiskAnalyzer가 Java에서
+ * 명시적으로 계산한:
+ *
+ * - WEALTH
+ * - CAREER
+ * - RELATIONSHIP
+ *
+ * 의 PRESSURE / MIXED Evidence,
+ *
+ * 복수 Domain,
+ *
+ * 복수 independent provenance
+ *
+ * 조건만 사용한다.
+ *
+ * 따라서 이 클래스에서:
+ *
+ * - Domain 관계 생성
+ * - Cross 조건 재계산
+ * - Status 재계산
+ * - 사건 추론
+ *
+ * 을 하지 않는다.
+ *
+ * =================================================
+ * LEGAL_RISK Provenance
+ * =================================================
+ *
+ * LEGAL_RISK의 독립 Source 판정은
+ * ConsultationLegalRiskAnalyzer 내부의
+ * 공식 계산을 그대로 사용한다.
+ *
+ * 따라서 이 Routing Analyzer에서:
  *
  * ANNUAL_CONTEXT
- * ANNUAL_FUNCTIONAL_CONTEXT
- * DECADE_CONTEXT
+ * +
+ * ANNUAL_FUNCTIONAL
  *
- * 기반 Match도
+ * 또는:
  *
- * upstream 객체 Identity가 다르다는 이유로
- * LifeDomainRuleMatch equals에서 달라질 수 있다.
+ * MONTHLY_CONTEXT
+ * +
+ * MONTHLY_FUNCTIONAL
  *
- * =================================================
- *
- * 잘못된 결과:
- *
- * 같은 2026 세운 Functional 판단이
- * 12개 대표월에 존재한다는 이유만으로
- *
- * 12개의 독립 근거처럼
- * Timeline Year에 남을 수 있다.
+ * 을 다시 독립 Source로 세지 않는다.
  *
  * =================================================
- *
- * 이번 정밀화:
- *
- * Timeline Year 압축에서는
- * LifeDomainRuleMatch 객체 equality가 아니라
- *
- * "논리적 Match Signature"
- *
- * 를 사용한다.
- *
- * Signature:
- *
- * - domain
- * - ruleCode
- * - status
- * - summary
- * - Evidence SourceType
- * - Evidence Tier
- * - Evidence sourceKey
- * - reasons
- *
+ * 중요한 원칙
  * =================================================
  *
- * 매우 중요:
+ * 이 Analyzer는:
  *
- * Evidence의 실제 source() 객체 Identity는
- * Year 압축 중복 판단에서 제외한다.
- *
- * sourceKey가 공식 deterministic provenance
- * Anchor이기 때문이다.
- *
- * =================================================
- *
- * 하지만 월운은 삭제하지 않는다.
- *
- * 예:
- *
- * MONTHLY:2026:1
- * MONTHLY:2026:2
- * MONTHLY:2026:3
- *
- * 는 sourceKey가 서로 다르므로
- * 각각 별도의 Match로 남는다.
- *
- * =================================================
- *
- * 대운 교운도 삭제하지 않는다.
- *
- * 같은 Annual Functional sourceKey라 하더라도
- *
- * 현재 대운 Sequence
- * Resolved Function
- * Cross Pattern
- * Qualification
- *
- * 이 달라져 Rule의 summary/reasons/status가
- * 달라지면 별도의 Match로 남는다.
- *
- * =================================================
- *
- * 따라서:
- *
- * 동일 결과 반복
- * -> 1회
- *
- * 월별 실제 변화
- * -> 보존
- *
- * 교운 Segment별 실제 변화
- * -> 보존
- *
- * Timeline uncertainty
- * -> 보존
- *
- * =================================================
- *
- * 하지 않는 것:
- *
+ * - 새로운 명리 계산
+ * - Status 재판정
  * - 다수결
  * - 반복 횟수 점수화
  * - 대표 월 선택
- * - 가장 많이 나온 Status 선택
- * - Annual/Monthly 평균
- * - 서로 다른 Status 상쇄
+ * - 서로 다른 Evidence 관계 합성
+ *
+ * 을 하지 않는다.
+ *
+ * 오직:
+ *
+ * - 일반 Category
+ *   -> Policy Routing
+ *
+ * - PAST/FUTURE
+ *   -> Timeline Range Routing
+ *
+ * - LEGAL_RISK
+ *   -> 전용 Java Analyzer
+ *
+ * 로 이미 계산된 결과를
+ * 올바른 Category View로 전달한다.
+ *
+ * =================================================
+ * 관계형 풀이 금지
+ * =================================================
+ *
+ * 일반 Category Routing만으로:
+ *
+ * A 때문에 B
+ * A가 B로 이어진다
+ * A와 B가 함께 있으므로 C다
+ *
+ * 같은 의미를 만들지 않는다.
+ *
+ * LEGAL_RISK의 Cross는 예외적으로
+ * 별도 Java Analyzer가 명시적으로 계산한
+ * 공식 Cross-Domain Contract이므로
+ * 그 결과만 인정한다.
  */
 @Component
 public class ConsultationCategoryEvidenceAnalyzer {
@@ -211,10 +185,17 @@ public class ConsultationCategoryEvidenceAnalyzer {
     private final ConsultationCategoryEvidencePolicyRegistry
             policyRegistry;
 
+    private final ConsultationLegalRiskAnalyzer
+            legalRiskAnalyzer;
+
+
     public ConsultationCategoryEvidenceAnalyzer(
 
             ConsultationCategoryEvidencePolicyRegistry
-                    policyRegistry
+                    policyRegistry,
+
+            ConsultationLegalRiskAnalyzer
+                    legalRiskAnalyzer
 
     ) {
 
@@ -223,7 +204,14 @@ public class ConsultationCategoryEvidenceAnalyzer {
                         policyRegistry,
                         "ConsultationCategoryEvidencePolicyRegistry가 필요합니다."
                 );
+
+        this.legalRiskAnalyzer =
+                Objects.requireNonNull(
+                        legalRiskAnalyzer,
+                        "ConsultationLegalRiskAnalyzer가 필요합니다."
+                );
     }
+
 
     /*
      * =================================================
@@ -241,9 +229,10 @@ public class ConsultationCategoryEvidenceAnalyzer {
         );
     }
 
+
     /*
      * =================================================
-     * 21차 Range 연결 API
+     * 21차 Timeline Range 연결 API
      * =================================================
      */
 
@@ -303,6 +292,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
         );
     }
 
+
     /*
      * =================================================
      * Category Routing
@@ -319,6 +309,16 @@ public class ConsultationCategoryEvidenceAnalyzer {
             ConsultationCategoryEvidencePolicy policy
 
     ) {
+
+        Objects.requireNonNull(
+                currentLifeDomainAnalysis,
+                "Category Routing에는 LifeDomainAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                policy,
+                "Category Routing에는 ConsultationCategoryEvidencePolicy가 필요합니다."
+        );
 
         /*
          * =================================================
@@ -398,18 +398,59 @@ public class ConsultationCategoryEvidenceAnalyzer {
 
         /*
          * =================================================
-         * LEGAL_RISK
+         * Dedicated Cross-Domain Category
          * =================================================
+         *
+         * 현재 공식적으로 전용 Cross-Domain Analyzer를
+         * 사용하는 Category는 LEGAL_RISK다.
+         *
+         * 여기서는 Cross 계산을 재현하지 않고
+         * ConsultationLegalRiskAnalyzer의
+         * 공식 결과만 사용한다.
          */
 
         if (
                 policy.requiresDedicatedCrossDomainRule()
         ) {
 
-            return unavailable(
-                    policy.category(),
-                    "LEGAL_RISK는 단일 LifeDomain 또는 하나의 관계 Evidence로 생성하지 않고 전용 교차 Evidence Rule이 필요합니다."
-            );
+            if (
+                    policy.category()
+                            != ConsultationCategory.LEGAL_RISK
+            ) {
+
+                throw new IllegalStateException(
+                        "전용 Cross-Domain Rule이 필요한 Category에 연결된 Analyzer가 없습니다: "
+                                + policy.category()
+                );
+            }
+
+            ConsultationCategoryEvidenceView legalRiskView =
+                    legalRiskAnalyzer
+                            .analyze(
+                                    currentLifeDomainAnalysis
+                            );
+
+            /*
+             * =================================================
+             * Category Contract 검증
+             * =================================================
+             *
+             * 전용 Analyzer가 잘못된 Category View를
+             * 반환하는 구조 오류를 즉시 차단한다.
+             */
+
+            if (
+                    legalRiskView.category()
+                            != ConsultationCategory.LEGAL_RISK
+            ) {
+
+                throw new IllegalStateException(
+                        "ConsultationLegalRiskAnalyzer가 LEGAL_RISK가 아닌 Category View를 반환했습니다: "
+                                + legalRiskView.category()
+                );
+            }
+
+            return legalRiskView;
         }
 
         /*
@@ -439,6 +480,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
                 Optional.empty()
         );
     }
+
 
     /*
      * =================================================
@@ -491,10 +533,16 @@ public class ConsultationCategoryEvidenceAnalyzer {
         );
     }
 
+
     /*
      * =================================================
-     * Range -> Year Group
+     * Range -> 명리연도 Group
      * =================================================
+     *
+     * 기존 21차 Range 압축 계약을 그대로 유지한다.
+     *
+     * LifeDomainRuleMatch 객체 Identity가 아니라
+     * deterministic 논리 Signature로 중복을 압축한다.
      */
 
     private List<ConsultationCategoryTimelineYearEvidence>
@@ -503,6 +551,11 @@ public class ConsultationCategoryEvidenceAnalyzer {
             List<LifeDomainAnalysis> analyses
 
     ) {
+
+        Objects.requireNonNull(
+                analyses,
+                "Timeline Range Routing에는 LifeDomainAnalysis 목록이 필요합니다."
+        );
 
         Map<
                 Integer,
@@ -524,6 +577,11 @@ public class ConsultationCategoryEvidenceAnalyzer {
                     LifeDomainSegmentAnalysis segmentAnalysis
                     : analysis.segmentAnalyses()
             ) {
+
+                Objects.requireNonNull(
+                        segmentAnalysis,
+                        "Timeline Range의 LifeDomainSegmentAnalysis는 null일 수 없습니다."
+                );
 
                 int sajuYear =
                         segmentAnalysis
@@ -547,10 +605,6 @@ public class ConsultationCategoryEvidenceAnalyzer {
                  * =================================================
                  * Month Coverage
                  * =================================================
-                 *
-                 * Match 중복 압축과 별개로
-                 * 실제 Timeline Range가 확인한
-                 * 월 Index는 모두 보존한다.
                  */
 
                 accumulator.addMonthIndex(
@@ -582,7 +636,10 @@ public class ConsultationCategoryEvidenceAnalyzer {
                  *
                  * PAST_LUCK / FUTURE_LUCK은
                  * 특정 하나의 LifeDomain이 아니라
-                 * 전체 생활영역의 시간 흐름 View다.
+                 * 전체 생활영역 Timeline View다.
+                 *
+                 * selected RuleCode Routing 변경은
+                 * Range View에는 적용하지 않는다.
                  */
 
                 for (
@@ -600,15 +657,6 @@ public class ConsultationCategoryEvidenceAnalyzer {
                             domain,
                             matches
                     );
-
-                    /*
-                     * =================================================
-                     * Logical Dedup
-                     * =================================================
-                     *
-                     * 여기서 객체 Identity가 아니라
-                     * deterministic Match Signature로 압축한다.
-                     */
 
                     accumulator.addMatches(
                             matches
@@ -638,10 +686,38 @@ public class ConsultationCategoryEvidenceAnalyzer {
         );
     }
 
+
     /*
      * =================================================
-     * Natal
+     * Natal Routing
      * =================================================
+     *
+     * 기존:
+     *
+     * natalDomains에 포함된 Domain 전체만 Routing.
+     *
+     * =================================================
+     *
+     * 확장:
+     *
+     * 1.
+     * Domain 전체가 허용되면
+     * 해당 Domain의 모든 Match를 보존한다.
+     *
+     * 2.
+     * Domain 전체가 허용되지 않았더라도
+     * selectedNatalRuleCodes에
+     * 정확한 RuleCode가 등록되어 있으면
+     * 그 Match만 보존한다.
+     *
+     * =================================================
+     * 중요
+     * =================================================
+     *
+     * - Status 변경 없음
+     * - summary 파싱 없음
+     * - reasons 파싱 없음
+     * - RuleCode 정확 일치만 사용
      */
 
     private List<LifeDomainRuleMatch>
@@ -653,6 +729,16 @@ public class ConsultationCategoryEvidenceAnalyzer {
 
     ) {
 
+        Objects.requireNonNull(
+                lifeDomainAnalysis,
+                "Natal Routing에는 LifeDomainAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                policy,
+                "Natal Routing에는 ConsultationCategoryEvidencePolicy가 필요합니다."
+        );
+
         List<LifeDomainRuleMatch> result =
                 new ArrayList<>();
 
@@ -661,10 +747,25 @@ public class ConsultationCategoryEvidenceAnalyzer {
                 : LifeDomain.values()
         ) {
 
-            if (
-                    !policy.acceptsNatalDomain(
+            boolean fullDomainAccepted =
+                    policy.acceptsNatalDomain(
                             domain
-                    )
+                    );
+
+            boolean selectedRulesExist =
+                    policy.hasSelectedNatalRulesFor(
+                            domain
+                    );
+
+            /*
+             * Domain 전체도 아니고
+             * 해당 Domain의 selected Rule도 없다면
+             * 조회 자체를 하지 않는다.
+             */
+
+            if (
+                    !fullDomainAccepted
+                            && !selectedRulesExist
             ) {
 
                 continue;
@@ -681,9 +782,47 @@ public class ConsultationCategoryEvidenceAnalyzer {
                     matches
             );
 
-            result.addAll(
-                    matches
-            );
+            for (
+                    LifeDomainRuleMatch match
+                    : matches
+            ) {
+
+                LifeDomainRuleMatch normalized =
+                        Objects.requireNonNull(
+                                match,
+                                "Natal Routing의 LifeDomainRuleMatch는 null일 수 없습니다."
+                        );
+
+                /*
+                 * =================================================
+                 * 공식 Policy 판정
+                 * =================================================
+                 *
+                 * acceptsNatalRule():
+                 *
+                 * Domain 전체 허용
+                 * -> true
+                 *
+                 * 또는:
+                 *
+                 * selected RuleCode 정확 일치
+                 * -> true
+                 */
+
+                if (
+                        !policy.acceptsNatalRule(
+                                domain,
+                                normalized.ruleCode()
+                        )
+                ) {
+
+                    continue;
+                }
+
+                result.add(
+                        normalized
+                );
+            }
         }
 
         return List.copyOf(
@@ -691,10 +830,32 @@ public class ConsultationCategoryEvidenceAnalyzer {
         );
     }
 
+
     /*
      * =================================================
-     * Current Segment
+     * Current Segment Routing
      * =================================================
+     *
+     * 기존:
+     *
+     * segmentDomains에 포함된 Domain 전체만 Routing.
+     *
+     * =================================================
+     *
+     * 확장:
+     *
+     * selectedSegmentRuleCodes만 존재하는 Policy도
+     * 정상적으로 Segment Evidence를 생성한다.
+     *
+     * 1.
+     * Domain 전체 허용
+     * -> 모든 Match 보존
+     *
+     * 2.
+     * Domain 전체 미허용
+     * +
+     * selected RuleCode 등록
+     * -> 해당 Match만 보존
      */
 
     private List<ConsultationCategorySegmentEvidence>
@@ -706,9 +867,33 @@ public class ConsultationCategoryEvidenceAnalyzer {
 
     ) {
 
+        Objects.requireNonNull(
+                lifeDomainAnalysis,
+                "Segment Routing에는 LifeDomainAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                policy,
+                "Segment Routing에는 ConsultationCategoryEvidencePolicy가 필요합니다."
+        );
+
+        /*
+         * =================================================
+         * 아무 Segment Routing도 없는 경우
+         * =================================================
+         *
+         * 기존에는 segmentDomains.isEmpty()만 봤다.
+         *
+         * 이제 selectedSegmentRuleCodes만 존재할 수도 있으므로
+         * 둘 다 비어 있을 때만 종료한다.
+         */
+
         if (
                 policy.segmentDomains()
                         .isEmpty()
+
+                        && !policy
+                        .hasSelectedSegmentRules()
         ) {
 
             return List.of();
@@ -725,6 +910,11 @@ public class ConsultationCategoryEvidenceAnalyzer {
                 : lifeDomainAnalysis.segmentAnalyses()
         ) {
 
+            Objects.requireNonNull(
+                    segmentAnalysis,
+                    "Segment Routing의 LifeDomainSegmentAnalysis는 null일 수 없습니다."
+            );
+
             List<LifeDomainRuleMatch> matches =
                     new ArrayList<>();
 
@@ -733,10 +923,19 @@ public class ConsultationCategoryEvidenceAnalyzer {
                     : LifeDomain.values()
             ) {
 
-                if (
-                        !policy.acceptsSegmentDomain(
+                boolean fullDomainAccepted =
+                        policy.acceptsSegmentDomain(
                                 domain
-                        )
+                        );
+
+                boolean selectedRulesExist =
+                        policy.hasSelectedSegmentRulesFor(
+                                domain
+                        );
+
+                if (
+                        !fullDomainAccepted
+                                && !selectedRulesExist
                 ) {
 
                     continue;
@@ -753,10 +952,41 @@ public class ConsultationCategoryEvidenceAnalyzer {
                         domainMatches
                 );
 
-                matches.addAll(
-                        domainMatches
-                );
+                for (
+                        LifeDomainRuleMatch match
+                        : domainMatches
+                ) {
+
+                    LifeDomainRuleMatch normalized =
+                            Objects.requireNonNull(
+                                    match,
+                                    "Segment Routing의 LifeDomainRuleMatch는 null일 수 없습니다."
+                            );
+
+                    if (
+                            !policy.acceptsSegmentRule(
+                                    domain,
+                                    normalized.ruleCode()
+                            )
+                    ) {
+
+                        continue;
+                    }
+
+                    matches.add(
+                            normalized
+                    );
+                }
             }
+
+            /*
+             * Segment 자체의 Timeline 좌표와
+             * uncertainty 정보는 기존과 동일하게 보존한다.
+             *
+             * 선택된 Match가 없는 Segment라도
+             * 기존 Domain Routing과 동일하게
+             * Segment Evidence 구조는 유지한다.
+             */
 
             result.add(
                     new ConsultationCategorySegmentEvidence(
@@ -771,6 +1001,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
                 result
         );
     }
+
 
     /*
      * =================================================
@@ -824,6 +1055,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
         }
     }
 
+
     /*
      * =================================================
      * Unavailable
@@ -864,6 +1096,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
         );
     }
 
+
     /*
      * =================================================
      * Timeline Logical Match Key
@@ -872,27 +1105,18 @@ public class ConsultationCategoryEvidenceAnalyzer {
      * LifeDomainRuleMatch의 upstream source 객체
      * Identity를 Year 압축 기준에서 제거한다.
      *
-     * =================================================
+     * 보존:
      *
-     * 보존하는 것:
+     * - domain
+     * - ruleCode
+     * - status
+     * - summary
+     * - Evidence provenance metadata
+     * - reasons
      *
-     * domain
-     * ruleCode
-     * status
-     * summary
-     * Evidence provenance metadata
-     * Rule reasons
+     * 제거:
      *
-     * =================================================
-     *
-     * 제거하는 것:
-     *
-     * LifeDomainEvidenceReference.source()
-     *
-     * 즉 같은 연도 계산을 다시 수행하면서
-     * 새로 생성된 upstream 객체 Identity만 다르고
-     * deterministic 결과가 완전히 같다면
-     * 하나의 Match로 압축된다.
+     * - LifeDomainEvidenceReference.source() 객체 Identity
      */
 
     private record TimelineMatchKey(
@@ -948,6 +1172,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
                     );
         }
 
+
         private static TimelineMatchKey of(
                 LifeDomainRuleMatch match
         ) {
@@ -979,47 +1204,21 @@ public class ConsultationCategoryEvidenceAnalyzer {
         }
     }
 
+
     /*
      * =================================================
-     * Evidence Logical Key
+     * Timeline Evidence Logical Key
      * =================================================
      *
-     * source() 객체 자체는 넣지 않는다.
+     * 실제 source() 객체는 사용하지 않는다.
      *
-     * 공식 provenance metadata:
+     * deterministic provenance metadata:
      *
-     * sourceType
-     * tier
-     * sourceKey
+     * - sourceType
+     * - tier
+     * - sourceKey
      *
      * 만 사용한다.
-     *
-     * =================================================
-     *
-     * 예:
-     *
-     * ANNUAL_CONTEXT
-     * TEMPORAL_CONTEXT
-     * ANNUAL:2026
-     *
-     * =================================================
-     *
-     * 또는:
-     *
-     * ANNUAL_FUNCTIONAL_CONTEXT
-     * TEMPORAL_CONTEXT
-     * ANNUAL_FUNCTIONAL:2026
-     *
-     * =================================================
-     *
-     * 월운:
-     *
-     * MONTHLY_CONTEXT
-     * TEMPORAL_CONTEXT
-     * MONTHLY:2026:3
-     *
-     * 처럼 sourceKey 자체가 다르므로
-     * 월별 Evidence는 유지된다.
      */
 
     private record TimelineEvidenceKey(
@@ -1050,6 +1249,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
             );
         }
 
+
         private static TimelineEvidenceKey of(
                 LifeDomainEvidenceReference<?> reference
         ) {
@@ -1071,53 +1271,28 @@ public class ConsultationCategoryEvidenceAnalyzer {
         }
     }
 
+
     /*
      * =================================================
-     * Year Accumulator
+     * Timeline Year Accumulator
      * =================================================
-     *
-     * 계산 객체가 아니다.
      *
      * 이미 계산된 월별 Match를
      * 하나의 명리연도 아래에 구조적으로 모은다.
      *
-     * =================================================
+     * 동일 deterministic Signature 반복:
+     * -> 1회
      *
-     * 기존:
+     * 실제 월별 변화:
+     * -> 보존
      *
-     * Set<LifeDomainRuleMatch>
+     * 실제 교운 변화:
+     * -> 보존
      *
-     * =================================================
-     *
-     * 변경:
-     *
-     * Map<
-     *     TimelineMatchKey,
-     *     LifeDomainRuleMatch
-     * >
-     *
-     * =================================================
-     *
-     * 따라서:
-     *
-     * 동일 deterministic 결과
-     * +
-     * 서로 다른 upstream Java 객체
-     *
-     * 는 하나로 압축된다.
-     *
-     * =================================================
-     *
-     * 반면:
-     *
-     * 다른 월 SourceKey
-     * 다른 Status
-     * 다른 Summary
-     * 다른 Reasons
-     * 다른 Cross Segment 결과
-     *
-     * 는 별개로 남는다.
+     * Timeline uncertainty:
+     * -> 보존
      */
+
     private static final class TimelineYearAccumulator {
 
         private final int sajuYear;
@@ -1135,6 +1310,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
         private boolean
                 timelineUncertaintyExists;
 
+
         private TimelineYearAccumulator(
                 int sajuYear
         ) {
@@ -1142,6 +1318,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
             this.sajuYear =
                     sajuYear;
         }
+
 
         /*
          * =================================================
@@ -1157,6 +1334,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
                     monthIndex
             );
         }
+
 
         /*
          * =================================================
@@ -1189,26 +1367,13 @@ public class ConsultationCategoryEvidenceAnalyzer {
                                 normalized
                         );
 
-                /*
-                 * =================================================
-                 * 첫 deterministic 대표 객체 보존
-                 * =================================================
-                 *
-                 * 대표 월을 선택한다는 의미가 아니다.
-                 *
-                 * 동일 Signature Match가 이미 존재할 때
-                 * 새 객체를 한 번 더 추가하지 않는 것이다.
-                 *
-                 * 값 자체가 달라지면 Signature가 달라지므로
-                 * 별도 Match로 남는다.
-                 */
-
                 matches.putIfAbsent(
                         key,
                         normalized
                 );
             }
         }
+
 
         /*
          * =================================================
@@ -1221,6 +1386,7 @@ public class ConsultationCategoryEvidenceAnalyzer {
             timelineUncertaintyExists =
                     true;
         }
+
 
         /*
          * =================================================

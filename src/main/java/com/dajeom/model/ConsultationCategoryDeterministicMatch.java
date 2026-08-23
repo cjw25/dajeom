@@ -16,7 +16,7 @@ import java.util.Set;
  * 하나의 계산 결과.
  *
  * =================================================
- * 기존 LifeDomainRuleMatch와의 차이
+ * LifeDomainRuleMatch와의 차이
  * =================================================
  *
  * LifeDomainRuleMatch:
@@ -60,7 +60,7 @@ import java.util.Set;
  *
  * dependencies에는
  * 상위 Synthesis Rule이 참조한
- * 기존 ConsultationCategoryDeterministicMatch의
+ * ConsultationCategoryDeterministicMatch의
  * immutable dependency reference가 존재한다.
  *
  * =================================================
@@ -146,11 +146,13 @@ public record ConsultationCategoryDeterministicMatch(
 
     /*
      * =================================================
-     * 기존 생성자 호환
+     * Dependency 없는 일반 Rule용 편의 생성자
      * =================================================
      *
-     * 기존 모든 일반 Deterministic Rule은
-     * 수정 없이 그대로 컴파일된다.
+     * 별도의 deterministic dependency를 사용하지 않는
+     * 일반 Category Rule은 이 생성자를 사용한다.
+     *
+     * dependencies는 빈 목록으로 확정한다.
      */
 
     public ConsultationCategoryDeterministicMatch(

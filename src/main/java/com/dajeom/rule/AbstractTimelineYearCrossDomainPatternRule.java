@@ -36,8 +36,8 @@ import java.util.Objects;
  * HEALTH_LIFESTYLE
  *
  * 같은 서로 다른 LifeDomain의
- * deterministic 방향이
- * 어떤 구조로 함께 작동하는지 분류한다.
+ * 이미 계산된 deterministic 방향이
+ * 어떤 상태 조합으로 함께 존재하는지 분류한다.
  *
  * =================================================
  * 중요한 원칙
@@ -51,6 +51,9 @@ import java.util.Objects;
  * - Rule 개수를 세지 않는다.
  * - Evidence 개수를 세지 않는다.
  * - 가장 많이 나온 Status를 선택하지 않는다.
+ * - Domain 사이의 인과를 생성하지 않는다.
+ * - Domain 사이의 강화·약화를 생성하지 않는다.
+ * - Function 사이의 관계를 생성하지 않는다.
  *
  * =================================================
  * Temporal Match
@@ -67,6 +70,19 @@ import java.util.Objects;
  *
  * Natal-only Match만으로
  * 연도 Cross-Domain Pattern을 만들지 않는다.
+ *
+ * MONTHLY_FUNCTIONAL_CONTEXT는
+ * 이 Rule의 직접 Cross-Domain 입력으로 사용하지 않는다.
+ *
+ * Monthly Functional 계층에서 계산되지 않은:
+ *
+ * - Function 생성
+ * - Function 제어
+ * - Function 충돌
+ * - Function 순서
+ * - Domain 간 인과
+ *
+ * 를 이 Rule에서 새로 만들지 않는다.
  *
  * =================================================
  * Annual Derived Provenance
@@ -117,7 +133,7 @@ import java.util.Objects;
  * =================================================
  *
  * 1.
- * MIXED_PROPAGATION
+ * MIXED_WITH_DIRECTIONAL
  *
  * MIXED Domain이 존재하고
  * 다른 별도의 방향성 Domain도 존재.
@@ -128,9 +144,9 @@ import java.util.Objects;
  * =================================================
  *
  * 2.
- * DIRECTIONAL_CONFLICT
+ * SUPPORTIVE_PRESSURE_COEXISTENCE
  *
- * 서로 다른 Domain 사이에
+ * 서로 다른 Domain에:
  *
  * SUPPORTIVE
  *
@@ -138,15 +154,18 @@ import java.util.Objects;
  *
  * PRESSURE
  *
- * 가 동시에 존재.
+ * 가 함께 존재.
  *
  * ->
  * MIXED
  *
+ * 두 Domain이 서로 충돌한다거나
+ * 한쪽이 다른 쪽을 방해한다고 계산하는 것은 아니다.
+ *
  * =================================================
  *
  * 3.
- * PRESSURE_RESONANCE
+ * MULTI_DOMAIN_PRESSURE
  *
  * 서로 다른 최소 2개 Domain이
  * PRESSURE.
@@ -154,16 +173,22 @@ import java.util.Objects;
  * ->
  * PRESSURE
  *
+ * PRESSURE가 서로 강화되거나
+ * 공진한다고 계산하는 것은 아니다.
+ *
  * =================================================
  *
  * 4.
- * SUPPORTIVE_RESONANCE
+ * MULTI_DOMAIN_SUPPORTIVE
  *
  * 서로 다른 최소 2개 Domain이
  * SUPPORTIVE.
  *
  * ->
  * SUPPORTIVE
+ *
+ * SUPPORTIVE가 서로 강화되거나
+ * 공진한다고 계산하는 것은 아니다.
  *
  * =================================================
  *
@@ -173,7 +198,7 @@ import java.util.Objects;
  * 방향성 Domain은 하나뿐이고
  * 다른 Domain들은 CONTEXTUAL.
  *
- * 또는
+ * 또는:
  *
  * MIXED Domain 하나와
  * CONTEXTUAL Domain만 공존.
@@ -190,7 +215,7 @@ import java.util.Objects;
  * =================================================
  *
  * 6.
- * CONTEXTUAL_SPREAD
+ * MULTI_DOMAIN_CONTEXTUAL
  *
  * 둘 이상의 Domain이
  * CONTEXTUAL만 가지고 있음.
@@ -199,48 +224,52 @@ import java.util.Objects;
  * CONTEXTUAL
  *
  * =================================================
- * 우선순위
+ * 분류 순서
  * =================================================
  *
- * Pattern 분류 우선순위는
+ * Pattern 분류 순서는
  * 강도 순위가 아니다.
  *
- * 더 구체적인 구조를 먼저 식별하기 위한
+ * 더 구체적인 상태 조합을 먼저 식별하기 위한
  * deterministic classification 순서다.
  *
- * MIXED propagation
+ * MIXED_WITH_DIRECTIONAL
  * ->
- * directional conflict
+ * SUPPORTIVE_PRESSURE_COEXISTENCE
  * ->
- * pressure resonance
+ * MULTI_DOMAIN_PRESSURE
  * ->
- * supportive resonance
+ * MULTI_DOMAIN_SUPPORTIVE
  * ->
- * directional with context
+ * DIRECTIONAL_WITH_CONTEXT
  * ->
- * contextual spread
+ * MULTI_DOMAIN_CONTEXTUAL
  *
  * =================================================
  * 하지 않는 것
  * =================================================
  *
- * PRESSURE_RESONANCE
+ * MULTI_DOMAIN_PRESSURE
  * ->
  * 실제 문제가 여러 개 발생한다
  *
- * DIRECTIONAL_CONFLICT
+ * SUPPORTIVE_PRESSURE_COEXISTENCE
  * ->
- * 좋은 일과 나쁜 일이 동시에 발생한다
+ * 좋은 일과 나쁜 일이 서로 충돌한다
  *
- * SUPPORTIVE_RESONANCE
+ * MULTI_DOMAIN_SUPPORTIVE
  * ->
- * 큰 성공이 발생한다
+ * 서로 강화되어 큰 성공이 발생한다
  *
- * MIXED_PROPAGATION
+ * MIXED_WITH_DIRECTIONAL
  * ->
- * 상황이 혼란스럽다
+ * 다른 영역으로 혼재가 전파된다
  *
- * 같은 사건·심리·체감 추론은 하지 않는다.
+ * MULTI_DOMAIN_CONTEXTUAL
+ * ->
+ * 불확실성이 여러 영역으로 확산된다
+ *
+ * 같은 사건·인과·강화·약화·심리·체감 추론은 하지 않는다.
  */
 public abstract class AbstractTimelineYearCrossDomainPatternRule
         implements ConsultationCategoryDeterministicRule {
@@ -384,7 +413,8 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
                 );
 
         /*
-         * Cross-Domain은 최소 두 Domain이 필요하다.
+         * Cross-Domain 분류에는
+         * 최소 두 LifeDomain이 필요하다.
          */
 
         if (
@@ -582,6 +612,17 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
      * =================================================
      * Temporal Activity
      * =================================================
+     *
+     * Cross-Domain Pattern의 직접 입력은:
+     *
+     * ANNUAL_CONTEXT
+     * ANNUAL_FUNCTIONAL_CONTEXT
+     * MONTHLY_CONTEXT
+     *
+     * 이다.
+     *
+     * MONTHLY_FUNCTIONAL_CONTEXT만으로
+     * 새로운 Cross-Domain 상태 조합을 만들지 않는다.
      */
 
     private boolean temporalActivityExists(
@@ -729,6 +770,18 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
      * =================================================
      * Cross-Domain Classification
      * =================================================
+     *
+     * 서로 다른 Domain의 확정 Status 조합만 분류한다.
+     *
+     * Domain 사이의:
+     *
+     * - 원인
+     * - 결과
+     * - 강화
+     * - 약화
+     * - 순서
+     *
+     * 는 계산하지 않는다.
      */
 
     private CrossDomainPattern resolveCrossDomainPattern(
@@ -771,11 +824,12 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
 
         /*
          * =================================================
-         * 1. MIXED_PROPAGATION
+         * 1. MIXED_WITH_DIRECTIONAL
          * =================================================
          *
-         * MIXED Domain 하나가 존재하고
-         * 그 외에 별도의 방향성 Domain이 하나 이상.
+         * MIXED Domain 하나 이상
+         * +
+         * 별도의 다른 방향성 Domain 하나 이상.
          */
 
         if (
@@ -784,16 +838,18 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
         ) {
 
             return CrossDomainPattern
-                    .MIXED_PROPAGATION;
+                    .MIXED_WITH_DIRECTIONAL;
         }
 
         /*
          * =================================================
-         * 2. DIRECTIONAL_CONFLICT
+         * 2. SUPPORTIVE_PRESSURE_COEXISTENCE
          * =================================================
          *
          * 서로 다른 Domain에
-         * SUPPORTIVE와 PRESSURE가 공존.
+         * SUPPORTIVE와 PRESSURE가 함께 존재한다.
+         *
+         * 충돌이나 상쇄를 별도로 계산하지 않는다.
          */
 
         if (
@@ -802,12 +858,12 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
         ) {
 
             return CrossDomainPattern
-                    .DIRECTIONAL_CONFLICT;
+                    .SUPPORTIVE_PRESSURE_COEXISTENCE;
         }
 
         /*
          * =================================================
-         * 3. PRESSURE_RESONANCE
+         * 3. MULTI_DOMAIN_PRESSURE
          * =================================================
          */
 
@@ -817,12 +873,12 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
         ) {
 
             return CrossDomainPattern
-                    .PRESSURE_RESONANCE;
+                    .MULTI_DOMAIN_PRESSURE;
         }
 
         /*
          * =================================================
-         * 4. SUPPORTIVE_RESONANCE
+         * 4. MULTI_DOMAIN_SUPPORTIVE
          * =================================================
          */
 
@@ -832,7 +888,7 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
         ) {
 
             return CrossDomainPattern
-                    .SUPPORTIVE_RESONANCE;
+                    .MULTI_DOMAIN_SUPPORTIVE;
         }
 
         /*
@@ -841,11 +897,12 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
          * =================================================
          *
          * 방향성 Domain은 하나뿐이고
-         * 다른 Domain들은 Contextual.
+         * 다른 Domain들은 CONTEXTUAL.
          *
-         * 또는 MIXED 하나 + Contextual.
+         * MIXED 하나 + CONTEXTUAL도
+         * 이 조건에 포함된다.
          *
-         * Contextual을 같은 방향으로 승격하지 않는다.
+         * CONTEXTUAL을 같은 방향으로 승격하지 않는다.
          */
 
         if (
@@ -859,7 +916,7 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
 
         /*
          * =================================================
-         * 6. CONTEXTUAL_SPREAD
+         * 6. MULTI_DOMAIN_CONTEXTUAL
          * =================================================
          */
 
@@ -869,11 +926,12 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
         ) {
 
             return CrossDomainPattern
-                    .CONTEXTUAL_SPREAD;
+                    .MULTI_DOMAIN_CONTEXTUAL;
         }
 
         /*
-         * 구조적으로 Cross-Domain Pattern을
+         * 현재 계산 조건으로
+         * Cross-Domain 상태 조합을
          * 하나로 정의할 수 없음.
          */
 
@@ -933,8 +991,8 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
      * Source Selection
      * =================================================
      *
-     * Pattern에 실제 기여한 Domain/Status만
-     * sourceMatches로 보존한다.
+     * Pattern 분류에 실제 사용된
+     * Domain/Status만 sourceMatches로 보존한다.
      */
 
     private List<LifeDomainRuleMatch>
@@ -1036,7 +1094,7 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
                 pattern
                 ) {
 
-            case MIXED_PROPAGATION ->
+            case MIXED_WITH_DIRECTIONAL ->
                     state
                             == DomainState.MIXED
 
@@ -1046,18 +1104,18 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
                             || state
                             == DomainState.PRESSURE;
 
-            case DIRECTIONAL_CONFLICT ->
+            case SUPPORTIVE_PRESSURE_COEXISTENCE ->
                     state
                             == DomainState.SUPPORTIVE
 
                             || state
                             == DomainState.PRESSURE;
 
-            case PRESSURE_RESONANCE ->
+            case MULTI_DOMAIN_PRESSURE ->
                     state
                             == DomainState.PRESSURE;
 
-            case SUPPORTIVE_RESONANCE ->
+            case MULTI_DOMAIN_SUPPORTIVE ->
                     state
                             == DomainState.SUPPORTIVE;
 
@@ -1074,7 +1132,7 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
                             || state
                             == DomainState.CONTEXTUAL;
 
-            case CONTEXTUAL_SPREAD ->
+            case MULTI_DOMAIN_CONTEXTUAL ->
                     state
                             == DomainState.CONTEXTUAL;
         };
@@ -1103,9 +1161,8 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
         );
 
         /*
-         * =================================================
-         * Domain State를 만든 실제 방향만 사용.
-         * =================================================
+         * Domain State를 실제로 만든
+         * Status만 sourceMatches로 보존한다.
          */
 
         return switch (
@@ -1135,7 +1192,7 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
                             == CrossDomainPattern.DIRECTIONAL_WITH_CONTEXT
 
                             || pattern
-                            == CrossDomainPattern.CONTEXTUAL_SPREAD
+                            == CrossDomainPattern.MULTI_DOMAIN_CONTEXTUAL
 
                             ? matchStatus
                             == LifeDomainSignalStatus.CONTEXTUAL
@@ -1169,7 +1226,7 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
 
         reasons.add(
                 flowLabel()
-                        + " CROSS_DOMAIN_PATTERN은 Match 수, Rule 수, Evidence 수를 비교하지 않고 서로 다른 LifeDomain에 존재하는 deterministic 방향의 구조적 조합만 사용합니다."
+                        + " CROSS_DOMAIN_PATTERN은 Match 수, Rule 수, Evidence 수를 비교하지 않고 서로 다른 LifeDomain에 이미 계산된 deterministic 방향이 어떤 상태 조합으로 함께 존재하는지만 사용합니다."
         );
 
         reasons.add(
@@ -1177,7 +1234,11 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
         );
 
         reasons.add(
-                "Natal-only Match는 해당 명리연도의 Cross-Domain 작동으로 승격하지 않고 ANNUAL_CONTEXT, ANNUAL_FUNCTIONAL_CONTEXT 또는 MONTHLY_CONTEXT를 사용하는 Match만 사용합니다."
+                "Natal-only Match는 해당 명리연도의 Cross-Domain 상태 조합으로 승격하지 않고 ANNUAL_CONTEXT, ANNUAL_FUNCTIONAL_CONTEXT 또는 MONTHLY_CONTEXT를 사용하는 Match만 사용합니다."
+        );
+
+        reasons.add(
+                "MONTHLY_FUNCTIONAL_CONTEXT만을 근거로 새로운 Cross-Domain 관계·인과·강화·약화·Function 관계를 생성하지 않습니다."
         );
 
         /*
@@ -1223,24 +1284,24 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
                 pattern
         ) {
 
-            case MIXED_PROPAGATION ->
+            case MIXED_WITH_DIRECTIONAL ->
                     reasons.add(
-                            "하나 이상의 LifeDomain에 MIXED 구조가 존재하고 별도의 다른 방향성 LifeDomain도 함께 존재하여 CROSS_DOMAIN_PATTERN을 MIXED_PROPAGATION으로 분류합니다."
+                            "하나 이상의 LifeDomain에 MIXED 구조가 존재하고 별도의 다른 방향성 LifeDomain도 존재하여 CROSS_DOMAIN_PATTERN을 MIXED_WITH_DIRECTIONAL로 분류합니다. MIXED가 다른 Domain으로 전파된다고 계산하지 않습니다."
                     );
 
-            case DIRECTIONAL_CONFLICT ->
+            case SUPPORTIVE_PRESSURE_COEXISTENCE ->
                     reasons.add(
-                            "서로 다른 LifeDomain 사이에 SUPPORTIVE와 PRESSURE 방향이 동시에 존재하여 CROSS_DOMAIN_PATTERN을 DIRECTIONAL_CONFLICT로 분류합니다. 어느 방향도 삭제하거나 상쇄하지 않습니다."
+                            "서로 다른 LifeDomain에 SUPPORTIVE와 PRESSURE 방향이 함께 존재하여 CROSS_DOMAIN_PATTERN을 SUPPORTIVE_PRESSURE_COEXISTENCE로 분류합니다. 두 방향 사이의 충돌·상쇄·인과는 추가 계산하지 않습니다."
                     );
 
-            case PRESSURE_RESONANCE ->
+            case MULTI_DOMAIN_PRESSURE ->
                     reasons.add(
-                            "서로 다른 최소 두 LifeDomain에 명시적 PRESSURE 방향이 존재하여 CROSS_DOMAIN_PATTERN을 PRESSURE_RESONANCE로 분류합니다. Match 반복 횟수는 사용하지 않습니다."
+                            "서로 다른 최소 두 LifeDomain에 명시적 PRESSURE 방향이 존재하여 CROSS_DOMAIN_PATTERN을 MULTI_DOMAIN_PRESSURE로 분류합니다. PRESSURE가 서로 강화되거나 공진한다고 계산하지 않습니다."
                     );
 
-            case SUPPORTIVE_RESONANCE ->
+            case MULTI_DOMAIN_SUPPORTIVE ->
                     reasons.add(
-                            "서로 다른 최소 두 LifeDomain에 SUPPORTIVE 방향이 존재하여 CROSS_DOMAIN_PATTERN을 SUPPORTIVE_RESONANCE로 분류합니다. 이것을 사건 성공이나 결과 확정으로 변환하지 않습니다."
+                            "서로 다른 최소 두 LifeDomain에 SUPPORTIVE 방향이 존재하여 CROSS_DOMAIN_PATTERN을 MULTI_DOMAIN_SUPPORTIVE로 분류합니다. SUPPORTIVE가 서로 강화되거나 결과 성공으로 이어진다고 계산하지 않습니다."
                     );
 
             case DIRECTIONAL_WITH_CONTEXT ->
@@ -1248,9 +1309,9 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
                             "하나의 방향성 LifeDomain과 하나 이상의 CONTEXTUAL LifeDomain이 함께 존재하지만 CONTEXTUAL Domain을 해당 방향으로 승격할 수 없어 CROSS_DOMAIN_PATTERN을 DIRECTIONAL_WITH_CONTEXT로 보존합니다."
                     );
 
-            case CONTEXTUAL_SPREAD ->
+            case MULTI_DOMAIN_CONTEXTUAL ->
                     reasons.add(
-                            "서로 다른 최소 두 LifeDomain에 CONTEXTUAL 구조만 존재하여 CROSS_DOMAIN_PATTERN을 CONTEXTUAL_SPREAD로 분류합니다."
+                            "서로 다른 최소 두 LifeDomain에 CONTEXTUAL 구조만 존재하여 CROSS_DOMAIN_PATTERN을 MULTI_DOMAIN_CONTEXTUAL로 분류합니다. CONTEXTUAL 상태가 서로 확산되거나 강화된다고 계산하지 않습니다."
                     );
         }
 
@@ -1343,28 +1404,28 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
                 pattern
                 ) {
 
-            case MIXED_PROPAGATION ->
-                    "해당 명리연도에는 MIXED LifeDomain과 다른 방향성 LifeDomain이 함께 작동하는 Cross-Domain 혼재 구조가 존재합니다. participants="
+            case MIXED_WITH_DIRECTIONAL ->
+                    "해당 명리연도에는 MIXED LifeDomain과 별도의 다른 방향성 LifeDomain이 함께 존재합니다. 서로의 원인·결과나 전파 관계는 계산하지 않습니다. participants="
                             + participants;
 
-            case DIRECTIONAL_CONFLICT ->
-                    "해당 명리연도에는 서로 다른 LifeDomain 사이에 SUPPORTIVE와 PRESSURE 방향이 함께 존재하는 Cross-Domain 방향 충돌 구조가 있습니다. participants="
+            case SUPPORTIVE_PRESSURE_COEXISTENCE ->
+                    "해당 명리연도에는 서로 다른 LifeDomain에 SUPPORTIVE와 PRESSURE 방향이 함께 존재합니다. 두 방향 사이의 충돌·상쇄·인과는 계산하지 않습니다. participants="
                             + participants;
 
-            case PRESSURE_RESONANCE ->
-                    "해당 명리연도에는 서로 다른 LifeDomain에 PRESSURE 방향이 함께 존재하는 Cross-Domain 부담 공진 구조가 있습니다. participants="
+            case MULTI_DOMAIN_PRESSURE ->
+                    "해당 명리연도에는 서로 다른 최소 두 LifeDomain에 PRESSURE 방향이 존재합니다. Domain 사이의 강화 관계는 계산하지 않습니다. participants="
                             + participants;
 
-            case SUPPORTIVE_RESONANCE ->
-                    "해당 명리연도에는 서로 다른 LifeDomain에 SUPPORTIVE 방향이 함께 존재하는 Cross-Domain 지지 공진 구조가 있습니다. participants="
+            case MULTI_DOMAIN_SUPPORTIVE ->
+                    "해당 명리연도에는 서로 다른 최소 두 LifeDomain에 SUPPORTIVE 방향이 존재합니다. Domain 사이의 강화 관계는 계산하지 않습니다. participants="
                             + participants;
 
             case DIRECTIONAL_WITH_CONTEXT ->
                     "해당 명리연도에는 하나의 방향성 LifeDomain과 방향을 확정하지 않는 CONTEXTUAL LifeDomain이 함께 존재합니다. participants="
                             + participants;
 
-            case CONTEXTUAL_SPREAD ->
-                    "해당 명리연도에는 여러 LifeDomain에 방향을 단독 확정하지 않는 CONTEXTUAL 구조가 함께 존재합니다. participants="
+            case MULTI_DOMAIN_CONTEXTUAL ->
+                    "해당 명리연도에는 서로 다른 최소 두 LifeDomain에 방향을 단독 확정하지 않는 CONTEXTUAL 구조가 존재합니다. participants="
                             + participants;
         };
     }
@@ -1393,28 +1454,39 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
      * Internal Cross-Domain Pattern
      * =================================================
      *
-     * 외부 공식 Enum을 새로 추가하지 않는다.
+     * 외부 공식 Enum을 추가하지 않는다.
      *
      * 현재 CategoryDeterministicMatch의
-     * 공식 Status 체계를 유지하면서
-     * 이 Rule 내부에서 Cross-Domain 구조를
+     * 공식 Status 체계를 그대로 유지하면서
+     * 이 Rule 내부에서
+     * 서로 다른 LifeDomain의 Status 공존 구조만
      * deterministic하게 분류한다.
+     *
+     * Enum 이름 자체가:
+     *
+     * - 전파
+     * - 공진
+     * - 충돌
+     * - 확산
+     *
+     * 처럼 계산하지 않은 관계를 암시하지 않도록
+     * 실제 판정 조건을 그대로 표현한다.
      */
     private enum CrossDomainPattern {
 
-        MIXED_PROPAGATION(
+        MIXED_WITH_DIRECTIONAL(
                 ConsultationCategoryDeterministicStatus.MIXED
         ),
 
-        DIRECTIONAL_CONFLICT(
+        SUPPORTIVE_PRESSURE_COEXISTENCE(
                 ConsultationCategoryDeterministicStatus.MIXED
         ),
 
-        PRESSURE_RESONANCE(
+        MULTI_DOMAIN_PRESSURE(
                 ConsultationCategoryDeterministicStatus.PRESSURE
         ),
 
-        SUPPORTIVE_RESONANCE(
+        MULTI_DOMAIN_SUPPORTIVE(
                 ConsultationCategoryDeterministicStatus.SUPPORTIVE
         ),
 
@@ -1422,7 +1494,7 @@ public abstract class AbstractTimelineYearCrossDomainPatternRule
                 ConsultationCategoryDeterministicStatus.CONTEXTUAL
         ),
 
-        CONTEXTUAL_SPREAD(
+        MULTI_DOMAIN_CONTEXTUAL(
                 ConsultationCategoryDeterministicStatus.CONTEXTUAL
         );
 

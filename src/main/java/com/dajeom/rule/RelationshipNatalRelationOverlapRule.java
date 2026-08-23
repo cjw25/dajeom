@@ -63,6 +63,24 @@ import java.util.Set;
  *
  * =================================================
  *
+ * 이 Rule에서 사용하는 관계는
+ * 8차 RelationAnalysis가 실제 계산한
+ * EarthlyBranchPairRelation에 한정한다.
+ *
+ * 독립된 다른 Evidence를 가져와:
+ *
+ * - 관계
+ * - 인과
+ * - 순서
+ * - 강화
+ * - 약화
+ * - 상쇄
+ * - 추가 종합 의미
+ *
+ * 를 만들지 않는다.
+ *
+ * =================================================
+ *
  * 또한:
  *
  * 合 존재
@@ -450,7 +468,7 @@ public class RelationshipNatalRelationOverlapRule
                                     )
                                             + "입니다.",
                                     "破·害 단독을 沖·刑과 동일한 강도의 Pressure로 자동 평준화하지 않습니다.",
-                                    "관계 마찰의 Context로 보존하고 다른 구조·합화·운 Evidence와 함께 해석합니다."
+                                    "이 Match는 破·害가 존재한다는 계산 결과와 CONTEXTUAL 상태만 보존하며, 다른 독립 Evidence와의 추가 관계나 종합 의미를 생성하지 않습니다."
                             )
                     )
             );

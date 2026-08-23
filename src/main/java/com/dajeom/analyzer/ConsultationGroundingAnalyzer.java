@@ -9,6 +9,7 @@ import com.dajeom.model.ConsultationCategoryTimelineYearEvidence;
 import com.dajeom.model.ConsultationGroundingAnalysis;
 import com.dajeom.model.ConsultationGroundingDeterministicConclusion;
 import com.dajeom.model.ConsultationGroundingEvidence;
+import com.dajeom.model.ConsultationGroundingProminence;
 import com.dajeom.model.ConsultationGroundingSection;
 import com.dajeom.model.ConsultationGroundingSource;
 import com.dajeom.model.ConsultationGroundingTimelineScenario;
@@ -30,102 +31,89 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * 정밀화 20차 / 21차 Range / 22차 Prominence
- * +
- * Personality Direct-Natal Grounding
- * +
- * PAST/FUTURE Category Deterministic Contract 확장.
+ * Category Evidence View를
+ * 공식 LLM Grounding 구조로 변환한다.
  *
  * =================================================
- * 기존 일반 Category
+ * 의미 경계
  * =================================================
  *
- * LifeDomain
- * ↓
- * Rule Match
- * ↓
- * Grounding Evidence
+ * raw LifeDomain Evidence
+ *
+ * =
+ * 세부 계산 근거와 provenance.
+ *
+ * -------------------------------------------------
+ *
+ * Category Deterministic Conclusion
+ *
+ * =
+ * Java가 해당 ConsultationCategory에서
+ * 확정한 공식 Meaning Boundary.
  *
  * =================================================
- * PERSONALITY
+ * Layer Routing
  * =================================================
  *
- * NatalPersonalityStatementContract
+ * NATAL
  *
- * 를 공식 deterministic 의미 Source로 사용한다.
+ * ->
+ * ConsultationGroundingSection
+ * .natalDeterministicConclusions
  *
- * =================================================
+ * CURRENT_TIMELINE
+ *
+ * ->
+ * ConsultationGroundingTimelineScenario
+ * .deterministicConclusions
+ *
+ * TIMELINE_YEAR
+ *
+ * ->
  * PAST_LUCK / FUTURE_LUCK
- * =================================================
- *
- * 기존:
- *
- * Timeline Year
- * ↓
- * raw LifeDomainRuleMatch
- * ↓
- * Grounding Evidence
+ * ConsultationGroundingTimelineYear
+ * .deterministicContract
  *
  * =================================================
- *
- * 변경:
- *
- * Timeline Year Evidence
- * ↓
- * ConsultationCategoryDeterministicRuleEngine
- * ↓
- *
- * BIG_FLOW
- * PRIMARY_ACTIVE_DOMAIN
- * PRIMARY_PRESSURE_DOMAIN
- * CROSS_DOMAIN_PATTERN
- * TURNING_POINT
- * OVERALL_NARRATIVE
- *
- * ↓
- *
- * Grounding Timeline Year Deterministic Contract
- *
- * +
- *
- * raw Grounding Evidence
- *
- * =================================================
- * 핵심 우선순위
+ * Evidence Prominence
  * =================================================
  *
- * Deterministic Contract:
+ * LifeDomainRuleMatch를
+ * ConsultationGroundingEvidence로 처음 변환할 때도
+ * prominence를 생략하지 않는다.
  *
- * 최종 연도 의미의 공식 상위 계약.
+ * 최초 변환에서는:
+ *
+ * ConsultationGroundingProminence.unranked(sources)
+ *
+ * 를 명시적으로 넣는다.
+ *
+ * 이후 같은 Slice 안에서:
+ *
+ * ConsultationGroundingProminenceAnalyzer
+ *
+ * 가 실제 narrativePriority를 계산한다.
  *
  * =================================================
- *
- * raw Grounding Evidence:
- *
- * 그 계약을 설명하기 위한 세부 근거.
- *
+ * 중요한 원칙
  * =================================================
  *
- * raw Evidence를 다시 합산해서
- * 연도 전체 방향을 계산하지 않는다.
+ * 독립 계산 결과는 독립적으로 유지한다.
  *
- * =================================================
- * LLM Boundary
- * =================================================
+ * 여러 Evidence 또는 Conclusion이
+ * 함께 존재한다는 이유만으로:
  *
- * ConsultationCategoryDeterministicMatch 전체를
- * 직접 LLM 경계로 넘기지 않는다.
+ * - 관계
+ * - 인과
+ * - 순서
+ * - 강화/약화
+ * - 새로운 종합 Status
  *
- * 내부 LifeDomainRuleMatch를 제거하고:
+ * 를 생성하지 않는다.
  *
- * - ruleCode
- * - status
- * - summary
- * - source Domain / Status
- * - reasons
- * - dependency provenance
- *
- * 만 Grounding Conclusion으로 변환한다.
+ * 관계 또는 합성 의미는
+ * 별도의 Java Deterministic Rule이
+ * 실제로 계산한 경우에만 보존한다.
  */
 @Component
 public class ConsultationGroundingAnalyzer {
@@ -142,58 +130,6 @@ public class ConsultationGroundingAnalyzer {
     private final ConsultationCategoryDeterministicRuleEngine
             deterministicRuleEngine;
 
-
-    /*
-     * =================================================
-     * 기존 호출 호환
-     * =================================================
-     *
-     * 직접 new 하는 기존 코드에서는
-     * Category Deterministic Rule이 등록되지 않은
-     * 빈 Engine을 사용한다.
-     *
-     * 실제 Spring Application에서는
-     * @Autowired Constructor를 사용한다.
-     */
-
-    public ConsultationGroundingAnalyzer() {
-
-        this(
-                new ConsultationGroundingProminenceAnalyzer(),
-                new ConsultationCategoryDeterministicRuleEngine(
-                        List.of()
-                )
-        );
-    }
-
-
-    /*
-     * =================================================
-     * 기존 Prominence 직접 주입 호출 호환
-     * =================================================
-     */
-
-    public ConsultationGroundingAnalyzer(
-
-            ConsultationGroundingProminenceAnalyzer
-                    prominenceAnalyzer
-
-    ) {
-
-        this(
-                prominenceAnalyzer,
-                new ConsultationCategoryDeterministicRuleEngine(
-                        List.of()
-                )
-        );
-    }
-
-
-    /*
-     * =================================================
-     * Spring 공식 Constructor
-     * =================================================
-     */
 
     @Autowired
     public ConsultationGroundingAnalyzer(
@@ -220,32 +156,6 @@ public class ConsultationGroundingAnalyzer {
     }
 
 
-    /*
-     * =================================================
-     * 기존 호출 호환
-     * =================================================
-     */
-
-    public ConsultationGroundingAnalysis analyze(
-
-            ConsultationRequestEvidenceAnalysis
-                    requestEvidenceAnalysis
-
-    ) {
-
-        return analyzeInternal(
-                requestEvidenceAnalysis,
-                Optional.empty()
-        );
-    }
-
-
-    /*
-     * =================================================
-     * 현재 공식 Application 호출
-     * =================================================
-     */
-
     public ConsultationGroundingAnalysis analyze(
 
             ConsultationRequestEvidenceAnalysis
@@ -257,37 +167,13 @@ public class ConsultationGroundingAnalyzer {
     ) {
 
         Objects.requireNonNull(
-                personalityStatementContract,
-                "Personality Statement Contract는 필수입니다."
-        );
-
-        return analyzeInternal(
-                requestEvidenceAnalysis,
-                Optional.of(
-                        personalityStatementContract
-                )
-        );
-    }
-
-
-    private ConsultationGroundingAnalysis analyzeInternal(
-
-            ConsultationRequestEvidenceAnalysis
-                    requestEvidenceAnalysis,
-
-            Optional<NatalPersonalityStatementContract>
-                    personalityStatementContract
-
-    ) {
-
-        Objects.requireNonNull(
                 requestEvidenceAnalysis,
                 "ConsultationGroundingAnalyzer에는 ConsultationRequestEvidenceAnalysis가 필요합니다."
         );
 
         Objects.requireNonNull(
                 personalityStatementContract,
-                "Personality Statement Contract Optional은 필수입니다."
+                "Personality Statement Contract는 필수입니다."
         );
 
         List<ConsultationGroundingSection> sections =
@@ -330,7 +216,7 @@ public class ConsultationGroundingAnalyzer {
 
     /*
      * =================================================
-     * Category
+     * Section
      * =================================================
      */
 
@@ -338,7 +224,7 @@ public class ConsultationGroundingAnalyzer {
 
             ConsultationCategoryEvidenceView view,
 
-            Optional<NatalPersonalityStatementContract>
+            NatalPersonalityStatementContract
                     personalityStatementContract
 
     ) {
@@ -350,34 +236,19 @@ public class ConsultationGroundingAnalyzer {
 
         Objects.requireNonNull(
                 personalityStatementContract,
-                "Personality Statement Contract Optional은 필수입니다."
+                "Personality Statement Contract는 필수입니다."
         );
-
-        /*
-         * =================================================
-         * PERSONALITY
-         * =================================================
-         */
 
         if (
                 view.category()
                         == ConsultationCategory.PERSONALITY
-
-                        && personalityStatementContract.isPresent()
         ) {
 
             return toPersonalitySection(
                     view,
                     personalityStatementContract
-                            .orElseThrow()
             );
         }
-
-        /*
-         * =================================================
-         * Unavailable
-         * =================================================
-         */
 
         if (
                 view.unavailable()
@@ -388,34 +259,17 @@ public class ConsultationGroundingAnalyzer {
                     List.of(),
                     List.of(),
                     List.of(),
+                    List.of(),
                     Optional.empty(),
                     view.unavailableReason()
             );
         }
 
-        /*
-         * =================================================
-         * Category Deterministic
-         * =================================================
-         *
-         * PAST_LUCK / FUTURE_LUCK에서만
-         * 현재 연도 종합 Contract를 연결한다.
-         *
-         * 다른 Category의 기존 Grounding 동작은
-         * 이번 단계에서 변경하지 않는다.
-         */
-
         List<ConsultationCategoryDeterministicMatch>
                 deterministicMatches =
-                createTimelineRangeDeterministicMatches(
+                createCategoryDeterministicMatches(
                         view
                 );
-
-        /*
-         * =================================================
-         * Existing Grounding
-         * =================================================
-         */
 
         List<ConsultationGroundingEvidence>
                 natalEvidences =
@@ -423,10 +277,18 @@ public class ConsultationGroundingAnalyzer {
                         view.natalMatches()
                 );
 
+        List<ConsultationGroundingDeterministicConclusion>
+                natalDeterministicConclusions =
+                createNatalDeterministicConclusions(
+                        view,
+                        deterministicMatches
+                );
+
         List<ConsultationGroundingTimelineScenario>
                 scenarios =
                 createTimelineScenarios(
-                        view
+                        view,
+                        deterministicMatches
                 );
 
         List<ConsultationGroundingTimelineYear>
@@ -442,6 +304,8 @@ public class ConsultationGroundingAnalyzer {
 
                 natalEvidences,
 
+                natalDeterministicConclusions,
+
                 scenarios,
 
                 timelineYears,
@@ -455,51 +319,155 @@ public class ConsultationGroundingAnalyzer {
 
     /*
      * =================================================
-     * Category Deterministic Range
+     * Category Deterministic
      * =================================================
      */
 
     private List<ConsultationCategoryDeterministicMatch>
-    createTimelineRangeDeterministicMatches(
+    createCategoryDeterministicMatches(
 
             ConsultationCategoryEvidenceView view
 
     ) {
 
+        Objects.requireNonNull(
+                view,
+                "Category Deterministic Rule 실행에는 ConsultationCategoryEvidenceView가 필요합니다."
+        );
+
         if (
-                !timelineRangeCategory(
-                        view.category()
-                )
+                view.unavailable()
         ) {
 
             return List.of();
         }
 
+        List<ConsultationCategoryDeterministicMatch> matches =
+                deterministicRuleEngine
+                        .evaluate(
+                                view
+                        );
+
         if (
-                !view.hasTimelineYearEvidences()
+                matches == null
         ) {
 
-            return List.of();
+            throw new IllegalStateException(
+                    "ConsultationCategoryDeterministicRuleEngine.evaluate()는 null을 반환할 수 없습니다. category="
+                            + view.category()
+            );
         }
 
-        return deterministicRuleEngine
-                .evaluate(
-                        view
+        for (
+                ConsultationCategoryDeterministicMatch match
+                : matches
+        ) {
+
+            ConsultationCategoryDeterministicMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "Category Deterministic Match는 null일 수 없습니다."
+                    );
+
+            if (
+                    normalized.category()
+                            != view.category()
+            ) {
+
+                throw new IllegalStateException(
+                        "Category Deterministic Match의 Category가 현재 Evidence View와 일치하지 않습니다. viewCategory="
+                                + view.category()
+                                + ", matchCategory="
+                                + normalized.category()
+                                + ", rule="
+                                + normalized.ruleCode()
                 );
+            }
+        }
+
+        return List.copyOf(
+                matches
+        );
     }
 
 
-    private boolean timelineRangeCategory(
+    /*
+     * =================================================
+     * NATAL
+     * =================================================
+     */
 
-            ConsultationCategory category
+    private List<ConsultationGroundingDeterministicConclusion>
+    createNatalDeterministicConclusions(
+
+            ConsultationCategoryEvidenceView view,
+
+            List<ConsultationCategoryDeterministicMatch>
+                    deterministicMatches
 
     ) {
 
-        return category
-                == ConsultationCategory.PAST_LUCK
+        Objects.requireNonNull(
+                view,
+                "NATAL Deterministic Grounding에는 ConsultationCategoryEvidenceView가 필요합니다."
+        );
 
-                || category
-                == ConsultationCategory.FUTURE_LUCK;
+        if (
+                deterministicMatches == null
+                        || deterministicMatches.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationGroundingDeterministicConclusion>
+                result =
+                new ArrayList<>();
+
+        for (
+                ConsultationCategoryDeterministicMatch match
+                : deterministicMatches
+        ) {
+
+            ConsultationCategoryDeterministicMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "NATAL Deterministic Match는 null일 수 없습니다."
+                    );
+
+            if (
+                    normalized.category()
+                            != view.category()
+            ) {
+
+                throw new IllegalStateException(
+                        "NATAL Deterministic Match의 Category가 View와 일치하지 않습니다. viewCategory="
+                                + view.category()
+                                + ", matchCategory="
+                                + normalized.category()
+                                + ", rule="
+                                + normalized.ruleCode()
+                );
+            }
+
+            if (
+                    normalized.layer()
+                            != ConsultationCategoryDeterministicLayer.NATAL
+            ) {
+
+                continue;
+            }
+
+            result.add(
+                    toDeterministicConclusion(
+                            normalized
+                    )
+            );
+        }
+
+        return List.copyOf(
+                result
+        );
     }
 
 
@@ -519,9 +487,25 @@ public class ConsultationGroundingAnalyzer {
     ) {
 
         Objects.requireNonNull(
+                view,
+                "PERSONALITY Grounding에는 ConsultationCategoryEvidenceView가 필요합니다."
+        );
+
+        Objects.requireNonNull(
                 contract,
                 "PERSONALITY Grounding에는 Personality Statement Contract가 필요합니다."
         );
+
+        if (
+                view.category()
+                        != ConsultationCategory.PERSONALITY
+        ) {
+
+            throw new IllegalArgumentException(
+                    "toPersonalitySection은 PERSONALITY View만 처리할 수 있습니다: "
+                            + view.category()
+            );
+        }
 
         boolean outputAvailable =
                 hasPersonalityOutput(
@@ -542,6 +526,8 @@ public class ConsultationGroundingAnalyzer {
 
                     List.of(),
 
+                    List.of(),
+
                     Optional.of(
                             contract
                     ),
@@ -553,7 +539,7 @@ public class ConsultationGroundingAnalyzer {
         }
 
         List<ConsultationGroundingEvidence>
-                legacyNatalEvidences =
+                natalEvidences =
                 toEvidences(
                         view.natalMatches()
                 );
@@ -562,7 +548,9 @@ public class ConsultationGroundingAnalyzer {
 
                 ConsultationCategory.PERSONALITY,
 
-                legacyNatalEvidences,
+                natalEvidences,
+
+                List.of(),
 
                 List.of(),
 
@@ -601,16 +589,24 @@ public class ConsultationGroundingAnalyzer {
 
     /*
      * =================================================
-     * Current Timeline Scenario
+     * Current Timeline
      * =================================================
      */
 
     private List<ConsultationGroundingTimelineScenario>
     createTimelineScenarios(
 
-            ConsultationCategoryEvidenceView view
+            ConsultationCategoryEvidenceView view,
+
+            List<ConsultationCategoryDeterministicMatch>
+                    deterministicMatches
 
     ) {
+
+        Objects.requireNonNull(
+                view,
+                "Current Timeline Scenario 생성에는 ConsultationCategoryEvidenceView가 필요합니다."
+        );
 
         List<ConsultationGroundingTimelineScenario>
                 scenarios =
@@ -625,24 +621,39 @@ public class ConsultationGroundingAnalyzer {
                 : view.segmentEvidences()
         ) {
 
+            ConsultationCategorySegmentEvidence normalizedSegment =
+                    Objects.requireNonNull(
+                            segmentEvidence,
+                            "Current Timeline Segment Evidence는 null일 수 없습니다."
+                    );
+
             List<ConsultationGroundingEvidence>
                     evidences =
                     toEvidences(
-                            segmentEvidence.matches()
+                            normalizedSegment.matches()
+                    );
+
+            List<ConsultationGroundingDeterministicConclusion>
+                    deterministicConclusions =
+                    createCurrentTimelineDeterministicConclusions(
+                            view,
+                            normalizedSegment,
+                            deterministicMatches
                     );
 
             scenarios.add(
                     new ConsultationGroundingTimelineScenario(
                             scenarioOrder,
-                            segmentEvidence.sajuYear(),
-                            segmentEvidence.monthIndex(),
-                            segmentEvidence.fullyDefinite(),
-                            segmentEvidence.timelineUncertaintyExists(),
-                            segmentEvidence.hasActiveDecade(),
-                            segmentEvidence.beforeFirstDecadeLuck(),
-                            segmentEvidence.afterGeneratedDecadeRange(),
-                            segmentEvidence.decadeUnavailable(),
-                            evidences
+                            normalizedSegment.sajuYear(),
+                            normalizedSegment.monthIndex(),
+                            normalizedSegment.fullyDefinite(),
+                            normalizedSegment.timelineUncertaintyExists(),
+                            normalizedSegment.hasActiveDecade(),
+                            normalizedSegment.beforeFirstDecadeLuck(),
+                            normalizedSegment.afterGeneratedDecadeRange(),
+                            normalizedSegment.decadeUnavailable(),
+                            evidences,
+                            deterministicConclusions
                     )
             );
 
@@ -655,9 +666,316 @@ public class ConsultationGroundingAnalyzer {
     }
 
 
+    private List<ConsultationGroundingDeterministicConclusion>
+    createCurrentTimelineDeterministicConclusions(
+
+            ConsultationCategoryEvidenceView view,
+
+            ConsultationCategorySegmentEvidence segmentEvidence,
+
+            List<ConsultationCategoryDeterministicMatch>
+                    deterministicMatches
+
+    ) {
+
+        Objects.requireNonNull(
+                view,
+                "CURRENT_TIMELINE Deterministic Grounding에는 ConsultationCategoryEvidenceView가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                segmentEvidence,
+                "CURRENT_TIMELINE Deterministic Grounding에는 Segment Evidence가 필요합니다."
+        );
+
+        if (
+                deterministicMatches == null
+                        || deterministicMatches.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationGroundingDeterministicConclusion>
+                result =
+                new ArrayList<>();
+
+        for (
+                ConsultationCategoryDeterministicMatch match
+                : deterministicMatches
+        ) {
+
+            ConsultationCategoryDeterministicMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "CURRENT_TIMELINE Deterministic Match는 null일 수 없습니다."
+                    );
+
+            if (
+                    normalized.category()
+                            != view.category()
+            ) {
+
+                throw new IllegalStateException(
+                        "CURRENT_TIMELINE Deterministic Match의 Category가 View와 일치하지 않습니다. viewCategory="
+                                + view.category()
+                                + ", matchCategory="
+                                + normalized.category()
+                                + ", rule="
+                                + normalized.ruleCode()
+                );
+            }
+
+            if (
+                    normalized.layer()
+                            != ConsultationCategoryDeterministicLayer
+                            .CURRENT_TIMELINE
+            ) {
+
+                continue;
+            }
+
+            Integer matchYear =
+                    normalized.sajuYear();
+
+            Integer matchMonthIndex =
+                    normalized.monthIndex();
+
+            if (
+                    matchYear == null
+                            || matchMonthIndex == null
+            ) {
+
+                throw new IllegalStateException(
+                        "CURRENT_TIMELINE Deterministic Match에는 sajuYear와 monthIndex가 필요합니다. category="
+                                + normalized.category()
+                                + ", rule="
+                                + normalized.ruleCode()
+                );
+            }
+
+            if (
+                    matchYear.intValue()
+                            != segmentEvidence.sajuYear()
+            ) {
+
+                continue;
+            }
+
+            if (
+                    matchMonthIndex.intValue()
+                            != segmentEvidence.monthIndex()
+            ) {
+
+                continue;
+            }
+
+            if (
+                    !currentTimelineMatchBelongsToSegment(
+                            view,
+                            segmentEvidence,
+                            normalized
+                    )
+            ) {
+
+                continue;
+            }
+
+            result.add(
+                    toDeterministicConclusion(
+                            normalized
+                    )
+            );
+        }
+
+        return List.copyOf(
+                result
+        );
+    }
+
+
+    private boolean currentTimelineMatchBelongsToSegment(
+
+            ConsultationCategoryEvidenceView view,
+
+            ConsultationCategorySegmentEvidence segmentEvidence,
+
+            ConsultationCategoryDeterministicMatch match
+
+    ) {
+
+        Objects.requireNonNull(
+                view,
+                "CURRENT_TIMELINE Segment 소속 판정에는 Evidence View가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                segmentEvidence,
+                "CURRENT_TIMELINE Segment 소속 판정에는 Segment Evidence가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                match,
+                "CURRENT_TIMELINE Segment 소속 판정에는 Deterministic Match가 필요합니다."
+        );
+
+        if (
+                !match.sourceMatches()
+                        .isEmpty()
+        ) {
+
+            for (
+                    LifeDomainRuleMatch sourceMatch
+                    : match.sourceMatches()
+            ) {
+
+                LifeDomainRuleMatch normalizedSource =
+                        Objects.requireNonNull(
+                                sourceMatch,
+                                "CURRENT_TIMELINE Deterministic sourceMatch는 null일 수 없습니다."
+                        );
+
+                if (
+                        !containsLifeDomainMatch(
+                                segmentEvidence.matches(),
+                                normalizedSource
+                        )
+                ) {
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        int sameCoordinateScenarioCount =
+                countCurrentTimelineSegmentsAtCoordinate(
+                        view,
+                        segmentEvidence.sajuYear(),
+                        segmentEvidence.monthIndex()
+                );
+
+        if (
+                sameCoordinateScenarioCount > 1
+        ) {
+
+            throw new IllegalStateException(
+                    "sourceMatches가 없는 CURRENT_TIMELINE Deterministic Match를 동일 좌표의 복수 Scenario에 안전하게 배정할 수 없습니다. category="
+                            + match.category()
+                            + ", rule="
+                            + match.ruleCode()
+                            + ", sajuYear="
+                            + segmentEvidence.sajuYear()
+                            + ", monthIndex="
+                            + segmentEvidence.monthIndex()
+                            + ", scenarioCount="
+                            + sameCoordinateScenarioCount
+            );
+        }
+
+        return sameCoordinateScenarioCount == 1;
+    }
+
+
+    private int countCurrentTimelineSegmentsAtCoordinate(
+
+            ConsultationCategoryEvidenceView view,
+
+            int sajuYear,
+
+            int monthIndex
+
+    ) {
+
+        int count =
+                0;
+
+        for (
+                ConsultationCategorySegmentEvidence candidate
+                : view.segmentEvidences()
+        ) {
+
+            ConsultationCategorySegmentEvidence normalized =
+                    Objects.requireNonNull(
+                            candidate,
+                            "Timeline Segment Evidence는 null일 수 없습니다."
+                    );
+
+            if (
+                    normalized.sajuYear()
+                            != sajuYear
+            ) {
+
+                continue;
+            }
+
+            if (
+                    normalized.monthIndex()
+                            != monthIndex
+            ) {
+
+                continue;
+            }
+
+            count++;
+        }
+
+        return count;
+    }
+
+
+    private boolean containsLifeDomainMatch(
+
+            List<LifeDomainRuleMatch> candidates,
+
+            LifeDomainRuleMatch expected
+
+    ) {
+
+        if (
+                candidates == null
+                        || candidates.isEmpty()
+        ) {
+
+            return false;
+        }
+
+        Objects.requireNonNull(
+                expected,
+                "확인할 LifeDomainRuleMatch는 null일 수 없습니다."
+        );
+
+        for (
+                LifeDomainRuleMatch candidate
+                : candidates
+        ) {
+
+            if (
+                    candidate == null
+            ) {
+
+                continue;
+            }
+
+            if (
+                    candidate == expected
+                            || candidate.equals(
+                            expected
+                    )
+            ) {
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
     /*
      * =================================================
-     * Evidence Slice
+     * Evidence
      * =================================================
      */
 
@@ -692,7 +1010,7 @@ public class ConsultationGroundingAnalyzer {
 
     /*
      * =================================================
-     * Timeline Range
+     * Timeline Year Range
      * =================================================
      */
 
@@ -706,6 +1024,11 @@ public class ConsultationGroundingAnalyzer {
 
     ) {
 
+        Objects.requireNonNull(
+                view,
+                "Timeline Range Grounding에는 ConsultationCategoryEvidenceView가 필요합니다."
+        );
+
         List<ConsultationCategoryTimelineYearEvidence>
                 yearEvidences =
                 view.timelineYearEvidences();
@@ -716,6 +1039,18 @@ public class ConsultationGroundingAnalyzer {
         ) {
 
             return List.of();
+        }
+
+        if (
+                !timelineRangeCategory(
+                        view.category()
+                )
+        ) {
+
+            throw new IllegalStateException(
+                    "Timeline Year Grounding은 PAST_LUCK / FUTURE_LUCK에만 사용할 수 있습니다. category="
+                            + view.category()
+            );
         }
 
         List<ConsultationCategoryTimelineYearEvidence>
@@ -735,21 +1070,6 @@ public class ConsultationGroundingAnalyzer {
                         ordered.size()
                 );
 
-        boolean strictDeterministicContractExpected =
-                timelineRangeCategory(
-                        view.category()
-                )
-
-                        && deterministicRuleEngine
-                        .hasRules(
-                                view.category()
-                        )
-
-                        && deterministicRuleEngine
-                        .hasSynthesisRules(
-                                view.category()
-                        );
-
         int yearOrder =
                 1;
 
@@ -759,28 +1079,33 @@ public class ConsultationGroundingAnalyzer {
                 : ordered
         ) {
 
+            ConsultationCategoryTimelineYearEvidence
+                    normalizedYearEvidence =
+                    Objects.requireNonNull(
+                            yearEvidence,
+                            "Timeline Year Evidence는 null일 수 없습니다."
+                    );
+
             List<ConsultationGroundingEvidence>
                     evidences =
                     toEvidences(
-                            yearEvidence.matches()
+                            normalizedYearEvidence.matches()
                     );
 
-            Optional<
-                    ConsultationGroundingTimelineYearDeterministicContract
-                    > deterministicContract =
+            ConsultationGroundingTimelineYearDeterministicContract
+                    deterministicContract =
                     createTimelineYearDeterministicContract(
                             view.category(),
-                            yearEvidence.sajuYear(),
-                            deterministicMatches,
-                            strictDeterministicContractExpected
+                            normalizedYearEvidence.sajuYear(),
+                            deterministicMatches
                     );
 
             result.add(
                     new ConsultationGroundingTimelineYear(
                             yearOrder,
-                            yearEvidence.sajuYear(),
-                            yearEvidence.monthIndices(),
-                            yearEvidence.timelineUncertaintyExists(),
+                            normalizedYearEvidence.sajuYear(),
+                            normalizedYearEvidence.monthIndices(),
+                            normalizedYearEvidence.timelineUncertaintyExists(),
                             evidences,
                             deterministicContract
                     )
@@ -795,24 +1120,29 @@ public class ConsultationGroundingAnalyzer {
     }
 
 
-    /*
-     * =================================================
-     * Timeline Year Contract
-     * =================================================
-     */
+    private boolean timelineRangeCategory(
 
-    private Optional<
-            ConsultationGroundingTimelineYearDeterministicContract
-            > createTimelineYearDeterministicContract(
+            ConsultationCategory category
+
+    ) {
+
+        return category
+                == ConsultationCategory.PAST_LUCK
+
+                || category
+                == ConsultationCategory.FUTURE_LUCK;
+    }
+
+
+    private ConsultationGroundingTimelineYearDeterministicContract
+    createTimelineYearDeterministicContract(
 
             ConsultationCategory category,
 
             int sajuYear,
 
             List<ConsultationCategoryDeterministicMatch>
-                    deterministicMatches,
-
-            boolean strictExpected
+                    deterministicMatches
 
     ) {
 
@@ -822,7 +1152,12 @@ public class ConsultationGroundingAnalyzer {
                 )
         ) {
 
-            return Optional.empty();
+            throw new IllegalStateException(
+                    "Timeline Year Deterministic Contract는 PAST_LUCK / FUTURE_LUCK에만 생성할 수 있습니다. category="
+                            + category
+                            + ", sajuYear="
+                            + sajuYear
+            );
         }
 
         if (
@@ -830,19 +1165,12 @@ public class ConsultationGroundingAnalyzer {
                         || deterministicMatches.isEmpty()
         ) {
 
-            if (
-                    strictExpected
-            ) {
-
-                throw new IllegalStateException(
-                        "PAST/FUTURE Timeline Year에 Category Deterministic Rule이 등록되어 있지만 결과가 없습니다. category="
-                                + category
-                                + ", sajuYear="
-                                + sajuYear
-                );
-            }
-
-            return Optional.empty();
+            throw new IllegalStateException(
+                    "PAST/FUTURE Timeline Year에 Category Deterministic Match가 없습니다. category="
+                            + category
+                            + ", sajuYear="
+                            + sajuYear
+            );
         }
 
         String prefix =
@@ -857,8 +1185,14 @@ public class ConsultationGroundingAnalyzer {
                         prefix
                                 + "OVERALL_NARRATIVE"
                 )
-                        .orElse(
-                                null
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "PAST/FUTURE Timeline Year의 OVERALL_NARRATIVE가 없습니다. category="
+                                                        + category
+                                                        + ", sajuYear="
+                                                        + sajuYear
+                                        )
                         );
 
         ConsultationCategoryDeterministicMatch bigFlow =
@@ -869,50 +1203,15 @@ public class ConsultationGroundingAnalyzer {
                         prefix
                                 + "BIG_FLOW"
                 )
-                        .orElse(
-                                null
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "PAST/FUTURE Timeline Year의 BIG_FLOW가 없습니다. category="
+                                                        + category
+                                                        + ", sajuYear="
+                                                        + sajuYear
+                                        )
                         );
-
-        /*
-         * =================================================
-         * 공식 Contract가 활성화된 Application에서
-         * Overall / BigFlow 누락은 조용히 fallback하지 않는다.
-         * =================================================
-         */
-
-        if (
-                strictExpected
-
-                        && (
-                        overall == null
-                                || bigFlow == null
-                )
-        ) {
-
-            throw new IllegalStateException(
-                    "PAST/FUTURE Timeline Year의 공식 Deterministic Contract가 완성되지 않았습니다. category="
-                            + category
-                            + ", sajuYear="
-                            + sajuYear
-                            + ", overallExists="
-                            + (overall != null)
-                            + ", bigFlowExists="
-                            + (bigFlow != null)
-            );
-        }
-
-        /*
-         * 기존 직접 생성 호환 경로에서
-         * Rule Engine이 비어 있으면 Contract 없음.
-         */
-
-        if (
-                overall == null
-                        || bigFlow == null
-        ) {
-
-            return Optional.empty();
-        }
 
         ConsultationCategoryDeterministicMatch primaryActive =
                 findUniqueTimelineYearMatch(
@@ -962,42 +1261,34 @@ public class ConsultationGroundingAnalyzer {
                                 null
                         );
 
-        return Optional.of(
-                new ConsultationGroundingTimelineYearDeterministicContract(
+        return new ConsultationGroundingTimelineYearDeterministicContract(
 
-                        toDeterministicConclusion(
-                                overall
-                        ),
+                toDeterministicConclusion(
+                        overall
+                ),
 
-                        toDeterministicConclusion(
-                                bigFlow
-                        ),
+                toDeterministicConclusion(
+                        bigFlow
+                ),
 
-                        optionalConclusion(
-                                primaryActive
-                        ),
+                optionalConclusion(
+                        primaryActive
+                ),
 
-                        optionalConclusion(
-                                primaryPressure
-                        ),
+                optionalConclusion(
+                        primaryPressure
+                ),
 
-                        optionalConclusion(
-                                crossDomain
-                        ),
+                optionalConclusion(
+                        crossDomain
+                ),
 
-                        optionalConclusion(
-                                turningPoint
-                        )
+                optionalConclusion(
+                        turningPoint
                 )
         );
     }
 
-
-    /*
-     * =================================================
-     * Find Deterministic Match
-     * =================================================
-     */
 
     private Optional<ConsultationCategoryDeterministicMatch>
     findUniqueTimelineYearMatch(
@@ -1037,7 +1328,8 @@ public class ConsultationGroundingAnalyzer {
 
             if (
                     normalized.layer()
-                            != ConsultationCategoryDeterministicLayer.TIMELINE_YEAR
+                            != ConsultationCategoryDeterministicLayer
+                            .TIMELINE_YEAR
             ) {
 
                 continue;
@@ -1124,7 +1416,9 @@ public class ConsultationGroundingAnalyzer {
 
                 match.reasons(),
 
-                match.dependencies()
+                match.dependencies(),
+
+                structuralReference
         );
     }
 
@@ -1153,7 +1447,7 @@ public class ConsultationGroundingAnalyzer {
 
     /*
      * =================================================
-     * Rule Match -> Grounding Evidence
+     * Raw Evidence
      * =================================================
      */
 
@@ -1177,13 +1471,20 @@ public class ConsultationGroundingAnalyzer {
                         )
                         .toList();
 
+        ConsultationGroundingProminence unrankedProminence =
+                ConsultationGroundingProminence
+                        .unranked(
+                                sources
+                        );
+
         return new ConsultationGroundingEvidence(
                 match.domain(),
                 match.ruleCode(),
                 match.status(),
                 match.summary(),
                 sources,
-                match.reasons()
+                match.reasons(),
+                unrankedProminence
         );
     }
 

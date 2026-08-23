@@ -39,7 +39,7 @@ import java.util.Objects;
  * 이다.
  *
  * LifeDomain 상태를 연도 BIG_FLOW로
- * 합성하는 deterministic 공식 자체는 동일하다.
+ * 계산하는 deterministic 공식 자체는 동일하다.
  *
  * =================================================
  *
@@ -79,7 +79,7 @@ import java.util.Objects;
  *
  * 6.
  * 그 다음 서로 다른 Domain 상태를
- *    연도 BIG_FLOW로 합성한다.
+ *    연도 BIG_FLOW로 계산한다.
  *
  * =================================================
  *
@@ -129,9 +129,9 @@ import java.util.Objects;
  *
  * ANNUAL_CONTEXT
  * +
- * ANNUAL_FUNCTIONAL_CONTEXT
+ * ANNUAL_FUNCTIONAL
  *
- * 가 같이 있다는 이유로
+ * 이 같이 존재한다는 이유로
  * 독립 확증 두 개로 세지 않는다.
  *
  * 애초에 이 계산기는
@@ -848,11 +848,11 @@ public abstract class AbstractTimelineYearBigFlowRule
         );
 
         reasons.add(
-                "같은 세운 또는 같은 Rule 결과가 여러 대표월에서 반복되었다는 이유만으로 방향을 강화하지 않습니다."
+                "같은 세운 또는 같은 Rule 결과가 여러 월 구간에서 반복되었다는 이유만으로 방향을 강화하지 않습니다."
         );
 
         reasons.add(
-                "ANNUAL_CONTEXT와 ANNUAL_FUNCTIONAL_CONTEXT가 함께 존재해도 같은 세운 provenance에서 파생된 근거를 독립 확증 두 개처럼 가중하지 않습니다."
+                "ANNUAL_CONTEXT와 ANNUAL_FUNCTIONAL이 함께 존재해도 같은 세운 provenance에서 파생된 근거를 독립 확증 두 개처럼 가중하지 않습니다."
         );
 
         for (

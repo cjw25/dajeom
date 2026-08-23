@@ -29,8 +29,10 @@ import java.util.Set;
  * 그 내부 계산 객체를 직접 노출하지 않는다.
  *
  * =================================================
+ * 보존 구조
+ * =================================================
  *
- * 따라서 다음 구조만 보존한다.
+ * 다음 구조만 보존한다.
  *
  * - ruleCode
  * - deterministic status
@@ -38,6 +40,92 @@ import java.util.Set;
  * - source LifeDomain / Status 구조
  * - deterministic reasons
  * - 상위 Synthesis dependency provenance
+ * - 자기 자신의 deterministic structural provenance
+ *
+ * =================================================
+ * structuralReference
+ * =================================================
+ *
+ * ConsultationCategoryDeterministicMatch 전체를
+ * Grounding 경계에 그대로 넣지 않으면서도:
+ *
+ * - category
+ * - layer
+ * - ruleCode
+ * - status
+ * - sajuYear
+ * - monthIndex
+ * - sourceDomainStatuses
+ *
+ * 를 보존하기 위한 자기 자신의
+ * immutable structural reference다.
+ *
+ * 실제 타입은:
+ *
+ * ConsultationCategoryDeterministicDependencyReference
+ *
+ * 를 재사용한다.
+ *
+ * =================================================
+ * 공식 생성 계약
+ * =================================================
+ *
+ * Grounding Deterministic Conclusion은
+ * 반드시 structuralReference를 가진다.
+ *
+ * structuralReference가 없는
+ * Deterministic Conclusion은
+ * 공식 Grounding 경계에 존재할 수 없다.
+ *
+ * 호출부는 반드시:
+ *
+ * ConsultationCategoryDeterministicMatch
+ *
+ * 로부터 자기 자신의 Structural Reference를
+ * 생성해서 전달해야 한다.
+ *
+ * =================================================
+ * 필요한 이유
+ * =================================================
+ *
+ * structuralReference가 없으면:
+ *
+ * - category
+ * - layer
+ * - sajuYear
+ * - monthIndex
+ *
+ * 정보를 잃게 된다.
+ *
+ * 그러면 Grounding Policy 단계에서:
+ *
+ * NATAL Conclusion이
+ * 실제 NATAL Layer에서 왔는지,
+ *
+ * CURRENT_TIMELINE Conclusion이
+ * 실제 현재 Scenario 좌표에 해당하는지,
+ *
+ * 해당 Conclusion이
+ * 현재 ConsultationCategory에서 생성된 것인지
+ *
+ * 구조적으로 재검증할 수 없다.
+ *
+ * =================================================
+ * RuleCode 문자열 추측 금지
+ * =================================================
+ *
+ * 다음처럼 검사하지 않는다.
+ *
+ * ruleCode가 WEALTH_로 시작하니까
+ * WEALTH Category일 것이다.
+ *
+ * ruleCode에 MONTHLY가 있으니까
+ * CURRENT_TIMELINE일 것이다.
+ *
+ * 이런 방식은 공식 구조 검증이 아니다.
+ *
+ * structuralReference의
+ * 실제 enum / timeline 좌표를 사용한다.
  *
  * =================================================
  * sourceDomainStatuses
@@ -58,6 +146,8 @@ import java.util.Set;
  *
  * 로 보존된다.
  *
+ * =================================================
+ * 반복 횟수 경계
  * =================================================
  *
  * 따라서:
@@ -82,6 +172,55 @@ import java.util.Set;
  * - 독립 Evidence 개수
  *
  * 로 해석하지 않는다.
+ *
+ * =================================================
+ * structuralReference와 dependencies 차이
+ * =================================================
+ *
+ * structuralReference
+ *
+ * =
+ * 현재 Conclusion 자기 자신의 구조.
+ *
+ * -------------------------------------------------
+ *
+ * dependencies
+ *
+ * =
+ * 현재 Conclusion이 Synthesis 과정에서 참조한
+ * 이전 Deterministic Match들의 구조.
+ *
+ * 두 개념을 합치지 않는다.
+ *
+ * =================================================
+ * 관계형 풀이 금지
+ * =================================================
+ *
+ * structuralReference 또는 dependencies가
+ * 여러 개 존재한다고 해서:
+ *
+ * - A 때문에 B
+ * - A가 B로 이어진다
+ * - A와 B가 함께 있으므로 C다
+ *
+ * 같은 의미를 LLM이 새로 만들 수 있다는
+ * 뜻이 아니다.
+ *
+ * dependencies는 Java Synthesis Rule이
+ * 실제 참조한 provenance일 뿐이다.
+ *
+ * =================================================
+ * 하지 않는 것
+ * =================================================
+ *
+ * - sourceDomainStatuses 다수결
+ * - dependency 개수 점수화
+ * - sourceDomain 개수 점수화
+ * - deterministic status 재계산
+ * - 관계 생성
+ * - 인과 생성
+ * - 순서 생성
+ * - structuralReference 없는 우회 생성
  */
 public record ConsultationGroundingDeterministicConclusion(
 
@@ -99,9 +238,18 @@ public record ConsultationGroundingDeterministicConclusion(
         List<String> reasons,
 
         List<ConsultationCategoryDeterministicDependencyReference>
-        dependencies
+        dependencies,
+
+        ConsultationCategoryDeterministicDependencyReference
+        structuralReference
 
 ) {
+
+    /*
+     * =================================================
+     * Canonical Constructor
+     * =================================================
+     */
 
     public ConsultationGroundingDeterministicConclusion {
 
@@ -136,6 +284,81 @@ public record ConsultationGroundingDeterministicConclusion(
                 normalizeDependencies(
                         dependencies
                 );
+
+        structuralReference =
+                Objects.requireNonNull(
+                        structuralReference,
+                        "Grounding Deterministic Conclusion에는 structuralReference가 반드시 필요합니다. rule="
+                                + ruleCode
+                );
+
+        /*
+         * =================================================
+         * 자기 Structural Reference 일치 검증
+         * =================================================
+         *
+         * - ruleCode
+         * - status
+         * - sourceDomainStatuses
+         *
+         * 는 현재 Grounding Conclusion과
+         * 반드시 일치해야 한다.
+         *
+         * category / layer / timeline 좌표는
+         * Grounding Conclusion에 별도 중복 저장하지 않고
+         * structuralReference를 공식 Source로 사용한다.
+         */
+
+        if (
+                !structuralReference
+                        .ruleCode()
+                        .equals(
+                                ruleCode
+                        )
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Grounding Deterministic Conclusion의 ruleCode와 "
+                            + "structuralReference.ruleCode가 일치하지 않습니다. "
+                            + "conclusionRule="
+                            + ruleCode
+                            + ", referenceRule="
+                            + structuralReference.ruleCode()
+            );
+        }
+
+        if (
+                structuralReference.status()
+                        != status
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Grounding Deterministic Conclusion의 status와 "
+                            + "structuralReference.status가 일치하지 않습니다. "
+                            + "rule="
+                            + ruleCode
+                            + ", conclusionStatus="
+                            + status
+                            + ", referenceStatus="
+                            + structuralReference.status()
+            );
+        }
+
+        if (
+                !structuralReference
+                        .sourceDomainStatuses()
+                        .equals(
+                                sourceDomainStatuses
+                        )
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Grounding Deterministic Conclusion의 sourceDomainStatuses와 "
+                            + "structuralReference.sourceDomainStatuses가 일치하지 않습니다. "
+                            + "rule="
+                            + ruleCode
+            );
+        }
     }
 
 
@@ -247,13 +470,13 @@ public record ConsultationGroundingDeterministicConclusion(
                     new LinkedHashSet<>();
 
             for (
-                    LifeDomainSignalStatus status
+                    LifeDomainSignalStatus sourceStatus
                     : statuses
             ) {
 
                 normalizedStatuses.add(
                         Objects.requireNonNull(
-                                status,
+                                sourceStatus,
                                 "Grounding Deterministic source status는 null일 수 없습니다."
                         )
                 );

@@ -27,8 +27,10 @@
 
 <div class="app-shell">
 
+
     <!-- =================================================
          HEADER
+         기존 유지
          ================================================= -->
 
     <header class="app-header">
@@ -61,6 +63,11 @@
     </header>
 
 
+
+    <!-- =================================================
+         MAIN
+         ================================================= -->
+
     <main class="home-page">
 
 
@@ -91,6 +98,7 @@
             </div>
 
         </section>
+
 
 
         <!-- =================================================
@@ -244,60 +252,198 @@
         </section>
 
 
+
         <!-- =================================================
-             HERO
-             category_bg.png 사용
+             MAIN AI BANNER
+
+             순서
+             1 = 전통 사주
+             2 = AI 타로
+             3 = 연애 사주
              ================================================= -->
 
-        <section class="home-hero">
+        <section class="ai-banner-section">
 
-            <div class="home-hero-background"></div>
+            <div class="ai-banner-slider"
+                 id="aiConsultSlider">
 
-            <div class="home-hero-overlay"></div>
+
+                <div class="ai-banner-track"
+                     id="aiConsultTrack">
 
 
-            <div class="home-hero-symbol"
-                 aria-hidden="true">
+                    <!-- =====================================
+                         1. 전통 사주
+                         ===================================== -->
 
-                <span class="hero-orbit hero-orbit-one"></span>
+                    <article class="ai-banner-slide"
+                             aria-hidden="false">
 
-                <span class="hero-orbit hero-orbit-two"></span>
+                        <img th:src="@{/img/saju_main_banner.png}"
+                             src="/img/saju_main_banner.png"
+                             alt="AI 사주 상담">
 
-                <span class="hero-orbit hero-orbit-three"></span>
 
-                <strong>
-                    命
-                </strong>
+                        <div class="ai-banner-shade"></div>
+
+
+                        <div class="ai-banner-copy">
+
+                            <span class="ai-banner-kicker">
+                                AI 사주
+                            </span>
+
+
+                            <h2>
+                                "사주는 운명을 알기 위한 도구가 아니라,<br>
+                                삶을 더 나은 방향으로 이끄는 지혜입니다."
+                            </h2>
+
+
+                            <a th:href="@{/saju}"
+                               href="/saju"
+                               class="ai-banner-button">
+
+                                상담하러 가기
+
+                            </a>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- =====================================
+                         2. AI 타로
+                         /tarot 실제 연결
+                         ===================================== -->
+
+                    <article class="ai-banner-slide"
+                             aria-hidden="true">
+
+                        <img th:src="@{/img/tarot_master_main.png}"
+                             src="/img/tarot_master_main.png"
+                             alt="AI 타로 상담">
+
+
+                        <div class="ai-banner-shade"></div>
+
+
+                        <div class="ai-banner-copy">
+
+                            <span class="ai-banner-kicker">
+                                AI 타로 · 유성우
+                            </span>
+
+
+                            <h2>
+                                "오늘 당신에게 필요한 카드,<br>
+                                제가 대신 찾아드릴게요."
+                            </h2>
+
+
+                            <a th:href="@{/tarot}"
+                               href="/tarot"
+                               class="ai-banner-button">
+
+                                타로 보러가기
+
+                            </a>
+
+                        </div>
+
+                    </article>
+
+
+
+                    <!-- =====================================
+                         3. 연애 사주
+                         ===================================== -->
+
+                    <article class="ai-banner-slide"
+                             aria-hidden="true">
+
+                        <img th:src="@{/img/ys_img_06.png}"
+                             src="/img/ys_img_06.png"
+                             alt="AI 연애 사주 상담">
+
+
+                        <div class="ai-banner-shade"></div>
+
+
+                        <div class="ai-banner-copy">
+
+                            <span class="ai-banner-kicker">
+                                AI 연애사주 · 윤서현
+                            </span>
+
+
+                            <h2>
+                                "연애 때문에 왔지?<br>
+                                네 인연부터 제대로 볼게."
+                            </h2>
+
+
+                            <button type="button"
+                                    class="ai-banner-button"
+                                    data-message="AI 연애사주">
+
+                                연애운 보러가기
+
+                            </button>
+
+                        </div>
+
+                    </article>
+
+                </div>
 
             </div>
 
 
-            <div class="home-hero-copy">
 
-                <span>
-                    AI SAJU
-                </span>
+            <!-- =================================================
+                 BANNER DOT
+                 ================================================= -->
 
-                <h2>
-                    계산은 정밀하게,<br>
-                    이야기는 쉽게
-                </h2>
+            <div class="ai-banner-dots"
+                 aria-label="상담 배너 선택">
 
-                <p>
-                    사주 원국과 운의 흐름을 계산한 뒤
-                    확인된 근거를 삶의 언어로 풀어드립니다.
-                </p>
+
+                <button type="button"
+                        class="ai-banner-dot is-active"
+                        data-slide="0"
+                        aria-label="전통 사주 배너">
+                </button>
+
+
+                <button type="button"
+                        class="ai-banner-dot"
+                        data-slide="1"
+                        aria-label="타로 배너">
+                </button>
+
+
+                <button type="button"
+                        class="ai-banner-dot"
+                        data-slide="2"
+                        aria-label="연애 사주 배너">
+                </button>
+
 
             </div>
 
         </section>
 
 
+
         <!-- =================================================
-             RECOMMEND
+             RECOMMENDED CONSULTATION
              ================================================= -->
 
         <section class="recommend-section">
+
 
             <div class="section-heading">
 
@@ -316,164 +462,150 @@
             </div>
 
 
-            <!--
-                핵심 연결.
 
-                templates/index.html
-                    ↓
-                GET /saju
-                    ↓
-                templates/saju.html
-            -->
-
-            <a th:href="@{/saju}"
-               href="/saju"
-               id="sajuRecommendCard"
-               class="recommend-card">
+            <div class="consult-menu-list">
 
 
-                <div class="recommend-background"></div>
+                <!-- =========================================
+                     1. 전통 사주풀이
+                     ========================================= -->
 
-                <div class="recommend-overlay"></div>
-
-
-                <div class="recommend-symbol"
-                     aria-hidden="true">
-
-                    <span></span>
-
-                    <strong>
-                        命
-                    </strong>
-
-                </div>
+                <a th:href="@{/saju}"
+                   href="/saju"
+                   class="consult-menu-card">
 
 
-                <span class="recommend-badge">
-                    AI 사주
-                </span>
+                    <div class="consult-menu-thumb">
+
+                        <img th:src="@{/img/saju_main_banner.png}"
+                             src="/img/saju_main_banner.png"
+                             alt="전통 사주풀이">
+
+                    </div>
 
 
-                <div class="recommend-copy">
+                    <div class="consult-menu-copy">
 
-                    <span class="recommend-kicker">
-                        SAJU CONSULTATION
+                        <strong>
+                            전통 사주풀이
+                        </strong>
+
+                        <p>
+                            사주명식부터 오행, 연애, 재물, 직업, 대운까지
+                        </p>
+
+                    </div>
+
+
+                    <span class="consult-menu-arrow"
+                          aria-hidden="true">
+
+                        ›
+
                     </span>
 
-                    <strong>
-                        천명 사주상담
-                    </strong>
+                </a>
 
-                    <p>
-                        원국·용신·관계·대운·세운을 계산하고
-                        11개 분야의 흐름으로 이어서 살펴봅니다.
-                    </p>
 
-                    <span class="recommend-action">
-                        상담 시작 →
+
+                <!-- =========================================
+                     2. 타로풀이
+                     /tarot 실제 연결
+                     ========================================= -->
+
+                <a th:href="@{/tarot}"
+                   href="/tarot"
+                   class="consult-menu-card">
+
+
+                    <div class="consult-menu-thumb">
+
+                        <img th:src="@{/img/tarot_master_main.png}"
+                             src="/img/tarot_master_main.png"
+                             alt="타로풀이">
+
+                    </div>
+
+
+                    <div class="consult-menu-copy">
+
+                        <strong>
+                            타로풀이 · 별빛타로마스터
+                        </strong>
+
+                        <p>
+                            질문에 맞는 베일타로 카드를 선택해 흐름을 읽어요
+                        </p>
+
+                    </div>
+
+
+                    <span class="consult-menu-arrow"
+                          aria-hidden="true">
+
+                        ›
+
                     </span>
 
-                </div>
-
-            </a>
-
-        </section>
+                </a>
 
 
-        <!-- =================================================
-             GUIDE
-             ================================================= -->
 
-        <section class="home-guide">
+                <!-- =========================================
+                     3. 연애운
+                     ========================================= -->
 
-            <div class="guide-heading">
+                <button type="button"
+                        class="consult-menu-card"
+                        data-message="연애운 전문">
 
-                <span>
-                    HOW IT WORKS
-                </span>
 
-                <h2>
-                    다점의 사주 분석
-                </h2>
+                    <div class="consult-menu-thumb">
+
+                        <img th:src="@{/img/ys_img_06.png}"
+                             src="/img/ys_img_06.png"
+                             alt="연애운 전문 윤서현">
+
+                    </div>
+
+
+                    <div class="consult-menu-copy">
+
+                        <strong>
+                            연애운 전문 · 윤서현
+                        </strong>
+
+                        <p>
+                            솔로 · 연애중 · 이별·재회, 상황에 맞춰 깊게 읽어요
+                        </p>
+
+                    </div>
+
+
+                    <span class="consult-menu-arrow"
+                          aria-hidden="true">
+
+                        ›
+
+                    </span>
+
+                </button>
+
 
             </div>
-
-
-            <article>
-
-                <span class="guide-number">
-                    01
-                </span>
-
-                <div>
-
-                    <strong>
-                        출생정보를 그대로 계산
-                    </strong>
-
-                    <p>
-                        양력·음력과 출생시간을 기준으로 명식을 구성합니다.
-                        시간을 모르면 시주를 임의로 만들지 않습니다.
-                    </p>
-
-                </div>
-
-            </article>
-
-
-            <article>
-
-                <span class="guide-number">
-                    02
-                </span>
-
-                <div>
-
-                    <strong>
-                        계산 근거를 먼저 확인
-                    </strong>
-
-                    <p>
-                        오행과 구조, 관계, 대운·세운의 흐름에서
-                        실제 확인된 근거를 분야별로 정리합니다.
-                    </p>
-
-                </div>
-
-            </article>
-
-
-            <article>
-
-                <span class="guide-number">
-                    03
-                </span>
-
-                <div>
-
-                    <strong>
-                        마지막에는 이야기로
-                    </strong>
-
-                    <p>
-                        계산 결과를 다시 만들지 않고,
-                        같은 근거를 이해하기 쉬운 상담 스토리로 연결합니다.
-                    </p>
-
-                </div>
-
-            </article>
 
         </section>
 
     </main>
 
 
+
     <!-- =================================================
-         BOTTOM NAV
+         BOTTOM NAVIGATION
          ================================================= -->
 
     <nav class="bottom-navigation">
+
 
         <a th:href="@{/}"
            href="/"
@@ -505,9 +637,14 @@
         </a>
 
 
-        <button type="button"
-                class="navigation-item"
-                data-message="AI 타로">
+        <!-- =============================================
+             AI 타로
+             /tarot 실제 연결
+             ============================================= -->
+
+        <a th:href="@{/tarot}"
+           href="/tarot"
+           class="navigation-item">
 
             <span>
                 ▣
@@ -517,7 +654,7 @@
                 AI타로
             </small>
 
-        </button>
+        </a>
 
 
         <button type="button"
@@ -549,14 +686,21 @@
 
         </button>
 
+
     </nav>
 
+
+
+    <!-- =================================================
+         TOAST
+         ================================================= -->
 
     <div id="toast"
          class="toast"
          role="status"
          aria-live="polite">
     </div>
+
 
 </div>
 

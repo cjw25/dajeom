@@ -8,89 +8,178 @@ import org.springframework.stereotype.Component;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
- * 정밀화 19차.
- *
- * 11개 ConsultationCategory와
- * 18차 LifeDomainAnalysis 사이의
+ * ConsultationCategory와 LifeDomainAnalysis 사이의
  * 공식 Evidence Routing Policy.
  *
- * =================================================
+ * 핵심 원칙:
  *
- * 핵심:
- *
- * LifeDomain 5개를
- * ConsultationCategory 11개로 복제하지 않는다.
- *
- * 각 Category의 성격에 따라:
- *
- * - 원국 View
- * - 현재 Segment View
- * - 과거 Range View
- * - 미래 Range View
- * - 전용 교차 Rule View
- *
- * 로 구분한다.
- *
- * =================================================
- *
- * 현재 정책:
- *
- * PERSONALITY
- * -> 원국의 여러 생활 기능을 종합
- *
- * PAST_LUCK
- * -> 과거 Timeline Range 필요
- *
- * SOCIAL_RELATIONSHIP
- * -> RELATIONSHIP
- *
- * LOVE_STYLE
- * -> 원국 RELATIONSHIP 중심
- *
- * PARTNER_LUCK
- * -> RELATIONSHIP + 현재 Timeline
- *
- * WEALTH
- * -> WEALTH
- *
- * CAREER
- * -> CAREER
- *
- * LEGAL_RISK
- * -> 단순 Domain 복사 금지
- * -> 별도 교차 Evidence Rule 필요
- *
- * HEALTH_TENDENCY
- * -> HEALTH_LIFESTYLE
- *
- * CURRENT_YEAR_LUCK
- * -> 현재 Segment의 모든 LifeDomain
- *    + 원국 기준 Context
- *
- * FUTURE_LUCK
- * -> 미래 Timeline Range 필요
- *
- * =================================================
- *
- * 주의:
- *
- * PAST_LUCK을 YEAR 궁위로 만들지 않는다.
- *
- * FUTURE_LUCK을 HOUR 궁위로 만들지 않는다.
- *
- * LEGAL_RISK를 충/형/칠살 존재만으로 만들지 않는다.
+ * - Category마다 필요한 Source만 Routing한다.
+ * - 여러 Source가 함께 Routing되었다는 이유만으로
+ *   관계·인과·순서·합성 의미를 만들지 않는다.
+ * - selected RuleCode는 허용 경계다.
  */
 @Component
 public class ConsultationCategoryEvidencePolicyRegistry {
+
+    /*
+     * =================================================
+     * RELATIONSHIP Category Selected Rule Codes
+     * =================================================
+     */
+
+    private static final String
+            RELATIONSHIP_PRIMARY_WEALTH_OFFICER_STRUCTURE =
+            "RELATIONSHIP_PRIMARY_WEALTH_OFFICER_STRUCTURE";
+
+    private static final String
+            RELATIONSHIP_NATAL_RELATION_OVERLAP =
+            "RELATIONSHIP_NATAL_RELATION_OVERLAP";
+
+
+    /*
+     * =================================================
+     * CAREER Selected Learning Rule Codes
+     * =================================================
+     */
+
+    private static final String
+            LEARNING_RESOURCE_OUTPUT =
+            "LEARNING_RESOURCE_OUTPUT";
+
+    private static final String
+            LEARNING_PRIMARY_RESOURCE_OUTPUT_STRUCTURE =
+            "LEARNING_PRIMARY_RESOURCE_OUTPUT_STRUCTURE";
+
+    private static final String
+            LEARNING_DECADE_CONTEXT =
+            "LEARNING_DECADE_CONTEXT";
+
+    private static final String
+            LEARNING_ANNUAL_CONTEXT =
+            "LEARNING_ANNUAL_CONTEXT";
+
+    private static final String
+            LEARNING_MONTHLY_CONTEXT =
+            "LEARNING_MONTHLY_CONTEXT";
+
+    private static final String
+            LEARNING_GROWTH_ANNUAL_FUNCTIONAL =
+            "LEARNING_GROWTH_ANNUAL_FUNCTIONAL";
+
+    private static final String
+            LEARNING_GROWTH_MONTHLY_FUNCTIONAL =
+            "LEARNING_GROWTH_MONTHLY_FUNCTIONAL";
+
+
+    /*
+     * =================================================
+     * Temporal LifeDomain Rule Codes
+     * =================================================
+     */
+
+    /*
+     * WEALTH
+     */
+
+    private static final String
+            WEALTH_DECADE_CONTEXT =
+            "WEALTH_DECADE_CONTEXT";
+
+    private static final String
+            WEALTH_ANNUAL_CONTEXT =
+            "WEALTH_ANNUAL_CONTEXT";
+
+    private static final String
+            WEALTH_ANNUAL_FUNCTIONAL =
+            "WEALTH_ANNUAL_FUNCTIONAL";
+
+    private static final String
+            WEALTH_MONTHLY_CONTEXT =
+            "WEALTH_MONTHLY_CONTEXT";
+
+    private static final String
+            WEALTH_MONTHLY_FUNCTIONAL =
+            "WEALTH_MONTHLY_FUNCTIONAL";
+
+
+    /*
+     * CAREER
+     */
+
+    private static final String
+            CAREER_DECADE_CONTEXT =
+            "CAREER_DECADE_CONTEXT";
+
+    private static final String
+            CAREER_ANNUAL_CONTEXT =
+            "CAREER_ANNUAL_CONTEXT";
+
+    private static final String
+            CAREER_ANNUAL_FUNCTIONAL =
+            "CAREER_ANNUAL_FUNCTIONAL";
+
+    private static final String
+            CAREER_MONTHLY_CONTEXT =
+            "CAREER_MONTHLY_CONTEXT";
+
+    private static final String
+            CAREER_MONTHLY_FUNCTIONAL =
+            "CAREER_MONTHLY_FUNCTIONAL";
+
+
+    /*
+     * RELATIONSHIP
+     */
+
+    private static final String
+            RELATIONSHIP_DECADE_CONTEXT =
+            "RELATIONSHIP_DECADE_CONTEXT";
+
+    private static final String
+            RELATIONSHIP_ANNUAL_CONTEXT =
+            "RELATIONSHIP_ANNUAL_CONTEXT";
+
+    private static final String
+            RELATIONSHIP_MONTHLY_CONTEXT =
+            "RELATIONSHIP_MONTHLY_CONTEXT";
+
+    private static final String
+            RELATIONSHIP_MONTHLY_FUNCTIONAL =
+            "RELATIONSHIP_MONTHLY_FUNCTIONAL";
+
+
+    /*
+     * HEALTH_LIFESTYLE
+     */
+
+    private static final String
+            HEALTH_DECADE_CONTEXT =
+            "HEALTH_DECADE_CONTEXT";
+
+    private static final String
+            HEALTH_ANNUAL_CONTEXT =
+            "HEALTH_ANNUAL_CONTEXT";
+
+    private static final String
+            HEALTH_LIFESTYLE_ANNUAL_FUNCTIONAL =
+            "HEALTH_LIFESTYLE_ANNUAL_FUNCTIONAL";
+
+    private static final String
+            HEALTH_LIFESTYLE_MONTHLY_FUNCTIONAL =
+            "HEALTH_LIFESTYLE_MONTHLY_FUNCTIONAL";
+
 
     private final Map<
             ConsultationCategory,
             ConsultationCategoryEvidencePolicy
             > policies;
+
 
     public ConsultationCategoryEvidencePolicyRegistry() {
 
@@ -102,142 +191,294 @@ public class ConsultationCategoryEvidencePolicyRegistry {
                         ConsultationCategory.class
                 );
 
+
         /*
          * =================================================
          * 1. PERSONALITY
          * =================================================
-         *
-         * 성격이라는 별도 LifeDomain을 만들지 않는다.
-         *
-         * 재물 처리 방식
-         * 역할 처리 방식
-         * 관계 방식
-         * 학습/표현 방식
-         *
-         * 같은 원국 생활 기능을 종합한다.
-         *
-         * HEALTH_LIFESTYLE는 성격 View에서
-         * 직접 소비하지 않는다.
          */
 
         put(
                 configured,
                 policy(
                         ConsultationCategory.PERSONALITY,
+
                         domains(
                                 LifeDomain.WEALTH,
                                 LifeDomain.CAREER,
                                 LifeDomain.RELATIONSHIP,
                                 LifeDomain.LEARNING_GROWTH
                         ),
+
                         domains(),
+
                         false,
                         false,
                         false
                 )
         );
 
+
         /*
          * =================================================
          * 2. PAST_LUCK
          * =================================================
-         *
-         * 실제 과거 Timeline 범위가 필요하다.
-         *
-         * YEAR Palace를 과거운으로 사용하지 않는다.
          */
 
         put(
                 configured,
                 policy(
                         ConsultationCategory.PAST_LUCK,
+
                         domains(),
+
                         domains(),
+
                         true,
                         false,
                         false
                 )
         );
 
+
         /*
          * =================================================
          * 3. SOCIAL_RELATIONSHIP
          * =================================================
+         *
+         * RELATIONSHIP Domain 전체 Routing 금지.
+         *
+         * NATAL:
+         *
+         * - RELATIONSHIP_PRIMARY_WEALTH_OFFICER_STRUCTURE
+         * - RELATIONSHIP_NATAL_RELATION_OVERLAP
+         *
+         * CURRENT_TIMELINE:
+         *
+         * - RELATIONSHIP_DECADE_CONTEXT
+         * - RELATIONSHIP_ANNUAL_CONTEXT
+         * - RELATIONSHIP_MONTHLY_CONTEXT
+         * - RELATIONSHIP_MONTHLY_FUNCTIONAL
          */
 
         put(
                 configured,
                 policy(
                         ConsultationCategory.SOCIAL_RELATIONSHIP,
-                        domains(
-                                LifeDomain.RELATIONSHIP
+
+                        domains(),
+
+                        domains(),
+
+                        selectedRules(
+                                LifeDomain.RELATIONSHIP,
+
+                                RELATIONSHIP_PRIMARY_WEALTH_OFFICER_STRUCTURE,
+
+                                RELATIONSHIP_NATAL_RELATION_OVERLAP
                         ),
-                        domains(
-                                LifeDomain.RELATIONSHIP
+
+                        selectedRules(
+                                LifeDomain.RELATIONSHIP,
+
+                                RELATIONSHIP_DECADE_CONTEXT,
+
+                                RELATIONSHIP_ANNUAL_CONTEXT,
+
+                                RELATIONSHIP_MONTHLY_CONTEXT,
+
+                                RELATIONSHIP_MONTHLY_FUNCTIONAL
                         ),
+
                         false,
                         false,
                         false
                 )
         );
+
 
         /*
          * =================================================
          * 4. LOVE_STYLE
          * =================================================
          *
-         * 스타일은 기본적으로 원국 View다.
+         * RELATIONSHIP Domain 전체 Routing 금지.
          *
-         * 현재 운의 관계 변화를
-         * 연애 "스타일" 자체로 덮어쓰지 않는다.
+         * 현재 LOVE_STYLE 공식 NATAL Source:
+         *
+         * RELATIONSHIP_NATAL_RELATION_OVERLAP
+         *
+         * 하나만 허용한다.
+         *
+         * Timeline Source는 현재 없다.
          */
 
         put(
                 configured,
                 policy(
                         ConsultationCategory.LOVE_STYLE,
-                        domains(
-                                LifeDomain.RELATIONSHIP
-                        ),
+
                         domains(),
+
+                        domains(),
+
+                        selectedRules(
+                                LifeDomain.RELATIONSHIP,
+
+                                RELATIONSHIP_NATAL_RELATION_OVERLAP
+                        ),
+
+                        Map.of(),
+
                         false,
                         false,
                         false
                 )
         );
+
 
         /*
          * =================================================
          * 5. PARTNER_LUCK
          * =================================================
          *
-         * 관계 원국 구조
-         * +
-         * 현재 Timeline 변화
+         * RELATIONSHIP Domain 전체 Routing 금지.
          *
-         * 를 함께 사용할 수 있다.
+         * 현재 PARTNER_LUCK이 실제 deterministic
+         * Conclusion으로 소비하는 정확한
+         * 6개 Source RuleCode만 허용한다.
          *
-         * 단:
+         * -------------------------------------------------
+         * NATAL
+         * -------------------------------------------------
          *
-         * 실제 결혼/이별 사건은
-         * 이후 Grounding에서도 확정하지 않는다.
+         * RELATIONSHIP_PRIMARY_WEALTH_OFFICER_STRUCTURE
+         *
+         * ->
+         *
+         * PARTNER_LUCK_PRIMARY_WEALTH_OFFICER_STRUCTURE
+         *
+         * -------------------------------------------------
+         *
+         * RELATIONSHIP_NATAL_RELATION_OVERLAP
+         *
+         * ->
+         *
+         * PARTNER_LUCK_NATAL_RELATION_OVERLAP
+         *
+         * -------------------------------------------------
+         * CURRENT_TIMELINE
+         * -------------------------------------------------
+         *
+         * RELATIONSHIP_DECADE_CONTEXT
+         *
+         * ->
+         *
+         * PARTNER_LUCK_CURRENT_DECADE_CONTEXT
+         *
+         * -------------------------------------------------
+         *
+         * RELATIONSHIP_ANNUAL_CONTEXT
+         *
+         * ->
+         *
+         * PARTNER_LUCK_CURRENT_ANNUAL_CONTEXT
+         *
+         * -------------------------------------------------
+         *
+         * RELATIONSHIP_MONTHLY_CONTEXT
+         *
+         * ->
+         *
+         * PARTNER_LUCK_CURRENT_MONTHLY_CONTEXT
+         *
+         * -------------------------------------------------
+         *
+         * RELATIONSHIP_MONTHLY_FUNCTIONAL
+         *
+         * ->
+         *
+         * PARTNER_LUCK_CURRENT_MONTHLY_FUNCTIONAL
+         *
+         * =================================================
+         * 현재 제외
+         * =================================================
+         *
+         * RELATIONSHIP_TEN_GOD_CONTEXT
+         *
+         * RELATIONSHIP_SPOUSE_PALACE
+         *
+         * RELATIONSHIP_PEACH_BLOSSOM_AUXILIARY
+         *
+         * 및 기타 RELATIONSHIP Rule은
+         * 현재 PARTNER_LUCK Category View에
+         * Routing하지 않는다.
+         *
+         * upstream LifeDomain 결과 자체를
+         * 삭제하는 것은 아니다.
+         *
+         * =================================================
+         * 독립성
+         * =================================================
+         *
+         * 이 6개 Source가 같은 Category에
+         * Routing된다는 이유만으로:
+         *
+         * - 역할·책임 + 관계망
+         * - 대운 + 세운
+         * - 세운 + 월운
+         * - 월운 Context + Monthly Functional
+         *
+         * 을 결합하지 않는다.
          */
 
         put(
                 configured,
                 policy(
                         ConsultationCategory.PARTNER_LUCK,
-                        domains(
-                                LifeDomain.RELATIONSHIP
+
+                        /*
+                         * Natal Domain 전체 차단.
+                         */
+                        domains(),
+
+                        /*
+                         * Segment Domain 전체 차단.
+                         */
+                        domains(),
+
+                        /*
+                         * selectedNatalRuleCodes
+                         */
+                        selectedRules(
+                                LifeDomain.RELATIONSHIP,
+
+                                RELATIONSHIP_PRIMARY_WEALTH_OFFICER_STRUCTURE,
+
+                                RELATIONSHIP_NATAL_RELATION_OVERLAP
                         ),
-                        domains(
-                                LifeDomain.RELATIONSHIP
+
+                        /*
+                         * selectedSegmentRuleCodes
+                         */
+                        selectedRules(
+                                LifeDomain.RELATIONSHIP,
+
+                                RELATIONSHIP_DECADE_CONTEXT,
+
+                                RELATIONSHIP_ANNUAL_CONTEXT,
+
+                                RELATIONSHIP_MONTHLY_CONTEXT,
+
+                                RELATIONSHIP_MONTHLY_FUNCTIONAL
                         ),
+
                         false,
                         false,
                         false
                 )
         );
+
 
         /*
          * =================================================
@@ -249,173 +490,234 @@ public class ConsultationCategoryEvidencePolicyRegistry {
                 configured,
                 policy(
                         ConsultationCategory.WEALTH,
+
                         domains(
                                 LifeDomain.WEALTH
                         ),
+
                         domains(
                                 LifeDomain.WEALTH
                         ),
+
                         false,
                         false,
                         false
                 )
         );
+
 
         /*
          * =================================================
          * 7. CAREER
          * =================================================
          *
-         * 우선 CAREER Domain만 공식 입력으로 사용한다.
+         * CAREER Domain 전체
          *
-         * LEARNING_GROWTH 중 어느 Rule을
-         * 직업 View에 추가할지는
-         * 이후 RuleCode 기반 선별 정책으로
-         * 별도 정밀화한다.
+         * +
          *
-         * 지금 모든 Learning Match를
-         * CAREER에 복사하지 않는다.
+         * LEARNING_GROWTH의 선별된 RuleCode만 사용.
          */
 
         put(
                 configured,
                 policy(
                         ConsultationCategory.CAREER,
+
                         domains(
                                 LifeDomain.CAREER
                         ),
+
                         domains(
                                 LifeDomain.CAREER
                         ),
+
+                        selectedRules(
+                                LifeDomain.LEARNING_GROWTH,
+
+                                LEARNING_RESOURCE_OUTPUT,
+
+                                LEARNING_PRIMARY_RESOURCE_OUTPUT_STRUCTURE
+                        ),
+
+                        selectedRules(
+                                LifeDomain.LEARNING_GROWTH,
+
+                                LEARNING_DECADE_CONTEXT,
+
+                                LEARNING_ANNUAL_CONTEXT,
+
+                                LEARNING_MONTHLY_CONTEXT,
+
+                                LEARNING_GROWTH_ANNUAL_FUNCTIONAL,
+
+                                LEARNING_GROWTH_MONTHLY_FUNCTIONAL
+                        ),
+
                         false,
                         false,
                         false
                 )
         );
 
+
         /*
          * =================================================
          * 8. LEGAL_RISK
          * =================================================
-         *
-         * 별도 LifeDomain.LEGAL을 만들지 않는다.
-         *
-         * 또한:
-         *
-         * 충
-         * 형
-         * 칠살
-         * PRESSURE
-         *
-         * 하나만으로 분쟁/법률 위험을 만들지 않는다.
-         *
-         * 19차 전용 교차 Evidence Rule이
-         * 별도로 필요하다.
          */
 
         put(
                 configured,
                 policy(
                         ConsultationCategory.LEGAL_RISK,
+
                         domains(),
+
                         domains(),
+
                         false,
                         false,
                         true
                 )
         );
 
+
         /*
          * =================================================
          * 9. HEALTH_TENDENCY
          * =================================================
-         *
-         * 의료 진단이 아니라
-         * 생활 균형/관리 경향 View.
          */
 
         put(
                 configured,
                 policy(
                         ConsultationCategory.HEALTH_TENDENCY,
+
                         domains(
                                 LifeDomain.HEALTH_LIFESTYLE
                         ),
+
                         domains(
                                 LifeDomain.HEALTH_LIFESTYLE
                         ),
+
                         false,
                         false,
                         false
                 )
         );
+
 
         /*
          * =================================================
          * 10. CURRENT_YEAR_LUCK
          * =================================================
          *
-         * "올해"는 LifeDomain이 아니라 시간 View다.
+         * 원국 전체 Routing 없음.
+         * Segment Domain 전체 Routing 없음.
          *
-         * 원국 기준선:
-         * 5개 Domain
-         *
-         * +
-         *
-         * 현재 분석 Segment 변화:
-         * 5개 Domain
-         *
-         * 을 모두 사용할 수 있다.
-         *
-         * 실제 Segment 선택은
-         * 19차 Engine이 담당한다.
+         * 실제 공식 Temporal RuleCode 23개만
+         * selectedSegmentRuleCodes로 허용한다.
          */
 
         put(
                 configured,
                 policy(
                         ConsultationCategory.CURRENT_YEAR_LUCK,
-                        allDomains(),
-                        allDomains(),
+
+                        domains(),
+
+                        domains(),
+
+                        Map.of(),
+
+                        selectedRulesByDomain(
+                                Map.of(
+                                        LifeDomain.WEALTH,
+                                        ruleCodes(
+                                                WEALTH_DECADE_CONTEXT,
+                                                WEALTH_ANNUAL_CONTEXT,
+                                                WEALTH_ANNUAL_FUNCTIONAL,
+                                                WEALTH_MONTHLY_CONTEXT,
+                                                WEALTH_MONTHLY_FUNCTIONAL
+                                        ),
+
+                                        LifeDomain.CAREER,
+                                        ruleCodes(
+                                                CAREER_DECADE_CONTEXT,
+                                                CAREER_ANNUAL_CONTEXT,
+                                                CAREER_ANNUAL_FUNCTIONAL,
+                                                CAREER_MONTHLY_CONTEXT,
+                                                CAREER_MONTHLY_FUNCTIONAL
+                                        ),
+
+                                        LifeDomain.RELATIONSHIP,
+                                        ruleCodes(
+                                                RELATIONSHIP_DECADE_CONTEXT,
+                                                RELATIONSHIP_ANNUAL_CONTEXT,
+                                                RELATIONSHIP_MONTHLY_CONTEXT,
+                                                RELATIONSHIP_MONTHLY_FUNCTIONAL
+                                        ),
+
+                                        LifeDomain.LEARNING_GROWTH,
+                                        ruleCodes(
+                                                LEARNING_DECADE_CONTEXT,
+                                                LEARNING_ANNUAL_CONTEXT,
+                                                LEARNING_GROWTH_ANNUAL_FUNCTIONAL,
+                                                LEARNING_MONTHLY_CONTEXT,
+                                                LEARNING_GROWTH_MONTHLY_FUNCTIONAL
+                                        ),
+
+                                        LifeDomain.HEALTH_LIFESTYLE,
+                                        ruleCodes(
+                                                HEALTH_DECADE_CONTEXT,
+                                                HEALTH_ANNUAL_CONTEXT,
+                                                HEALTH_LIFESTYLE_ANNUAL_FUNCTIONAL,
+                                                HEALTH_LIFESTYLE_MONTHLY_FUNCTIONAL
+                                        )
+                                )
+                        ),
+
                         false,
                         false,
                         false
                 )
         );
 
+
         /*
          * =================================================
          * 11. FUTURE_LUCK
          * =================================================
-         *
-         * 현재 대운 하나 또는
-         * HOUR Palace 하나만 보고
-         * "앞으로의 흐름"을 만들지 않는다.
-         *
-         * 실제 미래 Timeline Range가 필요하다.
          */
 
         put(
                 configured,
                 policy(
                         ConsultationCategory.FUTURE_LUCK,
+
                         domains(),
+
                         domains(),
+
                         false,
                         true,
                         false
                 )
         );
 
+
         /*
          * =================================================
-         * 11개 전부 정의되었는지 검증
+         * 모든 Category 정의 검증
          * =================================================
          */
 
         if (
                 configured.size()
-                        != ConsultationCategory.values().length
+                        != ConsultationCategory
+                        .values()
+                        .length
         ) {
 
             throw new IllegalStateException(
@@ -423,7 +725,9 @@ public class ConsultationCategoryEvidencePolicyRegistry {
                             + "configured="
                             + configured.size()
                             + ", expected="
-                            + ConsultationCategory.values().length
+                            + ConsultationCategory
+                            .values()
+                            .length
             );
         }
 
@@ -450,6 +754,7 @@ public class ConsultationCategoryEvidencePolicyRegistry {
                         configured
                 );
     }
+
 
     /*
      * =================================================
@@ -484,6 +789,7 @@ public class ConsultationCategoryEvidencePolicyRegistry {
         return policy;
     }
 
+
     public boolean acceptsNatalDomain(
 
             ConsultationCategory category,
@@ -499,6 +805,7 @@ public class ConsultationCategoryEvidencePolicyRegistry {
                         domain
                 );
     }
+
 
     public boolean acceptsSegmentDomain(
 
@@ -516,6 +823,47 @@ public class ConsultationCategoryEvidencePolicyRegistry {
                 );
     }
 
+
+    public boolean acceptsNatalRule(
+
+            ConsultationCategory category,
+
+            LifeDomain domain,
+
+            String ruleCode
+
+    ) {
+
+        return policyOf(
+                category
+        )
+                .acceptsNatalRule(
+                        domain,
+                        ruleCode
+                );
+    }
+
+
+    public boolean acceptsSegmentRule(
+
+            ConsultationCategory category,
+
+            LifeDomain domain,
+
+            String ruleCode
+
+    ) {
+
+        return policyOf(
+                category
+        )
+                .acceptsSegmentRule(
+                        domain,
+                        ruleCode
+                );
+    }
+
+
     public Map<
             ConsultationCategory,
             ConsultationCategoryEvidencePolicy
@@ -524,9 +872,10 @@ public class ConsultationCategoryEvidencePolicyRegistry {
         return policies;
     }
 
+
     /*
      * =================================================
-     * Builder
+     * Domain 전체 Routing Policy Builder
      * =================================================
      */
 
@@ -555,6 +904,54 @@ public class ConsultationCategoryEvidencePolicyRegistry {
                 requiresDedicatedCrossDomainRule
         );
     }
+
+
+    /*
+     * =================================================
+     * Selected RuleCode Policy Builder
+     * =================================================
+     */
+
+    private static ConsultationCategoryEvidencePolicy policy(
+
+            ConsultationCategory category,
+
+            EnumSet<LifeDomain> natalDomains,
+
+            EnumSet<LifeDomain> segmentDomains,
+
+            Map<LifeDomain, Set<String>>
+                    selectedNatalRuleCodes,
+
+            Map<LifeDomain, Set<String>>
+                    selectedSegmentRuleCodes,
+
+            boolean requiresPastTimelineRange,
+
+            boolean requiresFutureTimelineRange,
+
+            boolean requiresDedicatedCrossDomainRule
+
+    ) {
+
+        return new ConsultationCategoryEvidencePolicy(
+                category,
+                natalDomains,
+                segmentDomains,
+                selectedNatalRuleCodes,
+                selectedSegmentRuleCodes,
+                requiresPastTimelineRange,
+                requiresFutureTimelineRange,
+                requiresDedicatedCrossDomainRule
+        );
+    }
+
+
+    /*
+     * =================================================
+     * Domain Builder
+     * =================================================
+     */
 
     private static EnumSet<LifeDomain> domains(
             LifeDomain... domains
@@ -588,12 +985,236 @@ public class ConsultationCategoryEvidencePolicyRegistry {
         return result;
     }
 
-    private static EnumSet<LifeDomain> allDomains() {
 
-        return EnumSet.allOf(
-                LifeDomain.class
+    /*
+     * =================================================
+     * Selected RuleCode Builder
+     * =================================================
+     */
+
+    private static Map<LifeDomain, Set<String>>
+    selectedRules(
+
+            LifeDomain domain,
+
+            String... ruleCodes
+
+    ) {
+
+        LifeDomain normalizedDomain =
+                Objects.requireNonNull(
+                        domain,
+                        "Selected RuleCode에는 LifeDomain이 필요합니다."
+                );
+
+        return Map.of(
+                normalizedDomain,
+                ruleCodes(
+                        ruleCodes
+                )
         );
     }
+
+
+    /*
+     * =================================================
+     * Multi-Domain Selected RuleCode Builder
+     * =================================================
+     */
+
+    private static Map<LifeDomain, Set<String>>
+    selectedRulesByDomain(
+            Map<LifeDomain, Set<String>> source
+    ) {
+
+        Objects.requireNonNull(
+                source,
+                "Selected RuleCode Domain Map이 필요합니다."
+        );
+
+        if (
+                source.isEmpty()
+        ) {
+
+            return Map.of();
+        }
+
+        EnumMap<LifeDomain, Set<String>> result =
+                new EnumMap<>(
+                        LifeDomain.class
+                );
+
+        for (
+                Map.Entry<LifeDomain, Set<String>> entry
+                : source.entrySet()
+        ) {
+
+            Map.Entry<LifeDomain, Set<String>> normalizedEntry =
+                    Objects.requireNonNull(
+                            entry,
+                            "Selected RuleCode Domain Entry는 null일 수 없습니다."
+                    );
+
+            LifeDomain domain =
+                    Objects.requireNonNull(
+                            normalizedEntry.getKey(),
+                            "Selected RuleCode Domain은 null일 수 없습니다."
+                    );
+
+            Set<String> sourceRuleCodes =
+                    Objects.requireNonNull(
+                            normalizedEntry.getValue(),
+                            "Selected RuleCode Set은 null일 수 없습니다: "
+                                    + domain
+                    );
+
+            if (
+                    sourceRuleCodes.isEmpty()
+            ) {
+
+                throw new IllegalArgumentException(
+                        "Selected RuleCode Set은 비어 있을 수 없습니다: "
+                                + domain
+                );
+            }
+
+            LinkedHashSet<String> normalizedRuleCodes =
+                    new LinkedHashSet<>();
+
+            for (
+                    String ruleCode
+                    : sourceRuleCodes
+            ) {
+
+                Objects.requireNonNull(
+                        ruleCode,
+                        "Selected RuleCode는 null일 수 없습니다: "
+                                + domain
+                );
+
+                String normalized =
+                        ruleCode.trim();
+
+                if (
+                        normalized.isBlank()
+                ) {
+
+                    throw new IllegalArgumentException(
+                            "Selected RuleCode는 비어 있을 수 없습니다: "
+                                    + domain
+                    );
+                }
+
+                if (
+                        !normalizedRuleCodes.add(
+                                normalized
+                        )
+                ) {
+
+                    throw new IllegalArgumentException(
+                            "Selected RuleCode가 중복되었습니다: "
+                                    + domain
+                                    + " / "
+                                    + normalized
+                    );
+                }
+            }
+
+            Set<String> previous =
+                    result.put(
+                            domain,
+                            Collections.unmodifiableSet(
+                                    normalizedRuleCodes
+                            )
+                    );
+
+            if (
+                    previous != null
+            ) {
+
+                throw new IllegalArgumentException(
+                        "Selected RuleCode Domain이 중복되었습니다: "
+                                + domain
+                );
+            }
+        }
+
+        return Collections.unmodifiableMap(
+                result
+        );
+    }
+
+
+    /*
+     * =================================================
+     * RuleCode Set Builder
+     * =================================================
+     */
+
+    private static Set<String> ruleCodes(
+            String... ruleCodes
+    ) {
+
+        if (
+                ruleCodes == null
+                        ||
+                        ruleCodes.length == 0
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Selected RuleCode에는 최소 하나의 ruleCode가 필요합니다."
+            );
+        }
+
+        LinkedHashSet<String> normalizedRuleCodes =
+                new LinkedHashSet<>();
+
+        for (
+                String ruleCode
+                : ruleCodes
+        ) {
+
+            Objects.requireNonNull(
+                    ruleCode,
+                    "Selected RuleCode는 null일 수 없습니다."
+            );
+
+            String normalized =
+                    ruleCode.trim();
+
+            if (
+                    normalized.isBlank()
+            ) {
+
+                throw new IllegalArgumentException(
+                        "Selected RuleCode는 비어 있을 수 없습니다."
+                );
+            }
+
+            if (
+                    !normalizedRuleCodes.add(
+                            normalized
+                    )
+            ) {
+
+                throw new IllegalArgumentException(
+                        "Selected RuleCode가 중복되었습니다: "
+                                + normalized
+                );
+            }
+        }
+
+        return Collections.unmodifiableSet(
+                normalizedRuleCodes
+        );
+    }
+
+
+    /*
+     * =================================================
+     * Registry Put
+     * =================================================
+     */
 
     private static void put(
 

@@ -19,13 +19,11 @@ import com.dajeom.dto.SajuAnalysisRequest;
 import com.dajeom.dto.SajuAnalysisResponse;
 import com.dajeom.engine.AnnualFunctionalBaselinePipelineEngine;
 import com.dajeom.engine.AnnualLuckAnalysisEngine;
-import com.dajeom.engine.ConsultationAnalysisEngine;
 import com.dajeom.engine.DecadeLuckAnalysisEngine;
 import com.dajeom.engine.FourPillarsCalculationEngine;
-import com.dajeom.engine.InterpretationSignalAnalysisEngine;
 import com.dajeom.engine.LifeDomainAnalysisEngine;
 import com.dajeom.engine.LuckIntegratedAnalysisEngine;
-import com.dajeom.engine.LuckInteractionAnalysisEngine;
+import com.dajeom.engine.MonthlyFunctionalActivationPipelineEngine;
 import com.dajeom.engine.NatalChartAdvancedAnalysisEngine;
 import com.dajeom.engine.NatalChartAnalysisEngine;
 import com.dajeom.engine.NatalPersonalityStatementContractPipelineEngine;
@@ -38,7 +36,6 @@ import com.dajeom.model.AnnualLuckAnalysis;
 import com.dajeom.model.AnnualLuckTenGodEvidence;
 import com.dajeom.model.BirthDateValue;
 import com.dajeom.model.BirthTimeContext;
-import com.dajeom.model.ConsultationAnalysis;
 import com.dajeom.model.ConsultationCategoryEvidenceAnalysis;
 import com.dajeom.model.ConsultationGroundingAnalysis;
 import com.dajeom.model.ConsultationGroundingPolicyAnalysis;
@@ -46,18 +43,17 @@ import com.dajeom.model.ConsultationInterpretationPromptContext;
 import com.dajeom.model.ConsultationInterpretationPromptSection;
 import com.dajeom.model.ConsultationRequestEvidenceAnalysis;
 import com.dajeom.model.ConsultationRequestScopeAnalysis;
-import com.dajeom.model.ConsultationSection;
 import com.dajeom.model.ConsultationStoryGeneration;
 import com.dajeom.model.ConsultationTimelineRangeAnalysis;
 import com.dajeom.model.DecadeLuckAnalysis;
 import com.dajeom.model.DecadeLuckPeriod;
 import com.dajeom.model.FourPillars;
-import com.dajeom.model.InterpretationSignalAnalysis;
 import com.dajeom.model.LifeDomainAnalysis;
 import com.dajeom.model.LifeDomainEvidenceResolution;
 import com.dajeom.model.LuckIntegratedAnalysis;
-import com.dajeom.model.LuckInteractionAnalysis;
 import com.dajeom.model.LuckReferenceContext;
+import com.dajeom.model.MonthlyFunctionalActivationAnalysis;
+import com.dajeom.model.MonthlyLuckAnalysis;
 import com.dajeom.model.NatalChartAdvancedAnalysis;
 import com.dajeom.model.NatalChartAnalysis;
 import com.dajeom.model.NatalPersonalityStatementContract;
@@ -84,6 +80,7 @@ import com.dajeom.resolver.DecadeLuckTenGodSourceResolver;
 import com.dajeom.resolver.LifeDomainAnnualFunctionalSourceResolver;
 import com.dajeom.resolver.LifeDomainDecadeContextSourceResolver;
 import com.dajeom.resolver.LifeDomainEvidenceResolver;
+import com.dajeom.resolver.LifeDomainMonthlyFunctionalSourceResolver;
 import com.dajeom.resolver.LifeDomainNatalEvidenceSourceResolver;
 import com.dajeom.resolver.LifeDomainNatalEvidenceSourceResolverFactory;
 import com.dajeom.resolver.LuckIntegratedLayerAnalysisResolver;
@@ -111,44 +108,20 @@ import java.util.Optional;
  * 사주 전체 분석 Application Service.
  *
  * =================================================
- *
- * deterministic 실행선:
+ * 공식 deterministic 실행선
+ * =================================================
  *
  * 1 ~ 12차 원국
  *
  * ↓
  *
- * 원국 Personality Direct-Natal Pipeline
- *
- * NatalFunctionalAnalysis
- * ↓
- * NatalCrossFunctionalAnalysis
- * ↓
- * NatalConditionalResponseAnalysis
- * ↓
- * Personality Pattern
- * ↓
- * Deterministic Judgment
- * ↓
- * Finding
- * ↓
- * Synthesis
- * ↓
- * Statement Fact
- * ↓
- * Selection
- * ↓
- * Bundle
- * ↓
- * Statement Contract
+ * Personality Direct-Natal Pipeline
  *
  * ↓
  *
  * 13차 대운
  *
  * ↓
- *
- * luckReferenceDate 존재 시
  *
  * 16차
  * 원국 + 대운 + 세운 + 월운 통합 Timeline
@@ -161,7 +134,10 @@ import java.util.Optional;
  * ↓
  *
  * Annual Functional Baseline
- * (Natal + Decade + Annual Functional)
+ *
+ * ↓
+ *
+ * Monthly Functional Activation
  *
  * ↓
  *
@@ -175,6 +151,10 @@ import java.util.Optional;
  *
  * ↓
  *
+ * Timeline Range
+ *
+ * ↓
+ *
  * 20차
  * AI Grounding
  * +
@@ -184,12 +164,20 @@ import java.util.Optional;
  * +
  * Interpretation Prompt Context
  *
+ * ↓
+ *
+ * ConsultationStoryGenerator
+ *
+ * ↓
+ *
+ * ConsultationSectionResponse
+ *
+ * =================================================
+ * 공식 Meaning Anchor
  * =================================================
  *
  * ConsultationInterpretationPromptContext가
  * 외부 LLM Adapter의 공식 deterministic 입력 Anchor다.
- *
- * =================================================
  *
  * 외부 LLM 결과는:
  *
@@ -198,11 +186,50 @@ import java.util.Optional;
  *
  * 에만 연결한다.
  *
- * storyEmphasis는 새로운 사주 계산값이 아니라
- * storyText 중 화면에서 진하게 보여줄 위치 정보다.
+ * =================================================
+ * 제거한 Legacy Meaning 실행선
+ * =================================================
  *
- * 외부 LLM 실패가 deterministic 분석 전체를
- * 실패시키지 않도록 한다.
+ * 다음 실행선은 더 이상 사용하지 않는다.
+ *
+ * LuckInteractionAnalysisEngine
+ *
+ * ->
+ *
+ * InterpretationSignalAnalysisEngine
+ *
+ * ->
+ *
+ * ConsultationAnalysisEngine
+ *
+ * ->
+ *
+ * ConsultationRule
+ *
+ * 이 경로에서 생성되던:
+ *
+ * - supportScore
+ * - cautionScore
+ * - polarity
+ * - intensity
+ * - confidence
+ * - summaryMessage
+ * - guidanceMessage
+ * - narrationText
+ *
+ * 는 최종 상담 의미로 사용하지 않는다.
+ *
+ * =================================================
+ * Story 실패 처리
+ * =================================================
+ *
+ * 외부 LLM Story가 없다고 해서
+ * Legacy numeric 상담문으로 fallback하지 않는다.
+ *
+ * Prompt Section이 존재하지만
+ * Story Generation 결과만 없는 경우에는
+ * 계산되지 않은 의미를 새로 만들지 않았다는
+ * 기술적 안내만 반환한다.
  */
 @Service
 public class SajuAnalysisService {
@@ -211,6 +238,17 @@ public class SajuAnalysisService {
             LoggerFactory.getLogger(
                     SajuAnalysisService.class
             );
+
+    private static final String
+            STORY_GENERATION_UNAVAILABLE_MESSAGE =
+            "이 장의 계산 근거는 준비되어 있지만 상담문 생성 결과가 없어 "
+                    + "계산되지 않은 내용을 임의로 채우지 않았습니다.";
+
+    private static final String
+            CATEGORY_UNAVAILABLE_MESSAGE =
+            "현재 계산 근거만으로는 이 분야의 독립적인 해석을 확정하지 않습니다. "
+                    + "근거가 없는 내용을 추정해서 채우지 않았습니다.";
+
 
     private final KoreanLunarCalendarCalculator
             koreanLunarCalendarCalculator;
@@ -247,6 +285,9 @@ public class SajuAnalysisService {
 
     private final AnnualFunctionalBaselinePipelineEngine
             annualFunctionalBaselinePipelineEngine;
+
+    private final MonthlyFunctionalActivationPipelineEngine
+            monthlyFunctionalActivationPipelineEngine;
 
     private final LuckIntegratedAnalysisEngine
             luckIntegratedAnalysisEngine;
@@ -296,15 +337,6 @@ public class SajuAnalysisService {
     private final ConsultationStoryGenerator
             consultationStoryGenerator;
 
-    private final LuckInteractionAnalysisEngine
-            luckInteractionAnalysisEngine;
-
-    private final InterpretationSignalAnalysisEngine
-            interpretationSignalAnalysisEngine;
-
-    private final ConsultationAnalysisEngine
-            consultationAnalysisEngine;
-
     private final PalaceTenGodSourceResolver
             palaceTenGodSourceResolver;
 
@@ -328,6 +360,7 @@ public class SajuAnalysisService {
 
     private final AnnualLuckContextResolverFactory
             annualLuckContextResolverFactory;
+
 
     public SajuAnalysisService(
 
@@ -366,6 +399,9 @@ public class SajuAnalysisService {
 
             AnnualFunctionalBaselinePipelineEngine
                     annualFunctionalBaselinePipelineEngine,
+
+            MonthlyFunctionalActivationPipelineEngine
+                    monthlyFunctionalActivationPipelineEngine,
 
             LuckIntegratedAnalysisEngine
                     luckIntegratedAnalysisEngine,
@@ -414,15 +450,6 @@ public class SajuAnalysisService {
 
             ConsultationStoryGenerator
                     consultationStoryGenerator,
-
-            LuckInteractionAnalysisEngine
-                    luckInteractionAnalysisEngine,
-
-            InterpretationSignalAnalysisEngine
-                    interpretationSignalAnalysisEngine,
-
-            ConsultationAnalysisEngine
-                    consultationAnalysisEngine,
 
             PalaceTenGodSourceResolver
                     palaceTenGodSourceResolver,
@@ -510,6 +537,11 @@ public class SajuAnalysisService {
                         annualFunctionalBaselinePipelineEngine
                 );
 
+        this.monthlyFunctionalActivationPipelineEngine =
+                Objects.requireNonNull(
+                        monthlyFunctionalActivationPipelineEngine
+                );
+
         this.luckIntegratedAnalysisEngine =
                 Objects.requireNonNull(
                         luckIntegratedAnalysisEngine
@@ -590,21 +622,6 @@ public class SajuAnalysisService {
                         consultationStoryGenerator
                 );
 
-        this.luckInteractionAnalysisEngine =
-                Objects.requireNonNull(
-                        luckInteractionAnalysisEngine
-                );
-
-        this.interpretationSignalAnalysisEngine =
-                Objects.requireNonNull(
-                        interpretationSignalAnalysisEngine
-                );
-
-        this.consultationAnalysisEngine =
-                Objects.requireNonNull(
-                        consultationAnalysisEngine
-                );
-
         this.palaceTenGodSourceResolver =
                 Objects.requireNonNull(
                         palaceTenGodSourceResolver
@@ -645,6 +662,7 @@ public class SajuAnalysisService {
                         annualLuckContextResolverFactory
                 );
     }
+
 
     public SajuAnalysisResponse analyze(
             SajuAnalysisRequest request
@@ -1086,6 +1104,17 @@ public class SajuAnalysisService {
                 consultationStoryGeneration.isPresent()
         );
 
+        /*
+         * =================================================
+         * API 응답용 Annual Luck
+         * =================================================
+         *
+         * Legacy InterpretationSignal 생성을 위한 것이 아니다.
+         *
+         * 현재 SajuAnalysisResponse의 annualLuck 필드를 위해
+         * targetYear AnnualLuckAnalysis를 계산한다.
+         */
+
         log.info(
                 "[SAJU-SERVICE-DIAG] annual-response-analysis-start"
         );
@@ -1132,56 +1161,10 @@ public class SajuAnalysisService {
         );
 
         ZonedDateTime targetDateTime =
-                resolveLegacyDecadeReferenceDateTime(
+                resolveDecadeReferenceDateTime(
                         birthData,
                         luckIntegratedAnalysis
                 );
-
-        log.info(
-                "[SAJU-SERVICE-DIAG] legacy-luck-interaction-start"
-        );
-
-        LuckInteractionAnalysis luckInteractionAnalysis =
-                luckInteractionAnalysisEngine
-                        .analyze(
-                                advancedAnalysis,
-                                decadeLuckAnalysis,
-                                annualLuckAnalysis
-                        );
-
-        log.info(
-                "[SAJU-SERVICE-DIAG] legacy-luck-interaction-complete"
-        );
-
-        log.info(
-                "[SAJU-SERVICE-DIAG] interpretation-signal-start"
-        );
-
-        InterpretationSignalAnalysis signalAnalysis =
-                interpretationSignalAnalysisEngine
-                        .analyze(
-                                advancedAnalysis,
-                                luckInteractionAnalysis
-                        );
-
-        log.info(
-                "[SAJU-SERVICE-DIAG] interpretation-signal-complete"
-        );
-
-        log.info(
-                "[SAJU-SERVICE-DIAG] consultation-analysis-start"
-        );
-
-        ConsultationAnalysis consultationAnalysis =
-                consultationAnalysisEngine
-                        .analyze(
-                                signalAnalysis,
-                                luckInteractionAnalysis
-                        );
-
-        log.info(
-                "[SAJU-SERVICE-DIAG] consultation-analysis-complete"
-        );
 
         log.info(
                 "[SAJU-SERVICE-DIAG] response-create-start"
@@ -1194,7 +1177,6 @@ public class SajuAnalysisService {
                         advancedAnalysis,
                         decadeLuckAnalysis,
                         annualLuckAnalysis,
-                        consultationAnalysis,
                         interpretationPromptContext,
                         consultationStoryGeneration,
                         request.targetYear(),
@@ -1211,6 +1193,7 @@ public class SajuAnalysisService {
 
         return response;
     }
+
 
     private Optional<ConsultationStoryGeneration>
     generateConsultationStoriesIfAvailable(
@@ -1274,6 +1257,7 @@ public class SajuAnalysisService {
 
         return generated;
     }
+
 
     private Optional<ConsultationInterpretationPromptContext>
     analyzeInterpretationPromptContextIfAvailable(
@@ -1379,6 +1363,7 @@ public class SajuAnalysisService {
         );
     }
 
+
     private Optional<ConsultationRequestScopeAnalysis>
     analyzeConsultationRequestScopeIfAvailable(
 
@@ -1419,6 +1404,7 @@ public class SajuAnalysisService {
                 requestScope
         );
     }
+
 
     private Optional<ConsultationTimelineRangeAnalysis>
     analyzeConsultationTimelineRangeIfRequested(
@@ -1584,6 +1570,7 @@ public class SajuAnalysisService {
         );
     }
 
+
     private Optional<ConsultationRequestEvidenceAnalysis>
     analyzeConsultationRequestEvidenceIfAvailable(
 
@@ -1693,6 +1680,7 @@ public class SajuAnalysisService {
                 requestEvidenceAnalysis
         );
     }
+
 
     private Optional<LifeDomainAnalysis>
     analyzeLifeDomainIfIntegrated(
@@ -1819,6 +1807,31 @@ public class SajuAnalysisService {
                 annualFunctionalBaselines.size()
         );
 
+        /*
+         * =================================================
+         * Monthly Functional Activation
+         * =================================================
+         */
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] monthly-functional-activation-start"
+        );
+
+        Map<
+                MonthlyLuckAnalysis,
+                MonthlyFunctionalActivationAnalysis
+                > monthlyFunctionalActivations =
+                monthlyFunctionalActivationPipelineEngine
+                        .analyze(
+                                integratedAnalysis,
+                                annualFunctionalBaselines
+                        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] monthly-functional-activation-complete size={}",
+                monthlyFunctionalActivations.size()
+        );
+
         LifeDomainAnnualFunctionalSourceResolver
                 annualFunctionalSourceResolver =
                 segmentAnalysis -> {
@@ -1862,6 +1875,71 @@ public class SajuAnalysisService {
                     );
                 };
 
+        LifeDomainMonthlyFunctionalSourceResolver
+                monthlyFunctionalSourceResolver =
+                segmentAnalysis -> {
+
+                    MonthlyLuckAnalysis segmentMonthlyLuckAnalysis =
+                            segmentAnalysis
+                                    .monthlyLuckAnalysis();
+
+                    MonthlyFunctionalActivationAnalysis activation =
+                            monthlyFunctionalActivations
+                                    .get(
+                                            segmentMonthlyLuckAnalysis
+                                    );
+
+                    if (
+                            activation == null
+                    ) {
+
+                        throw new IllegalStateException(
+                                "18차 Monthly Functional Activation이 Timeline Segment에 존재하지 않습니다. "
+                                        + "sajuYear="
+                                        + segmentMonthlyLuckAnalysis.sajuYear()
+                                        + ", monthIndex="
+                                        + segmentMonthlyLuckAnalysis.monthIndex()
+                        );
+                    }
+
+                    if (
+                            activation
+                                    .monthlyLuckAnalysis()
+                                    != segmentMonthlyLuckAnalysis
+                    ) {
+
+                        throw new IllegalStateException(
+                                "18차 Monthly Functional Activation이 Timeline MonthlyLuckAnalysis Identity를 보존하지 않았습니다. "
+                                        + "sajuYear="
+                                        + segmentMonthlyLuckAnalysis.sajuYear()
+                                        + ", monthIndex="
+                                        + segmentMonthlyLuckAnalysis.monthIndex()
+                        );
+                    }
+
+                    if (
+                            activation
+                                    .annualFunctionalBaseline()
+                                    .annualLuckAnalysis()
+                                    != segmentAnalysis
+                                    .annualLuckAnalysis()
+                    ) {
+
+                        throw new IllegalStateException(
+                                "18차 Monthly Functional Activation의 Annual Functional Baseline이 "
+                                        + "현재 Timeline AnnualLuckAnalysis Identity를 보존하지 않았습니다. "
+                                        + "sajuYear="
+                                        + segmentMonthlyLuckAnalysis.sajuYear()
+                                        + ", monthIndex="
+                                        + segmentMonthlyLuckAnalysis.monthIndex()
+                        );
+                    }
+
+                    return Optional.of(
+                            activation
+                    );
+                };
+
         log.info(
                 "[SAJU-SERVICE-DIAG] life-domain-evidence-resolver-start"
         );
@@ -1873,7 +1951,8 @@ public class SajuAnalysisService {
                                 resolvedShinsalAnalysis,
                                 natalEvidenceSourceResolver,
                                 lifeDomainDecadeContextSourceResolver,
-                                annualFunctionalSourceResolver
+                                annualFunctionalSourceResolver,
+                                monthlyFunctionalSourceResolver
                         );
 
         log.info(
@@ -1935,6 +2014,7 @@ public class SajuAnalysisService {
         );
     }
 
+
     private Optional<ShinsalAnalysis>
     analyzeShinsalIfIntegrated(
 
@@ -1984,6 +2064,7 @@ public class SajuAnalysisService {
                 analysis
         );
     }
+
 
     private Optional<LuckIntegratedAnalysis>
     analyzeIntegratedLuckIfRequested(
@@ -2106,6 +2187,7 @@ public class SajuAnalysisService {
         );
     }
 
+
     private LuckReferenceContext
     createLuckReferenceContext(
 
@@ -2161,8 +2243,9 @@ public class SajuAnalysisService {
         );
     }
 
+
     private ZonedDateTime
-    resolveLegacyDecadeReferenceDateTime(
+    resolveDecadeReferenceDateTime(
 
             NormalizedBirthData birthData,
 
@@ -2204,6 +2287,7 @@ public class SajuAnalysisService {
         );
     }
 
+
     private BirthTimeContext createBirthTimeContext(
             NormalizedBirthData birthData
     ) {
@@ -2224,6 +2308,7 @@ public class SajuAnalysisService {
                 birthData.zoneId()
         );
     }
+
 
     private NormalizedBirthData normalizeBirthData(
             SajuAnalysisRequest request
@@ -2332,6 +2417,7 @@ public class SajuAnalysisService {
         );
     }
 
+
     private SajuAnalysisResponse createResponse(
 
             NormalizedBirthData birthData,
@@ -2344,8 +2430,6 @@ public class SajuAnalysisService {
 
             AnnualLuckAnalysis annualLuckAnalysis,
 
-            ConsultationAnalysis consultationAnalysis,
-
             Optional<ConsultationInterpretationPromptContext>
                     interpretationPromptContext,
 
@@ -2357,6 +2441,18 @@ public class SajuAnalysisService {
             ZonedDateTime targetDateTime
 
     ) {
+
+        List<ConsultationSectionResponse>
+                consultationResponses =
+                createConsultationResponses(
+                        interpretationPromptContext,
+                        consultationStoryGeneration
+                );
+
+        String fullNarrationText =
+                createFullNarrationText(
+                        consultationResponses
+                );
 
         return new SajuAnalysisResponse(
                 birthData.calendarType(),
@@ -2455,23 +2551,329 @@ public class SajuAnalysisService {
                         annualLuckAnalysis
                 ),
 
-                consultationAnalysis
-                        .sections()
-                        .stream()
-                        .map(
-                                section ->
-                                        toConsultationResponse(
-                                                section,
+                consultationResponses,
+
+                fullNarrationText
+        );
+    }
+
+
+    /*
+     * =================================================
+     * Deterministic Consultation API Response
+     * =================================================
+     *
+     * 모든 ConsultationCategory의
+     * API Section 구조는 유지한다.
+     *
+     * 그러나 상담 의미는
+     * ConsultationStoryGeneration의 storyText만
+     * 사용한다.
+     *
+     * Legacy ConsultationSection은 사용하지 않는다.
+     */
+
+    private List<ConsultationSectionResponse>
+    createConsultationResponses(
+
+            Optional<ConsultationInterpretationPromptContext>
+                    interpretationPromptContext,
+
+            Optional<ConsultationStoryGeneration>
+                    consultationStoryGeneration
+
+    ) {
+
+        Objects.requireNonNull(
+                interpretationPromptContext,
+                "Consultation API Response에는 ConsultationInterpretationPromptContext Optional이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                consultationStoryGeneration,
+                "Consultation API Response에는 ConsultationStoryGeneration Optional이 필요합니다."
+        );
+
+        return Arrays
+                .stream(
+                        ConsultationCategory.values()
+                )
+                .sorted(
+                        (
+                                left,
+                                right
+                        ) ->
+                                Integer.compare(
+                                        left.getOrder(),
+                                        right.getOrder()
+                                )
+                )
+                .map(
+                        category ->
+                                new ConsultationSectionResponse(
+                                        category.getOrder(),
+                                        category,
+                                        category.getKoreanName(),
+                                        resolveStoryText(
+                                                category,
+                                                interpretationPromptContext,
+                                                consultationStoryGeneration
+                                        ),
+                                        resolveStoryEmphasis(
+                                                category,
                                                 interpretationPromptContext,
                                                 consultationStoryGeneration
                                         )
-                        )
-                        .toList(),
+                                )
+                )
+                .toList();
+    }
 
-                consultationAnalysis
-                        .fullNarrationText()
+
+    /*
+     * =================================================
+     * Story Text
+     * =================================================
+     *
+     * 절대 Legacy narrationText로 fallback하지 않는다.
+     */
+
+    private String resolveStoryText(
+
+            ConsultationCategory category,
+
+            Optional<ConsultationInterpretationPromptContext>
+                    interpretationPromptContext,
+
+            Optional<ConsultationStoryGeneration>
+                    consultationStoryGeneration
+
+    ) {
+
+        Objects.requireNonNull(
+                category,
+                "Story Text 조회에는 ConsultationCategory가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                interpretationPromptContext,
+                "Story Text 조회에는 ConsultationInterpretationPromptContext Optional이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                consultationStoryGeneration,
+                "Story Text 조회에는 ConsultationStoryGeneration Optional이 필요합니다."
+        );
+
+        /*
+         * Grounding Prompt 자체가 없는 경우에는
+         * 상담 Meaning을 임의 생성하지 않는다.
+         */
+        if (
+                interpretationPromptContext.isEmpty()
+        ) {
+
+            return "";
+        }
+
+        ConsultationInterpretationPromptContext promptContext =
+                interpretationPromptContext
+                        .orElseThrow();
+
+        Optional<ConsultationInterpretationPromptSection> promptSection =
+                promptContext
+                        .findSection(
+                                category
+                        );
+
+        /*
+         * 요청되지 않았거나
+         * 공식 Prompt Section이 존재하지 않는 Category.
+         */
+        if (
+                promptSection.isEmpty()
+        ) {
+
+            return "";
+        }
+
+        ConsultationInterpretationPromptSection section =
+                promptSection
+                        .orElseThrow();
+
+        if (
+                section.unavailable()
+        ) {
+
+            return CATEGORY_UNAVAILABLE_MESSAGE;
+        }
+
+        if (
+                consultationStoryGeneration.isEmpty()
+        ) {
+
+            return STORY_GENERATION_UNAVAILABLE_MESSAGE;
+        }
+
+        Optional<String> generatedStory =
+                consultationStoryGeneration
+                        .orElseThrow()
+                        .storyTextOf(
+                                category
+                        );
+
+        return generatedStory
+                .filter(
+                        story ->
+                                !story.isBlank()
+                )
+                .map(
+                        String::trim
+                )
+                .orElse(
+                        STORY_GENERATION_UNAVAILABLE_MESSAGE
+                );
+    }
+
+
+    /*
+     * =================================================
+     * Story Emphasis
+     * =================================================
+     */
+
+    private List<String> resolveStoryEmphasis(
+
+            ConsultationCategory category,
+
+            Optional<ConsultationInterpretationPromptContext>
+                    interpretationPromptContext,
+
+            Optional<ConsultationStoryGeneration>
+                    consultationStoryGeneration
+
+    ) {
+
+        Objects.requireNonNull(
+                category,
+                "Story Emphasis 조회에는 ConsultationCategory가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                interpretationPromptContext,
+                "Story Emphasis 조회에는 ConsultationInterpretationPromptContext Optional이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                consultationStoryGeneration,
+                "Story Emphasis 조회에는 ConsultationStoryGeneration Optional이 필요합니다."
+        );
+
+        if (
+                interpretationPromptContext.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        ConsultationInterpretationPromptContext promptContext =
+                interpretationPromptContext
+                        .orElseThrow();
+
+        Optional<ConsultationInterpretationPromptSection> promptSection =
+                promptContext
+                        .findSection(
+                                category
+                        );
+
+        if (
+                promptSection.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        if (
+                promptSection
+                        .orElseThrow()
+                        .unavailable()
+        ) {
+
+            return List.of();
+        }
+
+        if (
+                consultationStoryGeneration.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        ConsultationStoryGeneration generation =
+                consultationStoryGeneration
+                        .orElseThrow();
+
+        if (
+                !generation.hasStory(
+                        category
+                )
+        ) {
+
+            return List.of();
+        }
+
+        return generation.storyEmphasisOf(
+                category
         );
     }
+
+
+    /*
+     * =================================================
+     * Full Narration
+     * =================================================
+     *
+     * Legacy ConsultationAnalysis.fullNarrationText()
+     * 를 사용하지 않는다.
+     *
+     * 실제 API storyText만
+     * Category 순서대로 연결한다.
+     */
+
+    private String createFullNarrationText(
+
+            List<ConsultationSectionResponse>
+                    consultationResponses
+
+    ) {
+
+        Objects.requireNonNull(
+                consultationResponses,
+                "Full Narration 생성에는 ConsultationSectionResponse 목록이 필요합니다."
+        );
+
+        return String.join(
+                " ",
+                consultationResponses
+                        .stream()
+                        .map(
+                                ConsultationSectionResponse
+                                        ::storyText
+                        )
+                        .filter(
+                                Objects::nonNull
+                        )
+                        .map(
+                                String::trim
+                        )
+                        .filter(
+                                text ->
+                                        !text.isBlank()
+                        )
+                        .toList()
+        );
+    }
+
 
     private List<FiveElement> selectedClimateElements(
             NatalChartAdvancedAnalysis advancedAnalysis
@@ -2501,6 +2903,7 @@ public class SajuAnalysisService {
                 .toList();
     }
 
+
     private List<FiveElement> selectedPassageElements(
             NatalChartAdvancedAnalysis advancedAnalysis
     ) {
@@ -2528,6 +2931,7 @@ public class SajuAnalysisService {
                 )
                 .toList();
     }
+
 
     private PillarResponse toPillarResponse(
             Pillar pillar
@@ -2576,6 +2980,7 @@ public class SajuAnalysisService {
         );
     }
 
+
     private PillarResponse toPillarResponse(
             SexagenaryPillar pillar
     ) {
@@ -2592,6 +2997,7 @@ public class SajuAnalysisService {
                 )
         );
     }
+
 
     private DecadeLuckResponse toDecadeLuckResponse(
 
@@ -2727,6 +3133,7 @@ public class SajuAnalysisService {
         );
     }
 
+
     private DecadeLuckPeriodResponse
     toDecadeLuckPeriodResponse(
             DecadeLuckPeriod period
@@ -2763,6 +3170,7 @@ public class SajuAnalysisService {
                 period.exactTiming()
         );
     }
+
 
     private AnnualLuckResponse toAnnualLuckResponse(
             AnnualLuckAnalysis analysis
@@ -2822,222 +3230,6 @@ public class SajuAnalysisService {
         );
     }
 
-    private ConsultationSectionResponse
-    toConsultationResponse(
-
-            ConsultationSection section,
-
-            Optional<ConsultationInterpretationPromptContext>
-                    interpretationPromptContext,
-
-            Optional<ConsultationStoryGeneration>
-                    consultationStoryGeneration
-
-    ) {
-
-        Objects.requireNonNull(
-                section,
-                "ConsultationSection은 필수입니다."
-        );
-
-        Objects.requireNonNull(
-                interpretationPromptContext,
-                "ConsultationInterpretationPromptContext Optional은 필수입니다."
-        );
-
-        Objects.requireNonNull(
-                consultationStoryGeneration,
-                "ConsultationStoryGeneration Optional은 필수입니다."
-        );
-
-        String storyText =
-                resolveStoryText(
-                        section,
-                        interpretationPromptContext,
-                        consultationStoryGeneration
-                );
-
-        List<String> storyEmphasis =
-                resolveStoryEmphasis(
-                        section,
-                        interpretationPromptContext,
-                        consultationStoryGeneration
-                );
-
-        return new ConsultationSectionResponse(
-                section.order(),
-                section.category(),
-                section.title(),
-                section.polarity(),
-                section.intensity(),
-                section.confidence(),
-                section.openingMessage(),
-                section.summaryMessage(),
-                section.guidanceMessage(),
-                section.narrationText(),
-                storyText,
-                storyEmphasis,
-                section.basisLabels(),
-                section.evidenceCount()
-        );
-    }
-
-    private String resolveStoryText(
-
-            ConsultationSection section,
-
-            Optional<ConsultationInterpretationPromptContext>
-                    interpretationPromptContext,
-
-            Optional<ConsultationStoryGeneration>
-                    consultationStoryGeneration
-
-    ) {
-
-        ConsultationCategory category =
-                section.category();
-
-        if (
-                interpretationPromptContext.isEmpty()
-        ) {
-
-            return section.narrationText();
-        }
-
-        ConsultationInterpretationPromptContext promptContext =
-                interpretationPromptContext
-                        .orElseThrow();
-
-        Optional<ConsultationInterpretationPromptSection> promptSection =
-                promptContext
-                        .findSection(
-                                category
-                        );
-
-        if (
-                promptSection.isEmpty()
-        ) {
-
-            return "";
-        }
-
-        if (
-                promptSection
-                        .orElseThrow()
-                        .unavailable()
-        ) {
-
-            return "현재 계산 근거만으로는 이 분야의 독립적인 해석을 확정하지 않습니다. "
-                    + "근거가 없는 내용을 추정해서 채우지 않았습니다.";
-        }
-
-        Optional<String> generatedStory =
-                consultationStoryGeneration
-                        .flatMap(
-                                generation ->
-                                        generation.storyTextOf(
-                                                category
-                                        )
-                        );
-
-        return generatedStory
-                .orElse(
-                        section.narrationText()
-                );
-    }
-
-    private List<String> resolveStoryEmphasis(
-
-            ConsultationSection section,
-
-            Optional<ConsultationInterpretationPromptContext>
-                    interpretationPromptContext,
-
-            Optional<ConsultationStoryGeneration>
-                    consultationStoryGeneration
-
-    ) {
-
-        Objects.requireNonNull(
-                section,
-                "ConsultationSection은 필수입니다."
-        );
-
-        Objects.requireNonNull(
-                interpretationPromptContext,
-                "ConsultationInterpretationPromptContext Optional은 필수입니다."
-        );
-
-        Objects.requireNonNull(
-                consultationStoryGeneration,
-                "ConsultationStoryGeneration Optional은 필수입니다."
-        );
-
-        if (
-                interpretationPromptContext.isEmpty()
-        ) {
-
-            return List.of();
-        }
-
-        ConsultationCategory category =
-                section.category();
-
-        ConsultationInterpretationPromptContext promptContext =
-                interpretationPromptContext
-                        .orElseThrow();
-
-        Optional<ConsultationInterpretationPromptSection> promptSection =
-                promptContext
-                        .findSection(
-                                category
-                        );
-
-        if (
-                promptSection.isEmpty()
-        ) {
-
-            return List.of();
-        }
-
-        if (
-                promptSection
-                        .orElseThrow()
-                        .unavailable()
-        ) {
-
-            return List.of();
-        }
-
-        if (
-                consultationStoryGeneration.isEmpty()
-        ) {
-
-            return List.of();
-        }
-
-        ConsultationStoryGeneration generation =
-                consultationStoryGeneration
-                        .orElseThrow();
-
-        /*
-         * 실제 생성 Story가 없는 경우에는
-         * resolveStoryText()가 legacy narrationText를 사용하므로
-         * LLM emphasis를 붙이지 않는다.
-         */
-        if (
-                !generation.hasStory(
-                        category
-                )
-        ) {
-
-            return List.of();
-        }
-
-        return generation.storyEmphasisOf(
-                category
-        );
-    }
 
     private List<String> toElementNames(
             Collection<FiveElement> elements

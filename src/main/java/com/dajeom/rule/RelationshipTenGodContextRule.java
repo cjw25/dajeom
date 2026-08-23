@@ -51,14 +51,37 @@ import java.util.Set;
  *
  * =================================================
  *
- * 재성·관살은:
+ * 재성·관살은 각각:
  *
  * - 관계 속 자원 교환
  * - 책임과 역할
  * - 통제와 부담
- * - 관계에서의 상호작용 Context
+ * - 관계에서의 구조 Context
  *
- * 를 읽기 위한 구조 Evidence로만 사용한다.
+ * 를 읽기 위한 독립 계산 결과로 사용한다.
+ *
+ * =================================================
+ *
+ * 중요한 원칙:
+ *
+ * WealthCompositeAnalysis와
+ * OfficerCompositeAnalysis에서 각각 계산된 결과는
+ * 독립 Match로 유지한다.
+ *
+ * 두 결과가 동시에 존재한다는 이유만으로:
+ *
+ * - 새로운 복합 상태
+ * - 새로운 관계
+ * - 새로운 인과
+ * - 강화 또는 약화
+ * - 상쇄
+ * - 추가 종합 의미
+ *
+ * 를 생성하지 않는다.
+ *
+ * 단, 각 upstream Analysis 내부에서
+ * Java가 이미 명시적으로 계산한 Pattern은
+ * 해당 계산 결과 그대로 사용할 수 있다.
  *
  * =================================================
  *
@@ -252,7 +275,7 @@ public class RelationshipTenGodContextRule
                                             .wealthFamilyShareBasisPoints()
                                             + "bp입니다.",
                                     "현재 18차 Evidence에는 성별 정보가 없으므로 재성을 배우자성으로 확정하지 않습니다.",
-                                    "재성 구조는 관계에서 자원·현실적 교환·운용 Context를 읽기 위한 보조 구조로 유지합니다."
+                                    "재성 구조는 관계에서 자원·현실적 교환·운용 Context를 읽기 위한 구조로 유지합니다."
                             )
                     )
             );
@@ -301,52 +324,13 @@ public class RelationshipTenGodContextRule
         /*
          * =================================================
          * 3.
-         * 재성 + 관살 동시 발달
-         * =================================================
-         *
-         * 어느 한쪽을 배우자성으로 선택하지 않는다.
-         *
-         * 두 Family가 모두 의미 있게 작동한다는
-         * 사실만 Context로 보존한다.
-         */
-
-        if (
-                wealthAnalysis
-                        .wealthDeveloped()
-
-                        && officerAnalysis
-                        .officerDeveloped()
-        ) {
-
-            matches.add(
-                    new LifeDomainRuleMatch(
-                            LifeDomain.RELATIONSHIP,
-                            RULE_CODE,
-                            LifeDomainSignalStatus.CONTEXTUAL,
-                            "재성 계열과 관살 계열이 관계 Context에서 함께 참조될 수 있는 구조입니다.",
-                            List.of(
-                                    tenGodReference
-                            ),
-                            List.of(
-                                    "10-4 재성 발달 Pattern과 10-5 관살 발달 Pattern이 동시에 의미 있게 성립합니다.",
-                                    "재성과 관살 중 어느 하나를 성별 정보 없이 배우자성으로 선택하지 않습니다.",
-                                    "자원·현실 운용 Context와 역할·책임 Context가 함께 존재한다는 사실을 그대로 보존합니다."
-                            )
-                    )
-            );
-        }
-
-        /*
-         * =================================================
-         * 4.
          * 정재 / 편재 혼재
          * =================================================
          *
-         * 관계 방식 자체를 단정하지 않는다.
+         * WealthCompositeAnalysis 내부에서
+         * Java가 이미 계산한 MIXED_WEALTH Pattern.
          *
-         * 현실적 자원 교환 방식에
-         * 복수의 재성 작동 양식이 있다는
-         * Context만 보존한다.
+         * 관계 방식 자체를 단정하지 않는다.
          */
 
         if (
@@ -366,7 +350,7 @@ public class RelationshipTenGodContextRule
                             List.of(
                                     "10-4 WealthCompositeAnalysis에서 MIXED_WEALTH Pattern이 의미 있게 성립합니다.",
                                     "정재와 편재의 병존을 관계의 좋고 나쁨으로 변환하지 않습니다.",
-                                    "복수의 재성 운용 방식이 관계의 현실적 교환 Context에 함께 관여할 수 있다는 수준으로 보존합니다."
+                                    "10-4에서 이미 계산된 복수 재성 구조를 해당 계산 범위의 Context로 보존합니다."
                             )
                     )
             );
@@ -374,9 +358,13 @@ public class RelationshipTenGodContextRule
 
         /*
          * =================================================
-         * 5.
+         * 4.
          * 정관 / 칠살 혼재
          * =================================================
+         *
+         * OfficerCompositeAnalysis 내부에서
+         * Java가 이미 계산한
+         * MIXED_OFFICER_KILLINGS Pattern.
          *
          * 관살혼잡 자체를
          * 관계 불안정 사건으로 만들지 않는다.
@@ -399,7 +387,7 @@ public class RelationshipTenGodContextRule
                             List.of(
                                     "10-5 OfficerCompositeAnalysis에서 MIXED_OFFICER_KILLINGS Pattern이 의미 있게 성립합니다.",
                                     "정관과 칠살의 병존을 배우자 문제나 관계 불안정으로 자동 변환하지 않습니다.",
-                                    "서로 다른 책임·통제·긴장 작동 방식이 함께 존재하는 Context로 유지합니다."
+                                    "10-5에서 이미 계산된 관살 혼재 구조를 해당 계산 범위의 Context로 보존합니다."
                             )
                     )
             );
@@ -407,15 +395,15 @@ public class RelationshipTenGodContextRule
 
         /*
          * =================================================
-         * 6.
+         * 5.
          * 신약 + 재성 부담
          * =================================================
          *
-         * 10-4에서 이미 계산된 결과.
+         * 10-4 WealthCompositeAnalysis에서
+         * 이미 명시적으로 계산된 결과.
          *
-         * 관계 Domain에서는
-         * 현실적 요구나 자원 부담을
-         * 감당하는 측면의 Pressure로만 읽는다.
+         * 이 Rule에서 신약과 재성을
+         * 다시 조합해서 계산하지 않는다.
          */
 
         if (
@@ -441,7 +429,7 @@ public class RelationshipTenGodContextRule
                                             .name()
                                             + "입니다.",
                                     "재성 부담을 금전 문제·배우자 문제 같은 실제 관계 사건으로 확정하지 않습니다.",
-                                    "일간 수용력 대비 현실적 요구와 자원 부담의 Pressure Evidence로만 보존합니다."
+                                    "10-4에서 이미 계산된 일간 수용력 대비 재성 부담의 Pressure 상태만 보존합니다."
                             )
                     )
             );
@@ -449,18 +437,15 @@ public class RelationshipTenGodContextRule
 
         /*
          * =================================================
-         * 7.
+         * 6.
          * 신약 + 관살 압박
          * =================================================
          *
-         * 관계 Domain에서는:
+         * 10-5 OfficerCompositeAnalysis에서
+         * 이미 명시적으로 계산된 결과.
          *
-         * 책임
-         * 기대
-         * 통제
-         * 역할 압력
-         *
-         * 의 수용 부담 Context로 연결한다.
+         * 이 Rule에서 신약과 관살을
+         * 다시 조합해서 계산하지 않는다.
          */
 
         if (
@@ -486,46 +471,7 @@ public class RelationshipTenGodContextRule
                                             .name()
                                             + "입니다.",
                                     "관살 압박을 배우자 갈등·이별 같은 실제 사건으로 확정하지 않습니다.",
-                                    "일간 수용력 대비 관계 속 역할·책임·통제 요구의 Pressure Evidence로만 보존합니다."
-                            )
-                    )
-            );
-        }
-
-        /*
-         * =================================================
-         * 8.
-         * 재성 부담 + 관살 압박 동시 존재
-         * =================================================
-         *
-         * 양쪽 Pressure가 동시에 존재하더라도
-         * 새로운 사건을 만들어내지 않는다.
-         *
-         * 복합 부담 Context로만 보존.
-         */
-
-        if (
-                wealthAnalysis
-                        .weakDayMasterWealthBurden()
-
-                        && officerAnalysis
-                        .weakDayMasterOfficerPressure()
-        ) {
-
-            matches.add(
-                    new LifeDomainRuleMatch(
-                            LifeDomain.RELATIONSHIP,
-                            RULE_CODE,
-                            LifeDomainSignalStatus.PRESSURE,
-                            "관계 영역에서 현실적 자원 부담과 역할·책임 부담이 동시에 나타나는 복합 Pressure Context가 존재합니다.",
-                            List.of(
-                                    tenGodReference,
-                                    dayMasterReference
-                            ),
-                            List.of(
-                                    "10-4 WEAK_DAY_MASTER_WEALTH_BURDEN과 10-5 WEAK_DAY_MASTER_OFFICER_PRESSURE가 동시에 의미 있게 성립합니다.",
-                                    "두 부담 구조를 하나로 상쇄하거나 하나만 선택하지 않습니다.",
-                                    "복합 Pressure의 존재를 실제 관계 실패 사건으로 환산하지 않습니다."
+                                    "10-5에서 이미 계산된 일간 수용력 대비 관살 Pressure 상태만 보존합니다."
                             )
                     )
             );

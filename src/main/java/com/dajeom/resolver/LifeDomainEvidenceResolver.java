@@ -10,6 +10,8 @@ import com.dajeom.model.LifeDomainEvidenceResolution;
 import com.dajeom.model.LifeDomainSegmentEvidence;
 import com.dajeom.model.LuckIntegratedAnalysis;
 import com.dajeom.model.LuckIntegratedSegmentAnalysis;
+import com.dajeom.model.MonthlyFunctionalActivationAnalysis;
+import com.dajeom.model.MonthlyFunctionalLifeDomainContext;
 import com.dajeom.model.MonthlyLuckContextAnalysis;
 import com.dajeom.model.ShinsalAnalysis;
 import com.dajeom.model.ShinsalEvidence;
@@ -43,6 +45,7 @@ import java.util.Set;
  * 14차 AnnualLuckContextAnalysis
  * Annual Functional Baseline
  * 15차 MonthlyLuckContextAnalysis
+ * Monthly Functional Activation
  * 17차 ShinsalEvidence
  *
  * =================================================
@@ -71,14 +74,34 @@ import java.util.Set;
  *
  * =================================================
  *
- * 신규 ANNUAL_FUNCTIONAL_CONTEXT:
+ * ANNUAL_FUNCTIONAL_CONTEXT:
  *
  * AnnualFunctionalBaselineAnalysis를
  * 현재 LuckIntegratedSegmentAnalysis와 함께
  * AnnualFunctionalLifeDomainContext로 연결한다.
  *
- * 두 Source는 역할이 다르며
+ * =================================================
+ *
+ * 기존 MONTHLY_CONTEXT:
+ *
+ * MonthlyLuckContextAnalysis를 그대로 유지한다.
+ *
+ * =================================================
+ *
+ * MONTHLY_FUNCTIONAL_CONTEXT:
+ *
+ * MonthlyFunctionalActivationAnalysis를
+ * 현재 LuckIntegratedSegmentAnalysis와 함께
+ * MonthlyFunctionalLifeDomainContext로 연결한다.
+ *
+ * =================================================
+ *
+ * 기존 Context와 Functional Context는
  * 서로 대체하지 않는다.
+ *
+ * 단 Functional Context는 derived temporal source이므로
+ * 이후 Prominence / Independence 판정에서
+ * 원본 Context와 독립 근거로 단순 합산하지 않는다.
  */
 @Component
 public class LifeDomainEvidenceResolver {
@@ -115,42 +138,7 @@ public class LifeDomainEvidenceResolver {
 
     /*
      * =================================================
-     * 기존 공식 18-2 API
-     * =================================================
-     *
-     * 기존 호출부를 깨뜨리지 않는다.
-     *
-     * 이 경로에서는 아직
-     * ANNUAL_FUNCTIONAL_CONTEXT를 넣지 않는다.
-     */
-
-    public LifeDomainEvidenceResolution resolve(
-
-            LuckIntegratedAnalysis luckIntegratedAnalysis,
-
-            ShinsalAnalysis shinsalAnalysis,
-
-            LifeDomainNatalEvidenceSourceResolver
-                    natalEvidenceSourceResolver,
-
-            LifeDomainDecadeContextSourceResolver
-                    decadeContextSourceResolver
-
-    ) {
-
-        return resolve(
-                luckIntegratedAnalysis,
-                shinsalAnalysis,
-                natalEvidenceSourceResolver,
-                decadeContextSourceResolver,
-                LifeDomainAnnualFunctionalSourceResolver
-                        .none()
-        );
-    }
-
-    /*
-     * =================================================
-     * Annual Functional 확장 공식 API
+     * Annual + Monthly Functional 공식 API
      * =================================================
      */
 
@@ -167,7 +155,10 @@ public class LifeDomainEvidenceResolver {
                     decadeContextSourceResolver,
 
             LifeDomainAnnualFunctionalSourceResolver
-                    annualFunctionalSourceResolver
+                    annualFunctionalSourceResolver,
+
+            LifeDomainMonthlyFunctionalSourceResolver
+                    monthlyFunctionalSourceResolver
 
     ) {
 
@@ -196,6 +187,11 @@ public class LifeDomainEvidenceResolver {
                 "18-2 Annual Functional 연결에는 LifeDomainAnnualFunctionalSourceResolver가 필요합니다."
         );
 
+        Objects.requireNonNull(
+                monthlyFunctionalSourceResolver,
+                "18-2 Monthly Functional 연결에는 LifeDomainMonthlyFunctionalSourceResolver가 필요합니다."
+        );
+
         if (
                 shinsalAnalysis
                         .luckIntegratedAnalysis()
@@ -216,7 +212,8 @@ public class LifeDomainEvidenceResolver {
          * 같은 upstream 객체가 여러 Timeline Segment에
          * 재사용되면 Reference도 재사용한다.
          *
-         * AnnualFunctionalLifeDomainContext는
+         * AnnualFunctionalLifeDomainContext와
+         * MonthlyFunctionalLifeDomainContext는
          * Timeline Segment 자체를 포함하므로
          * Segment별 객체를 생성한다.
          */
@@ -277,6 +274,7 @@ public class LifeDomainEvidenceResolver {
                             shinsalAnalysis,
                             decadeContextSourceResolver,
                             annualFunctionalSourceResolver,
+                            monthlyFunctionalSourceResolver,
                             temporalReferenceCache,
                             shinsalReferenceCache
                     )
@@ -438,6 +436,9 @@ public class LifeDomainEvidenceResolver {
             LifeDomainAnnualFunctionalSourceResolver
                     annualFunctionalSourceResolver,
 
+            LifeDomainMonthlyFunctionalSourceResolver
+                    monthlyFunctionalSourceResolver,
+
             Map<
                     Object,
                     LifeDomainEvidenceReference<?>
@@ -537,7 +538,7 @@ public class LifeDomainEvidenceResolver {
 
         /*
          * =================================================
-         * 신규 Annual Functional Context
+         * Annual Functional Context
          * =================================================
          */
 
@@ -557,50 +558,49 @@ public class LifeDomainEvidenceResolver {
             );
         }
 
-        if (
+        AnnualFunctionalBaselineAnalysis baseline =
                 annualFunctionalOptional
-                        .isPresent()
-        ) {
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "현재 Timeline Segment에는 ANNUAL_FUNCTIONAL_CONTEXT Evidence가 정확히 하나 필요합니다."
+                                        )
+                        );
 
-            AnnualFunctionalBaselineAnalysis baseline =
-                    annualFunctionalOptional
-                            .orElseThrow();
+        AnnualFunctionalLifeDomainContext functionalContext =
+                new AnnualFunctionalLifeDomainContext(
+                        segmentAnalysis,
+                        baseline
+                );
 
-            AnnualFunctionalLifeDomainContext functionalContext =
-                    new AnnualFunctionalLifeDomainContext(
-                            segmentAnalysis,
-                            baseline
-                    );
+        LifeDomainEvidenceReference<
+                AnnualFunctionalLifeDomainContext
+                > functionalReference =
+                new LifeDomainEvidenceReference<>(
+                        LifeDomainEvidenceSourceType
+                                .ANNUAL_FUNCTIONAL_CONTEXT,
+                        LifeDomainEvidenceTier
+                                .TEMPORAL_CONTEXT,
+                        annualFunctionalSourceKey(
+                                segmentAnalysis
+                        ),
+                        functionalContext,
+                        "현재 세운 Functional 기준선",
+                        List.of(
+                                "AnnualFunctionalBaselineAnalysis의 계산 결과를 현재 16차 Timeline Segment에 typed context로 연결합니다.",
+                                "기존 14-6 ANNUAL_CONTEXT를 대체하거나 복제하지 않습니다.",
+                                "Function 활성·CrossFunctional Pattern·Transformation·Natal Capacity·Context Qualification의 provenance를 그대로 보존합니다.",
+                                "이 Evidence 하나만으로 생활영역의 길흉이나 실제 사건을 확정하지 않습니다."
+                        )
+                );
 
-            LifeDomainEvidenceReference<
-                    AnnualFunctionalLifeDomainContext
-                    > functionalReference =
-                    new LifeDomainEvidenceReference<>(
-                            LifeDomainEvidenceSourceType
-                                    .ANNUAL_FUNCTIONAL_CONTEXT,
-                            LifeDomainEvidenceTier
-                                    .TEMPORAL_CONTEXT,
-                            annualFunctionalSourceKey(
-                                    segmentAnalysis
-                            ),
-                            functionalContext,
-                            "현재 세운 Functional 기준선",
-                            List.of(
-                                    "AnnualFunctionalBaselineAnalysis의 계산 결과를 현재 16차 Timeline Segment에 typed context로 연결합니다.",
-                                    "기존 14-6 ANNUAL_CONTEXT를 대체하거나 복제하지 않습니다.",
-                                    "Function 활성·CrossFunctional Pattern·Transformation·Natal Capacity·Context Qualification의 provenance를 그대로 보존합니다.",
-                                    "이 Evidence 하나만으로 생활영역의 길흉이나 실제 사건을 확정하지 않습니다."
-                            )
-                    );
-
-            temporalEvidences.add(
-                    functionalReference
-            );
-        }
+        temporalEvidences.add(
+                functionalReference
+        );
 
         /*
          * =================================================
-         * 15차 Monthly Context
+         * 기존 15차 Monthly Context
          * =================================================
          */
 
@@ -630,6 +630,101 @@ public class LifeDomainEvidenceResolver {
                         temporalReferenceCache,
                         monthlyReference
                 )
+        );
+
+        /*
+         * =================================================
+         * Monthly Functional Context
+         * =================================================
+         *
+         * 공식 Monthly Functional Pipeline이
+         * 제공한 결과를 정확히 하나 연결한다.
+         *
+         * 기존 MONTHLY_CONTEXT는 그대로 유지한다.
+         */
+
+        Optional<MonthlyFunctionalActivationAnalysis>
+                monthlyFunctionalOptional =
+                monthlyFunctionalSourceResolver
+                        .resolveMonthlyFunctionalActivation(
+                                segmentAnalysis
+                        );
+
+        if (
+                monthlyFunctionalOptional == null
+        ) {
+
+            throw new IllegalStateException(
+                    "LifeDomainMonthlyFunctionalSourceResolver는 null Optional을 반환할 수 없습니다."
+            );
+        }
+
+        MonthlyFunctionalActivationAnalysis activationAnalysis =
+                monthlyFunctionalOptional
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "현재 Timeline Segment에는 MONTHLY_FUNCTIONAL_CONTEXT Evidence가 정확히 하나 필요합니다."
+                                        )
+                        );
+
+        /*
+         * Timeline의 실제 MonthlyLuckAnalysis와
+         * 반드시 Identity가 같아야 한다.
+         *
+         * 연도/월 숫자로만 연결하지 않는다.
+         */
+        if (
+                activationAnalysis
+                        .monthlyLuckAnalysis()
+                        != segmentAnalysis
+                        .monthlyLuckAnalysis()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Monthly Functional Source Resolver가 현재 Timeline Segment와 "
+                            + "다른 MonthlyLuckAnalysis Identity를 반환했습니다. "
+                            + "sajuYear="
+                            + segmentAnalysis
+                            .monthlyLuckAnalysis()
+                            .sajuYear()
+                            + ", monthIndex="
+                            + segmentAnalysis
+                            .monthlyLuckAnalysis()
+                            .monthIndex()
+            );
+        }
+
+        MonthlyFunctionalLifeDomainContext monthlyFunctionalContext =
+                new MonthlyFunctionalLifeDomainContext(
+                        segmentAnalysis,
+                        activationAnalysis
+                );
+
+        LifeDomainEvidenceReference<
+                MonthlyFunctionalLifeDomainContext
+                > monthlyFunctionalReference =
+                new LifeDomainEvidenceReference<>(
+                        LifeDomainEvidenceSourceType
+                                .MONTHLY_FUNCTIONAL_CONTEXT,
+                        LifeDomainEvidenceTier
+                                .TEMPORAL_CONTEXT,
+                        monthlyFunctionalSourceKey(
+                                segmentAnalysis
+                        ),
+                        monthlyFunctionalContext,
+                        "현재 월운 Functional 활성",
+                        List.of(
+                                "MonthlyFunctionalActivationAnalysis의 계산 결과를 현재 16차 Timeline Segment에 typed context로 연결합니다.",
+                                "공식 Annual Functional Baseline은 변경하지 않고 월운의 Function 접촉 상태만 보존합니다.",
+                                "기존 15-7 MONTHLY_CONTEXT를 대체하지 않습니다.",
+                                "같은 월의 MONTHLY_CONTEXT와 MONTHLY_FUNCTIONAL_CONTEXT를 서로 독립된 명리근거 개수로 단순 합산해서는 안 됩니다.",
+                                "Function Contact 하나만으로 생활영역의 길흉이나 실제 사건을 확정하지 않습니다."
+                        )
+                );
+
+        temporalEvidences.add(
+                monthlyFunctionalReference
         );
 
         /*
@@ -983,6 +1078,20 @@ public class LifeDomainEvidenceResolver {
     ) {
 
         return "MONTHLY:"
+                + segment
+                .monthlyCandidate()
+                .sajuYear()
+                + ":"
+                + segment
+                .monthlyCandidate()
+                .monthIndex();
+    }
+
+    private String monthlyFunctionalSourceKey(
+            LuckIntegratedSegmentAnalysis segment
+    ) {
+
+        return "MONTHLY_FUNCTIONAL:"
                 + segment
                 .monthlyCandidate()
                 .sajuYear()

@@ -3,556 +3,829 @@
       xmlns:th="http://www.thymeleaf.org">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
     <meta name="theme-color"
-          content="#080619">
+          content="#07080c">
 
-    <title>다점 - AI 타로</title>
+    <link rel="icon"
+          href="data:,">
+
+    <title>AI 타로 · 유성우 - 다점</title>
 
     <link rel="stylesheet"
           th:href="@{/css/tarot.css}"
           href="/css/tarot.css">
+
 </head>
+
 
 <body>
 
 <div class="tarot-app">
 
-    <header class="tarot-header">
 
-        <button type="button"
-                id="tarotBackButton"
-                class="header-icon-button"
-                aria-label="이전 화면">
+    <!-- =====================================================
+         1. 웹툰 + 오프닝 영상
+         ===================================================== -->
+
+    <section id="introScene"
+             class="scene intro-scene is-active">
+
+
+        <!-- 홈으로 -->
+
+        <a th:href="@{/}"
+           href="/"
+           class="intro-back-button"
+           aria-label="홈으로">
+
             ‹
-        </button>
 
-        <div class="header-title">
-            <strong>AI 타로</strong>
-            <span id="headerStep">타로 상담</span>
+        </a>
+
+
+
+        <!-- =========================
+             웹툰
+             ========================= -->
+
+        <div class="webtoon-section">
+
+            <img th:src="@{/img/tarot_webtoon.jpg}"
+                 src="/img/tarot_webtoon.jpg"
+                 class="tarot-webtoon"
+                 alt="AI 타로 웹툰">
+
         </div>
 
+
+
+        <!-- =========================
+             오프닝 영상
+             ========================= -->
+
+        <div id="openingVideoSection"
+             class="opening-video-section">
+
+
+            <video id="openingVideo"
+                   class="opening-video"
+                   muted
+                   playsinline
+                   preload="metadata">
+
+                <source th:src="@{/video/tarot_opening_select.mp4}"
+                        src="/video/tarot_opening_select.mp4"
+                        type="video/mp4">
+
+            </video>
+
+
+            <div class="opening-video-shade">
+            </div>
+
+
+            <button type="button"
+                    id="soundButton"
+                    class="video-control sound-button">
+
+                소리 켜기
+
+            </button>
+
+
+            <button type="button"
+                    id="skipVideoButton"
+                    class="video-control skip-button">
+
+                건너뛰기
+
+            </button>
+
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =====================================================
+         2. 사용자 정보 질문
+         이름 → 취향 → 연애 → 직업 → 질문
+         ===================================================== -->
+
+    <section id="profileScene"
+             class="scene profile-scene">
+
+
+        <!-- 배경 -->
+
+        <div class="profile-background">
+
+            <img th:src="@{/img/tarot_card_select_bg.jpg}"
+                 src="/img/tarot_card_select_bg.jpg"
+                 alt="유성우">
+
+        </div>
+
+
+        <div class="profile-overlay">
+        </div>
+
+
+
+        <!-- =================================================
+             이름
+             ================================================= -->
+
+        <div id="nameStep"
+             class="profile-step is-active"
+             data-step="name">
+
+
+            <button type="button"
+                    class="step-back-button"
+                    data-back="intro"
+                    aria-label="이전">
+
+                ‹
+
+            </button>
+
+
+            <div class="step-content name-content">
+
+
+                <h1>
+                    이름이 뭐야?
+                </h1>
+
+
+                <div class="name-row">
+
+
+                    <input type="text"
+                           id="nameInput"
+                           maxlength="20"
+                           autocomplete="off"
+                           placeholder="이름 입력">
+
+
+                    <button type="button"
+                            id="nameNextButton"
+                            class="name-next-button">
+
+                        확인
+
+                    </button>
+
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             취향
+             ================================================= -->
+
+        <div id="preferenceStep"
+             class="profile-step"
+             data-step="preference">
+
+
+            <button type="button"
+                    class="step-back-button"
+                    data-back="name"
+                    aria-label="이전">
+
+                ‹
+
+            </button>
+
+
+            <div class="step-content">
+
+
+                <span class="dialogue-small">
+                    그래서 말이지...
+                </span>
+
+
+                <h1>
+                    취향이 어떻게 돼?
+                </h1>
+
+
+                <p class="warning-text">
+                    결과가 잘못 나올 수 있으니 잘 선택해줘
+                </p>
+
+
+
+                <div class="choice-list">
+
+
+                    <button type="button"
+                            class="choice-button preference-choice"
+                            data-value="opposite">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            이성을 좋아해요 (헤테로)
+                        </strong>
+
+                    </button>
+
+
+                    <button type="button"
+                            class="choice-button preference-choice"
+                            data-value="same">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            동성을 좋아해요 (LGBT+)
+                        </strong>
+
+                    </button>
+
+
+                </div>
+
+
+
+                <button type="button"
+                        id="preferenceNextButton"
+                        class="large-next-button"
+                        disabled>
+
+                    다음으로
+
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             연애 상태
+             ================================================= -->
+
+        <div id="relationshipStep"
+             class="profile-step"
+             data-step="relationship">
+
+
+            <button type="button"
+                    class="step-back-button"
+                    data-back="preference"
+                    aria-label="이전">
+
+                ‹
+
+            </button>
+
+
+            <div class="step-content">
+
+
+                <span class="dialogue-small">
+                    그렇군,
+                </span>
+
+
+                <h1>
+                    애인은 있고?
+                </h1>
+
+
+
+                <div class="choice-list compact-choice-list">
+
+
+                    <button type="button"
+                            class="choice-button relationship-choice"
+                            data-value="single">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            솔로예요
+                        </strong>
+
+                    </button>
+
+
+                    <button type="button"
+                            class="choice-button relationship-choice"
+                            data-value="crush">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            고민되는 사람은 있어요
+                        </strong>
+
+                    </button>
+
+
+                    <button type="button"
+                            class="choice-button relationship-choice"
+                            data-value="dating">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            애인 있어요
+                        </strong>
+
+                    </button>
+
+
+                    <button type="button"
+                            class="choice-button relationship-choice"
+                            data-value="recent_breakup">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            헤어진지 얼마 안됐어요
+                        </strong>
+
+                    </button>
+
+
+                    <button type="button"
+                            class="choice-button relationship-choice"
+                            data-value="married">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            결혼도 했어요
+                        </strong>
+
+                    </button>
+
+
+                </div>
+
+
+
+                <button type="button"
+                        id="relationshipNextButton"
+                        class="large-next-button"
+                        disabled>
+
+                    다음으로
+
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             직업
+             ================================================= -->
+
+        <div id="jobStep"
+             class="profile-step"
+             data-step="job">
+
+
+            <button type="button"
+                    class="step-back-button"
+                    data-back="relationship"
+                    aria-label="이전">
+
+                ‹
+
+            </button>
+
+
+            <div class="step-content">
+
+
+                <span class="dialogue-small">
+                    아아,
+                </span>
+
+
+                <h1>
+                    일은 잘 다녀?
+                </h1>
+
+
+
+                <div class="choice-list compact-choice-list">
+
+
+                    <button type="button"
+                            class="choice-button job-choice"
+                            data-value="student">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            학생이에요
+                        </strong>
+
+                    </button>
+
+
+                    <button type="button"
+                            class="choice-button job-choice"
+                            data-value="job_seeker">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            일 구하고 있어요
+                        </strong>
+
+                    </button>
+
+
+                    <button type="button"
+                            class="choice-button job-choice"
+                            data-value="employee">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            직장 다녀요
+                        </strong>
+
+                    </button>
+
+
+                    <button type="button"
+                            class="choice-button job-choice"
+                            data-value="business">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            사업해요
+                        </strong>
+
+                    </button>
+
+
+                    <button type="button"
+                            class="choice-button job-choice"
+                            data-value="freelancer">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            프리랜서예요
+                        </strong>
+
+                    </button>
+
+
+                    <button type="button"
+                            class="choice-button job-choice"
+                            data-value="unemployed">
+
+                        <span class="radio"></span>
+
+                        <strong>
+                            무직이에요
+                        </strong>
+
+                    </button>
+
+
+                </div>
+
+
+
+                <button type="button"
+                        id="jobNextButton"
+                        class="large-next-button"
+                        disabled>
+
+                    다음으로
+
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             질문
+             ================================================= -->
+
+        <div id="questionStep"
+             class="profile-step"
+             data-step="question">
+
+
+            <button type="button"
+                    class="step-back-button"
+                    data-back="job"
+                    aria-label="이전">
+
+                ‹
+
+            </button>
+
+
+            <div class="step-content question-content">
+
+
+                <h1>
+                    유성우에게 묻고 싶은 질문이 있어?
+                </h1>
+
+
+
+                <div class="question-box">
+
+
+                    <textarea id="questionInput"
+                              maxlength="200"
+                              placeholder="궁금한 질문을 적어줘 (연애, 진로, 고민 등 무엇이든)"></textarea>
+
+
+                    <span class="question-counter">
+
+                        <span id="questionCount">
+                            0
+                        </span>
+
+                        / 200
+
+                    </span>
+
+
+                </div>
+
+
+
+                <button type="button"
+                        id="questionNextButton"
+                        class="large-next-button"
+                        disabled>
+
+                    입력 완료
+
+                </button>
+
+
+
+                <button type="button"
+                        id="questionSkipButton"
+                        class="secondary-button">
+
+                    그냥 오늘의 메시지를 뽑아줘 (스킵)
+
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =====================================================
+         3. 배열법 선택
+         ===================================================== -->
+
+    <section id="spreadScene"
+             class="scene spread-scene">
+
+
+        <div class="spread-background">
+
+            <img th:src="@{/img/tarot_card_select_bg.jpg}"
+                 src="/img/tarot_card_select_bg.jpg"
+                 alt="">
+
+        </div>
+
+
+        <div class="spread-overlay">
+        </div>
+
+
+
         <button type="button"
-                id="tarotHomeButton"
-                class="header-icon-button home-button"
-                aria-label="홈으로">
-            ⌂
+                id="spreadBackButton"
+                class="spread-back-button"
+                aria-label="이전">
+
+            ‹
+
         </button>
 
-    </header>
 
-    <main>
 
-        <!-- 시작 화면 -->
-        <section class="tarot-screen is-active"
-                 data-tarot-screen="intro">
+        <div class="spread-content">
 
-            <div class="intro-hero">
 
-                <div class="intro-stars">
-                    <span>✦</span>
-                    <span>·</span>
-                    <span>☾</span>
-                    <span>·</span>
-                    <span>✦</span>
-                </div>
+            <div class="spread-title">
 
-                <div class="intro-tarot-cards">
-
-                    <div class="intro-card card-left">
-                        <span>☾</span>
-                    </div>
-
-                    <div class="intro-card card-center">
-                        <span>✦</span>
-                    </div>
-
-                    <div class="intro-card card-right">
-                        <span>☼</span>
-                    </div>
-
-                </div>
-
-                <div class="intro-copy">
-
-                    <span class="tarot-badge">
-                        AI TAROT
-                    </span>
-
-                    <h1>
-                        마음속 질문을<br>
-                        카드에 맡겨보세요
-                    </h1>
-
-                    <p>
-                        질문에 맞는 카드 배열을 고른 뒤,
-                        가장 끌리는 카드를 직접 선택하세요.
-                    </p>
-
-                </div>
-
-            </div>
-
-            <div class="intro-panel">
-
-                <div class="intro-guide">
-
-                    <div>
-                        <strong>1</strong>
-                        <span>궁금한 질문과 카드 배열을 선택합니다.</span>
-                    </div>
-
-                    <div>
-                        <strong>2</strong>
-                        <span>78장의 카드를 좌우로 움직여 살펴봅니다.</span>
-                    </div>
-
-                    <div>
-                        <strong>3</strong>
-                        <span>끌리는 카드를 누르면 바로 선택됩니다.</span>
-                    </div>
-
-                    <div>
-                        <strong>4</strong>
-                        <span>마지막 카드까지 뽑으면 쉬운 해설이 자동으로 나옵니다.</span>
-                    </div>
-
-                </div>
-
-                <button type="button"
-                        id="startTarotButton"
-                        class="primary-button">
-                    타로 시작하기
-                </button>
-
-            </div>
-
-        </section>
-
-        <!-- 질문과 배열 선택 -->
-        <section class="tarot-screen"
-                 data-tarot-screen="question">
-
-            <div class="content-page">
-
-                <span class="page-kicker">
-                    STEP 01
-                </span>
 
                 <h1>
-                    무엇이 가장 궁금한가요?
+                    <span>2 ·</span>
+                    배열법을 선택해주세요
                 </h1>
 
-                <p class="page-description">
-                    마음속 질문을 입력하고 상황에 맞는 카드 배열을 선택해주세요.
-                    카드 배열은 자동으로 지정되지 않습니다.
+
+                <p>
+                    질문의 성격에 맞는 스프레드를 골라주세요.
                 </p>
 
-                <div class="question-example-list">
-
-                    <button type="button"
-                            class="question-example"
-                            data-question-example="오늘 나에게 가장 필요한 조언이 궁금합니다.">
-                        오늘의 조언
-                    </button>
-
-                    <button type="button"
-                            class="question-example"
-                            data-question-example="상대방이 현재 나를 어떻게 생각하는지 궁금합니다.">
-                        상대방의 마음
-                    </button>
-
-                    <button type="button"
-                            class="question-example"
-                            data-question-example="A와 B 중 어떤 선택이 나에게 더 맞는지 궁금합니다.">
-                        양자택일
-                    </button>
-
-                    <button type="button"
-                            class="question-example"
-                            data-question-example="현재 고민의 원인과 앞으로의 흐름이 궁금합니다.">
-                        전체 흐름
-                    </button>
-
-                </div>
-
-                <label class="field-label"
-                       for="tarotQuestion">
-                    타로 질문
-                </label>
-
-                <textarea id="tarotQuestion"
-                          class="question-textarea"
-                          maxlength="1000"
-                          placeholder="예: 상대방이 현재 나를 어떻게 생각하는지 궁금합니다."></textarea>
-
-                <div class="text-count">
-
-                    <span>
-                        질문을 입력하지 않아도 진행할 수 있습니다.
-                    </span>
-
-                    <strong id="questionTextCount">
-                        0 / 1000
-                    </strong>
-
-                </div>
-
-                <section class="spread-section">
-
-                    <div class="section-title">
-
-                        <strong>
-                            카드 배열 선택
-                        </strong>
-
-                        <span>
-                            질문에 맞는 배열을 직접 골라주세요.
-                        </span>
-
-                    </div>
-
-                    <div id="spreadList"
-                         class="spread-list">
-
-                        <div class="loading-box">
-                            카드 배열을 불러오고 있습니다.
-                        </div>
-
-                    </div>
-
-                </section>
-
-                <div id="selectedSpreadInfo"
-                     class="selected-spread-info is-empty">
-
-                    <strong>
-                        아직 카드 배열을 선택하지 않았습니다.
-                    </strong>
-
-                    <span>
-                        원하는 배열을 하나 선택해주세요.
-                    </span>
-
-                </div>
-
-                <label class="switch-card">
-
-                    <div>
-                        <strong>역방향 카드 사용</strong>
-
-                        <span>
-                            카드가 거꾸로 나온 경우의 의미도 함께 확인합니다.
-                        </span>
-                    </div>
-
-                    <input type="checkbox"
-                           id="allowReversed"
-                           checked>
-
-                    <span class="switch-control"></span>
-
-                </label>
-
-                <p id="questionError"
-                   class="error-message"></p>
-
-                <button type="button"
-                        id="createTarotSessionButton"
-                        class="primary-button"
-                        disabled>
-                    배열을 선택해주세요
-                </button>
 
             </div>
 
-        </section>
 
-        <!-- 셔플 -->
-        <section class="tarot-screen"
-                 data-tarot-screen="shuffle">
 
-            <div class="shuffle-page">
+            <div class="master-message">
 
-                <div class="shuffle-light"></div>
 
-                <div id="shuffleDeck"
-                     class="shuffle-deck">
-
-                    <div class="shuffle-card"></div>
-                    <div class="shuffle-card"></div>
-                    <div class="shuffle-card"></div>
-                    <div class="shuffle-card"></div>
-                    <div class="shuffle-card"></div>
-                    <div class="shuffle-card"></div>
-                    <div class="shuffle-card"></div>
-                    <div class="shuffle-card"></div>
-                    <div class="shuffle-card"></div>
-
-                </div>
-
-                <span class="shuffle-badge">
-                    AUTO SHUFFLE
-                </span>
-
-                <h1>
-                    78장의 카드를 섞고 있습니다
-                </h1>
-
-                <p id="shuffleMessage">
-                    질문을 마음속으로 천천히 떠올려주세요.
-                </p>
-
-                <div class="shuffle-progress">
-
-                    <div id="shuffleProgressBar"
-                         class="shuffle-progress-value">
-                    </div>
-
-                </div>
-
-                <strong id="shuffleProgressText">
-                    0%
+                <strong>
+                    유성우
                 </strong>
 
-            </div>
 
-        </section>
-
-        <!-- 카드 선택 -->
-        <section class="tarot-screen"
-                 data-tarot-screen="draw">
-
-            <div class="draw-page">
-
-                <div class="draw-heading">
-
-                    <span class="page-kicker">
-                        STEP 02
-                    </span>
-
-                    <strong id="drawSpreadName"
-                            class="draw-spread-name">
-                    </strong>
-
-                    <h1 id="drawTitle">
-                        카드를 선택해주세요
-                    </h1>
-
-                    <p id="drawGuide">
-                        카드를 좌우로 움직인 뒤 원하는 카드를 눌러주세요.
-                    </p>
-
-                </div>
-
-                <!-- 선택된 카드 위치 -->
-                <div id="selectedSlotList"
-                     class="spread-board selected-slot-list">
-                </div>
-
-                <div class="deck-count-row">
-
-                    <span id="selectionCountText">
-                        선택 0 / 0
-                    </span>
-
-                    <strong id="deckCountText">
-                        78장
-                    </strong>
-
-                </div>
-
-                <!-- 반달형 카드 덱 -->
-                <div id="tarotWheelStage"
-                     class="tarot-wheel-stage">
-
-                    <div class="selection-marker">
-
-                        <span>
-                            카드를 눌러 선택
-                        </span>
-
-                        <strong>▼</strong>
-
-                    </div>
-
-                    <div class="center-glow"></div>
-
-                    <div id="tarotDeckWheel"
-                         class="tarot-deck-wheel">
-                    </div>
-
-                    <img id="tarotHand"
-                         class="tarot-hand"
-                         th:src="@{/img/tarot/tarot-hand-open.png}"
-                         src="/img/tarot/tarot-hand-open.png"
-                         alt=""
-                         aria-hidden="true">
-
-                    <div class="drag-guide">
-
-                        <span>‹</span>
-
-                        <strong>
-                            좌우로 움직이거나 카드를 눌러보세요
-                        </strong>
-
-                        <span>›</span>
-
-                    </div>
-
-                </div>
-
-                <div class="center-card-indicator">
-
-                    <span>
-                        현재 중앙 카드
-                    </span>
-
-                    <strong id="centerCardNumber">
-                        1 / 78
-                    </strong>
-
-                </div>
-
-                <p class="direct-pick-guide">
-                    끌리는 카드를 누르면 별도의 버튼 없이 바로 선택됩니다.
-                </p>
-
-            </div>
-
-        </section>
-
-        <!-- 카드 공개와 쉬운 해설 -->
-        <section class="tarot-screen"
-                 data-tarot-screen="reveal">
-
-            <div class="reveal-page">
-
-                <span class="page-kicker">
-                    STEP 03
+                <span>
+                    어떻게 볼지 골라봐. 네가 고르면 내가 맞춰서 볼게.
                 </span>
 
-                <h1 id="revealHeading">
-                    선택한 카드를 공개합니다
-                </h1>
-
-                <p id="revealDescription"
-                   class="page-description">
-                    카드가 공개되는 순서대로 쉬운 해설이 나타납니다.
-                </p>
-
-                <div id="revealCardList"
-                     class="spread-board reveal-card-list">
-                </div>
-
-                <p id="revealStatus"
-                   class="reveal-status">
-                    카드의 흐름을 읽고 있습니다.
-                </p>
-
-                <!-- 카드별 해설 -->
-                <section id="easyReadingSection"
-                         class="easy-reading-section">
-
-                    <div class="reading-heading">
-
-                        <span>
-                            EASY READING
-                        </span>
-
-                        <h2>
-                            카드가 전하는 쉬운 이야기
-                        </h2>
-
-                        <p>
-                            어려운 타로 용어보다 질문과 현재 상황을 중심으로 설명합니다.
-                        </p>
-
-                    </div>
-
-                    <div id="easyReadingList"
-                         class="easy-reading-list">
-                    </div>
-
-                </section>
-
-                <!-- 종합 해설 -->
-                <section id="combinedReadingSection"
-                         class="combined-reading-section">
-
-                    <span class="combined-label">
-                        OVERALL MESSAGE
-                    </span>
-
-                    <h2>
-                        카드 전체를 연결한 해설
-                    </h2>
-
-                    <p id="combinedReadingText">
-                    </p>
-
-                    <div class="advice-box">
-
-                        <strong>
-                            지금 해볼 수 있는 행동
-                        </strong>
-
-                        <div id="practicalAdviceList"
-                             class="practical-advice-list">
-                        </div>
-
-                    </div>
-
-                    <div class="caution-box">
-
-                        <strong>
-                            기억해주세요
-                        </strong>
-
-                        <p>
-                            타로는 미래를 확정하는 답이 아니라,
-                            현재 상황과 선택을 돌아보기 위한 참고 해설입니다.
-                        </p>
-
-                    </div>
-
-                </section>
-
-                <div id="revealActions"
-                     class="reveal-actions">
-
-                    <button type="button"
-                            id="restartTarotButton"
-                            class="primary-button">
-                        새로운 질문으로 다시 보기
-                    </button>
-
-                    <button type="button"
-                            class="secondary-button"
-                            onclick="window.location.href='/'">
-                        홈으로 돌아가기
-                    </button>
-
-                </div>
 
             </div>
 
-        </section>
 
-    </main>
+
+            <div id="spreadList"
+                 class="spread-list">
+            </div>
+
+
+
+            <button type="button"
+                    id="spreadNextButton"
+                    class="spread-next-button"
+                    disabled>
+
+                배열법을 선택해주세요
+
+            </button>
+
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =====================================================
+         4. 카드 선택 - 추후 업데이트
+         ===================================================== -->
+
+    <section id="comingSoonScene"
+             class="scene coming-soon-scene">
+
+
+        <div class="coming-background">
+
+
+            <img th:src="@{/img/tarot_master_main.png}"
+                 src="/img/tarot_master_main.png"
+                 alt="AI 타로 유성우">
+
+
+        </div>
+
+
+        <div class="coming-overlay">
+        </div>
+
+
+
+        <button type="button"
+                id="comingBackButton"
+                class="coming-back-button"
+                aria-label="이전">
+
+            ‹
+
+        </button>
+
+
+
+        <div class="coming-content">
+
+
+            <span class="coming-label">
+                CARD SELECTION
+            </span>
+
+
+            <h1>
+                카드는 조금만<br>
+                기다려줘.
+            </h1>
+
+
+            <p>
+                곧 78장의 타로 카드 중<br>
+                네가 직접 마음이 가는 카드를<br>
+                고를 수 있게 준비해둘게.
+            </p>
+
+
+
+            <div class="spread-summary">
+
+
+                <small>
+                    선택한 배열법
+                </small>
+
+
+                <strong id="comingSpreadName">
+                </strong>
+
+
+                <span id="comingSpreadDescription">
+                </span>
+
+
+            </div>
+
+
+
+            <div class="coming-soon-badge">
+                COMING SOON
+            </div>
+
+
+
+            <a th:href="@{/}"
+               href="/"
+               class="home-button">
+
+                홈으로 돌아가기
+
+            </a>
+
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =====================================================
+         Toast
+         ===================================================== -->
 
     <div id="tarotToast"
-         class="tarot-toast"
-         role="status"
-         aria-live="polite">
+         class="tarot-toast">
     </div>
 
+
 </div>
+
 
 <script th:src="@{/js/tarot.js}"
         src="/js/tarot.js">

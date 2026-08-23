@@ -20,81 +20,26 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * 정밀화 18차.
- *
  * 재물 영역의 세운 Context Rule.
- *
- * =================================================
- *
- * 입력 Source:
- *
- * 14-6 AnnualLuckContextAnalysis
- *
- * =================================================
- *
- * 대상 십성:
  *
  * DIRECT_WEALTH
  * INDIRECT_WEALTH
  *
- * =================================================
- *
- * 중요한 원칙:
- *
- * 14차에서 이미 계산된:
- *
- * - 세운 십성
- * - 원국 × 세운
- * - 용신
- * - 격국
- * - 궁위
- * - 관계
- * - 합화
- * - 필요한 경우 대운 Context
- *
- * 결과를 18차에서 다시 계산하지 않는다.
+ * 관련 AnnualLuckContextSignal을 선택한다.
  *
  * =================================================
  *
- * 상태 변환:
+ * Signal 1개
+ * ->
+ * LifeDomainRuleMatch 1개
  *
- * SUPPORTED
- * -> SUPPORTIVE
+ * 로 독립 보존한다.
  *
- * QUALIFIED만 존재
- * -> CONTEXTUAL
+ * 정재·편재 Signal 또는
+ * 서로 다른 Axis를 합쳐
+ * 새 상태를 만들지 않는다.
  *
- * WEAKENED만 존재
- * -> PRESSURE
- *
- * CONFLICTED 존재
- * -> MIXED
- *
- * 지원 계열과 약화 계열이 동시에 존재
- * -> MIXED
- *
- * =================================================
- *
- * 하지 않는 것:
- *
- * 재성 세운
- * -> 돈이 들어온다
- *
- * 재성 약화
- * -> 손실이 생긴다
- *
- * 재성 충돌
- * -> 투자 실패
- *
- * 같은 실제 사건 확정.
- *
- * =================================================
- *
- * 원국 Bundle에는 ANNUAL_CONTEXT가 없으므로
- * 이 Rule은 아무 Match도 생성하지 않는다.
- *
- * 실제 Timeline Segment Bundle에서만
- * temporal Evidence가 존재할 때 작동한다.
+ * 실제 upstream 관계 계산은 유지한다.
  */
 @Component
 public class WealthAnnualContextRule
@@ -157,16 +102,6 @@ public class WealthAnnualContextRule
                                 .ANNUAL_CONTEXT
                 );
 
-        /*
-         * =================================================
-         * Natal Bundle
-         * =================================================
-         *
-         * 원국 Bundle에는 세운 Evidence가 없다.
-         *
-         * 정상 상태이므로 예외를 발생시키지 않는다.
-         */
-
         if (
                 annualReferenceOptional
                         .isEmpty()
@@ -186,16 +121,6 @@ public class WealthAnnualContextRule
                                 AnnualLuckContextAnalysis.class
                         );
 
-        /*
-         * =================================================
-         * 재성 관련 세운 Signal
-         * =================================================
-         *
-         * 동일 Signal이 정재/편재 양쪽 조회에서
-         * 중복될 가능성에 대비하여
-         * Object Identity 기준으로 중복 제거한다.
-         */
-
         List<AnnualLuckContextSignal>
                 directWealthSignals =
                 annualContext
@@ -212,102 +137,114 @@ public class WealthAnnualContextRule
                                         .INDIRECT_WEALTH
                         );
 
-        Set<AnnualLuckContextSignal>
-                uniqueSignals =
-                Collections
-                        .newSetFromMap(
-                                new IdentityHashMap<>()
-                        );
-
-        uniqueSignals.addAll(
-                directWealthSignals
-        );
-
-        uniqueSignals.addAll(
-                indirectWealthSignals
-        );
+        List<AnnualLuckContextSignal>
+                wealthSignals =
+                mergeIdentityUnique(
+                        directWealthSignals,
+                        indirectWealthSignals
+                );
 
         if (
-                uniqueSignals.isEmpty()
+                wealthSignals
+                        .isEmpty()
         ) {
 
             return List.of();
         }
 
-        List<AnnualLuckContextSignal>
-                wealthSignals =
-                List.copyOf(
-                        uniqueSignals
+        List<LifeDomainRuleMatch> matches =
+                new ArrayList<>();
+
+        for (
+                AnnualLuckContextSignal signal
+                : wealthSignals
+        ) {
+
+            Objects.requireNonNull(
+                    signal,
+                    "AnnualLuckContextAnalysis의 Annual Signal은 null일 수 없습니다."
+            );
+
+            LifeDomainSignalStatus status =
+                    resolveStatus(
+                            signal
+                    );
+
+            List<String> reasons =
+                    baseReasons(
+                            annualContext
+                    );
+
+            reasons.add(
+                    "Annual Signal ["
+                            + signal.code()
+                            + "] "
+                            + signal.summary()
+                            + " / axis="
+                            + signal.axis().name()
+                            + " / status="
+                            + signal.status().name()
+            );
+
+            reasons.add(
+                    "이 Signal에 실제 태깅된 재물영역 참조 재성 유형은 "
+                            + matchedWealthTypes(
+                            signal
+                    )
+                            + "입니다."
+            );
+
+            for (
+                    String signalReason
+                    : signal.reasons()
+            ) {
+
+                reasons.add(
+                        "Annual Signal ["
+                                + signal.code()
+                                + "] 근거: "
+                                + signalReason
                 );
+            }
 
-        /*
-         * =================================================
-         * 14차 상태 집계
-         * =================================================
-         *
-         * status 자체를 새로 계산하지 않는다.
-         *
-         * 14차에서 이미 결정된 상태를
-         * 생활영역 표현으로 변환할 뿐이다.
-         */
+            reasons.add(
+                    "이 Match는 하나의 AnnualLuckContextSignal만 보존하며 다른 Annual Signal과 상태를 합산하지 않습니다."
+            );
 
-        long supportedCount =
-                wealthSignals
-                        .stream()
-                        .filter(
-                                signal ->
-                                        signal
-                                                .status()
-                                                .supported()
-                        )
-                        .count();
+            reasons.add(
+                    "14차가 이미 계산한 십성·원국 관계·격국·용신·궁위·합화 Context를 이 Rule에서 다시 조합하지 않습니다."
+            );
 
-        long qualifiedCount =
-                wealthSignals
-                        .stream()
-                        .filter(
-                                signal ->
-                                        signal
-                                                .status()
-                                                .qualified()
-                        )
-                        .count();
+            reasons.add(
+                    "재성 관련 세운 Context를 실제 소득·재산 증가·투자 수익·금전 손실 같은 사건으로 직접 환산하지 않습니다."
+            );
 
-        long weakenedCount =
-                wealthSignals
-                        .stream()
-                        .filter(
-                                signal ->
-                                        signal
-                                                .status()
-                                                .weakened()
-                        )
-                        .count();
+            matches.add(
+                    new LifeDomainRuleMatch(
+                            LifeDomain.WEALTH,
+                            RULE_CODE,
+                            status,
+                            summaryOf(
+                                    signal
+                            ),
+                            List.of(
+                                    annualReference
+                            ),
+                            List.copyOf(
+                                    reasons
+                            )
+                    )
+            );
+        }
 
-        long conflictedCount =
-                wealthSignals
-                        .stream()
-                        .filter(
-                                signal ->
-                                        signal
-                                                .status()
-                                                .conflicted()
-                        )
-                        .count();
+        return List.copyOf(
+                matches
+        );
+    }
 
-        /*
-         * =================================================
-         * 18차 상태 변환
-         * =================================================
-         */
-
-        LifeDomainSignalStatus status =
-                resolveStatus(
-                        supportedCount,
-                        qualifiedCount,
-                        weakenedCount,
-                        conflictedCount
-                );
+    private List<String> baseReasons(
+            AnnualLuckContextAnalysis annualContext
+    ) {
 
         List<String> reasons =
                 new ArrayList<>();
@@ -318,51 +255,13 @@ public class WealthAnnualContextRule
                         + "년입니다."
         );
 
-        reasons.add(
-                "정재 관련 Annual Context Signal은 "
-                        + directWealthSignals.size()
-                        + "개입니다."
-        );
-
-        reasons.add(
-                "편재 관련 Annual Context Signal은 "
-                        + indirectWealthSignals.size()
-                        + "개입니다."
-        );
-
-        reasons.add(
-                "Object Identity 중복 제거 후 재성 관련 Signal은 "
-                        + wealthSignals.size()
-                        + "개입니다."
-        );
-
-        reasons.add(
-                "SUPPORTED="
-                        + supportedCount
-                        + ", QUALIFIED="
-                        + qualifiedCount
-                        + ", WEAKENED="
-                        + weakenedCount
-                        + ", CONFLICTED="
-                        + conflictedCount
-                        + "입니다."
-        );
-
-        reasons.add(
-                "14차가 판정한 Context 상태를 18차 생활영역 상태로 변환할 뿐, 세운 십성·격국·용신·관계·합화를 다시 계산하지 않습니다."
-        );
-
-        reasons.add(
-                "재성 관련 세운 Context를 실제 수입·재산 증가·투자 수익·손실 사건으로 직접 환산하지 않습니다."
-        );
-
         if (
                 !annualContext
                         .decadeContextAvailable()
         ) {
 
             reasons.add(
-                    "현재 세운은 대운 Segment Context를 사용할 수 없는 상태이지만, 14차 정책에 따라 세운 자체 annualSignals는 그대로 보존하여 사용합니다."
+                    "현재 세운은 대운 Segment Context를 사용할 수 없지만 14차 정책에 따라 세운 자체 annualSignals는 그대로 보존합니다."
             );
         }
 
@@ -372,71 +271,20 @@ public class WealthAnnualContextRule
         ) {
 
             reasons.add(
-                    "현재 세운 기간 안에 대운 교운시점 불확실성이 존재하며, 가능한 대운 Context를 하나로 임의 선택하지 않습니다."
+                    "현재 세운 기간에 대운 교운시점 불확실성이 존재하므로 가능한 대운 Context 중 하나를 임의로 확정하지 않습니다."
             );
         }
 
-        return List.of(
-                new LifeDomainRuleMatch(
-                        LifeDomain.WEALTH,
-                        RULE_CODE,
-                        status,
-                        summaryOf(
-                                status
-                        ),
-                        List.of(
-                                annualReference
-                        ),
-                        reasons
-                )
-        );
+        return reasons;
     }
 
-    /*
-     * =================================================
-     * 상태 결정
-     * =================================================
-     *
-     * 14차 Context 상태를
-     * 18차 생활영역 상태로만 변환한다.
-     *
-     * =================================================
-     *
-     * CONFLICTED는 그 자체로
-     * 상반 Evidence가 있다는 뜻이므로 MIXED.
-     *
-     * SUPPORTED / QUALIFIED와
-     * WEAKENED가 함께 있어도 MIXED.
-     *
-     * WEAKENED만 존재하면 PRESSURE.
-     *
-     * SUPPORTED가 존재하고 제한 신호가 없으면
-     * SUPPORTIVE.
-     *
-     * QUALIFIED만 존재하면 CONTEXTUAL.
-     */
-
     private LifeDomainSignalStatus resolveStatus(
-
-            long supportedCount,
-
-            long qualifiedCount,
-
-            long weakenedCount,
-
-            long conflictedCount
-
+            AnnualLuckContextSignal signal
     ) {
 
-        boolean supportiveSide =
-                supportedCount > 0
-                        || qualifiedCount > 0;
-
-        boolean weakenedSide =
-                weakenedCount > 0;
-
         if (
-                conflictedCount > 0
+                signal
+                        .conflicted()
         ) {
 
             return LifeDomainSignalStatus
@@ -444,16 +292,8 @@ public class WealthAnnualContextRule
         }
 
         if (
-                supportiveSide
-                        && weakenedSide
-        ) {
-
-            return LifeDomainSignalStatus
-                    .MIXED;
-        }
-
-        if (
-                weakenedSide
+                signal
+                        .weakened()
         ) {
 
             return LifeDomainSignalStatus
@@ -461,56 +301,127 @@ public class WealthAnnualContextRule
         }
 
         if (
-                supportedCount > 0
+                signal
+                        .supported()
         ) {
 
             return LifeDomainSignalStatus
                     .SUPPORTIVE;
         }
 
-        return LifeDomainSignalStatus
-                .CONTEXTUAL;
-    }
+        if (
+                signal
+                        .qualified()
+        ) {
 
-    /*
-     * =================================================
-     * Summary
-     * =================================================
-     */
+            return LifeDomainSignalStatus
+                    .CONTEXTUAL;
+        }
+
+        throw new IllegalStateException(
+                "지원하지 않는 AnnualLuckContextSignal 상태입니다: "
+                        + signal.status()
+        );
+    }
 
     private String summaryOf(
-            LifeDomainSignalStatus status
+            AnnualLuckContextSignal signal
     ) {
 
-        return switch (
-                status
-                ) {
-
-            case SUPPORTIVE ->
-                    "현재 세운에서 재성 관련 Context가 재물 기능을 지지하는 방향으로 나타납니다.";
-
-            case PRESSURE ->
-                    "현재 세운에서 재성 관련 Context에 약화·부담 방향이 존재합니다.";
-
-            case MIXED ->
-                    "현재 세운의 재성 관련 Context에 지원과 약화 또는 상충 근거가 함께 존재합니다.";
-
-            case CONTEXTUAL ->
-                    "현재 세운에서 재성 관련 Context가 존재하지만 단독 방향으로 확정할 수준은 아닙니다.";
-        };
+        return "현재 세운의 재물 관련 Annual Context Signal ["
+                + signal.code()
+                + "]을 독립적으로 보존합니다: "
+                + signal.summary();
     }
 
-    /*
-     * =================================================
-     * Temporal Evidence 조회
-     * =================================================
-     *
-     * Natal Bundle에서는 0개가 정상.
-     *
-     * Segment Bundle에서는
-     * 동일 SourceType이 2개 이상이면
-     * Evidence 구성 오류다.
-     */
+    private List<StructureTenGodType>
+    matchedWealthTypes(
+            AnnualLuckContextSignal signal
+    ) {
+
+        List<StructureTenGodType> types =
+                new ArrayList<>();
+
+        if (
+                signal.involves(
+                        StructureTenGodType
+                                .DIRECT_WEALTH
+                )
+        ) {
+
+            types.add(
+                    StructureTenGodType
+                            .DIRECT_WEALTH
+            );
+        }
+
+        if (
+                signal.involves(
+                        StructureTenGodType
+                                .INDIRECT_WEALTH
+                )
+        ) {
+
+            types.add(
+                    StructureTenGodType
+                            .INDIRECT_WEALTH
+            );
+        }
+
+        return List.copyOf(
+                types
+        );
+    }
+
+    @SafeVarargs
+    private final List<AnnualLuckContextSignal>
+    mergeIdentityUnique(
+            List<AnnualLuckContextSignal>... signalLists
+    ) {
+
+        Set<AnnualLuckContextSignal> unique =
+                Collections
+                        .newSetFromMap(
+                                new IdentityHashMap<>()
+                        );
+
+        List<AnnualLuckContextSignal> ordered =
+                new ArrayList<>();
+
+        for (
+                List<AnnualLuckContextSignal> signals
+                : signalLists
+        ) {
+
+            if (
+                    signals == null
+            ) {
+
+                continue;
+            }
+
+            for (
+                    AnnualLuckContextSignal signal
+                    : signals
+            ) {
+
+                if (
+                        unique.add(
+                                signal
+                        )
+                ) {
+
+                    ordered.add(
+                            signal
+                    );
+                }
+            }
+        }
+
+        return List.copyOf(
+                ordered
+        );
+    }
 
     private Optional<LifeDomainEvidenceReference<?>>
     optionalSingleEvidence(

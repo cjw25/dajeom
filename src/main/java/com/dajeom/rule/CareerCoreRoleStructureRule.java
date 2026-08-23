@@ -15,268 +15,277 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * CAREER 카테고리의
- * 원국 핵심 역할·책임 구조 Rule.
+ * CAREER 원국 주격 역할 구조 deterministic Rule.
  *
  * =================================================
- *
  * 목적
  * =================================================
  *
- * 기존 LifeDomain.CAREER 결과를
- * ConsultationCategory.CAREER에
- * 그대로 복사하지 않는다.
+ * LifeDomain.CAREER에서 이미 계산된:
  *
- * 이 Rule은 서로 다른 두 deterministic 축:
- *
- * 1.
  * CAREER_PRIMARY_OFFICER_STRUCTURE
  *
- * 2.
- * CAREER_OFFICER_STRUCTURE
- *
- * 를 함께 사용하여:
- *
- * "정관/칠살의 역할·책임·규범 기능이
- * 원국의 중심 구조로 실제 관여하고 있으며,
- * 그 관살 기능이 원국 전체에서
- * 어떤 방식으로 작동하고 있는가"
- *
- * 를 CAREER 카테고리 관점에서
- * 다시 판단한다.
+ * 의 공식 상태만
+ * ConsultationCategory.CAREER의
+ * 독립 deterministic 결과로 보존한다.
  *
  * =================================================
+ * 공식 Status Anchor
+ * =================================================
  *
- * Source 1
+ * 이 Rule의 공식 Anchor는:
+ *
  * CAREER_PRIMARY_OFFICER_STRUCTURE
- * =================================================
  *
- * 5차 StructureAnalysis에서
- * 실제 primaryStandardTenGod가:
- *
- * - DIRECT_OFFICER
- * - SEVEN_KILLINGS
- *
- * 인 경우에만 생성된다.
- *
- * 따라서 단순히 원국에
- * 정관/칠살이 존재한다는 의미가 아니다.
- *
- * 원국의 실제 주격 중심축에서:
- *
- * - 역할
- * - 책임
- * - 규범
- * - 통제
- * - 요구
- * - 사회적 역할 수행
- *
- * 기능이 어느 정도 중심적으로
- * 관여하는지를 나타낸다.
- *
- * 이 Source는:
- *
- * - 성립
- * - 부담
- * - 손상
- * - 혼잡
- *
- * 상태를 이미 계산한 결과다.
+ * 하나뿐이다.
  *
  * =================================================
- *
- * Source 2
- * CAREER_OFFICER_STRUCTURE
+ * Upstream 계산
  * =================================================
  *
- * TenGodCompositeAnalysis
+ * CareerPrimaryOfficerStructureRule은
+ * 5차 StructureAnalysis를 사용하여:
+ *
+ * - 실제 주격이 일반격인지
+ * - 실제 주격 십성이 DIRECT_OFFICER인지
+ * - 실제 주격 십성이 SEVEN_KILLINGS인지
+ * - 주격이 성립 계열인지
+ * - 부담을 동반하는지
+ * - 손상되어 있는지
+ * - 강한 손상이 있는지
+ * - 혼잡 상태인지
+ *
+ * 등을 이미 계산한다.
+ *
+ * 따라서 이 Category Rule에서는
+ * 격국을 다시 계산하지 않는다.
+ *
+ * =================================================
+ * CAREER_OFFICER_STRUCTURE와의 분리
+ * =================================================
+ *
+ * 기존에는:
+ *
+ * CAREER_PRIMARY_OFFICER_STRUCTURE
+ *
  * +
- * DayMasterStrengthAnalysis
  *
- * 에서 이미 계산된:
+ * CAREER_OFFICER_STRUCTURE
  *
- * - 관성 발달
- * - 정관 중심
- * - 칠살 중심
- * - 관살 혼재
- * - 신약 관살 압박
- * - 식상의 관살 대응
- * - 인성의 관살 중재
- * - 재성의 관살 지원
+ * 를 결합하여 하나의 finalStatus를 만들었다.
  *
- * 등의 복합 Context를 사용한다.
+ * 이제 그렇게 하지 않는다.
  *
- * =================================================
- *
- * 중요한 역할 분리
- * =================================================
+ * -------------------------------------------------
  *
  * CAREER_PRIMARY_OFFICER_STRUCTURE
  *
- * ->
+ * =
  *
- * "관성이 원국의 중심 역할 구조인가?"
+ * 관성이 실제 원국의 주격 중심축으로
+ * 선택되었는지와 그 주격 상태
  *
  * -------------------------------------------------
  *
  * CAREER_OFFICER_STRUCTURE
  *
- * ->
+ * =
  *
- * "그 관살 기능이 실제 원국 전체에서
- * 어떤 수용·압박·중재 Context를 가지는가?"
+ * 관살 Family가 원국 전체에서 가지는
+ * 발달·압박·중재·지원 Context
  *
  * -------------------------------------------------
  *
- * 따라서 같은 관성을 다루더라도
- * 두 Source는 서로 대체하지 않는다.
+ * 두 계산은 서로 다른 deterministic 결과다.
  *
  * =================================================
- *
- * Match 생성 조건
+ * 삭제되는 Cross-Source Status 합성
  * =================================================
  *
- * 두 Source Family가
- * 모두 실제로 존재해야 한다.
+ * 다음 계산을 하지 않는다.
  *
- * CAREER_PRIMARY_OFFICER_STRUCTURE가 없는데:
+ * PRIMARY SUPPORTIVE
+ * +
+ * OFFICER PRESSURE
+ * =
+ * MIXED
  *
- * "관성이 원국의 핵심 직업 중심축이다"
+ * 금지.
  *
- * 라고 추정하지 않는다.
+ * -------------------------------------------------
  *
- * CAREER_OFFICER_STRUCTURE가 없는데:
+ * PRIMARY PRESSURE
+ * +
+ * OFFICER SUPPORTIVE
+ * =
+ * MIXED
  *
- * 관살의 실제 작동 상태를
- * 임의 생성하지 않는다.
+ * 금지.
+ *
+ * -------------------------------------------------
+ *
+ * PRIMARY CONTEXTUAL
+ * +
+ * OFFICER PRESSURE
+ * =
+ * PRESSURE
+ *
+ * 금지.
  *
  * =================================================
- *
- * Source Family Status
+ * 이유
  * =================================================
  *
- * 각 Source Family 내부에서는
- * Match 개수를 사용하지 않는다.
+ * 두 Source Family가 각각 존재한다는 사실만으로:
+ *
+ * - 중심 역할 구조가 실제 관살 작동에 의해
+ *   강화된다
+ *
+ * - 관살 수용 부담이 주격을 약화시킨다
+ *
+ * - 주격 성립이 관살 부담을 상쇄한다
+ *
+ * - 두 구조가 함께 작동하여
+ *   새로운 직업 상태가 된다
+ *
+ * 같은 관계를 만들 수 없다.
+ *
+ * 그런 판단이 필요하면
+ * 두 계산 사이의 관계 자체를
+ * 별도의 deterministic Java Analysis로
+ * 직접 계산해야 한다.
+ *
+ * =================================================
+ * Status
+ * =================================================
+ *
+ * 동일한:
+ *
+ * CAREER_PRIMARY_OFFICER_STRUCTURE
+ *
+ * Source Family 내부의 공식
+ * LifeDomainSignalStatus만 사용한다.
  *
  * MIXED 존재
  * -> MIXED
  *
- * SUPPORTIVE + PRESSURE
+ * SUPPORTIVE + PRESSURE가
+ * 같은 Source Family 안에 실제 존재
  * -> MIXED
  *
- * PRESSURE 존재
+ * PRESSURE만 존재
  * -> PRESSURE
  *
- * SUPPORTIVE 존재
+ * SUPPORTIVE만 존재
  * -> SUPPORTIVE
  *
  * 그 외
  * -> CONTEXTUAL
  *
  * =================================================
- *
- * CAREER 전용 결합
+ * 중요한 경계
  * =================================================
  *
- * 중심 역할 구조 SUPPORTIVE
- * +
- * 관살 작동 CONTEXTUAL
- * -> SUPPORTIVE
+ * 위 Status 정규화는
+ * 서로 다른 계산 결과를 합성하는 것이 아니다.
  *
- * 중심 역할 구조는 실제 성립되어 있고,
- * 복합 관살 Context에서 이를 뒤집는
- * 부담 방향이 확인되지 않은 상태다.
- *
- * -------------------------------------------------
- *
- * 중심 역할 구조 SUPPORTIVE
- * +
- * 관살 작동 PRESSURE
- * -> MIXED
- *
- * 중심 역할 구조는 성립하지만
- * 실제 역할 수행 과정에는
- * 수용 부담이 존재한다.
- *
- * -------------------------------------------------
- *
- * 중심 역할 구조 PRESSURE
- * +
- * 관살 작동 SUPPORTIVE
- * -> MIXED
- *
- * 중심 구조 자체에는 부담이 있으나
- * 복합 작동에서 지지 방향이 존재한다.
- *
- * -------------------------------------------------
- *
- * 중심 역할 구조 PRESSURE
- * +
- * 관살 작동 CONTEXTUAL/PRESSURE
- * -> PRESSURE
- *
- * -------------------------------------------------
- *
- * 중심 역할 구조 CONTEXTUAL
- * +
- * 관살 작동 PRESSURE
- * -> PRESSURE
- *
- * -------------------------------------------------
- *
- * 중심 역할 구조 CONTEXTUAL
- * +
- * 관살 작동 SUPPORTIVE
- * -> CONTEXTUAL
- *
- * 복합 작동의 SUPPORTIVE만으로
- * 관성이 원국의 중심 역할 구조로
- * 성립했다고 승격하지 않는다.
+ * 동일 Source Family 안에서
+ * upstream Java가 이미 확정한
+ * 공식 상태를 Category 수준으로
+ * 보존하는 처리다.
  *
  * =================================================
- *
- * 매우 중요한 제한
- * =================================================
- *
- * 이 Rule은:
- *
- * - 관성 세력을 다시 계산하지 않는다.
- * - 신강신약을 다시 계산하지 않는다.
- * - 격국을 다시 계산하지 않는다.
- * - 십성 Pattern을 다시 계산하지 않는다.
- * - Match 개수를 점수화하지 않는다.
- * - summary 문자열을 파싱하지 않는다.
- * - reasons 문자열을 파싱하지 않는다.
- *
- * =================================================
- *
- * 금지
+ * CAREER 의미 경계
  * =================================================
  *
  * SUPPORTIVE
- * -> 취업 성공
  *
- * SUPPORTIVE
- * -> 승진
- *
- * PRESSURE
- * -> 실직
+ * != 취업 성공
+ * != 승진
+ * != 높은 직급
+ * != 좋은 직업
  *
  * PRESSURE
- * -> 직장 갈등 발생
  *
- * 정관
- * -> 공무원
+ * != 실직
+ * != 직장 갈등
+ * != 승진 실패
  *
- * 칠살
- * -> 군인/경찰
+ * MIXED
  *
- * 같은 실제 직업 사건이나
- * 특정 직종을 생성하지 않는다.
+ * != 직업 기복
+ *
+ * CONTEXTUAL
+ *
+ * != 직업운 없음
+ *
+ * =================================================
+ * 특정 직종 생성 금지
+ * =================================================
+ *
+ * DIRECT_OFFICER
+ * != 공무원
+ *
+ * SEVEN_KILLINGS
+ * != 군인
+ * != 경찰
+ * != 법조인
+ *
+ * 격국을 실제 직종으로 직접 변환하지 않는다.
+ *
+ * =================================================
+ * 관계형 풀이 금지
+ * =================================================
+ *
+ * 다음을 생성하지 않는다.
+ *
+ * - 책임을 맡기 전
+ * - 책임을 맡은 뒤
+ * - 역할이 반복될수록
+ * - 요구가 증가할수록
+ * - 조직 안에서 시간이 지나면서
+ * - A 때문에 B
+ * - A가 B로 이어진다
+ * - A와 B가 함께 작동한다
+ * - 먼저 A이고 이후 B가 된다
+ *
+ * =================================================
+ * 하지 않는 것
+ * =================================================
+ *
+ * - 관성 세력 재계산
+ * - 정관 / 칠살 재선택
+ * - 격국 재계산
+ * - 신강신약 재계산
+ * - 십성 Composite 재계산
+ * - 용신 재계산
+ * - 합충형파해 재계산
+ * - CAREER_OFFICER_STRUCTURE 조회
+ * - 다른 Source Family와 Status 합성
+ * - Match 개수 점수화
+ * - summary 문자열 파싱
+ * - reasons 문자열 파싱
+ * - 실제 직업 사건 생성
+ * - 특정 직업군 생성
+ * - 새로운 관계 생성
+ * - 새로운 인과 생성
+ * - 새로운 순서 생성
  */
 @Component
 public class CareerCoreRoleStructureRule
         implements ConsultationCategoryDeterministicRule {
+
+    /*
+     * =================================================
+     * Compatibility
+     * =================================================
+     *
+     * 기존 Contract / Grounding 연결 확인 전까지
+     * class명과 Rule Code는 유지한다.
+     *
+     * 실제 계산 의미는 이제
+     * CAREER_PRIMARY_OFFICER_STRUCTURE만 담당한다.
+     */
 
     private static final String RULE_CODE =
             "CAREER_CORE_ROLE_STRUCTURE";
@@ -285,9 +294,6 @@ public class CareerCoreRoleStructureRule
             PRIMARY_OFFICER_STRUCTURE_RULE_CODE =
             "CAREER_PRIMARY_OFFICER_STRUCTURE";
 
-    private static final String
-            OFFICER_STRUCTURE_RULE_CODE =
-            "CAREER_OFFICER_STRUCTURE";
 
     @Override
     public ConsultationCategory category() {
@@ -295,11 +301,13 @@ public class CareerCoreRoleStructureRule
         return ConsultationCategory.CAREER;
     }
 
+
     @Override
     public String code() {
 
         return RULE_CODE;
     }
+
 
     @Override
     public List<ConsultationCategoryDeterministicMatch>
@@ -314,7 +322,7 @@ public class CareerCoreRoleStructureRule
 
         /*
          * =================================================
-         * Category 검증
+         * Category
          * =================================================
          */
 
@@ -330,7 +338,7 @@ public class CareerCoreRoleStructureRule
 
         /*
          * =================================================
-         * unavailable View
+         * unavailable
          * =================================================
          */
 
@@ -343,49 +351,25 @@ public class CareerCoreRoleStructureRule
 
         /*
          * =================================================
-         * Source 1
-         * 주격 관성 중심 구조
+         * 공식 Status Anchor
          * =================================================
          */
 
-        List<LifeDomainRuleMatch>
-                primaryStructureMatches =
+        List<LifeDomainRuleMatch> primaryStructureMatches =
                 findNatalMatches(
                         view,
                         PRIMARY_OFFICER_STRUCTURE_RULE_CODE
                 );
 
         /*
-         * =================================================
-         * Source 2
-         * 관살 실제 복합 작동 구조
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch>
-                officerStructureMatches =
-                findNatalMatches(
-                        view,
-                        OFFICER_STRUCTURE_RULE_CODE
-                );
-
-        /*
-         * =================================================
-         * 두 Source Family 모두 필수
-         * =================================================
-         *
-         * 주격이 관성이 아닌데
-         * "관성이 직업 중심축"
-         * 이라고 생성하지 않는다.
-         *
-         * 또한 관살 복합 분석이 없는데
-         * 실제 역할 수행 상태를
-         * 추정하지 않는다.
+         * 실제 주격 관성 구조가 없으면
+         * 다른 CAREER Evidence를 대신 사용하여
+         * "관성이 원국의 중심 역할 구조다"
+         * 라고 생성하지 않는다.
          */
 
         if (
                 primaryStructureMatches.isEmpty()
-                        || officerStructureMatches.isEmpty()
         ) {
 
             return List.of();
@@ -393,94 +377,59 @@ public class CareerCoreRoleStructureRule
 
         /*
          * =================================================
-         * Source Family별 상태
+         * Status
          * =================================================
          */
 
-        ConsultationCategoryDeterministicStatus
-                primaryStructureStatus =
-                resolveFamilyStatus(
+        ConsultationCategoryDeterministicStatus status =
+                resolvePrimaryStructureStatus(
                         primaryStructureMatches
                 );
-
-        ConsultationCategoryDeterministicStatus
-                officerStructureStatus =
-                resolveFamilyStatus(
-                        officerStructureMatches
-                );
-
-        /*
-         * =================================================
-         * CAREER 전용 최종 결합
-         * =================================================
-         */
-
-        ConsultationCategoryDeterministicStatus
-                finalStatus =
-                resolveCombinedStatus(
-                        primaryStructureStatus,
-                        officerStructureStatus
-                );
-
-        /*
-         * =================================================
-         * Source Provenance
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch> sourceMatches =
-                new ArrayList<>();
-
-        sourceMatches.addAll(
-                primaryStructureMatches
-        );
-
-        sourceMatches.addAll(
-                officerStructureMatches
-        );
 
         /*
          * =================================================
          * Reasons
          * =================================================
+         *
+         * 최종 사용자 Story가 아니다.
+         * deterministic provenance 기록이다.
          */
 
         List<String> reasons =
                 new ArrayList<>();
 
         reasons.add(
-                "정관·칠살이 원국의 주격 중심 구조로 관여하는 상태와 관살 기능의 실제 복합 작동 상태를 서로 다른 deterministic 축으로 확인했습니다."
+                "CAREER의 원국 주격 역할 구조는 CAREER_PRIMARY_OFFICER_STRUCTURE Source Family만 공식 Status Anchor로 사용했습니다."
         );
 
-        reasons.add(
-                "CAREER_PRIMARY_OFFICER_STRUCTURE Source Family의 상태는 "
-                        + primaryStructureStatus.name()
-                        + "입니다."
-        );
-
-        reasons.add(
-                "CAREER_OFFICER_STRUCTURE Source Family의 상태는 "
-                        + officerStructureStatus.name()
-                        + "입니다."
-        );
-
-        appendCombinationReason(
+        appendStatusReason(
                 reasons,
-                primaryStructureStatus,
-                officerStructureStatus,
-                finalStatus
+                primaryStructureMatches,
+                status
         );
 
         reasons.add(
-                "관성의 존재량이나 Match 개수를 직업운의 강도, 직위, 성취 가능성 또는 직업 안정성 점수로 사용하지 않았습니다."
+                "CAREER_OFFICER_STRUCTURE는 이 Rule의 Source 또는 Status 계산에 사용하지 않았으며 별도의 CAREER deterministic 결과로 분리합니다."
         );
 
         reasons.add(
-                "정관과 칠살을 특정 직업군에 직접 대응시키지 않았습니다."
+                "주격 관성 구조와 관살 복합 작동 구조의 Status를 결합하여 새로운 SUPPORTIVE·PRESSURE·MIXED 상태를 만들지 않았습니다."
         );
 
         reasons.add(
-                "이 결과는 원국의 역할·책임 중심축과 관살 기능의 수용·압박·중재 구조를 설명하며 취업, 승진, 이직, 퇴사, 사업 성공 같은 실제 사건을 확정하지 않습니다."
+                "CAREER_PRIMARY_OFFICER_STRUCTURE Match의 반복 개수를 직업운 강도·사회적 지위·직위·성취 가능성의 점수로 사용하지 않았습니다."
+        );
+
+        reasons.add(
+                "Source의 summary 또는 reasons 문자열을 판단 조건으로 사용하지 않았습니다."
+        );
+
+        reasons.add(
+                "DIRECT_OFFICER 또는 SEVEN_KILLINGS 주격을 특정 직업군으로 직접 변환하지 않았습니다."
+        );
+
+        reasons.add(
+                "이 결과는 정관·칠살 계열이 실제 원국의 주격 중심축으로 관여하는 구조와 그 공식 상태만 보존하며 취업·승진·이직·퇴사 같은 실제 직업 사건을 생성하지 않습니다."
         );
 
         /*
@@ -498,7 +447,7 @@ public class CareerCoreRoleStructureRule
 
                         RULE_CODE,
 
-                        finalStatus,
+                        status,
 
                         null,
 
@@ -507,11 +456,11 @@ public class CareerCoreRoleStructureRule
                         List.of(),
 
                         summaryOf(
-                                finalStatus
+                                status
                         ),
 
                         List.copyOf(
-                                sourceMatches
+                                primaryStructureMatches
                         ),
 
                         List.copyOf(
@@ -521,20 +470,21 @@ public class CareerCoreRoleStructureRule
         );
     }
 
+
     /*
      * =================================================
      * Natal Source 조회
      * =================================================
      *
-     * 공식 구조값:
+     * Source 선택에는:
      *
      * - domain
      * - ruleCode
      *
      * 만 사용한다.
      *
-     * summary / reasons 문자열은
-     * Source 구분에 사용하지 않는다.
+     * summary / reasons 문자열을
+     * Source 판별에 사용하지 않는다.
      */
 
     private List<LifeDomainRuleMatch>
@@ -548,18 +498,14 @@ public class CareerCoreRoleStructureRule
 
         Objects.requireNonNull(
                 view,
-                "ConsultationCategoryEvidenceView가 필요합니다."
+                "CAREER Evidence View가 필요합니다."
         );
 
-        if (
-                sourceRuleCode == null
-                        || sourceRuleCode.isBlank()
-        ) {
-
-            throw new IllegalArgumentException(
-                    "CAREER Source ruleCode가 필요합니다."
-            );
-        }
+        String normalizedRuleCode =
+                requireText(
+                        sourceRuleCode,
+                        "CAREER Primary Officer Structure sourceRuleCode가 필요합니다."
+                );
 
         List<LifeDomainRuleMatch> result =
                 new ArrayList<>();
@@ -569,18 +515,20 @@ public class CareerCoreRoleStructureRule
                 : view.natalMatches()
         ) {
 
-            Objects.requireNonNull(
-                    match,
-                    "CAREER Natal Match는 null일 수 없습니다."
-            );
+            LifeDomainRuleMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "CAREER Natal Match는 null일 수 없습니다."
+                    );
 
             /*
-             * 다른 Domain의 Evidence를
-             * 이번 Rule에 끌어오지 않는다.
+             * =================================================
+             * CAREER Domain만
+             * =================================================
              */
 
             if (
-                    match.domain()
+                    normalized.domain()
                             != LifeDomain.CAREER
             ) {
 
@@ -588,13 +536,14 @@ public class CareerCoreRoleStructureRule
             }
 
             /*
-             * 공식 Rule Code 기준으로만
-             * Source Family를 구분한다.
+             * =================================================
+             * 공식 Rule Code만
+             * =================================================
              */
 
             if (
-                    !sourceRuleCode.equals(
-                            match.ruleCode()
+                    !normalizedRuleCode.equals(
+                            normalized.ruleCode()
                     )
             ) {
 
@@ -602,7 +551,7 @@ public class CareerCoreRoleStructureRule
             }
 
             result.add(
-                    match
+                    normalized
             );
         }
 
@@ -611,49 +560,63 @@ public class CareerCoreRoleStructureRule
         );
     }
 
+
     /*
      * =================================================
-     * Source Family Status
+     * Primary Structure Status
      * =================================================
      *
-     * Match 개수를 세지 않는다.
+     * 다른 Source Family는
+     * 이 메서드에 들어오지 않는다.
      *
-     * Family 내부에
-     * 어떤 공식 LifeDomainSignalStatus가
-     * 존재하는지만 본다.
+     * 오직:
+     *
+     * CAREER_PRIMARY_OFFICER_STRUCTURE
+     *
+     * 내부의 공식 Status만 정규화한다.
      */
 
     private ConsultationCategoryDeterministicStatus
-    resolveFamilyStatus(
-            List<LifeDomainRuleMatch> matches
+    resolvePrimaryStructureStatus(
+            List<LifeDomainRuleMatch> primaryStructureMatches
     ) {
 
         Objects.requireNonNull(
-                matches,
-                "CAREER Source Match 목록이 필요합니다."
+                primaryStructureMatches,
+                "CAREER Primary Officer Structure Match 목록이 필요합니다."
         );
+
+        if (
+                primaryStructureMatches.isEmpty()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "CAREER Primary Officer Structure Status 계산에는 최소 하나의 Match가 필요합니다."
+            );
+        }
 
         boolean supportiveExists =
                 hasStatus(
-                        matches,
+                        primaryStructureMatches,
                         LifeDomainSignalStatus.SUPPORTIVE
                 );
 
         boolean pressureExists =
                 hasStatus(
-                        matches,
+                        primaryStructureMatches,
                         LifeDomainSignalStatus.PRESSURE
                 );
 
         boolean mixedExists =
                 hasStatus(
-                        matches,
+                        primaryStructureMatches,
                         LifeDomainSignalStatus.MIXED
                 );
 
         /*
-         * 이미 Source가 MIXED를
-         * 확정했다면 그대로 보존한다.
+         * =================================================
+         * upstream MIXED 보존
+         * =================================================
          */
 
         if (
@@ -664,9 +627,10 @@ public class CareerCoreRoleStructureRule
         }
 
         /*
-         * 같은 Family 안에
-         * SUPPORTIVE와 PRESSURE가
-         * 함께 존재해도 MIXED다.
+         * =================================================
+         * 동일 Source Family 내부에
+         * 두 공식 방향이 모두 실제 존재
+         * =================================================
          */
 
         if (
@@ -694,159 +658,6 @@ public class CareerCoreRoleStructureRule
         return ConsultationCategoryDeterministicStatus.CONTEXTUAL;
     }
 
-    /*
-     * =================================================
-     * CAREER 전용 결합 Matrix
-     * =================================================
-     *
-     * primaryStructureStatus
-     *
-     * =
-     *
-     * 관성이 원국 주격의
-     * 중심 역할·책임 구조로
-     * 어떤 상태에 있는가.
-     *
-     * -------------------------------------------------
-     *
-     * officerStructureStatus
-     *
-     * =
-     *
-     * 관살 기능이 실제 원국 전체에서
-     * 어떤 수용·압박·중재 Context로
-     * 작동하는가.
-     */
-
-    private ConsultationCategoryDeterministicStatus
-    resolveCombinedStatus(
-
-            ConsultationCategoryDeterministicStatus
-                    primaryStructureStatus,
-
-            ConsultationCategoryDeterministicStatus
-                    officerStructureStatus
-
-    ) {
-
-        Objects.requireNonNull(
-                primaryStructureStatus,
-                "CAREER primaryStructureStatus가 필요합니다."
-        );
-
-        Objects.requireNonNull(
-                officerStructureStatus,
-                "CAREER officerStructureStatus가 필요합니다."
-        );
-
-        /*
-         * =================================================
-         * 어느 한 축이 이미 MIXED
-         * =================================================
-         */
-
-        if (
-                primaryStructureStatus
-                        == ConsultationCategoryDeterministicStatus.MIXED
-                        || officerStructureStatus
-                        == ConsultationCategoryDeterministicStatus.MIXED
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.MIXED;
-        }
-
-        /*
-         * =================================================
-         * 주격 관성 구조 SUPPORTIVE
-         * =================================================
-         */
-
-        if (
-                primaryStructureStatus
-                        == ConsultationCategoryDeterministicStatus.SUPPORTIVE
-        ) {
-
-            /*
-             * 중심 역할 구조는 성립하지만
-             * 실제 관살 작동에는
-             * 부담이 확인된다.
-             */
-
-            if (
-                    officerStructureStatus
-                            == ConsultationCategoryDeterministicStatus.PRESSURE
-            ) {
-
-                return ConsultationCategoryDeterministicStatus.MIXED;
-            }
-
-            /*
-             * 관살 복합구조가
-             * SUPPORTIVE 또는 CONTEXTUAL이고
-             * 별도의 부담이 없으면
-             * 주격의 성립 방향을 보존한다.
-             */
-
-            return ConsultationCategoryDeterministicStatus.SUPPORTIVE;
-        }
-
-        /*
-         * =================================================
-         * 주격 관성 구조 PRESSURE
-         * =================================================
-         */
-
-        if (
-                primaryStructureStatus
-                        == ConsultationCategoryDeterministicStatus.PRESSURE
-        ) {
-
-            /*
-             * 중심 구조 부담과
-             * 실제 관살 작동의 지지 방향이
-             * 동시에 존재하면 MIXED.
-             */
-
-            if (
-                    officerStructureStatus
-                            == ConsultationCategoryDeterministicStatus.SUPPORTIVE
-            ) {
-
-                return ConsultationCategoryDeterministicStatus.MIXED;
-            }
-
-            return ConsultationCategoryDeterministicStatus.PRESSURE;
-        }
-
-        /*
-         * =================================================
-         * 주격 관성 구조 CONTEXTUAL
-         * =================================================
-         */
-
-        if (
-                officerStructureStatus
-                        == ConsultationCategoryDeterministicStatus.PRESSURE
-        ) {
-
-            /*
-             * 주격 방향은 확정되지 않았지만
-             * 실제 관살 수용 부담은
-             * 공식적으로 확인되어 있다.
-             */
-
-            return ConsultationCategoryDeterministicStatus.PRESSURE;
-        }
-
-        /*
-         * 관살 복합 작동이 SUPPORTIVE라고 해도
-         * 주격 자체가 CONTEXTUAL인 상태를
-         * 원국의 핵심 역할구조 SUPPORTIVE로
-         * 자동 승격하지 않는다.
-         */
-
-        return ConsultationCategoryDeterministicStatus.CONTEXTUAL;
-    }
 
     /*
      * =================================================
@@ -864,7 +675,7 @@ public class CareerCoreRoleStructureRule
 
         Objects.requireNonNull(
                 matches,
-                "CAREER Match 목록이 필요합니다."
+                "CAREER Primary Officer Structure Match 목록이 필요합니다."
         );
 
         Objects.requireNonNull(
@@ -881,79 +692,118 @@ public class CareerCoreRoleStructureRule
                 );
     }
 
+
     /*
      * =================================================
-     * Combination Reason
+     * Status Provenance
      * =================================================
      */
 
-    private void appendCombinationReason(
+    private void appendStatusReason(
 
             List<String> reasons,
 
-            ConsultationCategoryDeterministicStatus
-                    primaryStructureStatus,
+            List<LifeDomainRuleMatch> primaryStructureMatches,
 
-            ConsultationCategoryDeterministicStatus
-                    officerStructureStatus,
-
-            ConsultationCategoryDeterministicStatus
-                    finalStatus
+            ConsultationCategoryDeterministicStatus status
 
     ) {
 
         Objects.requireNonNull(
                 reasons,
-                "reasons가 필요합니다."
+                "CAREER reasons가 필요합니다."
         );
 
+        Objects.requireNonNull(
+                primaryStructureMatches,
+                "CAREER Primary Officer Structure Match 목록이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                status,
+                "CAREER Primary Officer Structure Status가 필요합니다."
+        );
+
+        boolean supportiveExists =
+                hasStatus(
+                        primaryStructureMatches,
+                        LifeDomainSignalStatus.SUPPORTIVE
+                );
+
+        boolean pressureExists =
+                hasStatus(
+                        primaryStructureMatches,
+                        LifeDomainSignalStatus.PRESSURE
+                );
+
+        boolean mixedExists =
+                hasStatus(
+                        primaryStructureMatches,
+                        LifeDomainSignalStatus.MIXED
+                );
+
         if (
-                finalStatus
-                        == ConsultationCategoryDeterministicStatus.MIXED
+                mixedExists
         ) {
 
             reasons.add(
-                    "역할·책임의 중심 구조와 실제 관살 작동 구조가 한 방향으로 일치하지 않거나 두 축 중 하나에 이미 혼재가 존재하여 MIXED로 판단합니다."
+                    "CAREER_PRIMARY_OFFICER_STRUCTURE Source Family에 upstream MIXED 상태가 존재하므로 CAREER 주격 역할 구조 Status를 MIXED로 보존합니다."
             );
 
             return;
         }
 
         if (
-                finalStatus
+                supportiveExists
+                        && pressureExists
+        ) {
+
+            reasons.add(
+                    "CAREER_PRIMARY_OFFICER_STRUCTURE Source Family 내부에 SUPPORTIVE와 PRESSURE가 모두 실제 존재하므로 어느 한 방향을 삭제하지 않고 MIXED로 보존합니다."
+            );
+
+            return;
+        }
+
+        if (
+                status
                         == ConsultationCategoryDeterministicStatus.PRESSURE
         ) {
 
             reasons.add(
-                    "역할·책임의 중심 구조 또는 실제 관살 수용 구조에서 확인된 부담이 다른 축에 의해 해소된 것으로 볼 공식 근거가 없어 PRESSURE로 판단합니다."
+                    "CAREER_PRIMARY_OFFICER_STRUCTURE Source Family에 PRESSURE 상태가 존재하고 SUPPORTIVE 또는 MIXED 상태가 없어 CAREER 주격 역할 구조 Status를 PRESSURE로 확정합니다."
             );
 
             return;
         }
 
         if (
-                finalStatus
+                status
                         == ConsultationCategoryDeterministicStatus.SUPPORTIVE
         ) {
 
             reasons.add(
-                    "정관·칠살의 역할·책임 기능이 원국의 중심 구조로 비교적 성립되어 있고 실제 관살 작동에서 이를 뒤집는 부담 방향이 확인되지 않아 SUPPORTIVE로 판단합니다."
+                    "CAREER_PRIMARY_OFFICER_STRUCTURE Source Family에 SUPPORTIVE 상태가 존재하고 PRESSURE 또는 MIXED 상태가 없어 CAREER 주격 역할 구조 Status를 SUPPORTIVE로 확정합니다."
             );
 
             return;
         }
 
         reasons.add(
-                "역할·책임 기능이 원국의 중심축으로 관여하고 관살 복합구조도 확인되지만 현재 공식 status만으로 직업·사회 역할 구조의 방향을 한쪽으로 확정하지 않아 CONTEXTUAL로 유지합니다."
+                "CAREER_PRIMARY_OFFICER_STRUCTURE Source Family는 존재하지만 SUPPORTIVE·PRESSURE·MIXED 방향이 확정되지 않아 CAREER 주격 역할 구조 Status를 CONTEXTUAL로 유지합니다."
         );
     }
 
+
     /*
      * =================================================
-     * Internal Summary
+     * Internal Deterministic Summary
      * =================================================
      *
-     * 최종 사용자용 storyText가 아니다.
+     * 최종 사용자 Story가 아니다.
+     *
+     * CAREER_OFFICER_STRUCTURE와 연결하지 않는다.
+     * 실제 직업 사건으로 변환하지 않는다.
      */
 
     private String summaryOf(
@@ -962,7 +812,7 @@ public class CareerCoreRoleStructureRule
 
         Objects.requireNonNull(
                 status,
-                "CAREER deterministic status가 필요합니다."
+                "CAREER Primary Officer Structure Status가 필요합니다."
         );
 
         return switch (
@@ -970,16 +820,51 @@ public class CareerCoreRoleStructureRule
                 ) {
 
             case SUPPORTIVE ->
-                    "원국에서 역할·책임 기능이 중심 구조로 비교적 성립되어 있으며 이를 수행하는 관살 구조에서 이를 뒤집는 뚜렷한 부담 방향이 확인되지 않습니다.";
+                    "원국에서 정관·칠살 계열이 주격 역할 구조로 관여하며 해당 구조의 공식 상태가 SUPPORTIVE로 확인됩니다.";
 
             case PRESSURE ->
-                    "원국에서 역할·책임 기능이 중요한 축으로 관여하지만 중심 구조 또는 실제 관살 수용 과정에 부담이 존재합니다.";
+                    "원국에서 정관·칠살 계열이 주격 역할 구조로 관여하며 해당 구조의 공식 상태가 PRESSURE로 확인됩니다.";
 
             case MIXED ->
-                    "원국에서 역할·책임의 중심성은 존재하지만 실제 수용·압박·중재 구조가 한 방향으로 단순화되지 않는 복합적인 직업·사회 구조입니다.";
+                    "원국에서 정관·칠살 계열이 주격 역할 구조로 관여하며 해당 구조의 공식 상태가 MIXED로 확인됩니다.";
 
             case CONTEXTUAL ->
-                    "원국에서 정관·칠살의 역할·책임 기능과 관살 복합구조가 관여하지만 현재 근거만으로 직업·사회 역할 구조를 한 방향으로 단정하지 않습니다.";
+                    "원국에서 정관·칠살 계열이 주격 역할 구조로 관여하며 방향은 CONTEXTUAL로 유지됩니다.";
         };
+    }
+
+
+    /*
+     * =================================================
+     * Text
+     * =================================================
+     */
+
+    private static String requireText(
+
+            String value,
+
+            String message
+
+    ) {
+
+        Objects.requireNonNull(
+                value,
+                message
+        );
+
+        String normalized =
+                value.trim();
+
+        if (
+                normalized.isBlank()
+        ) {
+
+            throw new IllegalArgumentException(
+                    message
+            );
+        }
+
+        return normalized;
     }
 }

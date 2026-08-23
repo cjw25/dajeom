@@ -18,7 +18,7 @@ import java.util.Objects;
 
 /**
  * HEALTH_TENDENCY 카테고리의
- * 원국 조후·병약·통관 조정 부담 Rule.
+ * 원국 조후·명리적 병약·통관 조정 Context Rule.
  *
  * =================================================
  * 목적
@@ -28,36 +28,19 @@ import java.util.Objects;
  *
  * HEALTH_LIFESTYLE_BALANCE
  *
- * 안에는:
- *
- * - 오행 세력
- * - 일간 강약
- * - 조후
- * - 명리적 병약
- * - 통관
- * - 용신
- *
- * 관련 Match가 하나의 ruleCode 아래
- * 함께 존재한다.
- *
- * 이 Rule은 그중:
+ * 안에서 이미 계산된:
  *
  * CLIMATE_DISEASE_FLOW
  *
- * Source만 사용하는 Match를 구조적으로 분리하여:
- *
- * "원국에서 한난조습·명리적 병약·통관 등의
- * 조정 필요가 어느 방향으로 존재하는가"
- *
- * 를 HEALTH_TENDENCY의 별도 축으로 판단한다.
+ * Source Match를 HEALTH_TENDENCY의
+ * 독립적인 NATAL 결과로 보존한다.
  *
  * =================================================
- * 사용하는 upstream 판단
+ * Upstream
  * =================================================
  *
- * 기존 HealthLifestyleBalanceRule에서
- * CLIMATE_DISEASE_FLOW Source는 다음과 같은
- * deterministic 결과에 사용된다.
+ * HealthLifestyleBalanceRule은
+ * ClimateHealthAnalysis를 사용하여 이미:
  *
  * - 조후 조정 필요
  * - 의미 있는 명리적 병약 구조
@@ -67,72 +50,17 @@ import java.util.Objects;
  * - 후보 교차검증 모순
  * - 추가 재검토 필요
  *
- * 이 Rule은 위 판단을 다시 계산하지 않는다.
+ * 등을 각각 deterministic하게 계산한다.
+ *
+ * 이 Category Rule에서는
+ * 해당 판단을 다시 수행하지 않는다.
  *
  * =================================================
- * Source 분리 방식
+ * 중요한 변경
  * =================================================
  *
- * LifeDomainRuleMatch의:
- *
- * - summary
- * - reasons
- *
- * 문자열을 읽어서:
- *
- * "조후"
- * "병약"
- * "통관"
- *
- * 을 재구성하지 않는다.
- *
- * 오직 구조화된:
- *
- * LifeDomainEvidenceReference.sourceType()
- *
- * 만 사용한다.
- *
- * 이번 Rule의 대상 Match는
- * 모든 Evidence Source가:
- *
- * CLIMATE_DISEASE_FLOW
- *
- * 인 Match만 허용한다.
- *
- * =================================================
- * 제외
- * =================================================
- *
- * ELEMENT_STRENGTH
- * DAY_MASTER_STRENGTH
- *
- * Source는:
- *
- * HealthBaselineBalanceContextRule
- *
- * 의 책임이다.
- *
- * -------------------------------------------------
- *
- * USEFUL_GOD
- *
- * Source가 포함된 Match는:
- *
- * 이후 HealthAdjustmentDirectionContextRule
- *
- * 에서 별도로 다룬다.
- *
- * =================================================
- * Status
- * =================================================
- *
- * 이번 Rule은 CONTEXTUAL 고정이 아니다.
- *
- * 기존 6차 ClimateHealthAnalysis가 이미
- * 조정 부담 또는 충돌 방향을 deterministic하게
- * 확정했기 때문에 이를 보존한다.
- *
- * -------------------------------------------------
+ * 기존 Category Rule은
+ * 여러 CLIMATE_DISEASE_FLOW Match를 모은 뒤:
  *
  * MIXED 존재
  * -> MIXED
@@ -146,89 +74,284 @@ import java.util.Objects;
  * SUPPORTIVE 존재
  * -> SUPPORTIVE
  *
- * 그 외
+ * 와 같이 Category 단계에서
+ * Family Status를 다시 만들었다.
+ *
+ * 이제 이 계산을 제거한다.
+ *
+ * =================================================
+ * 이유
+ * =================================================
+ *
+ * 각각의 LifeDomainRuleMatch는
+ * 이미 서로 다른 upstream deterministic 판단이다.
+ *
+ * 예:
+ *
+ * 조후 조정 필요
+ *
+ * 와
+ *
+ * 통관 필요
+ *
+ * 가 동시에 존재한다고 해서
+ * Category가 두 결과를 다시 합쳐
+ * 새로운 상태를 만들 필요가 없다.
+ *
+ * =================================================
+ * 실제 upstream MIXED 보존
+ * =================================================
+ *
+ * 다음과 같이 upstream Java가
+ * 실제 조건을 확인해서 생성한 MIXED는
+ * 그대로 보존한다.
+ *
+ * - ClimateHealthIntegrationAnalysis conflict
+ * - ClimateHealthCrossValidationAnalysis contradiction
+ *
+ * 이는 Category 단계에서
+ * 두 독립 Evidence를 보고 새로 만든 MIXED가 아니다.
+ *
+ * =================================================
+ * 1 : 1 보존
+ * =================================================
+ *
+ * CLIMATE_DISEASE_FLOW
+ * LifeDomainRuleMatch 하나
+ *
+ * ->
+ *
+ * HEALTH_TENDENCY
+ * ConsultationCategoryDeterministicMatch 하나
+ *
+ * 로 보존한다.
+ *
+ * =================================================
+ * Status
+ * =================================================
+ *
+ * 원본 LifeDomainSignalStatus를
+ * Category Status로 그대로 1:1 변환한다.
+ *
+ * SUPPORTIVE
+ * -> SUPPORTIVE
+ *
+ * PRESSURE
+ * -> PRESSURE
+ *
+ * MIXED
+ * -> MIXED
+ *
+ * CONTEXTUAL
  * -> CONTEXTUAL
+ *
+ * =================================================
+ * Status 합성 금지
+ * =================================================
+ *
+ * 다음 계산을 하지 않는다.
+ *
+ * CLIMATE Match A = SUPPORTIVE
+ *
+ * +
+ *
+ * CLIMATE Match B = PRESSURE
+ *
+ * =
+ *
+ * Category MIXED
+ *
+ * 금지.
  *
  * -------------------------------------------------
  *
- * 현재 upstream에서는 일반적으로:
+ * CLIMATE Match A = PRESSURE
+ *
+ * +
+ *
+ * CLIMATE Match B = PRESSURE
+ *
+ * =
+ *
+ * 더 강한 PRESSURE
+ *
+ * 금지.
+ *
+ * =================================================
+ * Match 개수 금지
+ * =================================================
+ *
+ * PRESSURE Match가 여러 개 존재해도:
+ *
+ * - 건강 위험도 증가
+ * - 질병 가능성 증가
+ * - 체력 저하 정도 증가
+ * - 수명 감소
+ *
+ * 같은 점수로 변환하지 않는다.
+ *
+ * =================================================
+ * Source 분리
+ * =================================================
+ *
+ * 이번 Rule에서는
+ * 모든 Evidence가:
+ *
+ * CLIMATE_DISEASE_FLOW
+ *
+ * 인 HEALTH_LIFESTYLE_BALANCE Match만 사용한다.
+ *
+ * =================================================
+ * 제외
+ * =================================================
+ *
+ * ELEMENT_STRENGTH
+ * DAY_MASTER_STRENGTH
+ *
+ * ->
+ *
+ * HealthBaselineBalanceContextRule
+ *
+ * -------------------------------------------------
+ *
+ * USEFUL_GOD가 포함된 Match
+ *
+ * ->
+ *
+ * HealthAdjustmentDirectionContextRule
+ *
+ * 의 책임이다.
+ *
+ * =================================================
+ * 문자열 파싱 금지
+ * =================================================
+ *
+ * LifeDomainRuleMatch의:
+ *
+ * - summary
+ * - reasons
+ *
+ * 문자열을 파싱하여:
+ *
+ * - 조후
+ * - 병약
+ * - 통관
+ * - 통합 충돌
+ * - 교차검증 모순
+ *
+ * subtype을 다시 판정하지 않는다.
+ *
+ * Source 분리는 오직:
+ *
+ * LifeDomainEvidenceReference.sourceType()
+ *
+ * 를 사용한다.
+ *
+ * =================================================
+ * 의료적 의미 금지
+ * =================================================
  *
  * PRESSURE
+ * != 질병
+ *
+ * PRESSURE
+ * != 발병 가능성
+ *
+ * PRESSURE
+ * != 장기 이상
+ *
  * MIXED
+ * != 건강 상태 불안정
+ *
  * CONTEXTUAL
+ * != 건강함
  *
- * 이 사용되지만,
- * 공식 Status 전체를 안전하게 처리한다.
- *
- * =================================================
- * 중요한 의미 제한
- * =================================================
- *
- * PRESSURE는:
- *
- * "질병이 있다"
- *
- * 를 뜻하지 않는다.
- *
- * 명리 내부에서:
- *
- * - 한난조습 조정 필요
- * - 병약 구조의 균형 저해
- * - 통관 필요
- *
- * 같은 구조적 조정 부담이
- * 존재한다는 뜻이다.
- *
- * MIXED 역시:
- *
- * "건강 상태가 불안정하다"
- *
- * 는 의료판정이 아니다.
- *
- * 서로 다른 명리적 조정 방향이
- * 동시에 존재하거나 충돌한다는 뜻이다.
+ * SUPPORTIVE
+ * != 의학적으로 건강함
  *
  * =================================================
- * 의료적 해석 금지
+ * 명리적 병약 경계
  * =================================================
- *
- * 이 Rule은:
- *
- * - 특정 질환
- * - 특정 장기
- * - 발병
- * - 치료
- * - 수술
- * - 수명
- * - 건강검진 결과
- *
- * 를 예측하지 않는다.
- *
- * 또한:
  *
  * 명리적 병약
- * ->
- * 실제 질병
+ * != 의료적 pathology
  *
- * 으로 변환하지 않는다.
+ * 명리적 병약 구조는
+ * 명리 내부에서 계산된
+ * 균형 저해 Context다.
+ *
+ * 실제 질환을 의미하지 않는다.
  *
  * =================================================
- * Match 개수
+ * 관계·인과 생성 금지
  * =================================================
  *
- * PRESSURE Match가 3개 있다고 해서
- * 1개보다 건강 위험이 3배라고 보지 않는다.
+ * 다음을 새로 생성하지 않는다.
  *
- * Match 개수는:
+ * - 조후 부담 때문에 병약이 생긴다
+ * - 병약 때문에 통관이 필요하다
+ * - 통관 필요가 건강 악화로 이어진다
+ * - 조후와 병약이 같이 있으므로 더 위험하다
+ * - A 때문에 B
+ * - A가 B로 이어진다
+ * - A와 B가 함께 있으므로 C다
  *
- * - 질병 가능성
- * - 건강 위험도
- * - 수명
- * - 체력
+ * =================================================
+ * 실제 Java 관계와의 구분
+ * =================================================
  *
- * 점수가 아니다.
+ * ClimateHealthAnalysis 내부에서
+ * 실제 Java가 계산한:
  *
- * 공식 Status의 존재 조합만 사용한다.
+ * - integrationConflict
+ * - crossValidationContradiction
+ * - pathology remedy 상태
+ * - 통관 필요
+ *
+ * 등의 결과는 그대로 인정한다.
+ *
+ * Category가 새 관계를 추가하지 않는다는 뜻이지
+ * upstream 계산을 삭제한다는 뜻이 아니다.
+ *
+ * =================================================
+ * 사건 생성 금지
+ * =================================================
+ *
+ * PRESSURE
+ * != 병원 방문
+ * != 치료
+ * != 수술
+ * != 발병
+ *
+ * MIXED
+ * != 건강 악화
+ *
+ * SUPPORTIVE
+ * != 건강 회복
+ *
+ * =================================================
+ * 하지 않는 것
+ * =================================================
+ *
+ * - ClimateHealthAnalysis 재계산
+ * - 조후 재계산
+ * - 병약 재계산
+ * - Remedy 재계산
+ * - 통관 재계산
+ * - 통합 충돌 재계산
+ * - 교차검증 모순 재계산
+ * - 여러 Match Status 합성
+ * - SUPPORTIVE + PRESSURE -> MIXED 생성
+ * - Match 개수 점수화
+ * - summary 문자열 파싱
+ * - reasons 문자열 파싱
+ * - 특정 질환 생성
+ * - 특정 장기 생성
+ * - 발병 예측
+ * - 수명 예측
+ * - 새로운 관계 생성
+ * - 새로운 인과 생성
+ * - 새로운 순서 생성
  */
 @Component
 public class HealthClimateAdjustmentPressureRule
@@ -246,17 +369,20 @@ public class HealthClimateAdjustmentPressureRule
             LifeDomainEvidenceSourceType
                     .CLIMATE_DISEASE_FLOW;
 
+
     @Override
     public ConsultationCategory category() {
 
         return ConsultationCategory.HEALTH_TENDENCY;
     }
 
+
     @Override
     public String code() {
 
         return RULE_CODE;
     }
+
 
     @Override
     public List<ConsultationCategoryDeterministicMatch>
@@ -271,7 +397,7 @@ public class HealthClimateAdjustmentPressureRule
 
         /*
          * =================================================
-         * Category 검증
+         * Category
          * =================================================
          */
 
@@ -287,7 +413,7 @@ public class HealthClimateAdjustmentPressureRule
 
         /*
          * =================================================
-         * unavailable View
+         * unavailable
          * =================================================
          */
 
@@ -300,21 +426,14 @@ public class HealthClimateAdjustmentPressureRule
 
         /*
          * =================================================
-         * CLIMATE_DISEASE_FLOW Match 분리
+         * CLIMATE_DISEASE_FLOW Match 조회
          * =================================================
          */
 
-        List<LifeDomainRuleMatch>
-                climateMatches =
+        List<LifeDomainRuleMatch> climateMatches =
                 findClimateMatches(
                         view
                 );
-
-        /*
-         * 조후·병약·통관 관련
-         * deterministic Match가 없다면
-         * 이번 질문에 답할 근거가 없다.
-         */
 
         if (
                 climateMatches.isEmpty()
@@ -325,91 +444,69 @@ public class HealthClimateAdjustmentPressureRule
 
         /*
          * =================================================
-         * Status 결합
+         * Match 1개 -> Category Match 1개
          * =================================================
          */
 
-        ConsultationCategoryDeterministicStatus
-                finalStatus =
-                resolveClimateStatus(
-                        climateMatches
-                );
-
-        /*
-         * =================================================
-         * Reasons
-         * =================================================
-         */
-
-        List<String> reasons =
+        List<ConsultationCategoryDeterministicMatch> result =
                 new ArrayList<>();
 
-        reasons.add(
-                "기존 HEALTH_LIFESTYLE_BALANCE 결과 가운데 CLIMATE_DISEASE_FLOW Source만 사용하는 Match를 구조적으로 분리하여 조후·명리적 병약·통관 조정축의 상태를 확인했습니다."
-        );
+        for (
+                LifeDomainRuleMatch climateMatch
+                : climateMatches
+        ) {
 
-        reasons.add(
-                "조후 필요, 명리적 병약 구조, 통관 필요, 조정 방향 충돌 등의 세부 판단은 기존 ClimateHealthAnalysis가 이미 계산한 결과를 사용하며 이번 Rule에서 다시 계산하지 않았습니다."
-        );
+            LifeDomainRuleMatch normalizedMatch =
+                    Objects.requireNonNull(
+                            climateMatch,
+                            "HEALTH CLIMATE_DISEASE_FLOW Match는 null일 수 없습니다."
+                    );
 
-        reasons.add(
-                "LifeDomainRuleMatch의 summary 또는 reasons 문자열을 파싱해 조후·병약·통관 subtype을 재구성하지 않았습니다."
-        );
+            ConsultationCategoryDeterministicStatus categoryStatus =
+                    toCategoryStatus(
+                            normalizedMatch.status()
+                    );
 
-        appendStatusReason(
-                reasons,
-                finalStatus
-        );
+            List<String> reasons =
+                    buildReasons(
+                            normalizedMatch
+                    );
 
-        reasons.add(
-                "PRESSURE는 명리적 균형 조정 필요를 뜻하며 실제 질환, 장기 이상, 발병 또는 치료 필요성을 의미하지 않습니다."
-        );
+            result.add(
+                    new ConsultationCategoryDeterministicMatch(
+                            ConsultationCategory.HEALTH_TENDENCY,
 
-        reasons.add(
-                "MIXED는 서로 다른 명리적 조정 방향 또는 교차검증 근거가 함께 존재함을 뜻하며 의료적 건강 상태의 불안정성을 뜻하지 않습니다."
-        );
+                            ConsultationCategoryDeterministicLayer
+                                    .NATAL,
 
-        reasons.add(
-                "CLIMATE_DISEASE_FLOW Match 개수의 많고 적음을 건강 위험도, 체력, 질병 확률 또는 수명 점수로 사용하지 않았습니다."
-        );
+                            RULE_CODE,
 
-        /*
-         * =================================================
-         * Result
-         * =================================================
-         */
+                            categoryStatus,
 
-        return List.of(
-                new ConsultationCategoryDeterministicMatch(
-                        ConsultationCategory.HEALTH_TENDENCY,
+                            null,
 
-                        ConsultationCategoryDeterministicLayer
-                                .NATAL,
+                            null,
 
-                        RULE_CODE,
+                            List.of(),
 
-                        finalStatus,
+                            summaryOf(
+                                    categoryStatus
+                            ),
 
-                        null,
+                            List.of(
+                                    normalizedMatch
+                            ),
 
-                        null,
+                            reasons
+                    )
+            );
+        }
 
-                        List.of(),
-
-                        summaryOf(
-                                finalStatus
-                        ),
-
-                        List.copyOf(
-                                climateMatches
-                        ),
-
-                        List.copyOf(
-                                reasons
-                        )
-                )
+        return List.copyOf(
+                result
         );
     }
+
 
     /*
      * =================================================
@@ -419,30 +516,17 @@ public class HealthClimateAdjustmentPressureRule
      * 조건:
      *
      * 1.
-     * HEALTH_LIFESTYLE Domain
+     * HEALTH_LIFESTYLE
      *
      * 2.
-     * HEALTH_LIFESTYLE_BALANCE Rule
+     * HEALTH_LIFESTYLE_BALANCE
      *
      * 3.
-     * Evidence가 최소 하나 존재
+     * Evidence 존재
      *
      * 4.
      * 모든 Evidence SourceType이
      * CLIMATE_DISEASE_FLOW
-     *
-     * 이어야 한다.
-     *
-     * -------------------------------------------------
-     *
-     * 따라서:
-     *
-     * CLIMATE_DISEASE_FLOW
-     * +
-     * USEFUL_GOD
-     *
-     * 를 함께 사용하는 Match는
-     * 이번 Rule에 포함되지 않는다.
      */
 
     private List<LifeDomainRuleMatch>
@@ -463,49 +547,32 @@ public class HealthClimateAdjustmentPressureRule
                 : view.natalMatches()
         ) {
 
-            Objects.requireNonNull(
-                    match,
-                    "HEALTH_TENDENCY Natal Match는 null일 수 없습니다."
-            );
-
-            /*
-             * =================================================
-             * Domain
-             * =================================================
-             */
+            LifeDomainRuleMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "HEALTH_TENDENCY Natal Match는 null일 수 없습니다."
+                    );
 
             if (
-                    match.domain()
+                    normalized.domain()
                             != LifeDomain.HEALTH_LIFESTYLE
             ) {
 
                 continue;
             }
 
-            /*
-             * =================================================
-             * 기존 Health Rule
-             * =================================================
-             */
-
             if (
                     !HEALTH_LIFESTYLE_BALANCE_RULE_CODE.equals(
-                            match.ruleCode()
+                            normalized.ruleCode()
                     )
             ) {
 
                 continue;
             }
 
-            /*
-             * =================================================
-             * 구조화된 Evidence Source
-             * =================================================
-             */
-
             if (
                     !usesOnlyClimateSource(
-                            match
+                            normalized
                     )
             ) {
 
@@ -513,7 +580,7 @@ public class HealthClimateAdjustmentPressureRule
             }
 
             result.add(
-                    match
+                    normalized
             );
         }
 
@@ -522,9 +589,10 @@ public class HealthClimateAdjustmentPressureRule
         );
     }
 
+
     /*
      * =================================================
-     * CLIMATE_DISEASE_FLOW만 사용하는가
+     * CLIMATE_DISEASE_FLOW Source만 사용하는가
      * =================================================
      */
 
@@ -545,236 +613,145 @@ public class HealthClimateAdjustmentPressureRule
             return false;
         }
 
-        boolean climateSourceExists =
-                false;
-
         for (
                 LifeDomainEvidenceReference<?> evidence
                 : match.evidences()
         ) {
 
-            Objects.requireNonNull(
-                    evidence,
-                    "HEALTH Evidence는 null일 수 없습니다."
-            );
+            LifeDomainEvidenceReference<?> normalizedEvidence =
+                    Objects.requireNonNull(
+                            evidence,
+                            "HEALTH Evidence는 null일 수 없습니다."
+                    );
 
             if (
-                    evidence.sourceType()
+                    normalizedEvidence.sourceType()
                             != TARGET_SOURCE_TYPE
             ) {
 
                 return false;
             }
-
-            climateSourceExists =
-                    true;
         }
 
-        return climateSourceExists;
+        return true;
     }
+
 
     /*
      * =================================================
-     * Climate Family Status
+     * Status 1 : 1 변환
      * =================================================
      *
-     * Match 개수를 비교하지 않는다.
+     * 다른 Climate Match를 참조하지 않는다.
      *
-     * 공식 Status의 존재 여부만 사용한다.
+     * upstream LifeDomainRuleMatch 하나가 가진
+     * 공식 상태만 그대로 Category 상태로 보존한다.
      */
 
     private ConsultationCategoryDeterministicStatus
-    resolveClimateStatus(
-            List<LifeDomainRuleMatch> matches
+    toCategoryStatus(
+            LifeDomainSignalStatus sourceStatus
     ) {
 
         Objects.requireNonNull(
-                matches,
-                "HEALTH Climate Match 목록이 필요합니다."
+                sourceStatus,
+                "HEALTH Climate Match에는 LifeDomainSignalStatus가 필요합니다."
         );
 
-        boolean supportiveExists =
-                hasStatus(
-                        matches,
-                        LifeDomainSignalStatus.SUPPORTIVE
-                );
-
-        boolean pressureExists =
-                hasStatus(
-                        matches,
-                        LifeDomainSignalStatus.PRESSURE
-                );
-
-        boolean mixedExists =
-                hasStatus(
-                        matches,
-                        LifeDomainSignalStatus.MIXED
-                );
-
-        /*
-         * =================================================
-         * 이미 upstream에 MIXED가 존재
-         * =================================================
-         *
-         * 조후·병약·통관 방향 사이의
-         * 실제 충돌 / 모순을 보존한다.
-         */
-
-        if (
-                mixedExists
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.MIXED;
-        }
-
-        /*
-         * =================================================
-         * 지원 + 부담 동시 존재
-         * =================================================
-         */
-
-        if (
-                supportiveExists
-                        && pressureExists
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.MIXED;
-        }
-
-        /*
-         * =================================================
-         * 조정 부담 존재
-         * =================================================
-         */
-
-        if (
-                pressureExists
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.PRESSURE;
-        }
-
-        /*
-         * =================================================
-         * 지원 방향 존재
-         * =================================================
-         *
-         * 현재 upstream에서는
-         * 일반적으로 사용되지 않더라도
-         * 공식 Status 전체를 처리한다.
-         */
-
-        if (
-                supportiveExists
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.SUPPORTIVE;
-        }
-
-        /*
-         * =================================================
-         * 재검토 Context 등
-         * =================================================
-         */
-
-        return ConsultationCategoryDeterministicStatus.CONTEXTUAL;
-    }
-
-    /*
-     * =================================================
-     * Status 존재 여부
-     * =================================================
-     */
-
-    private boolean hasStatus(
-
-            List<LifeDomainRuleMatch> matches,
-
-            LifeDomainSignalStatus status
-
-    ) {
-
-        Objects.requireNonNull(
-                matches,
-                "HEALTH Match 목록이 필요합니다."
-        );
-
-        Objects.requireNonNull(
-                status,
-                "LifeDomainSignalStatus가 필요합니다."
-        );
-
-        return matches
-                .stream()
-                .anyMatch(
-                        match ->
-                                match.status()
-                                        == status
-                );
-    }
-
-    /*
-     * =================================================
-     * Status Reason
-     * =================================================
-     */
-
-    private void appendStatusReason(
-
-            List<String> reasons,
-
-            ConsultationCategoryDeterministicStatus status
-
-    ) {
-
-        Objects.requireNonNull(
-                reasons,
-                "reasons가 필요합니다."
-        );
-
-        Objects.requireNonNull(
-                status,
-                "HEALTH deterministic status가 필요합니다."
-        );
-
-        switch (
-                status
-        ) {
+        return switch (
+                sourceStatus
+                ) {
 
             case SUPPORTIVE ->
-
-                    reasons.add(
-                            "조후·병약·통관 관련 공식 Source Family에서 SUPPORTIVE 방향이 확인되고 이를 뒤집는 PRESSURE 또는 MIXED 상태가 없어 SUPPORTIVE로 판단합니다."
-                    );
+                    ConsultationCategoryDeterministicStatus
+                            .SUPPORTIVE;
 
             case PRESSURE ->
-
-                    reasons.add(
-                            "조후·명리적 병약·통관 관련 공식 Source Family에서 균형 조정 필요를 나타내는 PRESSURE가 확인되어 이를 보존합니다."
-                    );
+                    ConsultationCategoryDeterministicStatus
+                            .PRESSURE;
 
             case MIXED ->
-
-                    reasons.add(
-                            "조후·병약·통관 조정축 사이에 이미 MIXED가 확인되었거나 서로 다른 방향의 공식 상태가 함께 존재하여 한 방향으로 단순화하지 않고 MIXED로 판단합니다."
-                    );
+                    ConsultationCategoryDeterministicStatus
+                            .MIXED;
 
             case CONTEXTUAL ->
-
-                    reasons.add(
-                            "조후·병약·통관 관련 검토 Context는 존재하지만 현재 공식 상태만으로 명리적 조정 부담 방향을 확정할 수 없어 CONTEXTUAL로 유지합니다."
-                    );
-        }
+                    ConsultationCategoryDeterministicStatus
+                            .CONTEXTUAL;
+        };
     }
+
 
     /*
      * =================================================
-     * Internal Summary
+     * Reasons
      * =================================================
      *
-     * 최종 사용자 storyText가 아니다.
+     * 최종 사용자 Story가 아니라
+     * deterministic provenance 기록이다.
+     */
+
+    private List<String> buildReasons(
+            LifeDomainRuleMatch sourceMatch
+    ) {
+
+        Objects.requireNonNull(
+                sourceMatch,
+                "HEALTH Climate Source Match가 필요합니다."
+        );
+
+        List<String> reasons =
+                new ArrayList<>();
+
+        reasons.add(
+                "HEALTH_LIFESTYLE_BALANCE에서 이미 계산된 하나의 CLIMATE_DISEASE_FLOW Match를 HEALTH_TENDENCY Category Match로 1:1 보존했습니다."
+        );
+
+        reasons.add(
+                "원본 LifeDomainSignalStatus는 "
+                        + sourceMatch.status()
+                        + "이며 다른 CLIMATE_DISEASE_FLOW Match와 결합하지 않고 그대로 Category Status로 변환했습니다."
+        );
+
+        reasons.add(
+                "조후 필요, 명리적 병약 구조, Remedy 이후 미해결 상태, 통관 필요, 통합 충돌, 교차검증 모순 및 재검토 여부는 기존 ClimateHealthAnalysis와 HealthLifestyleBalanceRule이 이미 계산한 결과를 사용하며 이번 Rule에서 다시 계산하지 않았습니다."
+        );
+
+        reasons.add(
+                "upstream Java가 integrationConflict 또는 crossValidationContradiction 같은 조건으로 실제 MIXED를 생성한 경우 해당 MIXED 자체는 유효한 deterministic 결과로 그대로 보존합니다."
+        );
+
+        reasons.add(
+                "별도의 CLIMATE_DISEASE_FLOW Match가 SUPPORTIVE와 PRESSURE로 동시에 존재하더라도 Category 단계에서 이를 새 MIXED로 합성하지 않습니다."
+        );
+
+        reasons.add(
+                "PRESSURE Match가 여러 개 존재하더라도 더 강한 PRESSURE 또는 건강 위험 점수로 변환하지 않습니다."
+        );
+
+        reasons.add(
+                "LifeDomainRuleMatch의 summary 또는 reasons 문자열을 파싱하여 조후·병약·통관 등의 subtype을 재구성하지 않았습니다."
+        );
+
+        reasons.add(
+                "PRESSURE와 MIXED는 명리 내부의 균형 조정 구조를 나타내며 실제 질환·장기 이상·발병·치료 필요성·수명과 같은 의료적 의미로 변환하지 않습니다."
+        );
+
+        reasons.add(
+                "서로 다른 Climate Match가 함께 존재한다는 사실만으로 새로운 관계·인과·순서 또는 종합 상태를 생성하지 않았습니다."
+        );
+
+        return List.copyOf(
+                reasons
+        );
+    }
+
+
+    /*
+     * =================================================
+     * Internal Deterministic Summary
+     * =================================================
      *
-     * 의료 진단 표현을 사용하지 않는다.
+     * 최종 의료 해석이나 사용자 Story가 아니다.
      */
 
     private String summaryOf(
@@ -783,7 +760,7 @@ public class HealthClimateAdjustmentPressureRule
 
         Objects.requireNonNull(
                 status,
-                "HEALTH deterministic status가 필요합니다."
+                "HEALTH Climate Category Status가 필요합니다."
         );
 
         return switch (
@@ -791,16 +768,16 @@ public class HealthClimateAdjustmentPressureRule
                 ) {
 
             case SUPPORTIVE ->
-                    "원국의 조후·병약·통관 조정축에서 비교적 지지되는 방향이 확인됩니다.";
+                    "원국의 하나의 조후·명리적 병약·통관 계산에서 SUPPORTIVE 상태가 확인되며 다른 Climate Match와 합성하지 않고 그대로 보존합니다.";
 
             case PRESSURE ->
-                    "원국의 조후·명리적 병약·통관 구조에서 생활 균형을 조정해야 하는 명리적 부담 방향이 확인됩니다.";
+                    "원국의 하나의 조후·명리적 병약·통관 계산에서 명리적 조정 부담을 나타내는 PRESSURE 상태가 확인되며 그대로 보존합니다.";
 
             case MIXED ->
-                    "원국의 조후·명리적 병약·통관 조정축에서 복수의 방향이나 상충하는 근거가 함께 존재합니다.";
+                    "원국의 하나의 조후·명리적 병약·통관 계산 자체에서 MIXED 상태가 확인되며 해당 upstream 계산을 그대로 보존합니다.";
 
             case CONTEXTUAL ->
-                    "원국의 조후·명리적 병약·통관 구조에서 추가 검토가 필요한 조정 Context가 존재하지만 한 방향의 부담으로 단정하지 않습니다.";
+                    "원국의 하나의 조후·명리적 병약·통관 계산이 CONTEXTUAL 상태로 남아 있으며 다른 Match와 합성하지 않습니다.";
         };
     }
 }

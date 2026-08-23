@@ -24,61 +24,128 @@ import java.util.Set;
  * 목적
  * =================================================
  *
- * 기존 18차:
+ * LifeDomain.HEALTH_LIFESTYLE의:
  *
  * HEALTH_LIFESTYLE_BALANCE
  *
- * 안에서 7차 UsefulGodAnalysis를 사용하는
- * Match만 구조적으로 분리한다.
- *
- * 이 Rule이 다루는 것은:
- *
- * - 최종 용신 조정축
- * - 희신 조정축
- * - 기신 Context
- * - 복수 용신
- * - 용신 미확정
- * - 복수 PRIMARY 검토
- * - 추가 검토 필요
- *
- * 등이다.
+ * 결과 가운데
+ * USEFUL_GOD Source가 실제 포함된 Match를
+ * HEALTH_TENDENCY의 독립 NATAL Context로 보존한다.
  *
  * =================================================
- * 중요한 역할 분리
+ * Upstream
  * =================================================
  *
- * HealthBaselineBalanceContextRule
- *
- * ->
- *
- * 오행 분포와 일간 지원·압력의
- * 기본 생활 균형 Context.
+ * HealthLifestyleBalanceRule은
+ * UsefulGodAnalysis 결과를 사용하여
+ * 다음을 각각 별도 LifeDomainRuleMatch로 만든다.
  *
  * -------------------------------------------------
  *
- * HealthClimateAdjustmentPressureRule
+ * 1.
+ * 최종 용신 조정축
  *
- * ->
+ * Evidence:
  *
- * 조후·명리적 병약·통관에서
- * 실제로 확인된 조정 부담 / 충돌.
+ * CLIMATE_DISEASE_FLOW
+ * +
+ * USEFUL_GOD
  *
  * -------------------------------------------------
  *
- * 이 Rule
+ * 2.
+ * 복수 용신 Context
+ *
+ * Evidence:
+ *
+ * USEFUL_GOD
+ *
+ * -------------------------------------------------
+ *
+ * 3.
+ * 최종 용신 미확정 /
+ * 복수 PRIMARY /
+ * 추가 검토 Context
+ *
+ * Evidence:
+ *
+ * USEFUL_GOD
+ *
+ * -------------------------------------------------
+ *
+ * 위 Match들은 upstream Java에서
+ * 이미 서로 다른 deterministic 결과로
+ * 생성되어 있다.
+ *
+ * =================================================
+ * 중요한 변경
+ * =================================================
+ *
+ * 기존 Category Rule은
+ * USEFUL_GOD 관련 Match를 모두 모아:
+ *
+ * sourceMatches = [
+ *     Match A,
+ *     Match B,
+ *     Match C
+ * ]
+ *
+ * 형태의 하나의 Category Match로 만들었다.
+ *
+ * 이제 그렇게 하지 않는다.
+ *
+ * =================================================
+ * 1 : 1 보존
+ * =================================================
+ *
+ * LifeDomainRuleMatch 하나
  *
  * ->
  *
- * 격국·억부·조후·병약·통관 등
- * 서로 다른 용신법과 검토 과정을 거쳐
- * 7차 UsefulGodAnalysis에서 보존된
- * 최종 조정 방향 Context.
+ * ConsultationCategoryDeterministicMatch 하나
+ *
+ * 로 보존한다.
+ *
+ * 따라서:
+ *
+ * 최종 용신 조정축 Match
+ * ->
+ * Category Match A
+ *
+ * 복수 용신 Match
+ * ->
+ * Category Match B
+ *
+ * 용신 미확정 / 검토 Match
+ * ->
+ * Category Match C
+ *
+ * 로 각각 독립적으로 유지한다.
+ *
+ * =================================================
+ * 왜 분리하는가
+ * =================================================
+ *
+ * 다음은 서로 다른 upstream 계산이다.
+ *
+ * - 최종 조정축 존재
+ * - 복수 용신 존재
+ * - 선택 불확실성 / 재검토 존재
+ *
+ * 이 결과들이 동시에 존재한다고 해서:
+ *
+ * - 더 강한 조정 필요
+ * - 더 복잡한 건강 상태
+ * - 더 높은 건강 위험
+ * - 하나의 종합 상태
+ *
+ * 로 Category 단계에서 합치지 않는다.
  *
  * =================================================
  * Source 선택
  * =================================================
  *
- * LifeDomainRuleMatch 내부 Evidence에
+ * 대상 Match에는:
  *
  * USEFUL_GOD
  *
@@ -91,155 +158,348 @@ import java.util.Set;
  *
  * 뿐이다.
  *
- * 이유:
+ * =================================================
+ * CLIMATE_DISEASE_FLOW 포함 경계
+ * =================================================
  *
- * 기존 HealthLifestyleBalanceRule의
- * 최종 용신 조정축 Match는:
+ * 최종 용신 조정축 Match에는:
  *
  * CLIMATE_DISEASE_FLOW
  * +
  * USEFUL_GOD
  *
- * 를 함께 보존한다.
+ * 가 함께 존재할 수 있다.
  *
- * 복수 용신 / 미확정 검토 Match는
- * USEFUL_GOD만 사용한다.
+ * 이것은 Category에서
+ * 두 Evidence를 임의로 연결한 것이 아니다.
+ *
+ * HealthLifestyleBalanceRule이
+ * 최종 UsefulGodAnalysis 결과를
+ * 보존하기 위해 upstream에서
+ * 이미 만든 하나의 공식 Match다.
+ *
+ * 따라서 그 Match 자체를 그대로 보존한다.
  *
  * =================================================
- * 문자열 파싱 금지
+ * CLIMATE 단독 Match 제외
  * =================================================
  *
- * 다음 문자열을 읽어
- * 조정 방향을 다시 만들지 않는다.
+ * CLIMATE_DISEASE_FLOW만 사용하는 Match는
+ * 이 Rule에서 사용하지 않는다.
  *
- * - summary
- * - reasons
+ * 해당 Match는:
  *
- * 또한:
+ * HealthClimateDiseaseFlowDeterministicRule
  *
- * "木"
- * "火"
- * "희신"
- * "기신"
+ * 의 책임이다.
  *
- * 같은 문자열을 추출하여
- * Category Rule에서 새로운 오행 판단을
- * 생성하지 않는다.
+ * =================================================
+ * Baseline Source 제외
+ * =================================================
  *
- * 실제 오행 후보와 용신법 수렴은
- * UsefulGodAnalysis의 책임이다.
+ * 다음 Source는 이 Rule에서 사용하지 않는다.
+ *
+ * ELEMENT_STRENGTH
+ * DAY_MASTER_STRENGTH
+ *
+ * 해당 기본 균형 계산은:
+ *
+ * HealthBaselineBalanceContextRule
+ *
+ * 이 담당한다.
  *
  * =================================================
  * Status
  * =================================================
  *
- * final status는 항상 CONTEXTUAL이다.
+ * 이 Rule이 생성하는 Category Status는
+ * 항상:
+ *
+ * CONTEXTUAL
+ *
+ * 이다.
  *
  * 이유:
  *
- * 용신이 존재한다
+ * 용신 존재
+ * != 건강 좋음
  *
- * !=
+ * 희신 존재
+ * != 건강 회복
  *
- * 현재 건강이 좋다
- *
- * -------------------------------------------------
- *
- * 기신이 존재한다
- *
- * !=
- *
- * 현재 건강이 나쁘다
- *
- * -------------------------------------------------
+ * 기신 존재
+ * != 건강 나쁨
  *
  * 복수 용신
- *
- * !=
- *
- * 분석 오류
- *
- * -------------------------------------------------
+ * != 건강 불안정
  *
  * 용신 미확정
- *
- * !=
- *
- * 건강 위험
+ * != 건강 위험
  *
  * 이기 때문이다.
  *
- * 이 Rule은 오직:
+ * =================================================
+ * Source Status
+ * =================================================
  *
- * "원국을 조정할 때 참고할
- * 최종 명리적 방향이 어떤 상태로
- * 보존되어 있는가"
+ * 현재 upstream
+ * HealthLifestyleBalanceRule에서
+ * USEFUL_GOD 관련 Match는
+ * CONTEXTUAL로 생성된다.
  *
- * 만 기록한다.
+ * 원본 Match는 sourceMatches에
+ * 그대로 보존한다.
+ *
+ * Category에서 별도 길흉을 만들지 않는다.
  *
  * =================================================
- * 용신법 단순화 금지
+ * UsefulGod 방법론 보존
  * =================================================
  *
  * UsefulGodAnalysis에는:
  *
- * - 억부
- * - 조후
- * - 격국
- * - 병약
- * - 통관
- * - 종격
+ * - BALANCING
+ * - CLIMATE_CONTROL
+ * - STRUCTURE
+ * - REMEDY
+ * - PASSAGE
+ * - FOLLOW_STRUCTURE
  *
- * 등 서로 목적이 다른 방법론이 존재할 수 있다.
+ * 등 목적이 다른 용신 방법론이
+ * 존재할 수 있다.
  *
- * 따라서 이 Rule에서는:
- *
- * "최종 용신 하나"
- *
- * 를 강제로 대표값으로 만들지 않는다.
- *
- * 복수 용신이 존재하면
- * 그대로 복수 조정축 Context로 보존한다.
+ * Category에서는 이 방법론들을
+ * 다시 계산하거나 단일 대표값으로
+ * 강제 통합하지 않는다.
  *
  * =================================================
- * 건강·의료 해석 금지
+ * 복수 용신 경계
  * =================================================
  *
- * 이 Rule은:
+ * 복수 용신은 허용되는
+ * deterministic 상태다.
+ *
+ * 따라서:
+ *
+ * usefulGodElements().get(0)
+ *
+ * 같은 방식으로 첫 후보를
+ * 대표 용신으로 임의 선택하지 않는다.
+ *
+ * =================================================
+ * 용신 미확정 경계
+ * =================================================
+ *
+ * 다음 상태 역시 그대로 보존한다.
+ *
+ * - unresolvedUsefulGodSelection
+ * - multiplePrimaryReview
+ * - requiresReview
+ *
+ * 이를:
+ *
+ * - 분석 실패
+ * - 건강 위험
+ * - 질병 가능성
+ *
+ * 으로 변환하지 않는다.
+ *
+ * =================================================
+ * 문자열 파싱 금지
+ * =================================================
+ *
+ * LifeDomainRuleMatch의:
+ *
+ * - summary
+ * - reasons
+ *
+ * 문자열을 파싱하여:
+ *
+ * - 용신 오행
+ * - 희신 오행
+ * - 기신 오행
+ * - 용신법
+ * - 복수 여부
+ * - 미확정 여부
+ *
+ * 를 다시 판정하지 않는다.
+ *
+ * 실제 계산 정보는
+ * 원본 LifeDomainRuleMatch와
+ * UsefulGodAnalysis Evidence에
+ * 그대로 남긴다.
+ *
+ * =================================================
+ * Match 간 합성 금지
+ * =================================================
+ *
+ * 다음을 하지 않는다.
+ *
+ * 최종 용신 존재
+ * +
+ * 복수 용신
+ * =
+ * 더 강한 Context
+ *
+ * 금지.
+ *
+ * -------------------------------------------------
+ *
+ * 복수 용신
+ * +
+ * 추가 검토
+ * =
+ * MIXED
+ *
+ * 금지.
+ *
+ * -------------------------------------------------
+ *
+ * 최종 용신
+ * +
+ * 재검토
+ * =
+ * 건강 불안정
+ *
+ * 금지.
+ *
+ * =================================================
+ * Provenance 경계
+ * =================================================
+ *
+ * 여러 USEFUL_GOD Match가 존재하더라도
+ * 동일한 UsefulGodAnalysis에서
+ * 파생된 결과일 수 있다.
+ *
+ * 따라서 이후 Grounding / Prominence에서:
+ *
+ * - 독립 검증 횟수
+ * - 근거 강도
+ *
+ * 를 단순 Match 개수만으로
+ * 증가시켜서는 안 된다.
+ *
+ * 이번 Rule은 Match를 분리 보존할 뿐
+ * 독립성까지 새로 부여하지 않는다.
+ *
+ * =================================================
+ * 관계·인과 생성 금지
+ * =================================================
+ *
+ * 다음 의미를 새로 생성하지 않는다.
+ *
+ * - 조후 문제가 있어서 용신이 필요하다
+ * - 용신이 있으므로 균형이 회복된다
+ * - 기신 때문에 건강 부담이 생긴다
+ * - 복수 용신 때문에 상태가 복잡하다
+ * - 미확정이므로 건강 위험이 있다
+ * - A 때문에 B
+ * - A가 B로 이어진다
+ * - A와 B가 같이 있으므로 C다
+ *
+ * =================================================
+ * 실제 Java 계산과의 구분
+ * =================================================
+ *
+ * UsefulGodAnalysis가 실제 Java에서:
+ *
+ * - 후보 생성
+ * - 방법론별 평가
+ * - PRIMARY 판정
+ * - 복수 후보 유지
+ * - 충돌 검토
+ * - 최종 선택
+ * - 미확정
+ * - review 필요
+ *
+ * 를 계산한 결과는 그대로 인정한다.
+ *
+ * 금지하는 것은 Category 단계에서
+ * 별개의 Match 존재만 보고
+ * 새로운 관계나 상태를 만드는 것이다.
+ *
+ * =================================================
+ * 오행-장기 대응 금지
+ * =================================================
  *
  * 용신 木
- * -> 간에 좋다
+ * != 간에 좋음
  *
  * 용신 火
- * -> 심장에 좋다
+ * != 심장에 좋음
  *
- * 기신 水
- * -> 신장이 나쁘다
+ * 용신 土
+ * != 위장에 좋음
  *
- * 같은 오행-장기 매핑을 하지 않는다.
+ * 용신 金
+ * != 폐에 좋음
  *
- * 또한:
+ * 용신 水
+ * != 신장에 좋음
  *
- * - 질병
- * - 발병
- * - 진단
- * - 치료
- * - 수술
- * - 수명
- *
- * 을 예측하지 않는다.
+ * 기신 역시 특정 장기 문제로
+ * 변환하지 않는다.
  *
  * =================================================
- * Match 개수
+ * 의료 사건 생성 금지
  * =================================================
  *
- * 용신 관련 Match가 많다고:
+ * 용신 존재
+ * != 건강 회복
  *
- * - 건강관리 필요성이 크다
- * - 건강운이 강하다
+ * 기신 존재
+ * != 발병
+ *
+ * 복수 용신
+ * != 만성 문제
+ *
+ * 미확정
+ * != 진단 불가
+ *
+ * review
+ * != 병원 검사 필요
+ *
+ * =================================================
+ * Match 개수 금지
+ * =================================================
+ *
+ * USEFUL_GOD 관련 Match가 여러 개라고:
+ *
  * - 건강 위험이 높다
+ * - 건강 관리가 더 필요하다
+ * - 건강운이 강하다
+ * - 신체 문제가 많다
  *
- * 로 판단하지 않는다.
+ * 로 계산하지 않는다.
+ *
+ * =================================================
+ * 하지 않는 것
+ * =================================================
+ *
+ * - UsefulGodAnalysis 재계산
+ * - 용신 후보 재생성
+ * - 용신법 재평가
+ * - 대표 용신 임의 선택
+ * - 희신 재계산
+ * - 기신 재계산
+ * - 복수 용신 재판정
+ * - 용신 미확정 재판정
+ * - review 상태 재판정
+ * - CLIMATE 단독 Match 소비
+ * - Baseline Match 소비
+ * - 여러 USEFUL_GOD Match 결합
+ * - 여러 USEFUL_GOD Match Status 합성
+ * - Match 개수 점수화
+ * - summary 문자열 파싱
+ * - reasons 문자열 파싱
+ * - 특정 장기 생성
+ * - 특정 질환 생성
+ * - 발병 예측
+ * - 치료 예측
+ * - 수명 예측
+ * - 새로운 관계 생성
+ * - 새로운 인과 생성
+ * - 새로운 순서 생성
  */
 @Component
 public class HealthAdjustmentDirectionContextRule
@@ -254,7 +514,7 @@ public class HealthAdjustmentDirectionContextRule
 
     /*
      * =================================================
-     * 이번 Rule에서 허용할 Source
+     * 이번 Rule에서 허용하는 Source
      * =================================================
      */
 
@@ -265,17 +525,20 @@ public class HealthAdjustmentDirectionContextRule
                     LifeDomainEvidenceSourceType.CLIMATE_DISEASE_FLOW
             );
 
+
     @Override
     public ConsultationCategory category() {
 
         return ConsultationCategory.HEALTH_TENDENCY;
     }
 
+
     @Override
     public String code() {
 
         return RULE_CODE;
     }
+
 
     @Override
     public List<ConsultationCategoryDeterministicMatch>
@@ -290,7 +553,7 @@ public class HealthAdjustmentDirectionContextRule
 
         /*
          * =================================================
-         * Category 검증
+         * Category
          * =================================================
          */
 
@@ -306,7 +569,7 @@ public class HealthAdjustmentDirectionContextRule
 
         /*
          * =================================================
-         * unavailable View
+         * unavailable
          * =================================================
          */
 
@@ -319,21 +582,14 @@ public class HealthAdjustmentDirectionContextRule
 
         /*
          * =================================================
-         * USEFUL_GOD 관련 Match 분리
+         * USEFUL_GOD 관련 Match
          * =================================================
          */
 
-        List<LifeDomainRuleMatch>
-                adjustmentMatches =
+        List<LifeDomainRuleMatch> adjustmentMatches =
                 findAdjustmentMatches(
                         view
                 );
-
-        /*
-         * 최종 조정 방향에 관한
-         * deterministic Evidence가 없다면
-         * 결과를 임의 생성하지 않는다.
-         */
 
         if (
                 adjustmentMatches.isEmpty()
@@ -344,85 +600,63 @@ public class HealthAdjustmentDirectionContextRule
 
         /*
          * =================================================
-         * Reasons
+         * Match 1개 -> Category Match 1개
          * =================================================
          */
 
-        List<String> reasons =
+        List<ConsultationCategoryDeterministicMatch> result =
                 new ArrayList<>();
 
-        reasons.add(
-                "기존 HEALTH_LIFESTYLE_BALANCE 결과 가운데 USEFUL_GOD Source가 실제로 포함된 Match만 구조적으로 분리하여 최종 명리적 조정 방향 Context로 사용했습니다."
-        );
+        for (
+                LifeDomainRuleMatch adjustmentMatch
+                : adjustmentMatches
+        ) {
 
-        reasons.add(
-                "최종 조정축 Match에서는 CLIMATE_DISEASE_FLOW와 USEFUL_GOD가 함께 존재할 수 있으며, 복수 용신 또는 미확정 검토 Match에서는 USEFUL_GOD 단독 Source가 존재할 수 있습니다."
-        );
+            LifeDomainRuleMatch normalizedMatch =
+                    Objects.requireNonNull(
+                            adjustmentMatch,
+                            "HEALTH USEFUL_GOD Adjustment Match는 null일 수 없습니다."
+                    );
 
-        reasons.add(
-                "격국·억부·조후·병약·통관·종격 등 서로 다른 용신 방법론의 후보 생성과 수렴 과정은 기존 UsefulGodAnalysis의 계산 결과를 그대로 사용하며 이번 Rule에서 다시 계산하지 않았습니다."
-        );
+            List<String> reasons =
+                    buildReasons(
+                            normalizedMatch
+                    );
 
-        reasons.add(
-                "LifeDomainRuleMatch의 summary 또는 reasons 문자열을 파싱하여 특정 용신 오행, 희신 오행, 기신 오행 또는 용신법을 재구성하지 않았습니다."
-        );
+            result.add(
+                    new ConsultationCategoryDeterministicMatch(
+                            ConsultationCategory.HEALTH_TENDENCY,
 
-        reasons.add(
-                "용신이 존재한다는 사실을 현재 건강 상태가 좋다는 SUPPORTIVE로 변환하지 않았습니다."
-        );
+                            ConsultationCategoryDeterministicLayer
+                                    .NATAL,
 
-        reasons.add(
-                "기신이 존재한다는 사실을 현재 건강 상태가 나쁘거나 질병 위험이 있다는 PRESSURE로 변환하지 않았습니다."
-        );
+                            RULE_CODE,
 
-        reasons.add(
-                "복수 용신은 허용되는 구조적 상태로 보존하며 배열의 첫 번째 후보를 임의의 대표 용신으로 선택하지 않았습니다."
-        );
+                            ConsultationCategoryDeterministicStatus
+                                    .CONTEXTUAL,
 
-        reasons.add(
-                "용신 선택 미확정 또는 추가 검토 상태를 건강 위험이나 의료적 불확실성으로 해석하지 않았습니다."
-        );
+                            null,
 
-        reasons.add(
-                "이번 결과는 원국의 생활 균형을 해석할 때 참고할 최종 명리적 조정 방향만 보존하므로 final status는 CONTEXTUAL로 유지합니다."
-        );
+                            null,
 
-        /*
-         * =================================================
-         * Result
-         * =================================================
-         */
+                            List.of(),
 
-        return List.of(
-                new ConsultationCategoryDeterministicMatch(
-                        ConsultationCategory.HEALTH_TENDENCY,
+                            summaryOf(),
 
-                        ConsultationCategoryDeterministicLayer
-                                .NATAL,
+                            List.of(
+                                    normalizedMatch
+                            ),
 
-                        RULE_CODE,
+                            reasons
+                    )
+            );
+        }
 
-                        ConsultationCategoryDeterministicStatus
-                                .CONTEXTUAL,
-
-                        null,
-
-                        null,
-
-                        List.of(),
-
-                        "원국의 여러 명리적 조정 방법을 거쳐 보존된 최종 용신·희신·기신 방향을 생활 균형의 조정 Context로 참조하되 건강의 길흉이나 질병 판단으로 변환하지 않습니다.",
-
-                        List.copyOf(
-                                adjustmentMatches
-                        ),
-
-                        List.copyOf(
-                                reasons
-                        )
-                )
+        return List.copyOf(
+                result
         );
     }
+
 
     /*
      * =================================================
@@ -432,24 +666,24 @@ public class HealthAdjustmentDirectionContextRule
      * 조건:
      *
      * 1.
-     * HEALTH_LIFESTYLE Domain
+     * HEALTH_LIFESTYLE
      *
      * 2.
-     * HEALTH_LIFESTYLE_BALANCE Rule
+     * HEALTH_LIFESTYLE_BALANCE
      *
      * 3.
-     * Evidence 최소 1개
+     * Evidence 존재
      *
      * 4.
-     * USEFUL_GOD Source가 반드시 존재
+     * USEFUL_GOD Source 반드시 존재
      *
      * 5.
-     * 모든 Evidence SourceType은:
+     * 모든 Evidence SourceType이:
      *
-     * - USEFUL_GOD
-     * - CLIMATE_DISEASE_FLOW
+     * USEFUL_GOD
+     * CLIMATE_DISEASE_FLOW
      *
-     * 안에 있어야 한다.
+     * 중 하나.
      */
 
     private List<LifeDomainRuleMatch>
@@ -459,7 +693,7 @@ public class HealthAdjustmentDirectionContextRule
 
         Objects.requireNonNull(
                 view,
-                "ConsultationCategoryEvidenceView가 필요합니다."
+                "HEALTH_TENDENCY Evidence View가 필요합니다."
         );
 
         List<LifeDomainRuleMatch> result =
@@ -470,10 +704,11 @@ public class HealthAdjustmentDirectionContextRule
                 : view.natalMatches()
         ) {
 
-            Objects.requireNonNull(
-                    match,
-                    "HEALTH_TENDENCY Natal Match는 null일 수 없습니다."
-            );
+            LifeDomainRuleMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "HEALTH_TENDENCY Natal Match는 null일 수 없습니다."
+                    );
 
             /*
              * =================================================
@@ -482,7 +717,7 @@ public class HealthAdjustmentDirectionContextRule
              */
 
             if (
-                    match.domain()
+                    normalized.domain()
                             != LifeDomain.HEALTH_LIFESTYLE
             ) {
 
@@ -491,13 +726,13 @@ public class HealthAdjustmentDirectionContextRule
 
             /*
              * =================================================
-             * 기존 Health Rule
+             * Upstream Rule
              * =================================================
              */
 
             if (
                     !HEALTH_LIFESTYLE_BALANCE_RULE_CODE.equals(
-                            match.ruleCode()
+                            normalized.ruleCode()
                     )
             ) {
 
@@ -506,13 +741,13 @@ public class HealthAdjustmentDirectionContextRule
 
             /*
              * =================================================
-             * 구조화된 SourceType 기준
+             * 구조화된 SourceType 판정
              * =================================================
              */
 
             if (
                     !isUsefulGodAdjustmentMatch(
-                            match
+                            normalized
                     )
             ) {
 
@@ -520,7 +755,7 @@ public class HealthAdjustmentDirectionContextRule
             }
 
             result.add(
-                    match
+                    normalized
             );
         }
 
@@ -529,9 +764,10 @@ public class HealthAdjustmentDirectionContextRule
         );
     }
 
+
     /*
      * =================================================
-     * USEFUL_GOD 조정 Match 여부
+     * USEFUL_GOD Adjustment Match 여부
      * =================================================
      */
 
@@ -545,8 +781,9 @@ public class HealthAdjustmentDirectionContextRule
         );
 
         /*
-         * Evidence 없는 Match는
-         * 사용할 수 없다.
+         * =================================================
+         * Evidence 필수
+         * =================================================
          */
 
         if (
@@ -565,25 +802,20 @@ public class HealthAdjustmentDirectionContextRule
                 : match.evidences()
         ) {
 
-            Objects.requireNonNull(
-                    evidence,
-                    "HEALTH Evidence는 null일 수 없습니다."
-            );
+            LifeDomainEvidenceReference<?> normalizedEvidence =
+                    Objects.requireNonNull(
+                            evidence,
+                            "HEALTH Adjustment Evidence는 null일 수 없습니다."
+                    );
 
             LifeDomainEvidenceSourceType sourceType =
-                    evidence.sourceType();
+                    normalizedEvidence
+                            .sourceType();
 
             /*
              * =================================================
-             * 허용 Source 외 Evidence가 섞이면 제외
+             * 허용 Source 외 Evidence 제외
              * =================================================
-             *
-             * 이번 Rule에서:
-             *
-             * ELEMENT_STRENGTH
-             * DAY_MASTER_STRENGTH
-             *
-             * 등을 다시 소비하지 않는다.
              */
 
             if (
@@ -597,7 +829,7 @@ public class HealthAdjustmentDirectionContextRule
 
             /*
              * =================================================
-             * USEFUL_GOD 존재 확인
+             * USEFUL_GOD 반드시 존재
              * =================================================
              */
 
@@ -612,10 +844,101 @@ public class HealthAdjustmentDirectionContextRule
         }
 
         /*
-         * CLIMATE_DISEASE_FLOW만 있는 Match는
-         * HealthClimateAdjustmentPressureRule의 책임이다.
+         * =================================================
+         * CLIMATE 단독 Match 제외
+         * =================================================
          */
 
         return usefulGodExists;
+    }
+
+
+    /*
+     * =================================================
+     * Reasons
+     * =================================================
+     *
+     * 최종 사용자 Story가 아니라
+     * deterministic provenance 기록이다.
+     */
+
+    private List<String> buildReasons(
+            LifeDomainRuleMatch sourceMatch
+    ) {
+
+        Objects.requireNonNull(
+                sourceMatch,
+                "HEALTH Adjustment Source Match가 필요합니다."
+        );
+
+        List<String> reasons =
+                new ArrayList<>();
+
+        reasons.add(
+                "HEALTH_LIFESTYLE_BALANCE에서 이미 계산된 하나의 USEFUL_GOD 관련 LifeDomain Match를 HEALTH_TENDENCY의 독립 조정 방향 Context로 1:1 보존했습니다."
+        );
+
+        reasons.add(
+                "이 Category Match의 sourceMatches에는 다른 USEFUL_GOD 관련 Match를 추가하지 않고 현재 하나의 upstream Match만 보존했습니다."
+        );
+
+        reasons.add(
+                "원본 LifeDomain Match의 공식 상태는 "
+                        + sourceMatch.status()
+                        + "이며 용신·희신·기신 및 선택 상태를 건강 길흉으로 변환하지 않기 위해 Category Status는 CONTEXTUAL로 유지합니다."
+        );
+
+        reasons.add(
+                "최종 용신 조정축 Match에서는 CLIMATE_DISEASE_FLOW와 USEFUL_GOD가 함께 존재할 수 있는데 이는 HealthLifestyleBalanceRule에서 이미 생성한 하나의 공식 upstream Match이며 Category에서 새로 결합한 것이 아닙니다."
+        );
+
+        reasons.add(
+                "복수 용신 또는 용신 미확정·복수 PRIMARY·추가 검토 Match가 USEFUL_GOD 단독 Source로 존재하는 경우도 각각의 upstream Match 그대로 보존합니다."
+        );
+
+        reasons.add(
+                "격국·억부·조후·병약·통관·종격 등 서로 다른 UsefulGod 방법론의 후보 생성·검토·수렴은 UsefulGodAnalysis가 이미 계산한 결과를 사용하며 이 Rule에서 다시 계산하지 않았습니다."
+        );
+
+        reasons.add(
+                "여러 USEFUL_GOD 관련 Match가 동시에 존재하더라도 서로 합쳐 새로운 종합 Status, 조정 강도 또는 건강 위험도를 생성하지 않았습니다."
+        );
+
+        reasons.add(
+                "여러 USEFUL_GOD 관련 Match가 동일 UsefulGodAnalysis에서 파생될 수 있으므로 Match 개수를 독립 검증 횟수나 근거 강도로 그대로 사용해서는 안 됩니다."
+        );
+
+        reasons.add(
+                "LifeDomainRuleMatch의 summary 또는 reasons 문자열을 파싱하여 용신 오행·희신 오행·기신 오행·용신법·복수 여부·미확정 여부를 재판정하지 않았습니다."
+        );
+
+        reasons.add(
+                "용신·희신·기신을 특정 장기·질환·발병·치료·수술·수명과 연결하지 않았습니다."
+        );
+
+        reasons.add(
+                "서로 다른 조정 Match가 함께 존재한다는 사실만으로 새로운 관계·인과·순서 또는 종합 의미를 생성하지 않았습니다."
+        );
+
+        return List.copyOf(
+                reasons
+        );
+    }
+
+
+    /*
+     * =================================================
+     * Internal Deterministic Summary
+     * =================================================
+     *
+     * 최종 사용자 의료 해석이 아니다.
+     *
+     * Source 세부 subtype은
+     * 문자열로 재구성하지 않는다.
+     */
+
+    private String summaryOf() {
+
+        return "원국의 UsefulGodAnalysis를 통해 이미 계산된 하나의 명리적 조정 방향 Context를 HEALTH_TENDENCY에 독립적으로 보존하며 건강의 길흉이나 의료적 상태로 변환하지 않습니다.";
     }
 }

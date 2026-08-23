@@ -16,275 +16,305 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * WEALTH 카테고리의
- * 현재 Timeline 대운 배경 × 세운 방향 Rule.
+ * WEALTH 현재 명리연도 재물 Context deterministic Rule.
  *
  * =================================================
  * 목적
  * =================================================
  *
- * 원국 재물구조를 다시 계산하지 않는다.
+ * 현재 Timeline Segment에 실제 존재하는:
  *
- * 현재 Timeline Segment 안에서 이미
- * 18차 LifeDomain Rule이 계산한:
+ * WEALTH_ANNUAL_CONTEXT
  *
- * - WEALTH_DECADE_CONTEXT
- * - WEALTH_ANNUAL_CONTEXT
- *
- * 를 서로 다른 시간층으로 분리하여:
- *
- * "현재 대운의 재물 배경 위에서
- * 해당 세운의 재물 기능이
- * 어떤 방향으로 작동하는가"
- *
- * 를 WEALTH Category 관점에서
- * 다시 판단한다.
+ * 의 공식 상태만
+ * ConsultationCategory.WEALTH의
+ * 현재 명리연도 deterministic 결과로 보존한다.
  *
  * =================================================
- * 전통사주 시간층
+ * 중요한 변경
  * =================================================
  *
- * 이 Rule에서:
+ * 이 Rule은 더 이상:
  *
- * 대운
+ * WEALTH_DECADE_CONTEXT
+ *
+ * 를 사용하지 않는다.
+ *
+ * 대운 재물 Context는 별도의:
+ *
+ * WealthDecadeContextDeterministicRule
+ *
+ * 이 독립적으로 담당한다.
+ *
+ * =================================================
+ * 시간층 분리
+ * =================================================
+ *
+ * 대운:
+ *
+ * WEALTH_DECADE_CONTEXT
+ *
  * ->
- * 비교적 긴 기간의 구조적 배경
  *
- * 세운
+ * WealthDecadeContextDeterministicRule
+ *
+ * -------------------------------------------------
+ *
+ * 세운:
+ *
+ * WEALTH_ANNUAL_CONTEXT
+ *
  * ->
- * 해당 명리연도에서 실제로
- * 추가되는 연간 작동 방향
  *
- * 으로 구분한다.
+ * 이 Rule
  *
- * 따라서:
+ * -------------------------------------------------
  *
- * 대운 하나만 보고
- * "올해 재물운"
+ * 월운:
  *
- * 을 만들지 않는다.
+ * WEALTH_MONTHLY_CONTEXT
  *
- * 반대로:
- *
- * 세운 하나만 보고
- * 현재 장기 배경을 무시하지 않는다.
- *
- * =================================================
- * 이번 Rule에서 월운은 사용하지 않는다
- * =================================================
- *
- * MONTHLY_CONTEXT는
- * 별도의:
+ * ->
  *
  * WealthCurrentMonthlyActivationRule
  *
- * 에서 세운과 결합한다.
+ * -------------------------------------------------
  *
- * 대운 + 세운 + 월운을
- * 한 Rule에 전부 집어넣어
- * 서로 다른 시간층의 의미를
- * 없애지 않는다.
+ * Annual Functional:
  *
- * =================================================
- * Source 1
- * WEALTH_DECADE_CONTEXT
- * =================================================
+ * WEALTH_ANNUAL_FUNCTIONAL
  *
- * 기존 18차에서
- * 대운의 재성 관련 Context를
- * 이미 계산한 결과다.
+ * ->
  *
- * 여기서:
+ * WealthAnnualFunctionalDeterministicRule
  *
- * - 대운 십성
- * - 원국 × 대운
- * - 격국
- * - 용신
- * - 합화
- * - 기능 변화
+ * -------------------------------------------------
  *
- * 등을 다시 계산하지 않는다.
+ * Monthly Functional:
+ *
+ * WEALTH_MONTHLY_FUNCTIONAL
+ *
+ * ->
+ *
+ * WealthMonthlyFunctionalDeterministicRule
  *
  * =================================================
- * Source 2
- * WEALTH_ANNUAL_CONTEXT
+ * 공식 Status Anchor
  * =================================================
  *
- * 기존 18차에서
- * 해당 세운의 재성 관련 Context를
- * 이미 계산한 결과다.
+ * 이 Rule의 Status는 오직:
  *
- * 여기서도:
- *
- * - 세운 십성
- * - 원국 × 세운
- * - 가능한 대운 Context
- * - 격국
- * - 용신
- * - 합화
- *
- * 등을 다시 계산하지 않는다.
- *
- * =================================================
- * 두 Source 모두 필수
- * =================================================
- *
- * 이 Rule은:
- *
- * WEALTH_DECADE_CONTEXT
- * +
  * WEALTH_ANNUAL_CONTEXT
  *
- * 가 현재 Segment에 모두 존재할 때만
- * Match를 만든다.
- *
- * 따라서:
- *
- * - 첫 대운 시작 전
- * - 대운 계산 불가
- * - 생성 대운 범위 밖
- *
- * 등으로 대운 Evidence가 없는 경우
- * 억지로 대운 배경을 추정하지 않는다.
- *
- * 세운만 존재하는 경우는
- * 이후 별도 시간축 Rule에서
- * 다룰 수 있다.
+ * Source Family만 사용한다.
  *
  * =================================================
- * Status 결합 원칙
+ * 대운 사용 금지
  * =================================================
  *
- * 대운과 세운은 각각 먼저
- * Family Status로 정리한다.
+ * 다음을 하지 않는다.
  *
- * Match 개수는 사용하지 않는다.
+ * - WEALTH_DECADE_CONTEXT 조회
+ * - 대운 Status와 세운 Status 결합
+ * - 대운 Source를 sourceMatches에 포함
+ * - 대운을 세운의 보조 근거로 사용
+ * - 대운이 세운을 강화한다고 판단
+ * - 대운이 세운을 약화한다고 판단
+ * - 대운이 세운을 뒤집는다고 판단
  *
- * -------------------------------------------------
+ * =================================================
+ * Annual Source Family Status
+ * =================================================
  *
- * 어느 한 Family가 MIXED
+ * 동일한 WEALTH_ANNUAL_CONTEXT Source Family 내부에서:
+ *
+ * MIXED 존재
  * -> MIXED
  *
- * -------------------------------------------------
- *
- * DECADE SUPPORTIVE
- * +
- * ANNUAL PRESSURE
+ * SUPPORTIVE + PRESSURE 존재
  * -> MIXED
  *
- * 장기 배경은 지지되지만
- * 해당 연도에는 부담 방향이 들어옴.
- *
- * -------------------------------------------------
- *
- * DECADE PRESSURE
- * +
- * ANNUAL SUPPORTIVE
- * -> MIXED
- *
- * 장기 배경에는 부담이 있지만
- * 해당 연도에는 지지 방향이 들어옴.
- *
- * -------------------------------------------------
- *
- * ANNUAL PRESSURE
- * +
- * DECADE PRESSURE / CONTEXTUAL
+ * PRESSURE만 존재
  * -> PRESSURE
  *
- * -------------------------------------------------
- *
- * ANNUAL SUPPORTIVE
- * +
- * DECADE SUPPORTIVE / CONTEXTUAL
+ * SUPPORTIVE만 존재
  * -> SUPPORTIVE
  *
- * -------------------------------------------------
- *
- * ANNUAL CONTEXTUAL
- * +
- * DECADE PRESSURE
- * -> PRESSURE
- *
- * 해당 연도가 기존 대운 부담을
- * 뒤집는 공식 근거를 제공하지 않음.
- *
- * -------------------------------------------------
- *
- * ANNUAL CONTEXTUAL
- * +
- * DECADE SUPPORTIVE
- * -> SUPPORTIVE
- *
- * 해당 연도가 기존 대운의 지지 방향을
- * 뒤집는 공식 부담 근거를 제공하지 않음.
- *
- * -------------------------------------------------
- *
- * 둘 다 CONTEXTUAL
+ * 그 외
  * -> CONTEXTUAL
+ *
+ * =================================================
+ * 중요
+ * =================================================
+ *
+ * 위 정규화는:
+ *
+ * 대운과 세운을 합성하는 계산이 아니다.
+ *
+ * 동일한 WEALTH_ANNUAL_CONTEXT Source Family 안에서
+ * upstream이 이미 확정한 공식 상태만
+ * Category 수준으로 보존하는 것이다.
+ *
+ * =================================================
+ * Annual Functional과의 분리
+ * =================================================
+ *
+ * WEALTH_ANNUAL_FUNCTIONAL은
+ * 이 Rule에서 사용하지 않는다.
+ *
+ * 일반 Annual Context와
+ * Annual Functional은 같은 명리연도의
+ * 연결된 provenance이지만
+ * 서로 다른 계산 결과다.
+ *
+ * 따라서 이 Rule에서:
+ *
+ * ANNUAL_CONTEXT
+ * +
+ * ANNUAL_FUNCTIONAL
+ *
+ * 을 합성하지 않는다.
+ *
+ * =================================================
+ * Monthly와의 분리
+ * =================================================
+ *
+ * 다음 Source도 사용하지 않는다.
+ *
+ * WEALTH_MONTHLY_CONTEXT
+ * WEALTH_MONTHLY_FUNCTIONAL
+ *
+ * 세운과 월운 사이의
+ * 강화·약화·상쇄·충돌·전환을
+ * 이 Rule에서 생성하지 않는다.
+ *
+ * =================================================
+ * 원국과의 분리
+ * =================================================
+ *
+ * 다음 원국 Source도 사용하지 않는다.
+ *
+ * WEALTH_PRIMARY_WEALTH_STRUCTURE
+ * WEALTH_CAPACITY
+ * WEALTH_CROSS_VALIDATED_PATTERN
+ * WEALTH_PALACE_DISTRIBUTION_CONTEXT
+ *
+ * 원국 구조와 세운 Context를
+ * 하나의 Category Status로 합성하지 않는다.
+ *
+ * =================================================
+ * 관계형 풀이 금지
+ * =================================================
+ *
+ * 다음 의미를 생성하지 않는다.
+ *
+ * - 대운 때문에 올해 재물이 바뀐다
+ * - 원국 재성 구조 때문에 세운이 유리하다
+ * - 연간 재물 흐름이 월운으로 이어진다
+ * - A 때문에 B
+ * - A가 B로 이어진다
+ * - A와 B가 함께 작동한다
+ * - 먼저 A이고 이후 B가 된다
+ *
+ * =================================================
+ * 사건 생성 금지
+ * =================================================
+ *
+ * SUPPORTIVE
+ * != 수입 증가
+ * != 돈이 들어온다
+ * != 투자 성공
+ *
+ * PRESSURE
+ * != 손실
+ * != 돈이 나간다
+ * != 투자 실패
+ *
+ * MIXED
+ * != 재물 기복
+ *
+ * CONTEXTUAL
+ * != 재물운이 없다
+ *
+ * 또한:
+ *
+ * - 매출 증가
+ * - 급여 증가
+ * - 투자 성공
+ * - 투자 손실
+ * - 자산 증가
+ * - 부채
+ * - 횡재
+ *
+ * 같은 실제 사건을 생성하지 않는다.
  *
  * =================================================
  * Timeline 불확실성
  * =================================================
  *
- * ConsultationCategoryEvidenceView에
- * 여러 가능한 Segment가 존재하면
- * 각 Segment를 독립적으로 계산한다.
+ * 가능한 Segment가 여러 개라면
+ * 각 Segment를 독립적으로 보존한다.
  *
- * 서로 다른 가능한 Segment를
- * 임의로 하나 선택하지 않는다.
+ * 특정 Segment 하나를
+ * 대표값으로 임의 선택하지 않는다.
  *
- * 현재 ConsultationCategoryDeterministicMatch에는
- * segmentAnalysis 자체를 직접 보존하는 필드가 없으므로
- * 각 결과는:
+ * =================================================
+ * monthIndex
+ * =================================================
+ *
+ * 이 Match는 CURRENT_TIMELINE Layer이므로
+ * 현재 Segment의:
  *
  * - sajuYear
  * - monthIndex
- * - 실제 sourceMatches
- * - reasons
  *
- * 를 통해 가능한 계산 경로를 보존한다.
+ * 좌표를 그대로 보존한다.
  *
- * timelineUncertaintyExists가 true이면
- * 해당 사실도 reasons에 명시한다.
+ * monthIndex는 Annual Context를
+ * 월운 결과로 바꾸는 의미가 아니다.
  *
- * =================================================
- * 사건 예측 금지
- * =================================================
- *
- * SUPPORTIVE
- * ->
- * 돈이 들어온다
- *
- * PRESSURE
- * ->
- * 돈을 잃는다
- *
- * MIXED
- * ->
- * 투자 변동이 생긴다
- *
- * 로 변환하지 않는다.
- *
- * 이 결과는:
- *
- * 현재 대운 배경과 해당 세운에서
- * 재물 기능의 구조적 방향이
- * 어떻게 맞물리는지만 나타낸다.
+ * monthIndex == 0도
+ * 기존 Timeline 계산의 유효 값으로 취급한다.
  *
  * =================================================
  * Match 개수 금지
  * =================================================
  *
- * LifeDomain Match 수를:
+ * Annual Match 반복 개수를:
  *
+ * - 재물운 강도
  * - 재물 규모
  * - 수입 규모
- * - 성공 확률
- * - 손실 위험도
+ * - 자산 규모
+ * - 성공 가능성
  *
- * 로 사용하지 않는다.
+ * 으로 사용하지 않는다.
+ *
+ * =================================================
+ * 하지 않는 것
+ * =================================================
+ *
+ * - 대운 조회
+ * - 월운 조회
+ * - Annual Functional 조회
+ * - 원국 재성 구조 조회
+ * - 재성 재계산
+ * - 십신 재계산
+ * - 신강신약 재계산
+ * - 격국 재계산
+ * - 용신 재계산
+ * - 합충형파해 재계산
+ * - 합화 재계산
+ * - 대운 × 세운 Status 합성
+ * - 원국 × 세운 Status 합성
+ * - 세운 × 월운 Status 합성
+ * - Match 개수 점수화
+ * - summary 문자열 파싱
+ * - reasons 문자열 파싱
+ * - 새로운 관계 생성
+ * - 새로운 인과 생성
+ * - 새로운 순서 생성
+ * - 재물 사건 생성
  */
 @Component
 public class WealthCurrentStructuralFlowRule
@@ -294,12 +324,9 @@ public class WealthCurrentStructuralFlowRule
             "WEALTH_CURRENT_STRUCTURAL_FLOW";
 
     private static final String
-            DECADE_CONTEXT_RULE_CODE =
-            "WEALTH_DECADE_CONTEXT";
-
-    private static final String
             ANNUAL_CONTEXT_RULE_CODE =
             "WEALTH_ANNUAL_CONTEXT";
+
 
     @Override
     public ConsultationCategory category() {
@@ -307,11 +334,13 @@ public class WealthCurrentStructuralFlowRule
         return ConsultationCategory.WEALTH;
     }
 
+
     @Override
     public String code() {
 
         return RULE_CODE;
     }
+
 
     @Override
     public List<ConsultationCategoryDeterministicMatch>
@@ -355,7 +384,7 @@ public class WealthCurrentStructuralFlowRule
 
         /*
          * =================================================
-         * 현재 Timeline 자체가 없다면 종료
+         * Current Timeline 필요
          * =================================================
          */
 
@@ -371,11 +400,8 @@ public class WealthCurrentStructuralFlowRule
 
         /*
          * =================================================
-         * 가능한 Segment를 각각 독립 계산
+         * 가능한 Segment 각각 독립 처리
          * =================================================
-         *
-         * 출생시간 / 교운시점 등의 불확실성으로
-         * Segment가 복수라면 하나를 임의 선택하지 않는다.
          */
 
         for (
@@ -383,32 +409,32 @@ public class WealthCurrentStructuralFlowRule
                 : view.segmentEvidences()
         ) {
 
-            Objects.requireNonNull(
-                    segment,
-                    "WEALTH Current Timeline Segment는 null일 수 없습니다."
-            );
-
-            List<LifeDomainRuleMatch> decadeMatches =
-                    findSegmentMatches(
+            ConsultationCategorySegmentEvidence normalizedSegment =
+                    Objects.requireNonNull(
                             segment,
-                            DECADE_CONTEXT_RULE_CODE
-                    );
-
-            List<LifeDomainRuleMatch> annualMatches =
-                    findSegmentMatches(
-                            segment,
-                            ANNUAL_CONTEXT_RULE_CODE
+                            "WEALTH Annual Context Segment는 null일 수 없습니다."
                     );
 
             /*
              * =================================================
-             * 두 시간층 모두 필수
+             * Annual 공식 Status Anchor
              * =================================================
              */
 
+            List<LifeDomainRuleMatch> annualMatches =
+                    findSegmentMatches(
+                            normalizedSegment,
+                            ANNUAL_CONTEXT_RULE_CODE
+                    );
+
+            /*
+             * 해당 명리연도의 공식 재물 Context가 없으면
+             * 다른 시간층을 대신 사용해서
+             * Annual Category Match를 만들지 않는다.
+             */
+
             if (
-                    decadeMatches.isEmpty()
-                            || annualMatches.isEmpty()
+                    annualMatches.isEmpty()
             ) {
 
                 continue;
@@ -416,51 +442,14 @@ public class WealthCurrentStructuralFlowRule
 
             /*
              * =================================================
-             * 시간층별 Family Status
+             * Annual Status
              * =================================================
              */
 
-            ConsultationCategoryDeterministicStatus
-                    decadeStatus =
-                    resolveFamilyStatus(
-                            decadeMatches
-                    );
-
-            ConsultationCategoryDeterministicStatus
-                    annualStatus =
-                    resolveFamilyStatus(
+            ConsultationCategoryDeterministicStatus annualStatus =
+                    resolveAnnualStatus(
                             annualMatches
                     );
-
-            /*
-             * =================================================
-             * 대운 × 세운 결합
-             * =================================================
-             */
-
-            ConsultationCategoryDeterministicStatus
-                    finalStatus =
-                    resolveStructuralFlowStatus(
-                            decadeStatus,
-                            annualStatus
-                    );
-
-            /*
-             * =================================================
-             * Source Provenance
-             * =================================================
-             */
-
-            List<LifeDomainRuleMatch> sourceMatches =
-                    new ArrayList<>();
-
-            sourceMatches.addAll(
-                    decadeMatches
-            );
-
-            sourceMatches.addAll(
-                    annualMatches
-            );
 
             /*
              * =================================================
@@ -472,26 +461,31 @@ public class WealthCurrentStructuralFlowRule
                     new ArrayList<>();
 
             reasons.add(
-                    "현재 Timeline Segment에서 대운의 재물 Context와 해당 세운의 재물 Context를 서로 다른 시간층으로 확인했습니다."
+                    "현재 명리연도 WEALTH Status는 WEALTH_ANNUAL_CONTEXT Source Family만 공식 Status Anchor로 사용했습니다."
             );
 
-            reasons.add(
-                    "WEALTH_DECADE_CONTEXT Source Family의 상태는 "
-                            + decadeStatus.name()
-                            + "이며, 현재 재물 기능의 장기 구조적 배경으로 사용했습니다."
-            );
-
-            reasons.add(
-                    "WEALTH_ANNUAL_CONTEXT Source Family의 상태는 "
-                            + annualStatus.name()
-                            + "이며, 현재 명리연도에서 추가되는 재물 기능의 연간 작동 방향으로 사용했습니다."
-            );
-
-            appendCombinationReason(
+            appendAnnualStatusReason(
                     reasons,
-                    decadeStatus,
-                    annualStatus,
-                    finalStatus
+                    annualMatches,
+                    annualStatus
+            );
+
+            /*
+             * =================================================
+             * 시간층 분리
+             * =================================================
+             */
+
+            reasons.add(
+                    "WEALTH_DECADE_CONTEXT는 이 Rule에서 조회하거나 sourceMatches에 포함하지 않았으며 별도의 WealthDecadeContextDeterministicRule이 독립적으로 담당합니다."
+            );
+
+            reasons.add(
+                    "WEALTH_ANNUAL_FUNCTIONAL은 이 Rule에 합성하지 않았으며 별도의 WealthAnnualFunctionalDeterministicRule이 독립적으로 담당합니다."
+            );
+
+            reasons.add(
+                    "WEALTH_MONTHLY_CONTEXT와 WEALTH_MONTHLY_FUNCTIONAL도 이 Rule에 사용하지 않았습니다."
             );
 
             /*
@@ -501,33 +495,53 @@ public class WealthCurrentStructuralFlowRule
              */
 
             if (
-                    segment.timelineUncertaintyExists()
+                    normalizedSegment
+                            .timelineUncertaintyExists()
             ) {
 
                 reasons.add(
-                        "현재 조회 시점에는 출생시간·대운 경계 또는 Timeline 조건에 따른 불확실성이 존재하므로 이 Segment를 유일한 가능성으로 확정하지 않습니다."
+                        "현재 Timeline에 불확실성이 존재하므로 이 Segment를 유일한 WEALTH Annual Context 경로로 확정하지 않습니다."
                 );
             }
 
             if (
-                    !segment.fullyDefinite()
+                    !normalizedSegment
+                            .fullyDefinite()
             ) {
 
                 reasons.add(
-                        "현재 Segment는 완전 확정 Timeline이 아니므로 동일 연·월의 다른 가능한 Segment가 존재할 수 있으며, 각 가능성을 별도 결과로 보존합니다."
+                        "현재 Segment가 완전히 확정되지 않았으므로 동일 명리연도·월 좌표의 다른 가능한 Segment가 있으면 각각 별도 결과로 보존합니다."
                 );
             }
 
+            /*
+             * =================================================
+             * 계산 경계
+             * =================================================
+             */
+
             reasons.add(
-                    "대운과 세운의 LifeDomain Match 개수를 재물 규모, 수입 규모, 성공 가능성 또는 손실 위험 점수로 사용하지 않았습니다."
+                    "대운·월운·원국 Status와 현재 Annual Status를 결합하여 새로운 SUPPORTIVE·PRESSURE·MIXED 상태를 만들지 않았습니다."
             );
 
             reasons.add(
-                    "이번 Rule에서는 월운을 사용하지 않았으며, 월운의 단기 활성은 별도의 WEALTH CURRENT_TIMELINE Rule에서 계산합니다."
+                    "서로 다른 시간층 또는 Source Family 사이의 강화·약화·충돌·보완·전환 관계를 새로 생성하지 않았습니다."
             );
 
             reasons.add(
-                    "이 결과는 현재 대운의 장기 재물 배경과 해당 세운의 재물 작동 방향이 어떻게 맞물리는지를 설명하며 실제 수입, 지출, 투자, 손실 또는 재산 사건을 확정하지 않습니다."
+                    "Annual Source Match의 반복 개수를 재물운 강도·수입 규모·자산 규모·성공 가능성·손실 위험의 점수로 사용하지 않았습니다."
+            );
+
+            reasons.add(
+                    "Source의 summary 또는 reasons 문자열을 판단 조건으로 사용하지 않았습니다."
+            );
+
+            reasons.add(
+                    "monthIndex는 현재 Timeline Segment의 좌표 보존용이며 Annual Context를 Monthly 결과로 재해석하지 않습니다."
+            );
+
+            reasons.add(
+                    "이 결과는 현재 명리연도의 재물영역 deterministic 상태만 보존하며 실제 수입·지출·투자·손실·자산 증감 사건을 생성하지 않습니다."
             );
 
             /*
@@ -535,8 +549,10 @@ public class WealthCurrentStructuralFlowRule
              * Result
              * =================================================
              *
-             * monthIndex는 0을 포함해
-             * 기존 Timeline 값을 그대로 사용한다.
+             * 중요:
+             *
+             * sourceMatches에는
+             * WEALTH_ANNUAL_CONTEXT만 들어간다.
              */
 
             result.add(
@@ -548,20 +564,22 @@ public class WealthCurrentStructuralFlowRule
 
                             RULE_CODE,
 
-                            finalStatus,
+                            annualStatus,
 
-                            segment.sajuYear(),
+                            normalizedSegment
+                                    .sajuYear(),
 
-                            segment.monthIndex(),
+                            normalizedSegment
+                                    .monthIndex(),
 
                             List.of(),
 
                             summaryOf(
-                                    finalStatus
+                                    annualStatus
                             ),
 
                             List.copyOf(
-                                    sourceMatches
+                                    annualMatches
                             ),
 
                             List.copyOf(
@@ -576,19 +594,11 @@ public class WealthCurrentStructuralFlowRule
         );
     }
 
+
     /*
      * =================================================
      * Segment Source 조회
      * =================================================
-     *
-     * 반드시 현재 ConsultationCategorySegmentEvidence의
-     * matches() 안에서만 찾는다.
-     *
-     * Natal Match를 CURRENT_TIMELINE Source로
-     * 끌어오지 않는다.
-     *
-     * 이는 ConsultationCategoryDeterministicRuleEngine의
-     * 시간층 Source 검증 정책과도 일치한다.
      */
 
     private List<LifeDomainRuleMatch>
@@ -605,15 +615,11 @@ public class WealthCurrentStructuralFlowRule
                 "ConsultationCategorySegmentEvidence가 필요합니다."
         );
 
-        if (
-                sourceRuleCode == null
-                        || sourceRuleCode.isBlank()
-        ) {
-
-            throw new IllegalArgumentException(
-                    "WEALTH Timeline Source ruleCode가 필요합니다."
-            );
-        }
+        String normalizedRuleCode =
+                requireText(
+                        sourceRuleCode,
+                        "WEALTH Annual Context sourceRuleCode가 필요합니다."
+                );
 
         List<LifeDomainRuleMatch> result =
                 new ArrayList<>();
@@ -623,34 +629,23 @@ public class WealthCurrentStructuralFlowRule
                 : segment.matches()
         ) {
 
-            Objects.requireNonNull(
-                    match,
-                    "WEALTH Segment Match는 null일 수 없습니다."
-            );
-
-            /*
-             * =================================================
-             * WEALTH Domain만 사용
-             * =================================================
-             */
+            LifeDomainRuleMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "WEALTH Segment Match는 null일 수 없습니다."
+                    );
 
             if (
-                    match.domain()
+                    normalized.domain()
                             != LifeDomain.WEALTH
             ) {
 
                 continue;
             }
 
-            /*
-             * =================================================
-             * 공식 Rule Code
-             * =================================================
-             */
-
             if (
-                    !sourceRuleCode.equals(
-                            match.ruleCode()
+                    !normalizedRuleCode.equals(
+                            normalized.ruleCode()
                     )
             ) {
 
@@ -658,7 +653,7 @@ public class WealthCurrentStructuralFlowRule
             }
 
             result.add(
-                    match
+                    normalized
             );
         }
 
@@ -667,42 +662,50 @@ public class WealthCurrentStructuralFlowRule
         );
     }
 
+
     /*
      * =================================================
-     * 시간층 Family Status
+     * Annual Source Family Status
      * =================================================
      *
-     * Match 개수는 비교하지 않는다.
-     *
-     * 해당 시간층 안에 존재하는
-     * 공식 LifeDomainSignalStatus만 사용한다.
+     * 다른 Source Family 또는
+     * 다른 시간층을 사용하지 않는다.
      */
 
     private ConsultationCategoryDeterministicStatus
-    resolveFamilyStatus(
-            List<LifeDomainRuleMatch> matches
+    resolveAnnualStatus(
+            List<LifeDomainRuleMatch> annualMatches
     ) {
 
         Objects.requireNonNull(
-                matches,
-                "WEALTH Timeline Match 목록이 필요합니다."
+                annualMatches,
+                "WEALTH Annual Match 목록이 필요합니다."
         );
+
+        if (
+                annualMatches.isEmpty()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "WEALTH Annual Status 계산에는 최소 하나의 Annual Match가 필요합니다."
+            );
+        }
 
         boolean supportiveExists =
                 hasStatus(
-                        matches,
+                        annualMatches,
                         LifeDomainSignalStatus.SUPPORTIVE
                 );
 
         boolean pressureExists =
                 hasStatus(
-                        matches,
+                        annualMatches,
                         LifeDomainSignalStatus.PRESSURE
                 );
 
         boolean mixedExists =
                 hasStatus(
-                        matches,
+                        annualMatches,
                         LifeDomainSignalStatus.MIXED
                 );
 
@@ -721,7 +724,8 @@ public class WealthCurrentStructuralFlowRule
 
         /*
          * =================================================
-         * 양방향 동시 존재
+         * 동일 Annual Source Family 내부에
+         * 양방향 상태가 모두 실제 존재
          * =================================================
          */
 
@@ -750,128 +754,6 @@ public class WealthCurrentStructuralFlowRule
         return ConsultationCategoryDeterministicStatus.CONTEXTUAL;
     }
 
-    /*
-     * =================================================
-     * 대운 × 세운 Matrix
-     * =================================================
-     */
-
-    private ConsultationCategoryDeterministicStatus
-    resolveStructuralFlowStatus(
-
-            ConsultationCategoryDeterministicStatus decadeStatus,
-
-            ConsultationCategoryDeterministicStatus annualStatus
-
-    ) {
-
-        Objects.requireNonNull(
-                decadeStatus,
-                "WEALTH decadeStatus가 필요합니다."
-        );
-
-        Objects.requireNonNull(
-                annualStatus,
-                "WEALTH annualStatus가 필요합니다."
-        );
-
-        /*
-         * =================================================
-         * 어느 한 시간층이 이미 MIXED
-         * =================================================
-         */
-
-        if (
-                decadeStatus
-                        == ConsultationCategoryDeterministicStatus.MIXED
-                        || annualStatus
-                        == ConsultationCategoryDeterministicStatus.MIXED
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.MIXED;
-        }
-
-        /*
-         * =================================================
-         * 장기 배경과 연간 방향이 서로 반대
-         * =================================================
-         */
-
-        if (
-                decadeStatus
-                        == ConsultationCategoryDeterministicStatus.SUPPORTIVE
-                        && annualStatus
-                        == ConsultationCategoryDeterministicStatus.PRESSURE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.MIXED;
-        }
-
-        if (
-                decadeStatus
-                        == ConsultationCategoryDeterministicStatus.PRESSURE
-                        && annualStatus
-                        == ConsultationCategoryDeterministicStatus.SUPPORTIVE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.MIXED;
-        }
-
-        /*
-         * =================================================
-         * 세운이 명확한 방향을 가진 경우
-         * =================================================
-         *
-         * 현재 명리연도의 작동 방향을 보존한다.
-         *
-         * 반대 방향의 대운은 위에서
-         * 이미 MIXED로 처리되었다.
-         */
-
-        if (
-                annualStatus
-                        == ConsultationCategoryDeterministicStatus.PRESSURE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.PRESSURE;
-        }
-
-        if (
-                annualStatus
-                        == ConsultationCategoryDeterministicStatus.SUPPORTIVE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.SUPPORTIVE;
-        }
-
-        /*
-         * =================================================
-         * 세운 CONTEXTUAL
-         * =================================================
-         *
-         * 해당 연도가 장기 배경을
-         * 공식적으로 뒤집는 방향을
-         * 제공하지 않은 상태다.
-         */
-
-        if (
-                decadeStatus
-                        == ConsultationCategoryDeterministicStatus.PRESSURE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.PRESSURE;
-        }
-
-        if (
-                decadeStatus
-                        == ConsultationCategoryDeterministicStatus.SUPPORTIVE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.SUPPORTIVE;
-        }
-
-        return ConsultationCategoryDeterministicStatus.CONTEXTUAL;
-    }
 
     /*
      * =================================================
@@ -889,7 +771,7 @@ public class WealthCurrentStructuralFlowRule
 
         Objects.requireNonNull(
                 matches,
-                "WEALTH Timeline Match 목록이 필요합니다."
+                "WEALTH Annual Match 목록이 필요합니다."
         );
 
         Objects.requireNonNull(
@@ -906,102 +788,178 @@ public class WealthCurrentStructuralFlowRule
                 );
     }
 
+
     /*
      * =================================================
-     * 결합 Reason
+     * Annual Status Provenance
      * =================================================
      */
 
-    private void appendCombinationReason(
+    private void appendAnnualStatusReason(
 
             List<String> reasons,
 
-            ConsultationCategoryDeterministicStatus decadeStatus,
+            List<LifeDomainRuleMatch> annualMatches,
 
-            ConsultationCategoryDeterministicStatus annualStatus,
-
-            ConsultationCategoryDeterministicStatus finalStatus
+            ConsultationCategoryDeterministicStatus annualStatus
 
     ) {
 
         Objects.requireNonNull(
                 reasons,
-                "reasons가 필요합니다."
+                "WEALTH reasons가 필요합니다."
         );
 
+        Objects.requireNonNull(
+                annualMatches,
+                "WEALTH Annual Match 목록이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                annualStatus,
+                "WEALTH Annual Status가 필요합니다."
+        );
+
+        boolean supportiveExists =
+                hasStatus(
+                        annualMatches,
+                        LifeDomainSignalStatus.SUPPORTIVE
+                );
+
+        boolean pressureExists =
+                hasStatus(
+                        annualMatches,
+                        LifeDomainSignalStatus.PRESSURE
+                );
+
+        boolean mixedExists =
+                hasStatus(
+                        annualMatches,
+                        LifeDomainSignalStatus.MIXED
+                );
+
         if (
-                finalStatus
-                        == ConsultationCategoryDeterministicStatus.MIXED
+                mixedExists
         ) {
 
             reasons.add(
-                    "현재 대운의 재물 배경과 해당 세운의 재물 작동 방향이 서로 다르거나 어느 한 시간층에 이미 혼재가 존재하여 MIXED로 판단합니다."
+                    "WEALTH_ANNUAL_CONTEXT Source Family에 upstream MIXED 상태가 존재하므로 현재 명리연도 WEALTH Status를 MIXED로 보존합니다."
             );
 
             return;
         }
 
         if (
-                finalStatus
+                supportiveExists
+                        && pressureExists
+        ) {
+
+            reasons.add(
+                    "WEALTH_ANNUAL_CONTEXT Source Family 내부에 SUPPORTIVE와 PRESSURE가 모두 실제 존재하므로 어느 한 방향을 삭제하지 않고 MIXED로 보존합니다."
+            );
+
+            return;
+        }
+
+        if (
+                annualStatus
                         == ConsultationCategoryDeterministicStatus.PRESSURE
         ) {
 
             reasons.add(
-                    "현재 대운 또는 해당 세운에서 확인된 재물 기능의 부담 방향이 다른 시간층에 의해 반대로 전환된 것으로 볼 공식 근거가 없어 PRESSURE로 판단합니다."
+                    "WEALTH_ANNUAL_CONTEXT Source Family에 PRESSURE 상태가 존재하고 SUPPORTIVE 또는 MIXED 상태가 없어 현재 명리연도 WEALTH Status를 PRESSURE로 확정합니다."
             );
 
             return;
         }
 
         if (
-                finalStatus
+                annualStatus
                         == ConsultationCategoryDeterministicStatus.SUPPORTIVE
         ) {
 
             reasons.add(
-                    "현재 대운 또는 해당 세운의 재물 기능에서 지지 방향이 확인되고 다른 시간층에서 이를 반대로 뒤집는 공식 부담 방향이 확인되지 않아 SUPPORTIVE로 판단합니다."
+                    "WEALTH_ANNUAL_CONTEXT Source Family에 SUPPORTIVE 상태가 존재하고 PRESSURE 또는 MIXED 상태가 없어 현재 명리연도 WEALTH Status를 SUPPORTIVE로 확정합니다."
             );
 
             return;
         }
 
         reasons.add(
-                "현재 대운과 해당 세운 모두 재물 기능의 Context는 존재하지만 공식 근거만으로 한 방향의 흐름을 확정할 수 없어 CONTEXTUAL로 유지합니다."
+                "WEALTH_ANNUAL_CONTEXT Source Family는 존재하지만 SUPPORTIVE·PRESSURE·MIXED 방향이 확정되지 않아 현재 명리연도 WEALTH Status를 CONTEXTUAL로 유지합니다."
         );
     }
 
+
     /*
      * =================================================
-     * Internal Summary
+     * Internal Deterministic Summary
      * =================================================
      *
-     * 사용자용 최종 storyText가 아니다.
+     * 최종 사용자 Story가 아니다.
+     *
+     * 다른 시간층과 연결하지 않는다.
      */
 
     private String summaryOf(
-            ConsultationCategoryDeterministicStatus status
+            ConsultationCategoryDeterministicStatus annualStatus
     ) {
 
         Objects.requireNonNull(
-                status,
-                "WEALTH Current Timeline status가 필요합니다."
+                annualStatus,
+                "WEALTH Annual Status가 필요합니다."
         );
 
         return switch (
-                status
+                annualStatus
                 ) {
 
             case SUPPORTIVE ->
-                    "현재 대운의 재물 배경과 해당 세운의 재물 작동이 비교적 지지되는 방향으로 연결됩니다.";
+                    "현재 명리연도의 WEALTH Context 계산 결과가 SUPPORTIVE 상태로 보존됩니다.";
 
             case PRESSURE ->
-                    "현재 대운의 재물 배경과 해당 세운의 작동에서 자원 운용·수용과 관련한 구조적 부담 방향이 확인됩니다.";
+                    "현재 명리연도의 WEALTH Context 계산 결과가 PRESSURE 상태로 보존됩니다.";
 
             case MIXED ->
-                    "현재 대운의 재물 배경과 해당 세운의 작동이 서로 다른 방향으로 겹치거나 한 시간층에 복합성이 존재합니다.";
+                    "현재 명리연도의 WEALTH Context 계산 결과가 MIXED 상태로 보존됩니다.";
 
             case CONTEXTUAL ->
-                    "현재 대운과 해당 세운에서 재물 기능은 관여하지만 두 시간층의 결합을 한 방향으로 단정하지 않습니다.";
+                    "현재 명리연도의 WEALTH Context 계산 결과가 CONTEXTUAL 상태로 보존됩니다.";
         };
+    }
+
+
+    /*
+     * =================================================
+     * Text
+     * =================================================
+     */
+
+    private static String requireText(
+
+            String value,
+
+            String message
+
+    ) {
+
+        Objects.requireNonNull(
+                value,
+                message
+        );
+
+        String normalized =
+                value.trim();
+
+        if (
+                normalized.isBlank()
+        ) {
+
+            throw new IllegalArgumentException(
+                    message
+            );
+        }
+
+        return normalized;
     }
 }

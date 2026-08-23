@@ -45,6 +45,13 @@ import java.util.Objects;
  *
  * 일반 달력의 월 숫자가 아니라
  * 기존 15~16차가 사용하는 명리 월 인덱스를 그대로 보존한다.
+ *
+ * 공식 범위는 upstream Monthly Timeline과 동일한
+ * 0~11이다.
+ *
+ * 여기서는 새로운 월 체계를 만들거나
+ * 일반 달력의 1~12로 재해석하지 않고,
+ * upstream의 공식 monthIndex 범위만 검증한다.
  */
 public record ConsultationCategoryTimelineYearEvidence(
 
@@ -139,13 +146,16 @@ public record ConsultationCategoryTimelineYearEvidence(
                     "Timeline Year Evidence의 monthIndex는 null일 수 없습니다."
             );
 
-            /*
-             * 월 인덱스의 실제 범위 자체는
-             * MonthlyLuckCandidate의 공식 계약에 맡긴다.
-             *
-             * 여기서 0~11 또는 1~12 같은
-             * 별도 가정을 새로 만들지 않는다.
-             */
+            if (
+                    monthIndex < 0
+                            || monthIndex >= 12
+            ) {
+
+                throw new IllegalArgumentException(
+                        "Timeline Year Evidence의 monthIndex는 0~11이어야 합니다: "
+                                + monthIndex
+                );
+            }
 
             if (
                     !normalized.contains(

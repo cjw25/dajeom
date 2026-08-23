@@ -20,106 +20,28 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * 정밀화 18차.
- *
  * 직업·사회 영역의 대운 Context Rule.
  *
- * =================================================
+ * DecadeLuckContextSignal은
+ * 13-6에서 이미 계산된
+ * deterministic Evidence 단위다.
  *
- * 입력 Source:
- *
- * 13-6 DecadeLuckPeriodContextAnalysis
- *
- * =================================================
- *
- * 대상 십성:
- *
- * DIRECT_OFFICER
- * SEVEN_KILLINGS
+ * DIRECT_OFFICER / SEVEN_KILLINGS 관련 Signal을
+ * 선택한다.
  *
  * =================================================
  *
- * 의미:
+ * Signal 1개
+ * ->
+ * LifeDomainRuleMatch 1개
  *
- * 정관:
+ * 로 독립 보존한다.
  *
- * - 역할
- * - 책임
- * - 규범
- * - 제도적 Context
+ * 서로 다른 Signal의 상태를 합산해
+ * 새 MIXED / SUPPORTIVE / PRESSURE를 만들지 않는다.
  *
- * 칠살:
- *
- * - 압력
- * - 책임 부담
- * - 통제 요구
- * - 긴장 Context
- *
- * =================================================
- *
- * 중요한 원칙:
- *
- * 13차에서 이미 계산된:
- *
- * - 대운 십성
- * - 원국 × 대운 관계
- * - 용신·희신
- * - 격국
- * - 궁위
- * - 관계
- * - 합화·기능변화
- *
- * 등의 교차 Context를
- * 18차에서 다시 계산하지 않는다.
- *
- * =================================================
- *
- * 상태 변환:
- *
- * SUPPORTED
- * -> SUPPORTIVE
- *
- * QUALIFIED만 존재
- * -> CONTEXTUAL
- *
- * WEAKENED만 존재
- * -> PRESSURE
- *
- * CONFLICTED 존재
- * -> MIXED
- *
- * 지원 계열과 약화 계열 동시 존재
- * -> MIXED
- *
- * =================================================
- *
- * 하지 않는 것:
- *
- * 정관 대운
- * -> 취업한다
- *
- * 관살 SUPPORTED
- * -> 승진한다
- *
- * 관살 WEAKENED
- * -> 퇴사한다
- *
- * 관살 CONFLICTED
- * -> 직장 문제가 생긴다
- *
- * 칠살 대운
- * -> 이직한다
- *
- * 같은 실제 사건 결과 확정.
- *
- * =================================================
- *
- * DECADE_CONTEXT가 없는 Bundle:
- *
- * - Natal Bundle
- * - 비활성 대운 Segment
- *
- * 에서는 아무 Match도 생성하지 않는다.
+ * 실제 대운 관계 계산은
+ * upstream 결과 그대로 유지한다.
  */
 @Component
 public class CareerDecadeContextRule
@@ -182,12 +104,6 @@ public class CareerDecadeContextRule
                                 .DECADE_CONTEXT
                 );
 
-        /*
-         * =================================================
-         * Natal / 비활성 Segment
-         * =================================================
-         */
-
         if (
                 decadeReferenceOptional
                         .isEmpty()
@@ -206,22 +122,6 @@ public class CareerDecadeContextRule
                         .requireSource(
                                 DecadeLuckPeriodContextAnalysis.class
                         );
-
-        /*
-         * =================================================
-         * 정관 / 칠살 Signal
-         * =================================================
-         *
-         * signalsOf(StructureTenGodType)는
-         * 해당 십성이 연결된 모든 Context Signal을
-         * 반환한다.
-         *
-         * 따라서 단순 TEN_GOD Axis뿐 아니라
-         * USEFUL_GOD / STRUCTURE / RELATION /
-         * TRANSFORMATION 등의 Signal도
-         * tenGodTypes에 관살이 포함되어 있다면
-         * 함께 보존될 수 있다.
-         */
 
         List<DecadeLuckContextSignal>
                 directOfficerSignals =
@@ -254,21 +154,99 @@ public class CareerDecadeContextRule
             return List.of();
         }
 
-        /*
-         * =================================================
-         * 상태 집계
-         * =================================================
-         */
+        List<LifeDomainRuleMatch> matches =
+                new ArrayList<>();
 
-        SignalCounts counts =
-                countStatuses(
-                        officerSignals
-                );
+        for (
+                DecadeLuckContextSignal signal
+                : officerSignals
+        ) {
 
-        LifeDomainSignalStatus status =
-                resolveStatus(
-                        counts
+            Objects.requireNonNull(
+                    signal,
+                    "DecadeLuckPeriodContextAnalysis의 Decade Signal은 null일 수 없습니다."
+            );
+
+            LifeDomainSignalStatus status =
+                    resolveStatus(
+                            signal
+                    );
+
+            List<String> reasons =
+                    baseReasons(
+                            decadeContext
+                    );
+
+            reasons.add(
+                    "Decade Signal ["
+                            + signal.code()
+                            + "] "
+                            + signal.summary()
+                            + " / axis="
+                            + signal.axis().name()
+                            + " / status="
+                            + signal.status().name()
+            );
+
+            reasons.add(
+                    "이 Signal에 실제 태깅된 직업·사회 참조 관살 유형은 "
+                            + matchedOfficerTypes(
+                            signal
+                    )
+                            + "입니다."
+            );
+
+            for (
+                    String signalReason
+                    : signal.reasons()
+            ) {
+
+                reasons.add(
+                        "Decade Signal ["
+                                + signal.code()
+                                + "] 근거: "
+                                + signalReason
                 );
+            }
+
+            reasons.add(
+                    "이 Match는 하나의 DecadeLuckContextSignal만 보존하며 다른 Decade Signal과 상태를 합산하지 않습니다."
+            );
+
+            reasons.add(
+                    "13차가 이미 계산한 대운 십성·원국 관계·용신·격국·궁위·합화·기능변화를 이 Rule에서 다시 조합하지 않습니다."
+            );
+
+            reasons.add(
+                    "관살 관련 대운 Context를 취업·승진·퇴사·이직·직위 획득·직장 갈등 같은 실제 사건으로 직접 환산하지 않습니다."
+            );
+
+            matches.add(
+                    new LifeDomainRuleMatch(
+                            LifeDomain.CAREER,
+                            RULE_CODE,
+                            status,
+                            summaryOf(
+                                    signal
+                            ),
+                            List.of(
+                                    decadeReference
+                            ),
+                            List.copyOf(
+                                    reasons
+                            )
+                    )
+            );
+        }
+
+        return List.copyOf(
+                matches
+        );
+    }
+
+    private List<String> baseReasons(
+            DecadeLuckPeriodContextAnalysis decadeContext
+    ) {
 
         List<String> reasons =
                 new ArrayList<>();
@@ -285,184 +263,16 @@ public class CareerDecadeContextRule
                         + "입니다."
         );
 
-        reasons.add(
-                "정관 관련 Decade Context Signal은 "
-                        + directOfficerSignals.size()
-                        + "개입니다."
-        );
-
-        reasons.add(
-                "칠살 관련 Decade Context Signal은 "
-                        + sevenKillingsSignals.size()
-                        + "개입니다."
-        );
-
-        reasons.add(
-                "Object Identity 중복 제거 후 관살 관련 대운 Signal은 "
-                        + officerSignals.size()
-                        + "개입니다."
-        );
-
-        reasons.add(
-                "SUPPORTED="
-                        + counts.supported()
-                        + ", QUALIFIED="
-                        + counts.qualified()
-                        + ", WEAKENED="
-                        + counts.weakened()
-                        + ", CONFLICTED="
-                        + counts.conflicted()
-                        + "입니다."
-        );
-
-        /*
-         * =================================================
-         * 원 Signal 근거 보존
-         * =================================================
-         */
-
-        for (
-                DecadeLuckContextSignal signal
-                : officerSignals
-        ) {
-
-            reasons.add(
-                    "Decade Signal ["
-                            + signal.code()
-                            + "] "
-                            + signal.summary()
-                            + " / axis="
-                            + signal.axis().name()
-                            + " / status="
-                            + signal.status().name()
-            );
-
-            for (
-                    String signalReason
-                    : signal.reasons()
-            ) {
-
-                reasons.add(
-                        "Decade Signal ["
-                                + signal.code()
-                                + "] 근거: "
-                                + signalReason
-                );
-            }
-        }
-
-        reasons.add(
-                "13차가 이미 판정한 대운 교차 Context를 직업·사회 생활영역 상태로 변환할 뿐, 용신·격국·십성·관계·합화를 18차에서 다시 계산하지 않습니다."
-        );
-
-        reasons.add(
-                "관살 관련 대운 Context를 취업·승진·퇴사·이직·직위 획득·직장 갈등 같은 실제 사건으로 직접 환산하지 않습니다."
-        );
-
-        return List.of(
-                new LifeDomainRuleMatch(
-                        LifeDomain.CAREER,
-                        RULE_CODE,
-                        status,
-                        summaryOf(
-                                status
-                        ),
-                        List.of(
-                                decadeReference
-                        ),
-                        List.copyOf(
-                                reasons
-                        )
-                )
-        );
+        return reasons;
     }
-
-    /*
-     * =================================================
-     * 상태 집계
-     * =================================================
-     */
-
-    private SignalCounts countStatuses(
-            List<DecadeLuckContextSignal> signals
-    ) {
-
-        long supported =
-                signals
-                        .stream()
-                        .filter(
-                                DecadeLuckContextSignal
-                                        ::supported
-                        )
-                        .count();
-
-        long qualified =
-                signals
-                        .stream()
-                        .filter(
-                                DecadeLuckContextSignal
-                                        ::qualified
-                        )
-                        .count();
-
-        long weakened =
-                signals
-                        .stream()
-                        .filter(
-                                DecadeLuckContextSignal
-                                        ::weakened
-                        )
-                        .count();
-
-        long conflicted =
-                signals
-                        .stream()
-                        .filter(
-                                DecadeLuckContextSignal
-                                        ::conflicted
-                        )
-                        .count();
-
-        return new SignalCounts(
-                supported,
-                qualified,
-                weakened,
-                conflicted
-        );
-    }
-
-    /*
-     * =================================================
-     * 13-6 -> 18차 상태 변환
-     * =================================================
-     *
-     * CONFLICTED가 하나라도 존재하면
-     * 상충 구조를 없애지 않고 MIXED.
-     *
-     * 지원 방향:
-     *
-     * SUPPORTED / QUALIFIED
-     *
-     * 부담 방향:
-     *
-     * WEAKENED
-     *
-     * 두 방향이 동시에 존재해도 MIXED.
-     */
 
     private LifeDomainSignalStatus resolveStatus(
-            SignalCounts counts
+            DecadeLuckContextSignal signal
     ) {
 
-        boolean supportiveSide =
-                counts.supported() > 0
-                        || counts.qualified() > 0;
-
-        boolean pressureSide =
-                counts.weakened() > 0;
-
         if (
-                counts.conflicted() > 0
+                signal
+                        .conflicted()
         ) {
 
             return LifeDomainSignalStatus
@@ -470,16 +280,8 @@ public class CareerDecadeContextRule
         }
 
         if (
-                supportiveSide
-                        && pressureSide
-        ) {
-
-            return LifeDomainSignalStatus
-                    .MIXED;
-        }
-
-        if (
-                pressureSide
+                signal
+                        .weakened()
         ) {
 
             return LifeDomainSignalStatus
@@ -487,50 +289,77 @@ public class CareerDecadeContextRule
         }
 
         if (
-                counts.supported() > 0
+                signal
+                        .supported()
         ) {
 
             return LifeDomainSignalStatus
                     .SUPPORTIVE;
         }
 
-        return LifeDomainSignalStatus
-                .CONTEXTUAL;
-    }
+        if (
+                signal
+                        .qualified()
+        ) {
 
-    /*
-     * =================================================
-     * Summary
-     * =================================================
-     */
+            return LifeDomainSignalStatus
+                    .CONTEXTUAL;
+        }
+
+        throw new IllegalStateException(
+                "지원하지 않는 DecadeLuckContextSignal 상태입니다: "
+                        + signal.status()
+        );
+    }
 
     private String summaryOf(
-            LifeDomainSignalStatus status
+            DecadeLuckContextSignal signal
     ) {
 
-        return switch (
-                status
-                ) {
-
-            case SUPPORTIVE ->
-                    "현재 대운에서 관살 관련 Context가 직업·사회 역할 기능을 지지하는 방향으로 나타납니다.";
-
-            case PRESSURE ->
-                    "현재 대운에서 관살 관련 Context에 역할·책임의 약화 또는 부담 방향이 존재합니다.";
-
-            case MIXED ->
-                    "현재 대운의 관살 관련 Context에 지원과 약화 또는 상충 근거가 함께 존재합니다.";
-
-            case CONTEXTUAL ->
-                    "현재 대운에서 관살 관련 Context가 존재하지만 직업·사회 방향을 단독으로 확정할 수준은 아닙니다.";
-        };
+        return "현재 대운의 직업·사회 관련 Decade Context Signal ["
+                + signal.code()
+                + "]을 독립적으로 보존합니다: "
+                + signal.summary();
     }
 
-    /*
-     * =================================================
-     * Object Identity 중복 제거
-     * =================================================
-     */
+    private List<StructureTenGodType>
+    matchedOfficerTypes(
+            DecadeLuckContextSignal signal
+    ) {
+
+        List<StructureTenGodType> types =
+                new ArrayList<>();
+
+        if (
+                signal.involves(
+                        StructureTenGodType
+                                .DIRECT_OFFICER
+                )
+        ) {
+
+            types.add(
+                    StructureTenGodType
+                            .DIRECT_OFFICER
+            );
+        }
+
+        if (
+                signal.involves(
+                        StructureTenGodType
+                                .SEVEN_KILLINGS
+                )
+        ) {
+
+            types.add(
+                    StructureTenGodType
+                            .SEVEN_KILLINGS
+            );
+        }
+
+        return List.copyOf(
+                types
+        );
+    }
 
     @SafeVarargs
     private final List<DecadeLuckContextSignal>
@@ -544,6 +373,9 @@ public class CareerDecadeContextRule
                                 new IdentityHashMap<>()
                         );
 
+        List<DecadeLuckContextSignal> ordered =
+                new ArrayList<>();
+
         for (
                 List<DecadeLuckContextSignal> signals
                 : signalLists
@@ -556,39 +388,28 @@ public class CareerDecadeContextRule
                 continue;
             }
 
-            unique.addAll(
-                    signals
-            );
+            for (
+                    DecadeLuckContextSignal signal
+                    : signals
+            ) {
+
+                if (
+                        unique.add(
+                                signal
+                        )
+                ) {
+
+                    ordered.add(
+                            signal
+                    );
+                }
+            }
         }
 
         return List.copyOf(
-                unique
+                ordered
         );
     }
-
-    /*
-     * =================================================
-     * Temporal Evidence 조회
-     * =================================================
-     *
-     * 0개:
-     *
-     * Natal Bundle 또는
-     * 현재 Segment에 ACTIVE 대운 없음.
-     *
-     * 정상.
-     *
-     * 1개:
-     *
-     * 정상적인 ACTIVE 대운 Context.
-     *
-     * 2개 이상:
-     *
-     * 동일 Segment Bundle 구성 오류.
-     *
-     * 가능한 대운 중 하나를
-     * Rule이 임의 선택하지 않는다.
-     */
 
     private Optional<LifeDomainEvidenceReference<?>>
     optionalSingleEvidence(
@@ -631,24 +452,5 @@ public class CareerDecadeContextRule
                         0
                 )
         );
-    }
-
-    /*
-     * =================================================
-     * 내부 상태 집계
-     * =================================================
-     */
-
-    private record SignalCounts(
-
-            long supported,
-
-            long qualified,
-
-            long weakened,
-
-            long conflicted
-
-    ) {
     }
 }

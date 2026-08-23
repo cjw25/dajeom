@@ -22,6 +22,7 @@ import java.util.Set;
  * ANNUAL_CONTEXT
  * ANNUAL_FUNCTIONAL_CONTEXT
  * MONTHLY_CONTEXT
+ * MONTHLY_FUNCTIONAL_CONTEXT
  *
  * =================================================
  *
@@ -35,11 +36,28 @@ import java.util.Set;
  *
  * ANNUAL_FUNCTIONAL_CONTEXT:
  *
- * 신규 Annual Functional 최종 기준선.
+ * 공식 Annual Functional 최종 기준선.
  *
- * 아직 신규 Functional Chain을 연결하지 않은
- * 기존 호출 경로도 유지해야 하므로
- * 0개 또는 1개를 허용한다.
+ * 현재 공식 Pipeline에서는
+ * Timeline Segment마다 정확히 하나를 요구한다.
+ *
+ * =================================================
+ *
+ * MONTHLY_CONTEXT:
+ *
+ * 기존 15-7 MonthlyLuckContextAnalysis.
+ *
+ * 정확히 하나.
+ *
+ * =================================================
+ *
+ * MONTHLY_FUNCTIONAL_CONTEXT:
+ *
+ * 공식 Monthly Functional Activation을
+ * 현재 Timeline Segment에 연결한 typed context.
+ *
+ * 현재 공식 Pipeline에서는
+ * Timeline Segment마다 정확히 하나를 요구한다.
  *
  * =================================================
  *
@@ -74,7 +92,9 @@ public record LifeDomainSegmentEvidence(
                     LifeDomainEvidenceSourceType.ANNUAL_CONTEXT,
                     LifeDomainEvidenceSourceType
                             .ANNUAL_FUNCTIONAL_CONTEXT,
-                    LifeDomainEvidenceSourceType.MONTHLY_CONTEXT
+                    LifeDomainEvidenceSourceType.MONTHLY_CONTEXT,
+                    LifeDomainEvidenceSourceType
+                            .MONTHLY_FUNCTIONAL_CONTEXT
             );
 
     public LifeDomainSegmentEvidence {
@@ -156,11 +176,8 @@ public record LifeDomainSegmentEvidence(
 
         /*
          * =================================================
-         * Annual Functional은 최대 하나.
+         * Annual Functional은 반드시 하나.
          * =================================================
-         *
-         * 기존 18차 호출 경로 호환성을 위해
-         * 아직 0개도 허용한다.
          */
 
         long annualFunctionalCount =
@@ -175,11 +192,11 @@ public record LifeDomainSegmentEvidence(
                         .count();
 
         if (
-                annualFunctionalCount > 1
+                annualFunctionalCount != 1
         ) {
 
             throw new IllegalArgumentException(
-                    "하나의 Timeline Segment에는 ANNUAL_FUNCTIONAL_CONTEXT Evidence가 최대 하나만 존재할 수 있습니다."
+                    "하나의 Timeline Segment에는 ANNUAL_FUNCTIONAL_CONTEXT Evidence가 정확히 하나 필요합니다."
             );
         }
 
@@ -206,6 +223,32 @@ public record LifeDomainSegmentEvidence(
 
             throw new IllegalArgumentException(
                     "하나의 Timeline Segment에는 MONTHLY_CONTEXT Evidence가 정확히 하나 필요합니다."
+            );
+        }
+
+        /*
+         * =================================================
+         * Monthly Functional은 반드시 하나.
+         * =================================================
+         */
+
+        long monthlyFunctionalCount =
+                temporalEvidences
+                        .stream()
+                        .filter(
+                                evidence ->
+                                        evidence.sourceType()
+                                                == LifeDomainEvidenceSourceType
+                                                .MONTHLY_FUNCTIONAL_CONTEXT
+                        )
+                        .count();
+
+        if (
+                monthlyFunctionalCount != 1
+        ) {
+
+            throw new IllegalArgumentException(
+                    "하나의 Timeline Segment에는 MONTHLY_FUNCTIONAL_CONTEXT Evidence가 정확히 하나 필요합니다."
             );
         }
 
@@ -272,6 +315,51 @@ public record LifeDomainSegmentEvidence(
 
                 throw new IllegalArgumentException(
                         "ANNUAL_FUNCTIONAL_CONTEXT Source는 AnnualFunctionalLifeDomainContext여야 합니다."
+                );
+            }
+        }
+
+        /*
+         * =================================================
+         * Monthly Functional Source Type 검증
+         * =================================================
+         */
+
+        for (
+                LifeDomainEvidenceReference<?> evidence
+                : temporalEvidences
+        ) {
+
+            if (
+                    evidence.sourceType()
+                            != LifeDomainEvidenceSourceType
+                            .MONTHLY_FUNCTIONAL_CONTEXT
+            ) {
+
+                continue;
+            }
+
+            if (
+                    !(evidence.source()
+                            instanceof MonthlyFunctionalLifeDomainContext)
+            ) {
+
+                throw new IllegalArgumentException(
+                        "MONTHLY_FUNCTIONAL_CONTEXT Source는 MonthlyFunctionalLifeDomainContext여야 합니다."
+                );
+            }
+
+            MonthlyFunctionalLifeDomainContext context =
+                    (MonthlyFunctionalLifeDomainContext)
+                            evidence.source();
+
+            if (
+                    context.segmentAnalysis()
+                            != segmentAnalysis
+            ) {
+
+                throw new IllegalArgumentException(
+                        "MONTHLY_FUNCTIONAL_CONTEXT가 현재 LifeDomain Timeline Segment Identity를 보존하지 않았습니다."
                 );
             }
         }
@@ -407,9 +495,9 @@ public record LifeDomainSegmentEvidence(
     }
 
     /**
-     * 신규 Annual Functional Evidence.
+     * Annual Functional Evidence.
      *
-     * 기존 호출 경로에서는 없을 수 있다.
+     * Segment 계약상 정확히 하나 존재한다.
      */
     public Optional<LifeDomainEvidenceReference<?>>
     annualFunctionalEvidence() {
@@ -421,19 +509,12 @@ public record LifeDomainSegmentEvidence(
                 );
 
         if (
-                evidences.isEmpty()
-        ) {
-
-            return Optional.empty();
-        }
-
-        if (
                 evidences.size()
                         != 1
         ) {
 
             throw new IllegalStateException(
-                    "ANNUAL_FUNCTIONAL_CONTEXT Evidence가 2개 이상입니다."
+                    "ANNUAL_FUNCTIONAL_CONTEXT Evidence가 정확히 하나가 아닙니다."
             );
         }
 
@@ -449,6 +530,35 @@ public record LifeDomainSegmentEvidence(
                 LifeDomainEvidenceSourceType.MONTHLY_CONTEXT
         )
                 .get(0);
+    }
+
+    /**
+     * Monthly Functional Evidence.
+     *
+     * Segment 계약상 정확히 하나 존재한다.
+     */
+    public Optional<LifeDomainEvidenceReference<?>>
+    monthlyFunctionalEvidence() {
+
+        List<LifeDomainEvidenceReference<?>> evidences =
+                temporalOf(
+                        LifeDomainEvidenceSourceType
+                                .MONTHLY_FUNCTIONAL_CONTEXT
+                );
+
+        if (
+                evidences.size()
+                        != 1
+        ) {
+
+            throw new IllegalStateException(
+                    "MONTHLY_FUNCTIONAL_CONTEXT Evidence가 정확히 하나가 아닙니다."
+            );
+        }
+
+        return Optional.of(
+                evidences.get(0)
+        );
     }
 
     public List<LifeDomainEvidenceReference<?>>

@@ -40,6 +40,27 @@ import java.util.Set;
  *
  * =================================================
  *
+ * Monthly Functional Context:
+ *
+ * 공식 Annual Functional Baseline 위에서
+ * 실제 월운이 Function에 어떻게 접촉하는지를
+ * 계산한 derived temporal context.
+ *
+ * 모든 Domain에서 참조할 수 있지만:
+ *
+ * - Function Contact 하나
+ * - Monthly Status 하나
+ * - Monthly Context 하나
+ *
+ * 를 생활영역 결과 하나로
+ * 기계적으로 변환하지 않는다.
+ *
+ * 기존 MONTHLY_CONTEXT를 대체하지 않으며
+ * 두 Source를 독립 명리근거 개수로
+ * 단순 합산하지 않는다.
+ *
+ * =================================================
+ *
  * standaloneOutcomeAllowed:
  *
  * 현재 모든 Source = false.
@@ -172,6 +193,29 @@ public class LifeDomainEvidencePolicyRegistry {
         register(
                 map,
                 LifeDomainEvidenceSourceType.MONTHLY_CONTEXT,
+                allDomains()
+        );
+
+        /*
+         * =================================================
+         * Monthly Functional
+         * =================================================
+         *
+         * 모든 Domain이 월운 Functional Activation을
+         * 참조할 수 있다.
+         *
+         * 단:
+         *
+         * Function 하나를 LifeDomain 결과 하나로
+         * 직접 변환하지 않는다.
+         *
+         * 기존 MONTHLY_CONTEXT와
+         * 독립 근거 2개로 단순 합산하지 않는다.
+         */
+        register(
+                map,
+                LifeDomainEvidenceSourceType
+                        .MONTHLY_FUNCTIONAL_CONTEXT,
                 allDomains()
         );
 

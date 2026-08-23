@@ -3,7 +3,6 @@ package com.dajeom.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * 정밀화 21차-4
@@ -14,7 +13,7 @@ import java.util.Optional;
  * LLM Grounding Timeline Year.
  *
  * =================================================
- * 기존 구성
+ * 전체 구조
  * =================================================
  *
  * yearOrder
@@ -22,12 +21,11 @@ import java.util.Optional;
  * monthIndices
  * timelineUncertaintyExists
  * evidences
- *
- * =================================================
- * 추가
- * =================================================
- *
  * deterministicContract
+ *
+ * =================================================
+ * deterministicContract
+ * =================================================
  *
  * 해당 명리연도의:
  *
@@ -42,6 +40,24 @@ import java.util.Optional;
  * 최종 deterministic 계약.
  *
  * =================================================
+ * 공식 생성 계약
+ * =================================================
+ *
+ * ConsultationGroundingTimelineYear는
+ * PAST_LUCK / FUTURE_LUCK의
+ * 실제 연도 Grounding 전용 모델이다.
+ *
+ * 따라서 deterministicContract는
+ * 선택값이 아니다.
+ *
+ * 모든 Timeline Year는 생성 시점부터
+ * 완성된 Deterministic Contract를
+ * 반드시 가져야 한다.
+ *
+ * Contract가 없는 연도 객체 자체를
+ * 타입 구조에서 허용하지 않는다.
+ *
+ * =================================================
  * 중요한 우선순위
  * =================================================
  *
@@ -50,7 +66,7 @@ import java.util.Optional;
  * =
  * 연도 해석의 공식 상위 Meaning Contract
  *
- * =================================================
+ * -------------------------------------------------
  *
  * evidences
  *
@@ -58,13 +74,11 @@ import java.util.Optional;
  * 그 판단의 세부 LifeDomain Grounding 근거
  *
  * =================================================
- *
- * 따라서 외부 LLM은:
- *
- * raw evidences를 보고
- * 연도 전체 방향을 다시 계산해서는 안 된다.
- *
+ * 연도 방향 재계산 금지
  * =================================================
+ *
+ * 외부 LLM은 raw evidences를 보고
+ * 연도 전체 방향을 다시 계산해서는 안 된다.
  *
  * 예:
  *
@@ -84,15 +98,48 @@ import java.util.Optional;
  * 로 바꿀 수 없다.
  *
  * =================================================
+ * monthIndices
+ * =================================================
  *
- * 내부 계산 객체는 노출하지 않는다.
+ * monthIndices는 upstream에서 계산된
+ * 실제 명리 월 인덱스를 그대로 보존한다.
+ *
+ * 여기서는:
+ *
+ * - 일반 달력 월로 재해석하지 않는다.
+ * - 새로운 월 범위를 가정하지 않는다.
+ * - 대표 월을 선택하지 않는다.
+ * - 여러 월을 하나의 월 상태로 합성하지 않는다.
+ *
+ * 실제 월 인덱스의 범위 계약은
+ * upstream Monthly Timeline 계산에 맡긴다.
+ *
+ * =================================================
+ * 구조 분리
+ * =================================================
+ *
+ * 다음 내부 계산 객체는
+ * 이 Grounding 모델에 직접 노출하지 않는다.
  *
  * - LuckIntegratedSegmentAnalysis
  * - AnnualLuckAnalysis
  * - MonthlyLuckAnalysis
  * - LifeDomainRuleMatch
  *
- * 등을 직접 담지 않는다.
+ * =================================================
+ * 하지 않는 것
+ * =================================================
+ *
+ * - Evidence 다수결
+ * - Evidence 점수화
+ * - 연도 Status 재계산
+ * - deterministicContract 재계산
+ * - Cross-Domain 자동 합성
+ * - Cross-Temporal 자동 합성
+ * - 새로운 관계 생성
+ * - 새로운 인과 생성
+ * - 새로운 순서 생성
+ * - deterministicContract 없는 연도 생성
  */
 public record ConsultationGroundingTimelineYear(
 
@@ -106,45 +153,14 @@ public record ConsultationGroundingTimelineYear(
 
         List<ConsultationGroundingEvidence> evidences,
 
-        Optional<ConsultationGroundingTimelineYearDeterministicContract>
+        ConsultationGroundingTimelineYearDeterministicContract
         deterministicContract
 
 ) {
 
     /*
      * =================================================
-     * 기존 21차 호출 호환
-     * =================================================
-     */
-
-    public ConsultationGroundingTimelineYear(
-
-            int yearOrder,
-
-            int sajuYear,
-
-            List<Integer> monthIndices,
-
-            boolean timelineUncertaintyExists,
-
-            List<ConsultationGroundingEvidence> evidences
-
-    ) {
-
-        this(
-                yearOrder,
-                sajuYear,
-                monthIndices,
-                timelineUncertaintyExists,
-                evidences,
-                Optional.empty()
-        );
-    }
-
-
-    /*
-     * =================================================
-     * Canonical
+     * Canonical Constructor
      * =================================================
      */
 
@@ -170,8 +186,10 @@ public record ConsultationGroundingTimelineYear(
                 );
 
         deterministicContract =
-                normalizeDeterministicContract(
-                        deterministicContract
+                Objects.requireNonNull(
+                        deterministicContract,
+                        "Grounding Timeline Year에는 Deterministic Contract가 반드시 필요합니다. sajuYear="
+                                + sajuYear
                 );
     }
 
@@ -218,33 +236,6 @@ public record ConsultationGroundingTimelineYear(
 
     /*
      * =================================================
-     * Deterministic Contract
-     * =================================================
-     */
-
-    public boolean hasDeterministicContract() {
-
-        return deterministicContract
-                .isPresent();
-    }
-
-
-    public ConsultationGroundingTimelineYearDeterministicContract
-    requireDeterministicContract() {
-
-        return deterministicContract
-                .orElseThrow(
-                        () ->
-                                new IllegalStateException(
-                                        "Grounding Timeline Year에 Deterministic Contract가 없습니다. sajuYear="
-                                                + sajuYear
-                                )
-                );
-    }
-
-
-    /*
-     * =================================================
      * Month Normalize
      * =================================================
      */
@@ -276,6 +267,16 @@ public record ConsultationGroundingTimelineYear(
                     monthIndex,
                     "Grounding Timeline Year monthIndex는 null일 수 없습니다."
             );
+
+            /*
+             * monthIndex의 실제 값 범위는
+             * upstream Monthly Timeline 계산의
+             * 공식 계약을 그대로 따른다.
+             *
+             * 이 Grounding 모델에서는
+             * 별도의 0~11 / 1~12 가정을
+             * 새로 만들지 않는다.
+             */
 
             if (
                     !result.contains(
@@ -340,39 +341,6 @@ public record ConsultationGroundingTimelineYear(
 
         return List.copyOf(
                 result
-        );
-    }
-
-
-    /*
-     * =================================================
-     * Contract Normalize
-     * =================================================
-     */
-
-    private static Optional<
-            ConsultationGroundingTimelineYearDeterministicContract
-            > normalizeDeterministicContract(
-
-            Optional<
-                    ConsultationGroundingTimelineYearDeterministicContract
-                    > source
-
-    ) {
-
-        if (
-                source == null
-                        || source.isEmpty()
-        ) {
-
-            return Optional.empty();
-        }
-
-        return Optional.of(
-                Objects.requireNonNull(
-                        source.orElseThrow(),
-                        "Grounding Timeline Year Deterministic Contract는 null일 수 없습니다."
-                )
         );
     }
 }

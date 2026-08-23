@@ -21,329 +21,20 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * PAST_LUCK / FUTURE_LUCK의
- * TIMELINE_YEAR PRIMARY_ACTIVE_DOMAIN
- * 공통 deterministic Rule.
- *
- * =================================================
- * 목적
- * =================================================
- *
- * 한 명리연도에서:
- *
- * WEALTH
- * CAREER
- * RELATIONSHIP
- * LEARNING_GROWTH
- * HEALTH_LIFESTYLE
- *
- * 중 어떤 생활영역이
- * 가장 분명하게 "작동축"으로 식별되는지를
- * deterministic하게 판단한다.
- *
- * =================================================
- * PRIMARY_PRESSURE_DOMAIN과의 차이
- * =================================================
- *
- * PRIMARY_PRESSURE_DOMAIN:
- *
- * 명시적인 PRESSURE만 후보.
- *
- * =================================================
- *
- * PRIMARY_ACTIVE_DOMAIN:
- *
- * SUPPORTIVE
- * PRESSURE
- * MIXED
- * CONTEXTUAL
- *
- * 모두 후보가 될 수 있다.
- *
- * 따라서 이 Rule은:
- *
- * "좋은 영역"
- *
- * 또는
- *
- * "나쁜 영역"
- *
- * 을 찾는 Rule이 아니다.
- *
- * =================================================
- * 중요한 원칙 1.
- *
- * Match 개수를 사용하지 않는다.
- *
- * RELATIONSHIP 20개
- * CAREER 3개
- *
- * 라고 해서
- * RELATIONSHIP이 더 Active하다는 뜻이 아니다.
- *
- * =================================================
- * 중요한 원칙 2.
- *
- * Rule 개수를 사용하지 않는다.
- *
- * Domain마다 등록된 Rule 수가 다르므로
- * Rule 수는 Domain 활동 강도가 아니다.
- *
- * =================================================
- * 중요한 원칙 3.
- *
- * Evidence 수를 더하지 않는다.
- *
- * 특히:
- *
- * ANNUAL_CONTEXT
- * +
- * ANNUAL_FUNCTIONAL_CONTEXT
- *
- * 는 동일 Annual provenance의
- * 서로 다른 분석 단계다.
- *
- * 독립 근거 두 개로 더하지 않는다.
- *
- * =================================================
- * Temporal Candidate
- * =================================================
- *
- * PRIMARY_ACTIVE_DOMAIN 후보가 되려면
- * 해당 Domain에 최소 하나의:
- *
- * - ANNUAL_CONTEXT
- * - ANNUAL_FUNCTIONAL_CONTEXT
- * - MONTHLY_CONTEXT
- *
- * 를 사용하는 Match가 있어야 한다.
- *
- * Natal-only Match 반복으로
- * 해당 연도의 Active Domain을 만들지 않는다.
- *
- * =================================================
- * Domain 방향
- * =================================================
- *
- * 시간적 Match들 안에서:
- *
- * MIXED 존재
- * ->
- * MIXED
- *
- * SUPPORTIVE + PRESSURE 공존
- * ->
- * MIXED
- *
- * PRESSURE 존재
- * ->
- * PRESSURE
- *
- * SUPPORTIVE 존재
- * ->
- * SUPPORTIVE
- *
- * CONTEXTUAL만 존재
- * ->
- * CONTEXTUAL
- *
- * =================================================
- * Annual Qualification
- * =================================================
- *
- * NONE
- * <
- * ANNUAL_CONTEXT
- * <
- * ANNUAL_FUNCTIONAL
- *
- * =================================================
- *
- * 이것은 Evidence 가중치가 아니다.
- *
- * ANNUAL_FUNCTIONAL_CONTEXT가
- * 동일 Annual provenance에 대해:
- *
- * Natal Functional
- * Decade Functional
- * Annual Functional
- * CrossFunctional
- * Context Qualification
- *
- * 까지 연결된 더 정밀한 구조라는
- * qualification 계층이다.
- *
- * =================================================
- * Monthly Persistence
- * =================================================
- *
- * 서로 다른 2개 이상의
- * MONTHLY_CONTEXT sourceKey가 존재하면:
- *
- * multiMonthActivity = true
- *
- * =================================================
- *
- * 이것은:
- *
- * Match 2개니까 강도 2배
- *
- * 라는 뜻이 아니다.
- *
- * 하나의 월 Anchor에만 국한되지 않은
- * 시간적 지속 조건이다.
- *
- * =================================================
- * Directional Activity
- * =================================================
- *
- * SUPPORTIVE
- * PRESSURE
- * MIXED
- *
- * 는 방향성이 존재하므로:
- *
- * directionalActivity = true
- *
- * CONTEXTUAL만 존재하면:
- *
- * directionalActivity = false
- *
- * =================================================
- *
- * 단 SUPPORTIVE가 PRESSURE보다
- * 우위라는 의미는 아니다.
- *
- * SUPPORTIVE / PRESSURE / MIXED는
- * PRIMARY_ACTIVE 비교에서 같은
- * "방향성 존재" 계층이다.
- *
- * =================================================
- * Primary Selection
- * =================================================
- *
- * Candidate A가 B보다:
- *
- * 1.
- * Annual qualification이 낮지 않고
- *
- * 2.
- * Monthly persistence가 낮지 않고
- *
- * 3.
- * Directional activity가 낮지 않으며
- *
- * 이 세 축 중 최소 하나가
- * 엄격하게 높을 때:
- *
- * A dominates B.
- *
- * =================================================
- *
- * 하나의 Candidate가
- * 다른 모든 Candidate를 지배할 때만
- * PRIMARY_ACTIVE_DOMAIN을 생성한다.
- *
- * =================================================
- * 예
- * =================================================
- *
- * WEALTH:
- * ANNUAL_FUNCTIONAL
- * multiMonth=true
- * PRESSURE
- *
- * CAREER:
- * ANNUAL_CONTEXT
- * multiMonth=true
- * SUPPORTIVE
- *
- * ->
- *
- * WEALTH가 Annual qualification에서 높고
- * 나머지 자격은 낮지 않음.
- *
- * ->
- * WEALTH Primary Active
- *
- * =================================================
- * 예
- * =================================================
- *
- * WEALTH:
- * ANNUAL_FUNCTIONAL
- * multiMonth=false
- * PRESSURE
- *
- * CAREER:
- * ANNUAL_CONTEXT
- * multiMonth=true
- * SUPPORTIVE
- *
- * ->
- *
- * 서로 다른 자격축에서 우위.
- *
- * ->
- * incomparable
- *
- * ->
- * Primary 생성 안 함.
- *
- * =================================================
- * 예
- * =================================================
- *
- * WEALTH:
- * ANNUAL_FUNCTIONAL
- * multiMonth=true
- * PRESSURE
- *
- * CAREER:
- * ANNUAL_FUNCTIONAL
- * multiMonth=true
- * SUPPORTIVE
- *
- * ->
- *
- * 자격 동률.
- *
- * SUPPORTIVE/PRESSURE를 우열 비교하지 않음.
- *
- * ->
- * Primary 생성 안 함.
- *
- * =================================================
- * Timeline uncertainty
- * =================================================
- *
- * uncertainty만으로 이미 계산된
- * Domain 활동을 삭제하지 않는다.
- *
- * 다만 reason에 반드시 보존한다.
- *
- * =================================================
- * 하지 않는 것
- * =================================================
- *
- * - Match 수 랭킹
- * - Rule 수 랭킹
- * - Source 수 랭킹
- * - Domain 고정 우선순위
- * - SUPPORTIVE 우대
- * - PRESSURE 우대
- * - 대표 월 선택
- * - 사건 예측
- * - 실제 과거 사건 역추정
+ * PAST_LUCK / FUTURE_LUCK의 TIMELINE_YEAR PRIMARY_ACTIVE_DOMAIN 공통 Rule.
+ *
+ * 핵심 원칙:
+ * - Match/Rule/Evidence 개수를 점수화하지 않는다.
+ * - Annual qualification, multi-month persistence, directional activity만 비교한다.
+ * - ANNUAL_CONTEXT와 ANNUAL_FUNCTIONAL_CONTEXT는 동일 Annual provenance의
+ *   qualification 계층으로만 사용한다.
+ * - MONTHLY_CONTEXT와 MONTHLY_FUNCTIONAL_CONTEXT는 같은 사주연도/월이면
+ *   동일 MONTHLY_CONTEXT_FAMILY anchor로 정규화한다.
+ * - SUPPORTIVE/PRESSURE/MIXED 사이에 우열을 두지 않는다.
+ * - Natal-only Match로 연도 Active Domain을 만들지 않는다.
  */
 public abstract class AbstractTimelineYearPrimaryActiveDomainRule
         implements ConsultationCategoryDeterministicRule {
-
-    /*
-     * =================================================
-     * Subclass Contract
-     * =================================================
-     */
 
     @Override
     public abstract ConsultationCategory category();
@@ -353,35 +44,18 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
 
     protected abstract String flowLabel();
 
-    protected abstract void appendTemporalReason(
-            List<String> reasons
-    );
-
-
-    /*
-     * =================================================
-     * Evaluate
-     * =================================================
-     */
+    protected abstract void appendTemporalReason(List<String> reasons);
 
     @Override
     public final List<ConsultationCategoryDeterministicMatch> evaluate(
-
             ConsultationCategoryEvidenceView view
-
     ) {
-
         Objects.requireNonNull(
                 view,
-                flowLabel()
-                        + " PRIMARY_ACTIVE_DOMAIN에는 ConsultationCategoryEvidenceView가 필요합니다."
+                flowLabel() + " PRIMARY_ACTIVE_DOMAIN에는 ConsultationCategoryEvidenceView가 필요합니다."
         );
 
-        if (
-                view.category()
-                        != category()
-        ) {
-
+        if (view.category() != category()) {
             throw new IllegalArgumentException(
                     flowLabel()
                             + " PRIMARY_ACTIVE_DOMAIN Rule은 "
@@ -391,178 +65,77 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
             );
         }
 
-        if (
-                view.unavailable()
-        ) {
-
+        if (view.unavailable() || !view.hasTimelineYearEvidences()) {
             return List.of();
         }
 
-        if (
-                !view.hasTimelineYearEvidences()
-        ) {
+        List<ConsultationCategoryDeterministicMatch> result = new ArrayList<>();
 
-            return List.of();
-        }
+        for (ConsultationCategoryTimelineYearEvidence yearEvidence : view.timelineYearEvidences()) {
+            ConsultationCategoryDeterministicMatch match = evaluateYear(yearEvidence);
 
-        List<ConsultationCategoryDeterministicMatch> result =
-                new ArrayList<>();
-
-        for (
-                ConsultationCategoryTimelineYearEvidence yearEvidence
-                : view.timelineYearEvidences()
-        ) {
-
-            ConsultationCategoryDeterministicMatch match =
-                    evaluateYear(
-                            yearEvidence
-                    );
-
-            if (
-                    match != null
-            ) {
-
-                result.add(
-                        match
-                );
+            if (match != null) {
+                result.add(match);
             }
         }
 
-        return List.copyOf(
-                result
-        );
+        return List.copyOf(result);
     }
 
-
-    /*
-     * =================================================
-     * One Year
-     * =================================================
-     */
-
     private ConsultationCategoryDeterministicMatch evaluateYear(
-
             ConsultationCategoryTimelineYearEvidence yearEvidence
-
     ) {
-
         Objects.requireNonNull(
                 yearEvidence,
-                flowLabel()
-                        + " PRIMARY_ACTIVE_DOMAIN에는 Timeline Year Evidence가 필요합니다."
+                flowLabel() + " PRIMARY_ACTIVE_DOMAIN에는 Timeline Year Evidence가 필요합니다."
         );
 
-        List<LifeDomainRuleMatch> yearMatches =
-                yearEvidence.matches();
+        List<LifeDomainRuleMatch> yearMatches = yearEvidence.matches();
 
-        if (
-                yearMatches == null
-                        || yearMatches.isEmpty()
-        ) {
-
+        if (yearMatches == null || yearMatches.isEmpty()) {
             return null;
         }
 
-        Map<
-                LifeDomain,
-                List<LifeDomainRuleMatch>
-                > temporalMatchesByDomain =
-                groupTemporalMatches(
-                        yearMatches
-                );
+        Map<LifeDomain, List<LifeDomainRuleMatch>> temporalMatchesByDomain =
+                groupTemporalMatches(yearMatches);
 
-        if (
-                temporalMatchesByDomain.isEmpty()
-        ) {
-
-            /*
-             * Natal-only 구조만으로
-             * 해당 연도의 Active Domain을 만들지 않는다.
-             */
+        if (temporalMatchesByDomain.isEmpty()) {
             return null;
         }
 
-        List<ActiveDomainCandidate> candidates =
-                new ArrayList<>();
+        List<ActiveDomainCandidate> candidates = new ArrayList<>();
 
-        for (
-                LifeDomain domain
-                : LifeDomain.values()
-        ) {
-
+        for (LifeDomain domain : LifeDomain.values()) {
             List<LifeDomainRuleMatch> temporalMatches =
-                    temporalMatchesByDomain
-                            .getOrDefault(
-                                    domain,
-                                    List.of()
-                            );
-
-            if (
-                    temporalMatches.isEmpty()
-            ) {
-
-                continue;
-            }
-
-            candidates.add(
-                    buildCandidate(
+                    temporalMatchesByDomain.getOrDefault(
                             domain,
-                            temporalMatches
-                    )
-            );
+                            List.of()
+                    );
+
+            if (!temporalMatches.isEmpty()) {
+                candidates.add(
+                        buildCandidate(
+                                domain,
+                                temporalMatches
+                        )
+                );
+            }
         }
 
-        if (
-                candidates.isEmpty()
-        ) {
-
+        if (candidates.isEmpty()) {
             return null;
         }
 
-        ActiveDomainCandidate selected;
-
-        /*
-         * =================================================
-         * 하나의 Temporal Domain만 존재
-         * =================================================
-         */
-
-        if (
-                candidates.size()
-                        == 1
-        ) {
-
-            selected =
-                    candidates.get(
-                            0
-                    );
-
-        } else {
-
-            selected =
-                    selectUniqueDominantCandidate(
-                            candidates
-                    );
-
-            /*
-             * 명확한 지배 후보가 없다면
-             * 억지 Primary를 만들지 않는다.
-             */
-
-            if (
-                    selected == null
-            ) {
-
-                return null;
-            }
-        }
-
-        List<String> reasons =
-                buildReasons(
-                        yearEvidence,
-                        candidates,
-                        selected
+        ActiveDomainCandidate selected =
+                candidates.size() == 1
+                        ? candidates.get(0)
+                        : selectUniqueDominantCandidate(
+                        candidates
                 );
+
+        if (selected == null) {
+            return null;
+        }
 
         return new ConsultationCategoryDeterministicMatch(
                 category(),
@@ -578,39 +151,23 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
                         selected
                 ),
                 selected.temporalMatches(),
-                reasons
+                buildReasons(
+                        yearEvidence,
+                        candidates,
+                        selected
+                )
         );
     }
 
-
-    /*
-     * =================================================
-     * Temporal Group
-     * =================================================
-     */
-
-    private Map<
-            LifeDomain,
-            List<LifeDomainRuleMatch>
-            > groupTemporalMatches(
-
+    private Map<LifeDomain, List<LifeDomainRuleMatch>> groupTemporalMatches(
             List<LifeDomainRuleMatch> matches
-
     ) {
-
-        Map<
-                LifeDomain,
-                List<LifeDomainRuleMatch>
-                > mutable =
+        Map<LifeDomain, List<LifeDomainRuleMatch>> mutable =
                 new EnumMap<>(
                         LifeDomain.class
                 );
 
-        for (
-                LifeDomainRuleMatch match
-                : matches
-        ) {
-
+        for (LifeDomainRuleMatch match : matches) {
             LifeDomainRuleMatch normalized =
                     Objects.requireNonNull(
                             match,
@@ -618,12 +175,7 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
                                     + " Timeline Year Match는 null일 수 없습니다."
                     );
 
-            if (
-                    !temporalActivityExists(
-                            normalized
-                    )
-            ) {
-
+            if (!temporalActivityExists(normalized)) {
                 continue;
             }
 
@@ -638,21 +190,13 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
                     );
         }
 
-        Map<
-                LifeDomain,
-                List<LifeDomainRuleMatch>
-                > result =
+        Map<LifeDomain, List<LifeDomainRuleMatch>> result =
                 new EnumMap<>(
                         LifeDomain.class
                 );
 
-        for (
-                Map.Entry<
-                        LifeDomain,
-                        List<LifeDomainRuleMatch>
-                        > entry
-                : mutable.entrySet()
-        ) {
+        for (Map.Entry<LifeDomain, List<LifeDomainRuleMatch>> entry
+                : mutable.entrySet()) {
 
             result.put(
                     entry.getKey(),
@@ -665,29 +209,11 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
         return result;
     }
 
-
-    /*
-     * =================================================
-     * Temporal Activity
-     * =================================================
-     *
-     * 현재 공식적으로 확실히 연결된
-     * Timeline Year Source만 사용한다.
-     *
-     * Natal-only Match를 Active Domain으로
-     * 승격하지 않는다.
-     */
-
     private boolean temporalActivityExists(
-
             LifeDomainRuleMatch match
-
     ) {
-
-        for (
-                LifeDomainEvidenceReference<?> reference
-                : match.evidences()
-        ) {
+        for (LifeDomainEvidenceReference<?> reference
+                : match.evidences()) {
 
             Objects.requireNonNull(
                     reference,
@@ -697,19 +223,10 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
             LifeDomainEvidenceSourceType sourceType =
                     reference.sourceType();
 
-            if (
-                    sourceType
-                            == LifeDomainEvidenceSourceType
-                            .ANNUAL_CONTEXT
-
-                            || sourceType
-                            == LifeDomainEvidenceSourceType
-                            .ANNUAL_FUNCTIONAL_CONTEXT
-
-                            || sourceType
-                            == LifeDomainEvidenceSourceType
-                            .MONTHLY_CONTEXT
-            ) {
+            if (sourceType == LifeDomainEvidenceSourceType.ANNUAL_CONTEXT
+                    || sourceType == LifeDomainEvidenceSourceType.ANNUAL_FUNCTIONAL_CONTEXT
+                    || sourceType == LifeDomainEvidenceSourceType.MONTHLY_CONTEXT
+                    || sourceType == LifeDomainEvidenceSourceType.MONTHLY_FUNCTIONAL_CONTEXT) {
 
                 return true;
             }
@@ -718,21 +235,10 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
         return false;
     }
 
-
-    /*
-     * =================================================
-     * Candidate
-     * =================================================
-     */
-
     private ActiveDomainCandidate buildCandidate(
-
             LifeDomain domain,
-
             List<LifeDomainRuleMatch> temporalMatches
-
     ) {
-
         Objects.requireNonNull(
                 domain,
                 "Active Domain Candidate에는 LifeDomain이 필요합니다."
@@ -743,10 +249,7 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
                 "Active Domain Candidate에는 Temporal Match가 필요합니다."
         );
 
-        if (
-                temporalMatches.isEmpty()
-        ) {
-
+        if (temporalMatches.isEmpty()) {
             throw new IllegalArgumentException(
                     "Active Domain Candidate에는 최소 하나의 Temporal Match가 필요합니다. domain="
                             + domain
@@ -759,28 +262,15 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
         Set<String> monthlyAnchors =
                 new LinkedHashSet<>();
 
-        boolean supportiveExists =
-                false;
+        boolean supportiveExists = false;
+        boolean pressureExists = false;
+        boolean mixedExists = false;
+        boolean contextualExists = false;
 
-        boolean pressureExists =
-                false;
+        for (LifeDomainRuleMatch match
+                : temporalMatches) {
 
-        boolean mixedExists =
-                false;
-
-        boolean contextualExists =
-                false;
-
-        for (
-                LifeDomainRuleMatch match
-                : temporalMatches
-        ) {
-
-            if (
-                    match.domain()
-                            != domain
-            ) {
-
+            if (match.domain() != domain) {
                 throw new IllegalArgumentException(
                         "Active Domain Candidate의 Domain이 Source Match와 일치하지 않습니다. expected="
                                 + domain
@@ -795,31 +285,22 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
                             "Active Domain Candidate의 Match status는 null일 수 없습니다."
                     );
 
-            switch (
-                    status
-            ) {
-
+            switch (status) {
                 case SUPPORTIVE ->
-                        supportiveExists =
-                                true;
+                        supportiveExists = true;
 
                 case PRESSURE ->
-                        pressureExists =
-                                true;
+                        pressureExists = true;
 
                 case MIXED ->
-                        mixedExists =
-                                true;
+                        mixedExists = true;
 
                 case CONTEXTUAL ->
-                        contextualExists =
-                                true;
+                        contextualExists = true;
             }
 
-            for (
-                    LifeDomainEvidenceReference<?> reference
-                    : match.evidences()
-            ) {
+            for (LifeDomainEvidenceReference<?> reference
+                    : match.evidences()) {
 
                 Objects.requireNonNull(
                         reference,
@@ -830,63 +311,54 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
                         reference.sourceType();
 
                 /*
-                 * =========================================
-                 * Annual Functional
-                 * =========================================
+                 * Annual Functional은
+                 * 동일 Annual provenance의
+                 * 더 정밀한 qualification.
                  */
-
-                if (
-                        sourceType
-                                == LifeDomainEvidenceSourceType
-                                .ANNUAL_FUNCTIONAL_CONTEXT
-                ) {
+                if (sourceType
+                        == LifeDomainEvidenceSourceType.ANNUAL_FUNCTIONAL_CONTEXT) {
 
                     annualQualification =
-                            AnnualActivityQualification
-                                    .ANNUAL_FUNCTIONAL;
+                            AnnualActivityQualification.ANNUAL_FUNCTIONAL;
 
                     continue;
                 }
 
                 /*
-                 * =========================================
-                 * Annual Context
-                 * =========================================
+                 * Annual Context.
+                 *
+                 * 이미 ANNUAL_FUNCTIONAL이면
+                 * 낮은 단계로 되돌리지 않는다.
                  */
+                if (sourceType
+                        == LifeDomainEvidenceSourceType.ANNUAL_CONTEXT) {
 
-                if (
-                        sourceType
-                                == LifeDomainEvidenceSourceType
-                                .ANNUAL_CONTEXT
-                ) {
-
-                    if (
-                            annualQualification
-                                    == AnnualActivityQualification.NONE
-                    ) {
+                    if (annualQualification
+                            == AnnualActivityQualification.NONE) {
 
                         annualQualification =
-                                AnnualActivityQualification
-                                        .ANNUAL_CONTEXT;
+                                AnnualActivityQualification.ANNUAL_CONTEXT;
                     }
 
                     continue;
                 }
 
                 /*
-                 * =========================================
-                 * Monthly
-                 * =========================================
+                 * Monthly raw / derived.
+                 *
+                 * 같은 월은 같은 provenance family로
+                 * 정규화한다.
                  */
+                if (sourceType
+                        == LifeDomainEvidenceSourceType.MONTHLY_CONTEXT
 
-                if (
-                        sourceType
-                                == LifeDomainEvidenceSourceType
-                                .MONTHLY_CONTEXT
-                ) {
+                        || sourceType
+                        == LifeDomainEvidenceSourceType.MONTHLY_FUNCTIONAL_CONTEXT) {
 
                     monthlyAnchors.add(
-                            reference.sourceKey()
+                            monthlyIndependentAnchor(
+                                    reference
+                            )
                     );
                 }
             }
@@ -914,73 +386,111 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
                 annualQualification,
                 multiMonthActivity,
                 directionalActivity,
-                List.copyOf(
-                        temporalMatches
-                ),
-                Set.copyOf(
-                        monthlyAnchors
-                )
+                temporalMatches,
+                monthlyAnchors
         );
     }
 
-
-    /*
-     * =================================================
-     * Domain Status
-     * =================================================
+    /**
+     * MONTHLY:2026:7
+     * +
+     * MONTHLY_FUNCTIONAL:2026:7
+     *
+     * ->
+     *
+     * MONTHLY_CONTEXT_FAMILY:2026:7
+     *
+     * 예상하지 못한 key 형식은
+     * 서로 같은 provenance라고 추측하지 않는다.
      */
+    private String monthlyIndependentAnchor(
+            LifeDomainEvidenceReference<?> reference
+    ) {
+        Objects.requireNonNull(
+                reference,
+                "Monthly Independent Anchor 계산에는 Evidence Reference가 필요합니다."
+        );
+
+        LifeDomainEvidenceSourceType sourceType =
+                reference.sourceType();
+
+        String sourceKey =
+                Objects.requireNonNull(
+                        reference.sourceKey(),
+                        "Monthly Evidence sourceKey는 null일 수 없습니다."
+                );
+
+        String expectedPrefix;
+
+        if (sourceType
+                == LifeDomainEvidenceSourceType.MONTHLY_CONTEXT) {
+
+            expectedPrefix =
+                    "MONTHLY:";
+
+        } else if (sourceType
+                == LifeDomainEvidenceSourceType.MONTHLY_FUNCTIONAL_CONTEXT) {
+
+            expectedPrefix =
+                    "MONTHLY_FUNCTIONAL:";
+
+        } else {
+
+            throw new IllegalArgumentException(
+                    "Monthly Independent Anchor에는 MONTHLY_CONTEXT 또는 MONTHLY_FUNCTIONAL_CONTEXT만 사용할 수 있습니다. actual="
+                            + sourceType
+            );
+        }
+
+        if (sourceKey.startsWith(expectedPrefix)) {
+
+            String anchor =
+                    sourceKey.substring(
+                            expectedPrefix.length()
+                    );
+
+            if (!anchor.isBlank()) {
+                return "MONTHLY_CONTEXT_FAMILY:"
+                        + anchor;
+            }
+        }
+
+        /*
+         * 모르는 provenance는
+         * raw / functional끼리 억지로 합치지 않는다.
+         */
+        return "UNNORMALIZED_MONTHLY:"
+                + sourceType.name()
+                + ":"
+                + sourceKey;
+    }
 
     private LifeDomainSignalStatus resolveDomainStatus(
-
             boolean supportiveExists,
-
             boolean pressureExists,
-
             boolean mixedExists,
-
             boolean contextualExists
-
     ) {
-
-        if (
-                mixedExists
-        ) {
-
-            return LifeDomainSignalStatus
-                    .MIXED;
+        if (mixedExists) {
+            return LifeDomainSignalStatus.MIXED;
         }
 
-        if (
-                supportiveExists
-                        && pressureExists
-        ) {
+        if (supportiveExists
+                && pressureExists) {
 
-            return LifeDomainSignalStatus
-                    .MIXED;
+            return LifeDomainSignalStatus.MIXED;
         }
 
-        if (
-                pressureExists
-        ) {
-
-            return LifeDomainSignalStatus
-                    .PRESSURE;
+        if (pressureExists) {
+            return LifeDomainSignalStatus.PRESSURE;
         }
 
-        if (
-                supportiveExists
-        ) {
-
-            return LifeDomainSignalStatus
-                    .SUPPORTIVE;
+        if (supportiveExists) {
+            return LifeDomainSignalStatus.SUPPORTIVE;
         }
 
-        if (
-                contextualExists
-        ) {
-
-            return LifeDomainSignalStatus
-                    .CONTEXTUAL;
+        if (contextualExists) {
+            return LifeDomainSignalStatus.CONTEXTUAL;
         }
 
         throw new IllegalStateException(
@@ -989,49 +499,29 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
         );
     }
 
-
-    /*
-     * =================================================
-     * Dominance Selection
-     * =================================================
-     */
-
-    private ActiveDomainCandidate
-    selectUniqueDominantCandidate(
-
+    private ActiveDomainCandidate selectUniqueDominantCandidate(
             List<ActiveDomainCandidate> candidates
-
     ) {
-
         List<ActiveDomainCandidate> dominantCandidates =
                 new ArrayList<>();
 
-        for (
-                ActiveDomainCandidate candidate
-                : candidates
-        ) {
+        for (ActiveDomainCandidate candidate
+                : candidates) {
 
             boolean dominatesAllOthers =
                     true;
 
-            for (
-                    ActiveDomainCandidate other
-                    : candidates
-            ) {
+            for (ActiveDomainCandidate other
+                    : candidates) {
 
-                if (
-                        candidate == other
-                ) {
-
+                if (candidate == other) {
                     continue;
                 }
 
-                if (
-                        !dominates(
-                                candidate,
-                                other
-                        )
-                ) {
+                if (!dominates(
+                        candidate,
+                        other
+                )) {
 
                     dominatesAllOthers =
                             false;
@@ -1040,49 +530,22 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
                 }
             }
 
-            if (
-                    dominatesAllOthers
-            ) {
-
+            if (dominatesAllOthers) {
                 dominantCandidates.add(
                         candidate
                 );
             }
         }
 
-        if (
-                dominantCandidates.size()
-                        != 1
-        ) {
-
-            return null;
-        }
-
-        return dominantCandidates.get(
-                0
-        );
+        return dominantCandidates.size() == 1
+                ? dominantCandidates.get(0)
+                : null;
     }
 
-
-    /*
-     * =================================================
-     * Dominates
-     * =================================================
-     *
-     * 점수를 더하지 않는다.
-     *
-     * 모든 자격축에서 낮지 않고
-     * 최소 한 축에서 엄격히 높아야 한다.
-     */
-
     private boolean dominates(
-
             ActiveDomainCandidate first,
-
             ActiveDomainCandidate second
-
     ) {
-
         int firstAnnualLevel =
                 first
                         .annualQualification()
@@ -1125,59 +588,36 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
                 firstDirectionalLevel
                         >= secondDirectionalLevel;
 
-        if (
-                !annualNotLower
-                        || !monthlyNotLower
-                        || !directionalNotLower
-        ) {
+        if (!annualNotLower
+                || !monthlyNotLower
+                || !directionalNotLower) {
 
             return false;
         }
 
-        boolean annualStrictlyHigher =
-                firstAnnualLevel
-                        > secondAnnualLevel;
+        return firstAnnualLevel
+                > secondAnnualLevel
 
-        boolean monthlyStrictlyHigher =
-                firstMonthlyLevel
-                        > secondMonthlyLevel;
+                || firstMonthlyLevel
+                > secondMonthlyLevel
 
-        boolean directionalStrictlyHigher =
-                firstDirectionalLevel
-                        > secondDirectionalLevel;
-
-        return annualStrictlyHigher
-                || monthlyStrictlyHigher
-                || directionalStrictlyHigher;
+                || firstDirectionalLevel
+                > secondDirectionalLevel;
     }
-
 
     private int booleanLevel(
             boolean value
     ) {
-
         return value
                 ? 1
                 : 0;
     }
 
-
-    /*
-     * =================================================
-     * Reasons
-     * =================================================
-     */
-
     private List<String> buildReasons(
-
             ConsultationCategoryTimelineYearEvidence yearEvidence,
-
             List<ActiveDomainCandidate> candidates,
-
             ActiveDomainCandidate selected
-
     ) {
-
         List<String> reasons =
                 new ArrayList<>();
 
@@ -1187,7 +627,7 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
         );
 
         reasons.add(
-                "Natal-only Match는 해당 명리연도의 Active Domain 후보로 사용하지 않고 ANNUAL_CONTEXT, ANNUAL_FUNCTIONAL_CONTEXT 또는 MONTHLY_CONTEXT가 실제 존재하는 Domain만 후보로 사용합니다."
+                "Natal-only Match는 해당 명리연도의 Active Domain 후보로 사용하지 않고 ANNUAL_CONTEXT, ANNUAL_FUNCTIONAL_CONTEXT, MONTHLY_CONTEXT 또는 MONTHLY_FUNCTIONAL_CONTEXT가 실제 존재하는 Domain만 후보로 사용합니다."
         );
 
         reasons.add(
@@ -1195,23 +635,15 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
         );
 
         reasons.add(
-                "SUPPORTIVE, PRESSURE, MIXED는 PRIMARY_ACTIVE 비교에서 모두 방향성이 존재하는 상태이며 서로 우열을 두지 않습니다. CONTEXTUAL만 방향 미확정 상태로 구분합니다."
+                "MONTHLY_CONTEXT와 MONTHLY_FUNCTIONAL_CONTEXT는 같은 명리연도·같은 monthIndex라면 하나의 MONTHLY_CONTEXT_FAMILY Anchor로 정규화하고, 서로 다른 최소 두 월 Anchor가 있을 때만 multi-month activity를 인정합니다."
         );
 
         reasons.add(
-                "서로 다른 최소 두 MONTHLY_CONTEXT sourceKey가 존재할 때만 multi-month activity를 인정하며 반복 Match 개수 자체는 강도로 사용하지 않습니다."
+                "SUPPORTIVE, PRESSURE, MIXED는 PRIMARY_ACTIVE 비교에서 모두 방향성이 존재하는 상태이며 서로 우열을 두지 않습니다. CONTEXTUAL만 방향 미확정 상태로 구분합니다."
         );
 
-        /*
-         * =================================================
-         * Candidate
-         * =================================================
-         */
-
-        for (
-                ActiveDomainCandidate candidate
-                : candidates
-        ) {
+        for (ActiveDomainCandidate candidate
+                : candidates) {
 
             reasons.add(
                     "Active 후보 "
@@ -1228,16 +660,7 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
             );
         }
 
-        /*
-         * =================================================
-         * Selected
-         * =================================================
-         */
-
-        if (
-                candidates.size()
-                        == 1
-        ) {
+        if (candidates.size() == 1) {
 
             reasons.add(
                     selected.domain()
@@ -1252,15 +675,7 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
             );
         }
 
-        /*
-         * =================================================
-         * Selected Direction
-         * =================================================
-         */
-
-        switch (
-                selected.domainStatus()
-        ) {
+        switch (selected.domainStatus()) {
 
             case SUPPORTIVE ->
                     reasons.add(
@@ -1283,18 +698,10 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
                     );
         }
 
-        /*
-         * =================================================
-         * Monthly
-         * =================================================
-         */
-
-        if (
-                selected.multiMonthActivity()
-        ) {
+        if (selected.multiMonthActivity()) {
 
             reasons.add(
-                    "선택된 Domain은 둘 이상의 서로 다른 MONTHLY_CONTEXT Anchor에서 실제 Timeline Activity가 확인되어 하나의 대표 월에만 국한되지 않습니다."
+                    "선택된 Domain은 raw/functional 중복을 제거한 둘 이상의 서로 다른 MONTHLY_CONTEXT_FAMILY Anchor에서 실제 Timeline Activity가 확인되어 하나의 대표 월에만 국한되지 않습니다."
             );
 
         } else {
@@ -1304,22 +711,13 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
             );
         }
 
-        /*
-         * =================================================
-         * Timeline
-         * =================================================
-         */
-
         reasons.add(
                 "해당 명리연도의 실제 Timeline monthIndex 목록 "
                         + yearEvidence.monthIndices()
                         + "을 그대로 보존하며 대표 월을 임의 선택하지 않습니다."
         );
 
-        if (
-                yearEvidence
-                        .timelineUncertaintyExists()
-        ) {
+        if (yearEvidence.timelineUncertaintyExists()) {
 
             reasons.add(
                     "해당 명리연도에는 Timeline uncertainty가 존재하며 PRIMARY_ACTIVE_DOMAIN을 단일 사건이나 확정된 시간 결과로 변환하지 않습니다."
@@ -1335,30 +733,15 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
         );
     }
 
-
-    /*
-     * =================================================
-     * Summary
-     * =================================================
-     */
-
     private String summaryOf(
             ActiveDomainCandidate selected
     ) {
-
         return "해당 명리연도에는 "
                 + selected.domain()
                 + "이 다른 생활영역보다 시간적 작동 자격이 구조적으로 분명한 PRIMARY_ACTIVE_DOMAIN이며, 그 방향은 "
                 + selected.domainStatus()
                 + "입니다.";
     }
-
-
-    /*
-     * =================================================
-     * Annual Qualification
-     * =================================================
-     */
 
     private enum AnnualActivityQualification {
 
@@ -1379,44 +762,26 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
         AnnualActivityQualification(
                 int level
         ) {
-
             this.level =
                     level;
         }
 
         private int level() {
-
             return level;
         }
     }
 
-
-    /*
-     * =================================================
-     * Candidate
-     * =================================================
-     */
-
     private record ActiveDomainCandidate(
-
             LifeDomain domain,
-
             LifeDomainSignalStatus domainStatus,
-
             AnnualActivityQualification annualQualification,
-
             boolean multiMonthActivity,
-
             boolean directionalActivity,
-
             List<LifeDomainRuleMatch> temporalMatches,
-
             Set<String> monthlyAnchors
-
     ) {
 
         private ActiveDomainCandidate {
-
             Objects.requireNonNull(
                     domain,
                     "Active Domain Candidate에는 domain이 필요합니다."
@@ -1446,31 +811,22 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
                             monthlyAnchors
                     );
 
-            if (
-                    temporalMatches.isEmpty()
-            ) {
-
+            if (temporalMatches.isEmpty()) {
                 throw new IllegalArgumentException(
                         "Active Domain Candidate에는 최소 하나의 Temporal Match가 필요합니다. domain="
                                 + domain
                 );
             }
 
-            for (
-                    LifeDomainRuleMatch match
-                    : temporalMatches
-            ) {
+            for (LifeDomainRuleMatch match
+                    : temporalMatches) {
 
                 Objects.requireNonNull(
                         match,
                         "Active Domain Candidate의 sourceMatch는 null일 수 없습니다."
                 );
 
-                if (
-                        match.domain()
-                                != domain
-                ) {
-
+                if (match.domain() != domain) {
                     throw new IllegalArgumentException(
                             "Active Domain Candidate의 sourceMatch Domain이 일치하지 않습니다. expected="
                                     + domain
@@ -1480,14 +836,9 @@ public abstract class AbstractTimelineYearPrimaryActiveDomainRule
                 }
             }
 
-            if (
-                    directionalActivity
-                            !=
-                            (
-                                    domainStatus
-                                            != LifeDomainSignalStatus.CONTEXTUAL
-                            )
-            ) {
+            if (directionalActivity
+                    != (domainStatus
+                    != LifeDomainSignalStatus.CONTEXTUAL)) {
 
                 throw new IllegalArgumentException(
                         "Active Domain Candidate의 directionalActivity와 domainStatus가 일치하지 않습니다. domain="

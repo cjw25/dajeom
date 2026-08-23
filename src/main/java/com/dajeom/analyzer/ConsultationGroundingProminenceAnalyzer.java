@@ -79,7 +79,7 @@ import java.util.Set;
  * deterministic provenance를 나타낸다.
  *
  * =================================================
- * 파생 Evidence 독립성
+ * 파생 Evidence 독립성 - Annual
  * =================================================
  *
  * ANNUAL_CONTEXT
@@ -109,6 +109,49 @@ import java.util.Set;
  * 를 같은 ANNUAL provenance family로 정규화한다.
  *
  * =================================================
+ * 파생 Evidence 독립성 - Monthly
+ * =================================================
+ *
+ * MONTHLY_CONTEXT
+ *
+ * 와
+ *
+ * MONTHLY_FUNCTIONAL_CONTEXT
+ *
+ * 역시 LifeDomain Rule 실행에서는
+ * 서로 다른 typed Evidence로 모두 보존한다.
+ *
+ * Monthly Functional은:
+ *
+ * - 기존 MonthlyLuckAnalysis
+ * - 기존 MonthlyLuckContextAnalysis
+ * - 고정된 Annual Functional Baseline
+ *
+ * 을 기반으로 만들어진 derived temporal analysis다.
+ *
+ * 따라서 같은 명리연도 / 같은 월에서:
+ *
+ * MONTHLY_CONTEXT
+ *
+ * +
+ *
+ * MONTHLY_FUNCTIONAL_CONTEXT
+ *
+ * 가 함께 존재한다고 해서
+ * 독립 월운 근거 두 개로 prominence를
+ * 올리면 안 된다.
+ *
+ * Prominence의 독립성 계산에서만:
+ *
+ * MONTHLY_CONTEXT
+ *
+ * +
+ *
+ * MONTHLY_FUNCTIONAL_CONTEXT
+ *
+ * 를 같은 MONTHLY provenance family로 정규화한다.
+ *
+ * =================================================
  *
  * 이 정규화가 하지 않는 것:
  *
@@ -118,7 +161,10 @@ import java.util.Set;
  * - SUPPORTIVE/PRESSURE 합산
  * - Annual Functional 정보 삭제
  * - Annual Context 정보 삭제
+ * - Monthly Functional 정보 삭제
+ * - Monthly Context 정보 삭제
  * - 실제 Grounding Source 목록 변경
+ * - Annual과 Monthly를 하나의 Family로 합치기
  *
  * 오직 narrative prominence 계산에서만
  * 파생 근거의 독립성 중복을 제거한다.
@@ -143,6 +189,25 @@ public class ConsultationGroundingProminenceAnalyzer {
     private static final String
             ANNUAL_PROVENANCE_FAMILY =
             "ANNUAL_CONTEXT_FAMILY";
+
+
+    /*
+     * =================================================
+     * Monthly Provenance
+     * =================================================
+     */
+
+    private static final String
+            MONTHLY_CONTEXT_KEY_PREFIX =
+            "MONTHLY:";
+
+    private static final String
+            MONTHLY_FUNCTIONAL_KEY_PREFIX =
+            "MONTHLY_FUNCTIONAL:";
+
+    private static final String
+            MONTHLY_PROVENANCE_FAMILY =
+            "MONTHLY_CONTEXT_FAMILY";
 
 
     /*
@@ -314,11 +379,16 @@ public class ConsultationGroundingProminenceAnalyzer {
             /*
              * 실제 Grounding Source는 변경하지 않는다.
              *
-             * ANNUAL_CONTEXT와
-             * ANNUAL_FUNCTIONAL_CONTEXT 모두
-             * 원래 Source 목록 그대로 외부 Grounding에 남는다.
+             * ANNUAL_CONTEXT
+             * ANNUAL_FUNCTIONAL_CONTEXT
              *
-             * 위에서 계산한 숫자만
+             * MONTHLY_CONTEXT
+             * MONTHLY_FUNCTIONAL_CONTEXT
+             *
+             * 모두 원래 Source 목록 그대로
+             * 외부 Grounding에 남는다.
+             *
+             * 위에서 계산한 prominence 숫자만
              * 독립 Provenance 기준으로 정규화된다.
              */
 
@@ -567,6 +637,26 @@ public class ConsultationGroundingProminenceAnalyzer {
             return ANNUAL_PROVENANCE_FAMILY;
         }
 
+        /*
+         * =================================================
+         * Monthly Functional은
+         * Monthly Context의 derived provenance.
+         * =================================================
+         */
+
+        if (
+                sourceType
+                        == LifeDomainEvidenceSourceType
+                        .MONTHLY_CONTEXT
+
+                        || sourceType
+                        == LifeDomainEvidenceSourceType
+                        .MONTHLY_FUNCTIONAL_CONTEXT
+        ) {
+
+            return MONTHLY_PROVENANCE_FAMILY;
+        }
+
         return String.valueOf(
                 sourceType
         );
@@ -578,15 +668,29 @@ public class ConsultationGroundingProminenceAnalyzer {
      * Independent Source Key
      * =================================================
      *
+     * Annual:
+     *
      * ANNUAL:2026
      *
      * ANNUAL_FUNCTIONAL:2026
      *
-     * 을 prominence 독립성 계산에서는:
+     * ->
      *
      * ANNUAL_CONTEXT_FAMILY:2026
      *
-     * 하나로 본다.
+     * =================================================
+     *
+     * Monthly:
+     *
+     * MONTHLY:2026:7
+     *
+     * MONTHLY_FUNCTIONAL:2026:7
+     *
+     * ->
+     *
+     * MONTHLY_CONTEXT_FAMILY:2026:7
+     *
+     * =================================================
      *
      * 실제 SourceKey는 변경하지 않는다.
      */
@@ -612,15 +716,22 @@ public class ConsultationGroundingProminenceAnalyzer {
                 source
                         .sourceType();
 
+        /*
+         * =================================================
+         * Annual
+         * =================================================
+         */
+
         if (
                 sourceType
                         == LifeDomainEvidenceSourceType
                         .ANNUAL_CONTEXT
         ) {
 
-            return annualIndependentKey(
+            return provenanceIndependentKey(
                     sourceKey,
-                    ANNUAL_CONTEXT_KEY_PREFIX
+                    ANNUAL_CONTEXT_KEY_PREFIX,
+                    ANNUAL_PROVENANCE_FAMILY
             );
         }
 
@@ -630,9 +741,42 @@ public class ConsultationGroundingProminenceAnalyzer {
                         .ANNUAL_FUNCTIONAL_CONTEXT
         ) {
 
-            return annualIndependentKey(
+            return provenanceIndependentKey(
                     sourceKey,
-                    ANNUAL_FUNCTIONAL_KEY_PREFIX
+                    ANNUAL_FUNCTIONAL_KEY_PREFIX,
+                    ANNUAL_PROVENANCE_FAMILY
+            );
+        }
+
+        /*
+         * =================================================
+         * Monthly
+         * =================================================
+         */
+
+        if (
+                sourceType
+                        == LifeDomainEvidenceSourceType
+                        .MONTHLY_CONTEXT
+        ) {
+
+            return provenanceIndependentKey(
+                    sourceKey,
+                    MONTHLY_CONTEXT_KEY_PREFIX,
+                    MONTHLY_PROVENANCE_FAMILY
+            );
+        }
+
+        if (
+                sourceType
+                        == LifeDomainEvidenceSourceType
+                        .MONTHLY_FUNCTIONAL_CONTEXT
+        ) {
+
+            return provenanceIndependentKey(
+                    sourceKey,
+                    MONTHLY_FUNCTIONAL_KEY_PREFIX,
+                    MONTHLY_PROVENANCE_FAMILY
             );
         }
 
@@ -642,12 +786,14 @@ public class ConsultationGroundingProminenceAnalyzer {
 
     /*
      * =================================================
-     * Annual Independent Anchor
+     * Derived Temporal Independent Anchor
      * =================================================
      *
-     * 정상 SourceKey:
+     * 정상 예:
      *
      * ANNUAL:2026
+     *
+     * +
      *
      * ANNUAL_FUNCTIONAL:2026
      *
@@ -657,29 +803,48 @@ public class ConsultationGroundingProminenceAnalyzer {
      *
      * =================================================
      *
-     * 예상하지 못한 SourceKey 형식은
-     * 억지로 다른 Annual Evidence와 합치지 않는다.
+     * MONTHLY:2026:7
      *
-     * 즉 모르는 provenance를
+     * +
+     *
+     * MONTHLY_FUNCTIONAL:2026:7
+     *
+     * ->
+     *
+     * MONTHLY_CONTEXT_FAMILY:2026:7
+     *
+     * =================================================
+     *
+     * 예상하지 못한 SourceKey 형식은
+     * 억지로 다른 Evidence와 합치지 않는다.
+     *
+     * 모르는 provenance를
      * "같은 근거"라고 추측하지 않는다.
      */
 
-    private String annualIndependentKey(
+    private String provenanceIndependentKey(
 
             String sourceKey,
 
-            String expectedPrefix
+            String expectedPrefix,
+
+            String provenanceFamily
 
     ) {
 
         Objects.requireNonNull(
                 sourceKey,
-                "Annual Independent Source Key가 필요합니다."
+                "Independent Source Key가 필요합니다."
         );
 
         Objects.requireNonNull(
                 expectedPrefix,
-                "Annual Independent Source Key Prefix가 필요합니다."
+                "Independent Source Key Prefix가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                provenanceFamily,
+                "Independent Provenance Family가 필요합니다."
         );
 
         if (
@@ -698,7 +863,7 @@ public class ConsultationGroundingProminenceAnalyzer {
                     !anchor.isBlank()
             ) {
 
-                return ANNUAL_PROVENANCE_FAMILY
+                return provenanceFamily
                         + ":"
                         + anchor;
             }
@@ -708,7 +873,7 @@ public class ConsultationGroundingProminenceAnalyzer {
          * 예상하지 못한 Key 형식.
          *
          * 원본 Key를 그대로 보존해서
-         * 다른 Annual provenance와
+         * 다른 provenance와
          * 강제로 합치지 않는다.
          */
 
@@ -729,7 +894,7 @@ public class ConsultationGroundingProminenceAnalyzer {
      *
      * =================================================
      *
-     * 예:
+     * Annual 예:
      *
      * WEALTH_ANNUAL_CONTEXT
      *
@@ -755,10 +920,38 @@ public class ConsultationGroundingProminenceAnalyzer {
      *
      * =================================================
      *
-     * 따라서 같은 Status라면
+     * Monthly 예:
+     *
+     * WEALTH_MONTHLY_CONTEXT
+     *
+     * sources:
+     *
+     * MONTHLY:2026:7
+     *
+     * ->
+     *
+     * MONTHLY_CONTEXT_FAMILY:2026:7
+     *
+     * =================================================
+     *
+     * WEALTH_MONTHLY_FUNCTIONAL
+     *
+     * sources:
+     *
+     * MONTHLY_FUNCTIONAL:2026:7
+     *
+     * ->
+     *
+     * MONTHLY_CONTEXT_FAMILY:2026:7
+     *
+     * =================================================
+     *
+     * 따라서 같은 Status이고
+     * 같은 원본 temporal anchor에서 파생되었다면
+     *
      * independent same-direction group = 1.
      *
-     * 두 Match 자체는 모두 그대로 남는다.
+     * 각각의 Match 자체는 모두 그대로 남는다.
      */
 
     private String independentRuleGroupKey(

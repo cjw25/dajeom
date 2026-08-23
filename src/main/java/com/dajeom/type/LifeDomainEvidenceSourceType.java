@@ -22,11 +22,33 @@ package com.dajeom.type;
  *
  * ANNUAL_FUNCTIONAL_CONTEXT
  *
- * 신규 Annual Functional Chain의
+ * 공식 Annual Functional Chain의
  * 최종 기준선을 현재 16차 Timeline Segment에
  * 연결한 typed temporal context.
  *
  * 기존 ANNUAL_CONTEXT를 대체하지 않는다.
+ *
+ * =================================================
+ *
+ * MONTHLY_CONTEXT
+ *
+ * 기존 15-7 MonthlyLuckContextAnalysis.
+ *
+ * =================================================
+ *
+ * MONTHLY_FUNCTIONAL_CONTEXT
+ *
+ * 공식 Annual Functional Baseline 위에서
+ * 현재 실제 MonthlyLuckAnalysis가
+ * 어떤 Function에 접촉하는지를 계산한
+ * Monthly Functional Activation의
+ * typed temporal context.
+ *
+ * 기존 MONTHLY_CONTEXT를 대체하지 않는다.
+ *
+ * 또한 MONTHLY_CONTEXT와
+ * 서로 독립된 명리근거 2개로
+ * 단순 합산해서는 안 된다.
  */
 public enum LifeDomainEvidenceSourceType {
 
@@ -114,6 +136,30 @@ public enum LifeDomainEvidenceSourceType {
             LifeDomainEvidenceTier.TEMPORAL_CONTEXT
     ),
 
+    /**
+     * 기존 MONTHLY_CONTEXT와 별개다.
+     *
+     * Monthly Functional Activation 계산의:
+     *
+     * - Annual Functional Baseline
+     * - Monthly Direct TenGod Contact
+     * - Monthly Structured Context
+     * - 현재 Annual-Decade Segment
+     * - Monthly Decade Context
+     * - Function별 Activation Status
+     *
+     * 를 현재 Timeline Segment에 연결하는
+     * derived temporal Evidence.
+     *
+     * 기존 MONTHLY_CONTEXT에서 파생되는
+     * 구조가 포함되므로 둘을 독립 근거 개수로
+     * 단순 합산해서는 안 된다.
+     */
+    MONTHLY_FUNCTIONAL_CONTEXT(
+            "월운 기능 Context",
+            LifeDomainEvidenceTier.TEMPORAL_CONTEXT
+    ),
+
     SHINSAL(
             "신살",
             LifeDomainEvidenceTier.AUXILIARY
@@ -131,8 +177,11 @@ public enum LifeDomainEvidenceSourceType {
 
     ) {
 
-        this.koreanName = koreanName;
-        this.tier = tier;
+        this.koreanName =
+                koreanName;
+
+        this.tier =
+                tier;
     }
 
     public String koreanName() {
@@ -158,18 +207,5 @@ public enum LifeDomainEvidenceSourceType {
         return tier
                 == LifeDomainEvidenceTier
                 .TEMPORAL_CONTEXT;
-    }
-
-    /**
-     * 새 Annual Functional Layer에서
-     * 파생된 typed context인가.
-     *
-     * 이것을 별도 독립 명리근거 개수로
-     * 단순 합산하면 안 된다.
-     */
-    public boolean annualFunctionalContext() {
-
-        return this
-                == ANNUAL_FUNCTIONAL_CONTEXT;
     }
 }

@@ -32,43 +32,84 @@ import java.util.Set;
  *
  * =================================================
  *
- * 학습·성장 영역에서 읽는 세운 십성:
- *
- * 인성:
+ * 학습·성장 영역에서 참조하는 세운 십성:
  *
  * DIRECT_RESOURCE
  * INDIRECT_RESOURCE
- *
- * 식상:
- *
  * EATING_GOD
  * HURTING_OFFICER
  *
  * =================================================
  *
- * 인성:
- *
- * 학습
- * 흡수
- * 정리
- * 내재화
- *
- * 측면의 Context.
- *
- * =================================================
- *
- * 식상:
- *
- * 표현
- * 산출
- * 응용
- * 외부 발현
- *
- * 측면의 Context.
- *
- * =================================================
- *
  * 중요한 원칙:
+ *
+ * AnnualLuckContextSignal은
+ * 14-6에서 이미 계산된
+ * deterministic Evidence 단위다.
+ *
+ * 따라서 이 Rule에서는:
+ *
+ * AnnualLuckContextSignal 1개
+ * ->
+ * LifeDomainRuleMatch 1개
+ *
+ * 로 보존한다.
+ *
+ * =================================================
+ *
+ * 서로 다른 Annual Signal을:
+ *
+ * - 합산하지 않는다.
+ * - 개수로 방향을 결정하지 않는다.
+ * - 하나의 대표 상태로 축약하지 않는다.
+ * - 정인과 편인을 합쳐 새 인성 상태를 만들지 않는다.
+ * - 식신과 상관을 합쳐 새 식상 상태를 만들지 않는다.
+ * - 인성과 식상을 결합하지 않는다.
+ *
+ * 단순 공존만으로:
+ *
+ * - 새로운 관계
+ * - 새로운 인과
+ * - 새로운 순서
+ * - 강화
+ * - 약화
+ * - 상쇄
+ * - 복합 상태
+ * - 추가 종합 의미
+ *
+ * 를 생성하지 않는다.
+ *
+ * =================================================
+ *
+ * 동일 Annual Signal이
+ * 둘 이상의 StructureTenGodType 조회 결과에
+ * 포함될 수 있는 경우:
+ *
+ * Object Identity 기준으로 Match는 하나만 생성한다.
+ *
+ * 대신 해당 Signal이 어떤 십성 조회에
+ * 실제 포함되었는지는 모두 근거에 보존한다.
+ *
+ * =================================================
+ *
+ * 십성 의미:
+ *
+ * DIRECT_RESOURCE / INDIRECT_RESOURCE
+ *
+ * =
+ * 학습·흡수·정리·내재화와 관련하여
+ * 참조 가능한 Context.
+ *
+ * EATING_GOD / HURTING_OFFICER
+ *
+ * =
+ * 표현·산출·응용·외부 발현과 관련하여
+ * 참조 가능한 Context.
+ *
+ * 위 의미 역시 서로 다른 Signal을
+ * 합쳐 새로운 결과를 만드는 데 사용하지 않는다.
+ *
+ * =================================================
  *
  * 14차에서 이미 계산된:
  *
@@ -83,24 +124,30 @@ import java.util.Set;
  *
  * 를 18차에서 다시 계산하지 않는다.
  *
+ * 실제 관계 계산이 AnnualLuckContextSignal 내부에
+ * 이미 포함되어 있다면 해당 계산 결과는 유지한다.
+ *
+ * 이 Rule이 다른 독립 Signal과 연결하여
+ * 추가 관계 의미를 생성하지 않을 뿐이다.
+ *
  * =================================================
  *
- * 상태 변환:
+ * 단일 Signal 상태 변환:
  *
  * SUPPORTED
  * -> SUPPORTIVE
  *
- * QUALIFIED만 존재
+ * QUALIFIED
  * -> CONTEXTUAL
  *
- * WEAKENED만 존재
+ * WEAKENED
  * -> PRESSURE
  *
- * CONFLICTED 존재
+ * CONFLICTED
  * -> MIXED
  *
- * 지원 계열과 약화 계열 동시 존재
- * -> MIXED
+ * 여러 Signal의 상태를 합쳐
+ * 새로운 MIXED 등을 만들지 않는다.
  *
  * =================================================
  *
@@ -213,13 +260,9 @@ public class LearningAnnualContextRule
                                 AnnualLuckContextAnalysis.class
                         );
 
-        List<LifeDomainRuleMatch> matches =
-                new ArrayList<>();
-
         /*
          * =================================================
-         * 1.
-         * 인성 Annual Context
+         * 학습·성장 관련 Annual Signal 조회
          * =================================================
          */
 
@@ -240,88 +283,6 @@ public class LearningAnnualContextRule
                         );
 
         List<AnnualLuckContextSignal>
-                resourceSignals =
-                mergeIdentityUnique(
-                        directResourceSignals,
-                        indirectResourceSignals
-                );
-
-        if (
-                !resourceSignals
-                        .isEmpty()
-        ) {
-
-            SignalCounts counts =
-                    countStatuses(
-                            resourceSignals
-                    );
-
-            LifeDomainSignalStatus status =
-                    resolveStatus(
-                            counts
-                    );
-
-            List<String> reasons =
-                    baseReasons(
-                            annualContext
-                    );
-
-            reasons.add(
-                    "정인 관련 Annual Context Signal은 "
-                            + directResourceSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "편인 관련 Annual Context Signal은 "
-                            + indirectResourceSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "Object Identity 중복 제거 후 인성 관련 Signal은 "
-                            + resourceSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    statusSummary(
-                            counts
-                    )
-            );
-
-            reasons.add(
-                    "인성 관련 세운 Context는 학습·흡수·정리·내재화 측면의 작동으로 해석합니다."
-            );
-
-            reasons.add(
-                    "인성 관련 세운 Context를 시험 합격·학력 상승·자격 취득 같은 실제 성과로 직접 환산하지 않습니다."
-            );
-
-            matches.add(
-                    new LifeDomainRuleMatch(
-                            LifeDomain.LEARNING_GROWTH,
-                            RULE_CODE,
-                            status,
-                            summaryOfResource(
-                                    status
-                            ),
-                            List.of(
-                                    annualReference
-                            ),
-                            reasons
-                    )
-            );
-        }
-
-        /*
-         * =================================================
-         * 2.
-         * 식상 Annual Context
-         * =================================================
-         */
-
-        List<AnnualLuckContextSignal>
                 eatingGodSignals =
                 annualContext
                         .signalsOf(
@@ -337,117 +298,70 @@ public class LearningAnnualContextRule
                                         .HURTING_OFFICER
                         );
 
+        /*
+         * =================================================
+         * Identity 중복 제거
+         * =================================================
+         *
+         * 이것은 상태 합성이 아니다.
+         *
+         * 동일 객체가 여러 십성 조회 결과에
+         * 반복 포함되는 경우
+         * 같은 upstream Signal을 중복 Match로
+         * 생성하지 않기 위한 Identity 정규화다.
+         */
+
         List<AnnualLuckContextSignal>
-                outputSignals =
+                learningSignals =
                 mergeIdentityUnique(
+                        directResourceSignals,
+                        indirectResourceSignals,
                         eatingGodSignals,
                         hurtingOfficerSignals
                 );
 
-        if (
-                !outputSignals
-                        .isEmpty()
-        ) {
-
-            SignalCounts counts =
-                    countStatuses(
-                            outputSignals
-                    );
-
-            LifeDomainSignalStatus status =
-                    resolveStatus(
-                            counts
-                    );
-
-            List<String> reasons =
-                    baseReasons(
-                            annualContext
-                    );
-
-            reasons.add(
-                    "식신 관련 Annual Context Signal은 "
-                            + eatingGodSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "상관 관련 Annual Context Signal은 "
-                            + hurtingOfficerSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "Object Identity 중복 제거 후 식상 관련 Signal은 "
-                            + outputSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    statusSummary(
-                            counts
-                    )
-            );
-
-            reasons.add(
-                    "식상 관련 세운 Context는 표현·산출·응용·외부 발현 측면의 작동으로 해석합니다."
-            );
-
-            reasons.add(
-                    "식상 관련 세운 Context를 시험 성과·창작 성공·업무 성과 같은 실제 결과로 직접 환산하지 않습니다."
-            );
-
-            matches.add(
-                    new LifeDomainRuleMatch(
-                            LifeDomain.LEARNING_GROWTH,
-                            RULE_CODE,
-                            status,
-                            summaryOfOutput(
-                                    status
-                            ),
-                            List.of(
-                                    annualReference
-                            ),
-                            reasons
-                    )
-            );
-        }
+        List<LifeDomainRuleMatch> matches =
+                new ArrayList<>();
 
         /*
          * =================================================
-         * 3.
-         * 인성 + 식상 동시 작동
+         * Annual Signal 1개 -> Match 1개
          * =================================================
-         *
-         * 흡수·내재화 축과
-         * 표현·산출 축이
-         * 같은 세운에서 동시에 관여.
-         *
-         * 둘 중 하나를 대표축으로 선택하지 않는다.
-         *
-         * 지원과 압박이 섞이면 MIXED.
          */
 
-        if (
-                !resourceSignals.isEmpty()
-                        && !outputSignals.isEmpty()
+        for (
+                AnnualLuckContextSignal signal
+                : learningSignals
         ) {
 
-            List<AnnualLuckContextSignal>
-                    combinedSignals =
-                    mergeIdentityUnique(
-                            resourceSignals,
-                            outputSignals
-                    );
-
-            SignalCounts counts =
-                    countStatuses(
-                            combinedSignals
-                    );
+            Objects.requireNonNull(
+                    signal,
+                    "AnnualLuckContextAnalysis의 Annual Signal은 null일 수 없습니다."
+            );
 
             LifeDomainSignalStatus status =
                     resolveStatus(
-                            counts
+                            signal
                     );
+
+            List<StructureTenGodType>
+                    matchedTenGodTypes =
+                    matchedTenGodTypes(
+                            signal,
+                            directResourceSignals,
+                            indirectResourceSignals,
+                            eatingGodSignals,
+                            hurtingOfficerSignals
+                    );
+
+            if (
+                    matchedTenGodTypes.isEmpty()
+            ) {
+
+                throw new IllegalStateException(
+                        "학습·성장 Annual Signal의 StructureTenGodType 조회 출처를 확인할 수 없습니다."
+                );
+            }
 
             List<String> reasons =
                     baseReasons(
@@ -455,35 +369,49 @@ public class LearningAnnualContextRule
                     );
 
             reasons.add(
-                    "인성 Context와 식상 Context가 같은 세운에서 동시에 존재합니다."
+                    "이 Annual Signal이 실제 포함된 학습·성장 십성 조회 유형은 "
+                            + matchedTenGodTypes
+                            + "입니다."
             );
 
             reasons.add(
-                    "인성 Signal은 "
-                            + resourceSignals.size()
-                            + "개, 식상 Signal은 "
-                            + outputSignals.size()
-                            + "개입니다."
+                    "이 Annual Signal의 원래 상태는 "
+                            + signal.status().name()
+                            + "입니다."
             );
 
             reasons.add(
-                    "Object Identity 중복 제거 후 두 축을 합친 Signal은 "
-                            + combinedSignals.size()
-                            + "개입니다."
+                    "이 Match는 하나의 AnnualLuckContextSignal만 LifeDomain 상태로 변환합니다."
             );
 
             reasons.add(
-                    statusSummary(
-                            counts
+                    "다른 Annual Signal의 상태·개수·십성 유형과 합산하여 새로운 SUPPORTIVE·PRESSURE·MIXED 상태를 생성하지 않습니다."
+            );
+
+            if (
+                    containsResourceType(
+                            matchedTenGodTypes
                     )
-            );
+            ) {
+
+                reasons.add(
+                        "이 Signal은 인성 계열 조회에 포함되므로 학습·흡수·정리·내재화 측면에서 참조할 수 있습니다."
+                );
+            }
+
+            if (
+                    containsOutputType(
+                            matchedTenGodTypes
+                    )
+            ) {
+
+                reasons.add(
+                        "이 Signal은 식상 계열 조회에 포함되므로 표현·산출·응용·외부 발현 측면에서 참조할 수 있습니다."
+                );
+            }
 
             reasons.add(
-                    "학습·흡수·내재화 축과 표현·산출·응용 축을 어느 하나로 축약하지 않습니다."
-            );
-
-            reasons.add(
-                    "두 축의 동시 작동을 학습 성취나 결과 발생으로 자동 승격하지 않습니다."
+                    "인성 또는 식상 관련 세운 Context를 시험 합격·자격 취득·창작 성공·업무 성과 같은 실제 결과로 직접 환산하지 않습니다."
             );
 
             matches.add(
@@ -491,13 +419,16 @@ public class LearningAnnualContextRule
                             LifeDomain.LEARNING_GROWTH,
                             RULE_CODE,
                             status,
-                            summaryOfCombined(
+                            summaryOf(
+                                    matchedTenGodTypes,
                                     status
                             ),
                             List.of(
                                     annualReference
                             ),
-                            reasons
+                            List.copyOf(
+                                    reasons
+                            )
                     )
             );
         }
@@ -530,14 +461,6 @@ public class LearningAnnualContextRule
                 "14차가 이미 계산한 십성·원국 관계·격국·용신·궁위·합화 Context를 18차에서 다시 계산하지 않습니다."
         );
 
-        /*
-         * =================================================
-         * 대운 Context 사용 불가
-         * =================================================
-         *
-         * annualSignals는 그대로 유효.
-         */
-
         if (
                 !annualContext
                         .decadeContextAvailable()
@@ -547,14 +470,6 @@ public class LearningAnnualContextRule
                     "대운 Segment Context를 사용할 수 없는 상태이지만 14차 정책에 따라 세운 자체 annualSignals는 그대로 보존하여 사용합니다."
             );
         }
-
-        /*
-         * =================================================
-         * 대운 교운 불확실성
-         * =================================================
-         *
-         * 가능한 대운을 하나로 선택하지 않는다.
-         */
 
         if (
                 annualContext
@@ -571,100 +486,23 @@ public class LearningAnnualContextRule
 
     /*
      * =================================================
-     * 상태 집계
+     * 단일 Annual Signal 상태 변환
      * =================================================
-     */
-
-    private SignalCounts countStatuses(
-            List<AnnualLuckContextSignal> signals
-    ) {
-
-        long supported =
-                signals
-                        .stream()
-                        .filter(
-                                signal ->
-                                        signal
-                                                .status()
-                                                .supported()
-                        )
-                        .count();
-
-        long qualified =
-                signals
-                        .stream()
-                        .filter(
-                                signal ->
-                                        signal
-                                                .status()
-                                                .qualified()
-                        )
-                        .count();
-
-        long weakened =
-                signals
-                        .stream()
-                        .filter(
-                                signal ->
-                                        signal
-                                                .status()
-                                                .weakened()
-                        )
-                        .count();
-
-        long conflicted =
-                signals
-                        .stream()
-                        .filter(
-                                signal ->
-                                        signal
-                                                .status()
-                                                .conflicted()
-                        )
-                        .count();
-
-        return new SignalCounts(
-                supported,
-                qualified,
-                weakened,
-                conflicted
-        );
-    }
-
-    /*
-     * =================================================
-     * 18차 상태 변환
-     * =================================================
-     *
-     * CONFLICTED 존재
-     * -> MIXED
-     *
-     * SUPPORT/QUALIFIED와 WEAKENED 공존
-     * -> MIXED
-     *
-     * WEAKENED만 존재
-     * -> PRESSURE
-     *
-     * SUPPORTED 존재
-     * -> SUPPORTIVE
-     *
-     * QUALIFIED만 존재
-     * -> CONTEXTUAL
      */
 
     private LifeDomainSignalStatus resolveStatus(
-            SignalCounts counts
+            AnnualLuckContextSignal signal
     ) {
 
-        boolean supportiveSide =
-                counts.supported() > 0
-                        || counts.qualified() > 0;
-
-        boolean weakenedSide =
-                counts.weakened() > 0;
+        Objects.requireNonNull(
+                signal,
+                "AnnualLuckContextSignal이 필요합니다."
+        );
 
         if (
-                counts.conflicted() > 0
+                signal
+                        .status()
+                        .conflicted()
         ) {
 
             return LifeDomainSignalStatus
@@ -672,16 +510,9 @@ public class LearningAnnualContextRule
         }
 
         if (
-                supportiveSide
-                        && weakenedSide
-        ) {
-
-            return LifeDomainSignalStatus
-                    .MIXED;
-        }
-
-        if (
-                weakenedSide
+                signal
+                        .status()
+                        .weakened()
         ) {
 
             return LifeDomainSignalStatus
@@ -689,108 +520,208 @@ public class LearningAnnualContextRule
         }
 
         if (
-                counts.supported() > 0
+                signal
+                        .status()
+                        .supported()
         ) {
 
             return LifeDomainSignalStatus
                     .SUPPORTIVE;
         }
 
-        return LifeDomainSignalStatus
-                .CONTEXTUAL;
+        if (
+                signal
+                        .status()
+                        .qualified()
+        ) {
+
+            return LifeDomainSignalStatus
+                    .CONTEXTUAL;
+        }
+
+        throw new IllegalStateException(
+                "지원하지 않는 AnnualLuckContextSignal 상태입니다: "
+                        + signal.status()
+        );
     }
 
-    private String statusSummary(
-            SignalCounts counts
+    /*
+     * =================================================
+     * Signal의 실제 십성 조회 출처
+     * =================================================
+     */
+
+    private List<StructureTenGodType>
+    matchedTenGodTypes(
+
+            AnnualLuckContextSignal signal,
+
+            List<AnnualLuckContextSignal>
+                    directResourceSignals,
+
+            List<AnnualLuckContextSignal>
+                    indirectResourceSignals,
+
+            List<AnnualLuckContextSignal>
+                    eatingGodSignals,
+
+            List<AnnualLuckContextSignal>
+                    hurtingOfficerSignals
+
     ) {
 
-        return "SUPPORTED="
-                + counts.supported()
-                + ", QUALIFIED="
-                + counts.qualified()
-                + ", WEAKENED="
-                + counts.weakened()
-                + ", CONFLICTED="
-                + counts.conflicted()
-                + "입니다.";
+        List<StructureTenGodType> types =
+                new ArrayList<>();
+
+        if (
+                containsIdentity(
+                        directResourceSignals,
+                        signal
+                )
+        ) {
+
+            types.add(
+                    StructureTenGodType
+                            .DIRECT_RESOURCE
+            );
+        }
+
+        if (
+                containsIdentity(
+                        indirectResourceSignals,
+                        signal
+                )
+        ) {
+
+            types.add(
+                    StructureTenGodType
+                            .INDIRECT_RESOURCE
+            );
+        }
+
+        if (
+                containsIdentity(
+                        eatingGodSignals,
+                        signal
+                )
+        ) {
+
+            types.add(
+                    StructureTenGodType
+                            .EATING_GOD
+            );
+        }
+
+        if (
+                containsIdentity(
+                        hurtingOfficerSignals,
+                        signal
+                )
+        ) {
+
+            types.add(
+                    StructureTenGodType
+                            .HURTING_OFFICER
+            );
+        }
+
+        return List.copyOf(
+                types
+        );
+    }
+
+    private boolean containsIdentity(
+
+            List<AnnualLuckContextSignal> signals,
+
+            AnnualLuckContextSignal target
+
+    ) {
+
+        for (
+                AnnualLuckContextSignal signal
+                : signals
+        ) {
+
+            if (
+                    signal == target
+            ) {
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /*
+     * =================================================
+     * 십성 Family 확인
+     * =================================================
+     */
+
+    private boolean containsResourceType(
+            List<StructureTenGodType> types
+    ) {
+
+        return types.contains(
+                StructureTenGodType
+                        .DIRECT_RESOURCE
+        ) || types.contains(
+                StructureTenGodType
+                        .INDIRECT_RESOURCE
+        );
+    }
+
+    private boolean containsOutputType(
+            List<StructureTenGodType> types
+    ) {
+
+        return types.contains(
+                StructureTenGodType
+                        .EATING_GOD
+        ) || types.contains(
+                StructureTenGodType
+                        .HURTING_OFFICER
+        );
     }
 
     /*
      * =================================================
      * Summary
      * =================================================
+     *
+     * 여러 Signal의 의미를 합치지 않는다.
+     *
+     * 현재 하나의 Signal이 어떤
+     * StructureTenGodType 조회에 포함되었고
+     * 어떤 상태인지까지만 보존한다.
      */
 
-    private String summaryOfResource(
+    private String summaryOf(
+
+            List<StructureTenGodType> matchedTenGodTypes,
+
             LifeDomainSignalStatus status
+
     ) {
 
-        return switch (
-                status
-                ) {
-
-            case SUPPORTIVE ->
-                    "현재 세운에서 인성 관련 Context가 학습·흡수·내재화 기능을 지지하는 방향으로 나타납니다.";
-
-            case PRESSURE ->
-                    "현재 세운에서 인성 관련 Context에 학습·내재화 기능의 약화 또는 부담 방향이 존재합니다.";
-
-            case MIXED ->
-                    "현재 세운의 인성 관련 Context에 지원과 약화 또는 상충 근거가 함께 존재합니다.";
-
-            case CONTEXTUAL ->
-                    "현재 세운에서 인성 관련 Context가 존재하지만 학습·성장 방향을 단독으로 확정할 수준은 아닙니다.";
-        };
-    }
-
-    private String summaryOfOutput(
-            LifeDomainSignalStatus status
-    ) {
-
-        return switch (
-                status
-                ) {
-
-            case SUPPORTIVE ->
-                    "현재 세운에서 식상 관련 Context가 표현·산출·응용 기능을 지지하는 방향으로 나타납니다.";
-
-            case PRESSURE ->
-                    "현재 세운에서 식상 관련 Context에 표현·산출 기능의 약화 또는 소모 방향이 존재합니다.";
-
-            case MIXED ->
-                    "현재 세운의 식상 관련 Context에 지원과 약화 또는 상충 근거가 함께 존재합니다.";
-
-            case CONTEXTUAL ->
-                    "현재 세운에서 식상 관련 Context가 존재하지만 표현·성장 방향을 단독으로 확정할 수준은 아닙니다.";
-        };
-    }
-
-    private String summaryOfCombined(
-            LifeDomainSignalStatus status
-    ) {
-
-        return switch (
-                status
-                ) {
-
-            case SUPPORTIVE ->
-                    "현재 세운에서 학습·내재화와 표현·산출 두 축이 함께 지지 방향을 형성합니다.";
-
-            case PRESSURE ->
-                    "현재 세운에서 학습·내재화와 표현·산출 두 축에 함께 부담 방향이 존재합니다.";
-
-            case MIXED ->
-                    "현재 세운에서 학습·내재화와 표현·산출 축에 지원·약화·상충 근거가 함께 존재합니다.";
-
-            case CONTEXTUAL ->
-                    "현재 세운에서 학습·내재화와 표현·산출 두 축이 함께 관여하지만 단독 성과 방향으로 확정할 수준은 아닙니다.";
-        };
+        return "현재 세운의 학습·성장 관련 Annual Context Signal "
+                + matchedTenGodTypes
+                + "을 독립적으로 보존합니다. 상태="
+                + status.name()
+                + "입니다.";
     }
 
     /*
      * =================================================
      * Object Identity 중복 제거
      * =================================================
+     *
+     * 서로 다른 Signal을 합성하기 위한 것이 아니다.
+     *
+     * 동일 upstream Signal 객체의
+     * 중복 Match 생성을 방지하기 위한 용도다.
      */
 
     @SafeVarargs
@@ -805,6 +736,9 @@ public class LearningAnnualContextRule
                                 new IdentityHashMap<>()
                         );
 
+        List<AnnualLuckContextSignal> ordered =
+                new ArrayList<>();
+
         for (
                 List<AnnualLuckContextSignal> signals
                 : signalLists
@@ -817,13 +751,26 @@ public class LearningAnnualContextRule
                 continue;
             }
 
-            unique.addAll(
-                    signals
-            );
+            for (
+                    AnnualLuckContextSignal signal
+                    : signals
+            ) {
+
+                if (
+                        unique.add(
+                                signal
+                        )
+                ) {
+
+                    ordered.add(
+                            signal
+                    );
+                }
+            }
         }
 
         return List.copyOf(
-                unique
+                ordered
         );
     }
 
@@ -883,24 +830,5 @@ public class LearningAnnualContextRule
                         0
                 )
         );
-    }
-
-    /*
-     * =================================================
-     * 내부 상태 집계
-     * =================================================
-     */
-
-    private record SignalCounts(
-
-            long supported,
-
-            long qualified,
-
-            long weakened,
-
-            long conflicted
-
-    ) {
     }
 }

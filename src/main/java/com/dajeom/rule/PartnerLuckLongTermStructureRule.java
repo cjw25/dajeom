@@ -15,169 +15,17 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 관계 카테고리 정밀화.
+ * PARTNER_LUCK 원국 관계망 구조 deterministic Rule.
  *
- * PARTNER_LUCK의
- * 장기 관계 구조 Rule.
- *
- * =================================================
- *
- * 목적
- * =================================================
- *
- * PARTNER_LUCK을
- * 기존 RELATIONSHIP 결과의 단순 복사본으로
- * 만들지 않는다.
- *
- * 이 Rule은 원국에서:
- *
- * 1.
- * 가까운 관계 자체의
- * 결합·마찰·중첩 구조
- *
- * +
- *
- * 2.
- * 장기 관계를 유지할 때 필요한
- * 현실적 주고받음·약속·책임·역할 구조
- *
- * 가 실제로 함께 존재할 때
- *
- * 장기적인 가까운 관계를
- * 유지하고 조정하는 구조를
- * PARTNER_LUCK 관점으로
- * deterministic하게 판단한다.
- *
- * =================================================
- *
- * 핵심 Source 1
- * =================================================
+ * 공식 Source Family:
  *
  * RELATIONSHIP_NATAL_RELATION_OVERLAP
  *
- * DAY가 관여하는 가까운 관계망에서:
+ * 하나만 사용한다.
  *
- * - 관계 중첩
- * - 결합과 압박의 혼재
- * - 직접적인 압박
- * - 마찰 Context
- *
- * 가 어떻게 존재하는지를 사용한다.
- *
- * =================================================
- *
- * 핵심 Source 2
- * =================================================
- *
- * RELATIONSHIP_PRIMARY_WEALTH_OFFICER_STRUCTURE
- *
- * 원국 중심 구조에서:
- *
- * - 현실적인 주고받음
- * - 생활적 기대
- * - 약속
- * - 책임
- * - 역할
- * - 관계 안의 기준
- *
- * 을 다루는 기능이
- * 어떤 상태로 존재하는지를 사용한다.
- *
- * =================================================
- *
- * Context Source
- * =================================================
- *
- * RELATIONSHIP_SPOUSE_PALACE
- *
- * 이름 때문에:
- *
- * DAY 궁위 = 배우자
- *
- * 로 사용하지 않는다.
- *
- * 기존 18차 정책 그대로
- * 가까운 관계와 밀접 상호작용에서
- * 중요하게 참조되는 위치 Context로만 사용한다.
- *
- * 이 Source는
- * Category Status를 직접 변경하지 않는다.
- *
- * =================================================
- *
- * 중요한 차이
- * =================================================
- *
- * SOCIAL_RELATIONSHIP의
- * 상호작용 Pattern Rule은
- * 원국 관계망 자체를 중심으로 판단한다.
- *
- * 이 Rule은 반드시:
- *
- * 관계망 구조
- * +
- * 장기적인 역할·책임 구조
- *
- * 두 Source Family가 모두 존재해야 한다.
- *
- * 따라서 같은 관계 Match에
- * PARTNER_LUCK 이름만 붙이는 구조가 아니다.
- *
- * =================================================
- *
- * Match 생성 조건
- * =================================================
- *
- * 다음 두 Source Family가
- * 모두 실제 존재해야 한다.
- *
- * - RELATIONSHIP_NATAL_RELATION_OVERLAP
- * - RELATIONSHIP_PRIMARY_WEALTH_OFFICER_STRUCTURE
- *
- * 하나라도 없으면
- * 이 Rule은 Match를 생성하지 않는다.
- *
- * 다른 관계 Evidence를 대신 끌어와
- * 조건을 채우지 않는다.
- *
- * =================================================
- *
- * Status 계산
- * =================================================
- *
- * 두 핵심 Source Family의
- * 공식 LifeDomainSignalStatus만 사용한다.
- *
- * MIXED 존재
- * -> MIXED
- *
- * SUPPORTIVE + PRESSURE 동시 존재
- * -> MIXED
- *
- * PRESSURE 존재
- * -> PRESSURE
- *
- * SUPPORTIVE 존재
- * -> SUPPORTIVE
- *
- * 방향성이 확정되지 않는
- * CONTEXTUAL 근거만 존재
- * -> CONTEXTUAL
- *
- * =================================================
- *
- * 금지
- * =================================================
- *
- * - Match 개수를 강도 점수로 사용
- * - summary 문자열 검색
- * - reasons 문자열 검색
- * - DAY 궁위를 배우자 자체로 해석
- * - SUPPORTIVE = 결혼 성공
- * - PRESSURE = 이별
- * - MIXED = 관계 불안정 확정
- * - 배우자 등장 시기 예측
- * - 결혼 여부 예측
+ * 이름에 LONG_TERM이 남아 있지만
+ * 현재 Source만으로 관계 지속 기간,
+ * 결혼 지속성, 장기 유지 능력을 새로 계산하지 않는다.
  */
 @Component
 public class PartnerLuckLongTermStructureRule
@@ -190,20 +38,11 @@ public class PartnerLuckLongTermStructureRule
             NATAL_RELATION_OVERLAP_RULE_CODE =
             "RELATIONSHIP_NATAL_RELATION_OVERLAP";
 
-    private static final String
-            PRIMARY_WEALTH_OFFICER_STRUCTURE_RULE_CODE =
-            "RELATIONSHIP_PRIMARY_WEALTH_OFFICER_STRUCTURE";
-
-    private static final String
-            SPOUSE_PALACE_RULE_CODE =
-            "RELATIONSHIP_SPOUSE_PALACE";
-
 
     @Override
     public ConsultationCategory category() {
 
-        return ConsultationCategory
-                .PARTNER_LUCK;
+        return ConsultationCategory.PARTNER_LUCK;
     }
 
 
@@ -242,202 +81,73 @@ public class PartnerLuckLongTermStructureRule
             return List.of();
         }
 
-        /*
-         * =================================================
-         * 핵심 Source 1
-         *
-         * 가까운 관계망의 실제 구조
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch>
-                relationOverlapMatches =
+        List<LifeDomainRuleMatch> relationOverlapMatches =
                 findNatalMatches(
                         view,
                         NATAL_RELATION_OVERLAP_RULE_CODE
                 );
 
-        /*
-         * =================================================
-         * 핵심 Source 2
-         *
-         * 현실적 주고받음 / 약속 / 책임 / 역할
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch>
-                structureMatches =
-                findNatalMatches(
-                        view,
-                        PRIMARY_WEALTH_OFFICER_STRUCTURE_RULE_CODE
-                );
-
-        /*
-         * =================================================
-         * 두 핵심 Source가 모두 필요
-         * =================================================
-         *
-         * 장기 관계 구조라는 Category 질문은
-         *
-         * 가까운 관계망
-         * +
-         * 역할·책임 구조
-         *
-         * 가 동시에 확인될 때만 계산한다.
-         *
-         * 한쪽이 없다고
-         * PALACE나 다른 RELATIONSHIP Match를
-         * 대신 사용하지 않는다.
-         */
-
         if (
                 relationOverlapMatches.isEmpty()
-                        || structureMatches.isEmpty()
         ) {
 
             return List.of();
         }
 
-        /*
-         * =================================================
-         * 위치 Context
-         * =================================================
-         *
-         * 방향 계산에는 사용하지 않는다.
-         */
-
-        List<LifeDomainRuleMatch>
-                palaceMatches =
-                findNatalMatches(
-                        view,
-                        SPOUSE_PALACE_RULE_CODE
-                );
-
-        /*
-         * =================================================
-         * 방향 계산 Source
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch>
-                directionalMatches =
-                new ArrayList<>();
-
-        directionalMatches.addAll(
-                relationOverlapMatches
-        );
-
-        directionalMatches.addAll(
-                structureMatches
-        );
-
         ConsultationCategoryDeterministicStatus status =
                 resolveStatus(
-                        directionalMatches
+                        relationOverlapMatches
                 );
-
-        /*
-         * =================================================
-         * Provenance
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch> sourceMatches =
-                new ArrayList<>();
-
-        sourceMatches.addAll(
-                relationOverlapMatches
-        );
-
-        sourceMatches.addAll(
-                structureMatches
-        );
-
-        sourceMatches.addAll(
-                palaceMatches
-        );
-
-        /*
-         * =================================================
-         * Reasons
-         * =================================================
-         */
 
         List<String> reasons =
                 new ArrayList<>();
 
         reasons.add(
-                "원국의 가까운 관계망 구조와 현실적 주고받음·약속·책임·역할을 다루는 중심 구조가 모두 확인되어 PARTNER_LUCK의 장기 관계 구조를 계산했습니다."
+                "PARTNER_LUCK의 이 원국 판단은 RELATIONSHIP_NATAL_RELATION_OVERLAP Source Family만 사용했습니다."
         );
 
         reasons.add(
-                "가까운 관계의 결합·마찰·중첩을 다루는 공식 관계망 Source Family가 실제 존재합니다."
+                statusReason(
+                        relationOverlapMatches,
+                        status
+                )
         );
 
         reasons.add(
-                "장기적인 관계에서 현실적 기대·약속·책임·역할을 다루는 공식 중심 구조 Source Family가 실제 존재합니다."
-        );
-
-        if (
-                !palaceMatches.isEmpty()
-        ) {
-
-            reasons.add(
-                    "가까운 관계와 밀접 상호작용에서 중요하게 참조되는 위치 Context도 함께 존재합니다."
-            );
-
-            reasons.add(
-                    "해당 위치 Context는 장기 관계가 작동하는 배경 근거로만 사용하며 배우자 자체나 결혼 사건으로 해석하지 않습니다."
-            );
-        }
-
-        appendStatusReason(
-                reasons,
-                directionalMatches
+                "RELATIONSHIP_PRIMARY_WEALTH_OFFICER_STRUCTURE와 RELATIONSHIP_SPOUSE_PALACE를 이 Conclusion의 Source로 결합하지 않았습니다."
         );
 
         reasons.add(
-                "관계망 Match와 역할·책임 Match의 개수를 비교하거나 장기 관계의 강도 점수로 환산하지 않았습니다."
+                "역할·책임 구조는 별도의 PARTNER_LUCK deterministic Conclusion에서 독립적으로 처리합니다."
         );
 
         reasons.add(
-                "기존 LifeDomainRuleMatch의 summary 또는 reasons 문자열을 검색하여 새로운 관계 사실을 만들지 않았습니다."
+                "Source Match 반복 개수를 배우자운·관계 지속성·결혼 가능성의 강도 점수로 사용하지 않았습니다."
         );
 
         reasons.add(
-                "이 결과는 장기적인 가까운 관계에서 관계 구조와 현실적 역할·책임 구조가 함께 작동하는 방식을 설명합니다."
+                "Source의 summary 또는 reasons 문자열을 판단 조건으로 사용하지 않았습니다."
         );
 
         reasons.add(
-                "이 결과를 배우자 존재 여부·결혼 성사·이별·재결합 같은 실제 사건으로 확정하지 않습니다."
+                "이 결과는 원국 관계망 구조 상태만 보존하며 장기 지속성·관계 단계·인과·순서·사건을 생성하지 않습니다."
         );
 
         return List.of(
                 new ConsultationCategoryDeterministicMatch(
-                        ConsultationCategory
-                                .PARTNER_LUCK,
-
-                        ConsultationCategoryDeterministicLayer
-                                .NATAL,
-
+                        ConsultationCategory.PARTNER_LUCK,
+                        ConsultationCategoryDeterministicLayer.NATAL,
                         RULE_CODE,
-
                         status,
-
                         null,
-
                         null,
-
                         List.of(),
-
                         summaryOf(
                                 status
                         ),
-
                         List.copyOf(
-                                sourceMatches
+                                relationOverlapMatches
                         ),
-
                         List.copyOf(
                                 reasons
                         )
@@ -445,20 +155,6 @@ public class PartnerLuckLongTermStructureRule
         );
     }
 
-
-    /*
-     * =================================================
-     * Natal Source 조회
-     * =================================================
-     *
-     * 판단에 사용하는 구조:
-     *
-     * - domain
-     * - ruleCode
-     *
-     * summary / reasons는
-     * Source 판별에 사용하지 않는다.
-     */
 
     private List<LifeDomainRuleMatch>
     findNatalMatches(
@@ -469,6 +165,17 @@ public class PartnerLuckLongTermStructureRule
 
     ) {
 
+        Objects.requireNonNull(
+                view,
+                "PARTNER_LUCK Evidence View가 필요합니다."
+        );
+
+        String normalizedRuleCode =
+                requireText(
+                        sourceRuleCode,
+                        "PARTNER_LUCK Source ruleCode가 필요합니다."
+                );
+
         List<LifeDomainRuleMatch> result =
                 new ArrayList<>();
 
@@ -477,13 +184,14 @@ public class PartnerLuckLongTermStructureRule
                 : view.natalMatches()
         ) {
 
-            Objects.requireNonNull(
-                    match,
-                    "PARTNER_LUCK Natal Match는 null일 수 없습니다."
-            );
+            LifeDomainRuleMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "PARTNER_LUCK Natal Match는 null일 수 없습니다."
+                    );
 
             if (
-                    match.domain()
+                    normalized.domain()
                             != LifeDomain.RELATIONSHIP
             ) {
 
@@ -491,8 +199,8 @@ public class PartnerLuckLongTermStructureRule
             }
 
             if (
-                    !sourceRuleCode.equals(
-                            match.ruleCode()
+                    !normalizedRuleCode.equals(
+                            normalized.ruleCode()
                     )
             ) {
 
@@ -500,7 +208,7 @@ public class PartnerLuckLongTermStructureRule
             }
 
             result.add(
-                    match
+                    normalized
             );
         }
 
@@ -510,88 +218,73 @@ public class PartnerLuckLongTermStructureRule
     }
 
 
-    /*
-     * =================================================
-     * Category Status
-     * =================================================
-     *
-     * 두 핵심 Source Family 안에서
-     * 공식 Status가 실제 존재하는지만 사용한다.
-     *
-     * Match 개수는 사용하지 않는다.
-     */
-
     private ConsultationCategoryDeterministicStatus
     resolveStatus(
-            List<LifeDomainRuleMatch> directionalMatches
+            List<LifeDomainRuleMatch> matches
     ) {
+
+        Objects.requireNonNull(
+                matches,
+                "PARTNER_LUCK 관계망 Match 목록이 필요합니다."
+        );
+
+        if (
+                matches.isEmpty()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "PARTNER_LUCK 관계망 Status 계산에는 최소 하나의 Match가 필요합니다."
+            );
+        }
 
         boolean supportiveExists =
                 hasStatus(
-                        directionalMatches,
+                        matches,
                         LifeDomainSignalStatus.SUPPORTIVE
                 );
 
         boolean pressureExists =
                 hasStatus(
-                        directionalMatches,
+                        matches,
                         LifeDomainSignalStatus.PRESSURE
                 );
 
         boolean mixedExists =
                 hasStatus(
-                        directionalMatches,
+                        matches,
                         LifeDomainSignalStatus.MIXED
                 );
-
-        /*
-         * Upstream deterministic Rule에서
-         * 이미 MIXED가 확정되어 있다면
-         * 복합성을 제거하지 않는다.
-         */
 
         if (
                 mixedExists
         ) {
 
-            return ConsultationCategoryDeterministicStatus
-                    .MIXED;
+            return ConsultationCategoryDeterministicStatus.MIXED;
         }
-
-        /*
-         * 가까운 관계 구조와
-         * 장기 역할 구조를 함께 봤을 때
-         * 지지와 부담 방향이 동시에 존재하면
-         * 장기 관계 구조를 MIXED로 판단한다.
-         */
 
         if (
                 supportiveExists
                         && pressureExists
         ) {
 
-            return ConsultationCategoryDeterministicStatus
-                    .MIXED;
+            return ConsultationCategoryDeterministicStatus.MIXED;
         }
 
         if (
                 pressureExists
         ) {
 
-            return ConsultationCategoryDeterministicStatus
-                    .PRESSURE;
+            return ConsultationCategoryDeterministicStatus.PRESSURE;
         }
 
         if (
                 supportiveExists
         ) {
 
-            return ConsultationCategoryDeterministicStatus
-                    .SUPPORTIVE;
+            return ConsultationCategoryDeterministicStatus.SUPPORTIVE;
         }
 
-        return ConsultationCategoryDeterministicStatus
-                .CONTEXTUAL;
+        return ConsultationCategoryDeterministicStatus.CONTEXTUAL;
     }
 
 
@@ -603,6 +296,16 @@ public class PartnerLuckLongTermStructureRule
 
     ) {
 
+        Objects.requireNonNull(
+                matches,
+                "PARTNER_LUCK Match 목록이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                status,
+                "LifeDomainSignalStatus가 필요합니다."
+        );
+
         return matches
                 .stream()
                 .anyMatch(
@@ -613,35 +316,39 @@ public class PartnerLuckLongTermStructureRule
     }
 
 
-    /*
-     * =================================================
-     * Status Reason
-     * =================================================
-     */
+    private String statusReason(
 
-    private void appendStatusReason(
+            List<LifeDomainRuleMatch> matches,
 
-            List<String> reasons,
-
-            List<LifeDomainRuleMatch> directionalMatches
+            ConsultationCategoryDeterministicStatus status
 
     ) {
 
+        Objects.requireNonNull(
+                matches,
+                "PARTNER_LUCK 관계망 Match 목록이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                status,
+                "PARTNER_LUCK 관계망 Status가 필요합니다."
+        );
+
         boolean supportiveExists =
                 hasStatus(
-                        directionalMatches,
+                        matches,
                         LifeDomainSignalStatus.SUPPORTIVE
                 );
 
         boolean pressureExists =
                 hasStatus(
-                        directionalMatches,
+                        matches,
                         LifeDomainSignalStatus.PRESSURE
                 );
 
         boolean mixedExists =
                 hasStatus(
-                        directionalMatches,
+                        matches,
                         LifeDomainSignalStatus.MIXED
                 );
 
@@ -649,11 +356,7 @@ public class PartnerLuckLongTermStructureRule
                 mixedExists
         ) {
 
-            reasons.add(
-                    "가까운 관계망 또는 역할·책임 중심 구조에 기존 MIXED 판단이 존재하므로 장기 관계에서도 유지 요소와 조정이 필요한 요소가 함께 존재하는 복합 구조로 판단합니다."
-            );
-
-            return;
+            return "RELATIONSHIP_NATAL_RELATION_OVERLAP Source Family의 upstream MIXED 상태를 그대로 보존했습니다.";
         }
 
         if (
@@ -661,71 +364,82 @@ public class PartnerLuckLongTermStructureRule
                         && pressureExists
         ) {
 
-            reasons.add(
-                    "가까운 관계망과 역할·책임 구조를 함께 보았을 때 SUPPORTIVE와 PRESSURE 방향이 동시에 존재하므로 장기 관계 구조를 한 방향으로 단순화하지 않고 MIXED로 판단합니다."
-            );
-
-            return;
+            return "RELATIONSHIP_NATAL_RELATION_OVERLAP Source Family 안에 SUPPORTIVE와 PRESSURE 상태가 모두 존재하여 MIXED로 보존했습니다.";
         }
 
         if (
-                pressureExists
+                status
+                        == ConsultationCategoryDeterministicStatus.PRESSURE
         ) {
 
-            reasons.add(
-                    "가까운 관계망과 역할·책임 구조를 함께 보았을 때 PRESSURE 방향이 존재하므로 장기 관계에서 관계 조정이나 책임 부담 관리가 중요해지는 구조로 판단합니다."
-            );
-
-            return;
+            return "RELATIONSHIP_NATAL_RELATION_OVERLAP Source Family의 공식 방향을 PRESSURE로 보존했습니다.";
         }
 
         if (
-                supportiveExists
+                status
+                        == ConsultationCategoryDeterministicStatus.SUPPORTIVE
         ) {
 
-            reasons.add(
-                    "가까운 관계망과 역할·책임 구조를 함께 보았을 때 SUPPORTIVE 방향이 존재하고 PRESSURE 또는 MIXED 방향이 확인되지 않아 장기 관계 유지 구조를 지지 방향으로 판단합니다."
-            );
-
-            return;
+            return "RELATIONSHIP_NATAL_RELATION_OVERLAP Source Family의 공식 방향을 SUPPORTIVE로 보존했습니다.";
         }
 
-        reasons.add(
-                "가까운 관계망과 역할·책임 구조가 모두 실제 존재하지만 SUPPORTIVE·PRESSURE·MIXED 중 하나의 방향으로 확정할 근거가 없어 CONTEXTUAL로 유지합니다."
-        );
+        return "RELATIONSHIP_NATAL_RELATION_OVERLAP Source Family는 존재하지만 방향은 CONTEXTUAL로 유지했습니다.";
     }
 
-
-    /*
-     * =================================================
-     * Internal Summary
-     * =================================================
-     *
-     * 최종 사용자 storyText가 아니다.
-     *
-     * 특정 결혼 사건을 만들지 않고
-     * 장기적인 관계 유지 구조만 요약한다.
-     */
 
     private String summaryOf(
             ConsultationCategoryDeterministicStatus status
     ) {
+
+        Objects.requireNonNull(
+                status,
+                "PARTNER_LUCK 관계망 Status가 필요합니다."
+        );
 
         return switch (
                 status
                 ) {
 
             case SUPPORTIVE ->
-                    "가까운 관계의 상호작용과 현실적인 역할·책임 구조를 함께 보았을 때 장기 관계를 유지하고 조정하는 데 지지되는 구조적 근거가 존재합니다.";
+                    "PARTNER_LUCK에서 참조하는 원국 관계망 구조에 SUPPORTIVE 상태가 확인됩니다.";
 
             case PRESSURE ->
-                    "가까운 관계의 상호작용과 현실적인 역할·책임이 함께 누적될 때 관계 조정이나 부담 관리가 중요해지는 장기 관계 구조가 존재합니다.";
+                    "PARTNER_LUCK에서 참조하는 원국 관계망 구조에 PRESSURE 상태가 확인됩니다.";
 
             case MIXED ->
-                    "장기적인 가까운 관계에서 연결과 유지에 도움이 되는 요소와 역할·책임 또는 관계 조정 부담이 함께 존재하는 복합 구조입니다.";
+                    "PARTNER_LUCK에서 참조하는 원국 관계망 구조에 MIXED 상태가 확인됩니다.";
 
             case CONTEXTUAL ->
-                    "가까운 관계망과 장기적인 역할·책임 구조가 모두 관여하지만 관계 유지 방향을 한쪽으로 단정할 수준은 아닙니다.";
+                    "PARTNER_LUCK에서 참조하는 원국 관계망 구조가 존재하며 방향은 CONTEXTUAL로 유지됩니다.";
         };
+    }
+
+
+    private static String requireText(
+
+            String value,
+
+            String message
+
+    ) {
+
+        Objects.requireNonNull(
+                value,
+                message
+        );
+
+        String normalized =
+                value.trim();
+
+        if (
+                normalized.isBlank()
+        ) {
+
+            throw new IllegalArgumentException(
+                    message
+            );
+        }
+
+        return normalized;
     }
 }

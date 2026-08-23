@@ -20,84 +20,62 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * 정밀화 18차.
- *
  * 직업·사회 영역의 세운 Context Rule.
  *
- * =================================================
+ * AnnualLuckContextSignal은
+ * 14-6에서 이미 계산된
+ * deterministic Evidence 단위다.
  *
- * 입력 Source:
- *
- * 14-6 AnnualLuckContextAnalysis
- *
- * =================================================
- *
- * 대상 십성:
+ * 이 Rule은
  *
  * DIRECT_OFFICER
  * SEVEN_KILLINGS
+ *
+ * 관련 Signal을 선택한다.
  *
  * =================================================
  *
  * 중요한 원칙:
  *
- * 14차에서 이미 계산된:
+ * Signal 1개
+ * ->
+ * LifeDomainRuleMatch 1개
+ *
+ * 로 독립 보존한다.
+ *
+ * 서로 다른 Signal의:
+ *
+ * - 상태
+ * - 개수
+ * - Axis
+ * - 십성 유형
+ *
+ * 을 합쳐 새로운:
+ *
+ * SUPPORTIVE
+ * PRESSURE
+ * MIXED
+ * CONTEXTUAL
+ *
+ * 상태를 만들지 않는다.
+ *
+ * =================================================
+ *
+ * 14차에서 실제 계산된:
  *
  * - 세운 십성
- * - 원국 × 세운
+ * - 원국 × 세운 관계
  * - 격국
  * - 용신
  * - 궁위
  * - 관계
  * - 합화
- * - 대운 사용 가능 시 대운 Segment Context
+ * - 대운 Segment Context
  *
- * 를 18차에서 다시 계산하지 않는다.
+ * 는 그대로 보존한다.
  *
- * =================================================
- *
- * 상태 변환:
- *
- * SUPPORTED
- * -> SUPPORTIVE
- *
- * QUALIFIED만 존재
- * -> CONTEXTUAL
- *
- * WEAKENED만 존재
- * -> PRESSURE
- *
- * CONFLICTED 존재
- * -> MIXED
- *
- * 지원 계열과 약화 계열이 동시에 존재
- * -> MIXED
- *
- * =================================================
- *
- * 하지 않는 것:
- *
- * 정관 세운
- * -> 취업한다
- *
- * 관살 지원
- * -> 승진한다
- *
- * 관살 약화
- * -> 퇴사한다
- *
- * 관살 충돌
- * -> 직장 문제가 생긴다
- *
- * 같은 실제 사건 결과 확정.
- *
- * =================================================
- *
- * 원국 Bundle에는 ANNUAL_CONTEXT가 없으므로
- * 아무 Match도 생성하지 않는다.
- *
- * Timeline Segment Bundle에서
- * ANNUAL_CONTEXT가 실제 존재할 때만 작동한다.
+ * 이 Rule에서 독립 Signal끼리 다시 연결하여
+ * 새로운 관계 의미를 생성하지 않는다.
  */
 @Component
 public class CareerAnnualContextRule
@@ -161,13 +139,7 @@ public class CareerAnnualContextRule
                 );
 
         /*
-         * =================================================
-         * Natal Bundle
-         * =================================================
-         *
-         * 원국 Bundle에는 ANNUAL_CONTEXT가 없다.
-         *
-         * 정상 상태이므로 예외를 발생시키지 않는다.
+         * Natal Bundle.
          */
 
         if (
@@ -189,17 +161,6 @@ public class CareerAnnualContextRule
                                 AnnualLuckContextAnalysis.class
                         );
 
-        /*
-         * =================================================
-         * 관살 관련 Annual Signal
-         * =================================================
-         *
-         * 정관 / 칠살 조회 결과가
-         * 같은 Signal 객체를 동시에 포함할 가능성에
-         * 대비하여 Object Identity 기준으로
-         * 중복 제거한다.
-         */
-
         List<AnnualLuckContextSignal>
                 directOfficerSignals =
                 annualContext
@@ -216,103 +177,127 @@ public class CareerAnnualContextRule
                                         .SEVEN_KILLINGS
                         );
 
-        Set<AnnualLuckContextSignal>
-                uniqueSignals =
-                Collections
-                        .newSetFromMap(
-                                new IdentityHashMap<>()
-                        );
+        /*
+         * 동일 upstream Signal 객체가
+         * 정관/칠살 조회에 중복 포함되는 경우만 제거한다.
+         *
+         * 이것은 상태 합성이 아니다.
+         */
 
-        uniqueSignals.addAll(
-                directOfficerSignals
-        );
-
-        uniqueSignals.addAll(
-                sevenKillingsSignals
-        );
+        List<AnnualLuckContextSignal>
+                officerSignals =
+                mergeIdentityUnique(
+                        directOfficerSignals,
+                        sevenKillingsSignals
+                );
 
         if (
-                uniqueSignals.isEmpty()
+                officerSignals
+                        .isEmpty()
         ) {
 
             return List.of();
         }
 
-        List<AnnualLuckContextSignal>
-                officerSignals =
-                List.copyOf(
-                        uniqueSignals
-                );
+        List<LifeDomainRuleMatch> matches =
+                new ArrayList<>();
 
         /*
          * =================================================
-         * 14차 상태 집계
-         * =================================================
-         *
-         * 18차에서 Context의 명리 상태를
-         * 새로 판정하지 않는다.
-         *
-         * AnnualLuckContextSignal.status()가
-         * 이미 결정한 결과를 집계한다.
-         */
-
-        long supportedCount =
-                officerSignals
-                        .stream()
-                        .filter(
-                                signal ->
-                                        signal
-                                                .status()
-                                                .supported()
-                        )
-                        .count();
-
-        long qualifiedCount =
-                officerSignals
-                        .stream()
-                        .filter(
-                                signal ->
-                                        signal
-                                                .status()
-                                                .qualified()
-                        )
-                        .count();
-
-        long weakenedCount =
-                officerSignals
-                        .stream()
-                        .filter(
-                                signal ->
-                                        signal
-                                                .status()
-                                                .weakened()
-                        )
-                        .count();
-
-        long conflictedCount =
-                officerSignals
-                        .stream()
-                        .filter(
-                                signal ->
-                                        signal
-                                                .status()
-                                                .conflicted()
-                        )
-                        .count();
-
-        /*
-         * =================================================
-         * 18차 생활영역 상태 변환
+         * Signal 1개 -> Match 1개
          * =================================================
          */
 
-        LifeDomainSignalStatus status =
-                resolveStatus(
-                        supportedCount,
-                        qualifiedCount,
-                        weakenedCount,
-                        conflictedCount
+        for (
+                AnnualLuckContextSignal signal
+                : officerSignals
+        ) {
+
+            Objects.requireNonNull(
+                    signal,
+                    "AnnualLuckContextAnalysis의 Annual Signal은 null일 수 없습니다."
+            );
+
+            LifeDomainSignalStatus status =
+                    resolveStatus(
+                            signal
+                    );
+
+            List<String> reasons =
+                    baseReasons(
+                            annualContext
+                    );
+
+            reasons.add(
+                    "Annual Signal ["
+                            + signal.code()
+                            + "] "
+                            + signal.summary()
+                            + " / axis="
+                            + signal.axis().name()
+                            + " / status="
+                            + signal.status().name()
+            );
+
+            reasons.add(
+                    "이 Signal에 실제 태깅된 직업·사회 참조 관살 유형은 "
+                            + matchedOfficerTypes(
+                            signal
+                    )
+                            + "입니다."
+            );
+
+            for (
+                    String signalReason
+                    : signal.reasons()
+            ) {
+
+                reasons.add(
+                        "Annual Signal ["
+                                + signal.code()
+                                + "] 근거: "
+                                + signalReason
                 );
+            }
+
+            reasons.add(
+                    "이 Match는 하나의 AnnualLuckContextSignal만 보존하며 다른 Annual Signal과 상태를 합산하지 않습니다."
+            );
+
+            reasons.add(
+                    "14차가 이미 계산한 십성·격국·용신·궁위·관계·합화 Context를 이 Rule에서 다시 계산하거나 서로 연결해 새 의미를 만들지 않습니다."
+            );
+
+            reasons.add(
+                    "관살 관련 세운 Context를 취업·승진·퇴사·이직·직장 갈등 같은 실제 사건으로 직접 환산하지 않습니다."
+            );
+
+            matches.add(
+                    new LifeDomainRuleMatch(
+                            LifeDomain.CAREER,
+                            RULE_CODE,
+                            status,
+                            summaryOf(
+                                    signal
+                            ),
+                            List.of(
+                                    annualReference
+                            ),
+                            List.copyOf(
+                                    reasons
+                            )
+                    )
+            );
+        }
+
+        return List.copyOf(
+                matches
+        );
+    }
+
+    private List<String> baseReasons(
+            AnnualLuckContextAnalysis annualContext
+    ) {
 
         List<String> reasons =
                 new ArrayList<>();
@@ -323,71 +308,15 @@ public class CareerAnnualContextRule
                         + "년입니다."
         );
 
-        reasons.add(
-                "정관 관련 Annual Context Signal은 "
-                        + directOfficerSignals.size()
-                        + "개입니다."
-        );
-
-        reasons.add(
-                "칠살 관련 Annual Context Signal은 "
-                        + sevenKillingsSignals.size()
-                        + "개입니다."
-        );
-
-        reasons.add(
-                "Object Identity 중복 제거 후 관살 관련 Signal은 "
-                        + officerSignals.size()
-                        + "개입니다."
-        );
-
-        reasons.add(
-                "SUPPORTED="
-                        + supportedCount
-                        + ", QUALIFIED="
-                        + qualifiedCount
-                        + ", WEAKENED="
-                        + weakenedCount
-                        + ", CONFLICTED="
-                        + conflictedCount
-                        + "입니다."
-        );
-
-        reasons.add(
-                "14차가 판정한 관살 관련 Context 상태를 18차 직업·사회 상태로 변환할 뿐, 세운 십성·격국·용신·관계·합화를 다시 계산하지 않습니다."
-        );
-
-        reasons.add(
-                "정관·칠살 관련 세운 Context를 취업·승진·퇴사·이직·직장 갈등 같은 실제 사건으로 직접 환산하지 않습니다."
-        );
-
-        /*
-         * =================================================
-         * 대운 Context 사용 가능 여부
-         * =================================================
-         *
-         * 대운 Context 사용 불가여도
-         * annualSignals는 유효하다.
-         */
-
         if (
                 !annualContext
                         .decadeContextAvailable()
         ) {
 
             reasons.add(
-                    "현재 세운은 대운 Segment Context를 사용할 수 없지만, 14차 정책에 따라 대운과 무관하게 확정 가능한 annualSignals는 그대로 보존하여 사용합니다."
+                    "현재 세운은 대운 Segment Context를 사용할 수 없지만 14차 정책에 따라 세운 자체 annualSignals는 그대로 보존합니다."
             );
         }
-
-        /*
-         * =================================================
-         * 교운 불확실성
-         * =================================================
-         *
-         * 불확실 구간에서 가능한 대운을
-         * 하나로 강제 선택하지 않는다.
-         */
 
         if (
                 annualContext
@@ -395,83 +324,25 @@ public class CareerAnnualContextRule
         ) {
 
             reasons.add(
-                    "현재 세운 기간에 대운 교운시점 불확실성이 존재하므로 가능한 대운 Context 중 하나를 확정값으로 임의 선택하지 않습니다."
+                    "현재 세운 기간에 대운 교운시점 불확실성이 존재하므로 가능한 대운 Context 중 하나를 임의로 확정하지 않습니다."
             );
         }
 
-        return List.of(
-                new LifeDomainRuleMatch(
-                        LifeDomain.CAREER,
-                        RULE_CODE,
-                        status,
-                        summaryOf(
-                                status
-                        ),
-                        List.of(
-                                annualReference
-                        ),
-                        reasons
-                )
-        );
+        return reasons;
     }
 
     /*
-     * =================================================
-     * 상태 결정
-     * =================================================
-     *
-     * AnnualLuckContextSignal의 기존 상태를
-     * 생활영역 표현으로만 정리한다.
-     *
-     * =================================================
-     *
-     * CONFLICTED
-     *
-     * 자체가 상충 Evidence를 뜻하므로
-     * 하나라도 존재하면 MIXED.
-     *
-     * =================================================
-     *
-     * SUPPORTED / QUALIFIED
-     * +
-     * WEAKENED
-     *
-     * 가 함께 존재해도 MIXED.
-     *
-     * =================================================
-     *
-     * WEAKENED만 존재
-     * -> PRESSURE
-     *
-     * SUPPORTED가 존재하고
-     * 제한 Evidence가 없음
-     * -> SUPPORTIVE
-     *
-     * QUALIFIED만 존재
-     * -> CONTEXTUAL
+     * 단일 Annual Signal의 상태만
+     * LifeDomain 상태로 1:1 변환한다.
      */
 
     private LifeDomainSignalStatus resolveStatus(
-
-            long supportedCount,
-
-            long qualifiedCount,
-
-            long weakenedCount,
-
-            long conflictedCount
-
+            AnnualLuckContextSignal signal
     ) {
 
-        boolean supportiveSide =
-                supportedCount > 0
-                        || qualifiedCount > 0;
-
-        boolean weakenedSide =
-                weakenedCount > 0;
-
         if (
-                conflictedCount > 0
+                signal
+                        .conflicted()
         ) {
 
             return LifeDomainSignalStatus
@@ -479,16 +350,8 @@ public class CareerAnnualContextRule
         }
 
         if (
-                supportiveSide
-                        && weakenedSide
-        ) {
-
-            return LifeDomainSignalStatus
-                    .MIXED;
-        }
-
-        if (
-                weakenedSide
+                signal
+                        .weakened()
         ) {
 
             return LifeDomainSignalStatus
@@ -496,60 +359,132 @@ public class CareerAnnualContextRule
         }
 
         if (
-                supportedCount > 0
+                signal
+                        .supported()
         ) {
 
             return LifeDomainSignalStatus
                     .SUPPORTIVE;
         }
 
-        return LifeDomainSignalStatus
-                .CONTEXTUAL;
-    }
+        if (
+                signal
+                        .qualified()
+        ) {
 
-    /*
-     * =================================================
-     * Summary
-     * =================================================
-     */
+            return LifeDomainSignalStatus
+                    .CONTEXTUAL;
+        }
+
+        throw new IllegalStateException(
+                "지원하지 않는 AnnualLuckContextSignal 상태입니다: "
+                        + signal.status()
+        );
+    }
 
     private String summaryOf(
-            LifeDomainSignalStatus status
+            AnnualLuckContextSignal signal
     ) {
 
-        return switch (
-                status
-                ) {
+        return "현재 세운의 직업·사회 관련 Annual Context Signal ["
+                + signal.code()
+                + "]을 독립적으로 보존합니다: "
+                + signal.summary();
+    }
 
-            case SUPPORTIVE ->
-                    "현재 세운에서 관살 관련 Context가 직업·사회 역할 기능을 지지하는 방향으로 나타납니다.";
+    private List<StructureTenGodType>
+    matchedOfficerTypes(
+            AnnualLuckContextSignal signal
+    ) {
 
-            case PRESSURE ->
-                    "현재 세운에서 관살 관련 Context에 역할·책임의 약화 또는 부담 방향이 존재합니다.";
+        List<StructureTenGodType> types =
+                new ArrayList<>();
 
-            case MIXED ->
-                    "현재 세운의 관살 관련 Context에 지원과 약화 또는 상충 근거가 함께 존재합니다.";
+        if (
+                signal.involves(
+                        StructureTenGodType
+                                .DIRECT_OFFICER
+                )
+        ) {
 
-            case CONTEXTUAL ->
-                    "현재 세운에서 관살 관련 Context가 존재하지만 직업·사회 방향을 단독으로 확정할 수준은 아닙니다.";
-        };
+            types.add(
+                    StructureTenGodType
+                            .DIRECT_OFFICER
+            );
+        }
+
+        if (
+                signal.involves(
+                        StructureTenGodType
+                                .SEVEN_KILLINGS
+                )
+        ) {
+
+            types.add(
+                    StructureTenGodType
+                            .SEVEN_KILLINGS
+            );
+        }
+
+        return List.copyOf(
+                types
+        );
     }
 
     /*
-     * =================================================
-     * Temporal Evidence 조회
-     * =================================================
-     *
-     * Natal Bundle
-     * -> 0개 정상.
-     *
-     * Segment Bundle
-     * -> 1개 정상.
-     *
-     * 동일 Segment Bundle에
-     * ANNUAL_CONTEXT가 2개 이상이면
-     * Evidence 구성 오류.
+     * 동일 객체 중복만 제거하며
+     * 서로 다른 Signal을 하나의 상태로 합치지 않는다.
      */
+
+    @SafeVarargs
+    private final List<AnnualLuckContextSignal>
+    mergeIdentityUnique(
+            List<AnnualLuckContextSignal>... signalLists
+    ) {
+
+        Set<AnnualLuckContextSignal> unique =
+                Collections
+                        .newSetFromMap(
+                                new IdentityHashMap<>()
+                        );
+
+        List<AnnualLuckContextSignal> ordered =
+                new ArrayList<>();
+
+        for (
+                List<AnnualLuckContextSignal> signals
+                : signalLists
+        ) {
+
+            if (
+                    signals == null
+            ) {
+
+                continue;
+            }
+
+            for (
+                    AnnualLuckContextSignal signal
+                    : signals
+            ) {
+
+                if (
+                        unique.add(
+                                signal
+                        )
+                ) {
+
+                    ordered.add(
+                            signal
+                    );
+                }
+            }
+        }
+
+        return List.copyOf(
+                ordered
+        );
+    }
 
     private Optional<LifeDomainEvidenceReference<?>>
     optionalSingleEvidence(

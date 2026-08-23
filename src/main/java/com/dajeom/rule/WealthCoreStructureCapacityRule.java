@@ -15,132 +15,197 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * WEALTH 카테고리의
- * 원국 핵심 재성 구조 / 수용력 결합 Rule.
+ * WEALTH 원국 재성 중심 구조 deterministic Rule.
  *
  * =================================================
- *
  * 목적
  * =================================================
  *
- * 기존 LifeDomain.WEALTH 결과를
- * ConsultationCategory.WEALTH에
- * 그대로 복사하지 않는다.
- *
- * 이 Rule은 서로 다른 두 deterministic 축:
- *
- * 1.
- * WEALTH_PRIMARY_WEALTH_STRUCTURE
- *
- * 2.
- * WEALTH_CAPACITY
- *
- * 를 함께 사용해
- *
- * "재성이 원국의 중심 구조로 관여하는 상태와
- * 그 재성 기능을 실제로 감당하는 수용 구조가
- * 서로 어떤 관계를 이루는가"
- *
- * 를 WEALTH 카테고리 관점에서
- * 다시 판단한다.
+ * WEALTH_PRIMARY_WEALTH_STRUCTURE에서
+ * 이미 계산된 원국 재성 중심 구조의
+ * 공식 상태만 WEALTH Category에 보존한다.
  *
  * =================================================
- *
- * Source 1
+ * 중요한 변경
  * =================================================
+ *
+ * 기존에는:
  *
  * WEALTH_PRIMARY_WEALTH_STRUCTURE
  *
- * StructureAnalysis에서:
- *
- * - DIRECT_WEALTH
- * - INDIRECT_WEALTH
- *
- * 가 실제 primaryStandardTenGod로
- * 선택된 경우의 중심 구조 상태.
- *
- * 이 Source는:
- *
- * - 성립
- * - 부담
- * - 손상
- * - 혼잡
- *
- * 등을 이미 계산한 결과를 제공한다.
- *
- * =================================================
- *
- * Source 2
- * =================================================
- *
- * WEALTH_CAPACITY
- *
- * TenGodCompositeAnalysis
  * +
- * DayMasterStrengthAnalysis
  *
- * 를 통해 이미 확정된:
+ * WEALTH_CAPACITY
  *
- * - 재성 발달
- * - 정재/편재 중심
- * - 정재/편재 혼재
+ * 를 결합하여 하나의 finalStatus를 만들었다.
+ *
+ * 이제 두 Source Family를 합성하지 않는다.
+ *
+ * =================================================
+ * 이 Rule의 공식 Anchor
+ * =================================================
+ *
+ * WEALTH_PRIMARY_WEALTH_STRUCTURE
+ *
+ * 만 사용한다.
+ *
+ * 이 Source는 upstream에서 이미:
+ *
+ * - DIRECT_WEALTH / INDIRECT_WEALTH가
+ *   실제 주격으로 선택되었는지
+ *
+ * - 재성 주격의 성립 상태
+ *
+ * - 재성 주격의 손상 상태
+ *
+ * - 재성 주격의 혼잡 상태
+ *
+ * - 재성 중심 구조의 부담 상태
+ *
+ * 등을 계산한 결과다.
+ *
+ * 이 Rule에서는 그 계산을 반복하지 않는다.
+ *
+ * =================================================
+ * WEALTH_CAPACITY
+ * =================================================
+ *
+ * WEALTH_CAPACITY는 이 Rule에서 사용하지 않는다.
+ *
+ * 재성 기능의:
+ *
+ * - 수용력
  * - 재다신약 부담
  * - 비겁의 재성 압박
+ * - 정재 / 편재 중심
  *
- * 등을 사용한다.
- *
- * =================================================
- *
- * 중요한 원칙
- * =================================================
- *
- * 이 Rule은:
- *
- * - 재성 세력을 다시 계산하지 않는다.
- * - 신강신약을 다시 계산하지 않는다.
- * - 격국을 다시 계산하지 않는다.
- * - Match 개수를 점수로 사용하지 않는다.
- * - summary 문자열을 파싱하지 않는다.
- * - reasons 문자열을 파싱하지 않는다.
- *
- * 기존 Java deterministic 결과의
- * 공식 구조 필드만 사용한다.
+ * 같은 Capacity 계산은 별도의
+ * ConsultationCategory deterministic Rule로
+ * 독립 보존한다.
  *
  * =================================================
- *
- * 결과가 없는 경우
- * =================================================
- *
- * 이 Rule은 두 Source Family가
- * 모두 실제로 존재할 때만 Match를 만든다.
- *
- * 즉:
- *
- * 재성 주격 구조가 없는데
- * 억지로 "재성격" 판단을 만들지 않는다.
- *
- * 또한 재성 수용력 Source가 없는데
- * 상태를 추정하지 않는다.
- *
- * =================================================
- *
  * 금지
  * =================================================
  *
- * 이 결과로:
+ * 다음과 같은 Cross-Source 합성을 하지 않는다.
  *
- * - 돈을 많이 번다
- * - 부자가 된다
- * - 투자에 성공한다
- * - 재산이 늘어난다
- * - 돈을 잃는다
+ * PRIMARY STRUCTURE SUPPORTIVE
+ * +
+ * CAPACITY PRESSURE
+ * =
+ * MIXED
  *
- * 같은 실제 사건이나 결과를
- * 확정하지 않는다.
+ * 금지.
+ *
+ * PRIMARY STRUCTURE PRESSURE
+ * +
+ * CAPACITY SUPPORTIVE
+ * =
+ * MIXED
+ *
+ * 금지.
+ *
+ * 또한:
+ *
+ * - 중심 구조가 수용력을 보완한다
+ * - 수용력이 중심 구조를 뒤집는다
+ * - 수용력 때문에 재성 구조가 부담이 된다
+ * - 두 구조가 함께 작동한다
+ *
+ * 같은 새로운 관계 의미도 생성하지 않는다.
+ *
+ * =================================================
+ * Status 계산
+ * =================================================
+ *
+ * WEALTH_PRIMARY_WEALTH_STRUCTURE
+ * Source Family 내부에서만:
+ *
+ * MIXED 존재
+ * -> MIXED
+ *
+ * SUPPORTIVE + PRESSURE가
+ * 같은 Source Family 안에 실제 존재
+ * -> MIXED
+ *
+ * PRESSURE만 존재
+ * -> PRESSURE
+ *
+ * SUPPORTIVE만 존재
+ * -> SUPPORTIVE
+ *
+ * 그 외
+ * -> CONTEXTUAL
+ *
+ * =================================================
+ * 중요한 경계
+ * =================================================
+ *
+ * 위 처리는 서로 다른 계산 결과를
+ * 합성하는 것이 아니다.
+ *
+ * 동일한 Source Family 안에서
+ * upstream이 이미 확정한 공식 Status를
+ * Category 수준으로 정규화하는 것이다.
+ *
+ * =================================================
+ * 사건 생성 금지
+ * =================================================
+ *
+ * SUPPORTIVE
+ * != 돈을 많이 번다
+ * != 부자가 된다
+ * != 투자 성공
+ *
+ * PRESSURE
+ * != 돈을 잃는다
+ * != 가난하다
+ * != 투자 실패
+ *
+ * MIXED
+ * != 재물 기복이 크다
+ *
+ * CONTEXTUAL
+ * != 재물운이 없다
+ *
+ * =================================================
+ * 하지 않는 것
+ * =================================================
+ *
+ * - 재성 세력 재계산
+ * - 신강신약 재계산
+ * - 격국 재계산
+ * - 용신 재계산
+ * - 합충형파해 재계산
+ * - 합화 재계산
+ * - WEALTH_CAPACITY와 Status 합성
+ * - 다른 Source Family와 Status 합성
+ * - Match 개수 점수화
+ * - summary 문자열 파싱
+ * - reasons 문자열 파싱
+ * - 재물 사건 생성
+ * - 인과 생성
+ * - 순서 생성
  */
 @Component
 public class WealthCoreStructureCapacityRule
         implements ConsultationCategoryDeterministicRule {
+
+    /*
+     * =================================================
+     * Compatibility
+     * =================================================
+     *
+     * 기존 Grounding / Contract 호환을 먼저
+     * 유지하기 위해 class명과 Rule Code는
+     * 현재 단계에서는 변경하지 않는다.
+     *
+     * 실제 계산 의미는 이제
+     * PRIMARY WEALTH STRUCTURE 하나만 담당한다.
+     *
+     * 전체 Category Contract 연결이 끝난 뒤
+     * identifier 정리는 별도로 검토한다.
+     */
 
     private static final String RULE_CODE =
             "WEALTH_CORE_STRUCTURE_CAPACITY";
@@ -149,9 +214,6 @@ public class WealthCoreStructureCapacityRule
             PRIMARY_WEALTH_STRUCTURE_RULE_CODE =
             "WEALTH_PRIMARY_WEALTH_STRUCTURE";
 
-    private static final String
-            WEALTH_CAPACITY_RULE_CODE =
-            "WEALTH_CAPACITY";
 
     @Override
     public ConsultationCategory category() {
@@ -159,11 +221,13 @@ public class WealthCoreStructureCapacityRule
         return ConsultationCategory.WEALTH;
     }
 
+
     @Override
     public String code() {
 
         return RULE_CODE;
     }
+
 
     @Override
     public List<ConsultationCategoryDeterministicMatch>
@@ -175,6 +239,12 @@ public class WealthCoreStructureCapacityRule
                 view,
                 "WealthCoreStructureCapacityRule에는 ConsultationCategoryEvidenceView가 필요합니다."
         );
+
+        /*
+         * =================================================
+         * Category
+         * =================================================
+         */
 
         if (
                 view.category()
@@ -188,7 +258,7 @@ public class WealthCoreStructureCapacityRule
 
         /*
          * =================================================
-         * 사용할 수 없는 View
+         * unavailable
          * =================================================
          */
 
@@ -201,8 +271,7 @@ public class WealthCoreStructureCapacityRule
 
         /*
          * =================================================
-         * Source 1
-         * 재성 주격 중심 구조
+         * 공식 Status Anchor
          * =================================================
          */
 
@@ -214,34 +283,13 @@ public class WealthCoreStructureCapacityRule
                 );
 
         /*
-         * =================================================
-         * Source 2
-         * 재성 수용 / 부담 구조
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch>
-                capacityMatches =
-                findNatalMatches(
-                        view,
-                        WEALTH_CAPACITY_RULE_CODE
-                );
-
-        /*
-         * =================================================
-         * 두 Source 모두 필수
-         * =================================================
-         *
-         * 재성이 주격이 아닌데
-         * 재성 주격 구조를 추정하지 않는다.
-         *
-         * 또한 Capacity Evidence가 없는데
-         * 감당 구조를 임의 생성하지 않는다.
+         * 재성 주격 구조가 실제로 존재하지 않으면
+         * 이 Rule에서 다른 재물 Evidence를 대신 가져와
+         * 재성 중심 구조를 생성하지 않는다.
          */
 
         if (
                 structureMatches.isEmpty()
-                        || capacityMatches.isEmpty()
         ) {
 
             return List.of();
@@ -249,102 +297,72 @@ public class WealthCoreStructureCapacityRule
 
         /*
          * =================================================
-         * Source Family별 상태
+         * Status
          * =================================================
          */
 
-        ConsultationCategoryDeterministicStatus
-                structureStatus =
-                resolveFamilyStatus(
+        ConsultationCategoryDeterministicStatus status =
+                resolveStructureStatus(
                         structureMatches
                 );
-
-        ConsultationCategoryDeterministicStatus
-                capacityStatus =
-                resolveFamilyStatus(
-                        capacityMatches
-                );
-
-        /*
-         * =================================================
-         * WEALTH Category 전용 결합
-         * =================================================
-         */
-
-        ConsultationCategoryDeterministicStatus
-                finalStatus =
-                resolveCombinedStatus(
-                        structureStatus,
-                        capacityStatus
-                );
-
-        /*
-         * =================================================
-         * 실제 사용 Source 보존
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch> sourceMatches =
-                new ArrayList<>();
-
-        sourceMatches.addAll(
-                structureMatches
-        );
-
-        sourceMatches.addAll(
-                capacityMatches
-        );
 
         /*
          * =================================================
          * Reasons
          * =================================================
+         *
+         * 사용자 Story가 아니라
+         * deterministic provenance 기록이다.
          */
 
         List<String> reasons =
                 new ArrayList<>();
 
         reasons.add(
-                "재성이 원국의 중심 구조로 관여하는 상태와 재성 기능을 감당하는 수용·부담 구조를 서로 다른 deterministic 축으로 확인했습니다."
+                "WEALTH의 이 원국 항목은 WEALTH_PRIMARY_WEALTH_STRUCTURE Source Family만 공식 Status Anchor로 사용했습니다."
         );
 
-        reasons.add(
-                "재성 중심 구조 Source Family의 상태는 "
-                        + structureStatus.name()
-                        + "입니다."
-        );
-
-        reasons.add(
-                "재성 수용력 Source Family의 상태는 "
-                        + capacityStatus.name()
-                        + "입니다."
-        );
-
-        appendCombinationReason(
+        appendStatusReason(
                 reasons,
-                structureStatus,
-                capacityStatus,
-                finalStatus
+                structureMatches,
+                status
         );
 
         reasons.add(
-                "LifeDomain Match 개수를 재물의 강도·크기·수입 규모 점수로 사용하지 않았습니다."
+                "WEALTH_CAPACITY Source Family는 이 Rule의 Status 계산에 사용하지 않았으며 별도의 deterministic 계산 항목으로 분리합니다."
         );
 
         reasons.add(
-                "이 결과는 원국의 재성 중심축과 수용 구조의 결합 상태를 설명하며 실제 수입, 재산 증가, 투자 성공, 금전 손실 사건을 확정하지 않습니다."
+                "재성 중심 구조와 재성 수용력의 Status를 결합하여 새로운 SUPPORTIVE·PRESSURE·MIXED 상태를 만들지 않았습니다."
         );
+
+        reasons.add(
+                "Source Match의 반복 개수를 재물 규모·재물운 강도·수입 규모·자산 규모의 점수로 사용하지 않았습니다."
+        );
+
+        reasons.add(
+                "Source의 summary 또는 reasons 문자열을 판단 조건으로 사용하지 않았습니다."
+        );
+
+        reasons.add(
+                "이 결과는 원국에서 재성이 중심 구조로 관여하는 공식 상태만 보존하며 실제 수입·자산 증가·투자 성공·금전 손실 사건을 생성하지 않습니다."
+        );
+
+        /*
+         * =================================================
+         * Result
+         * =================================================
+         */
 
         return List.of(
                 new ConsultationCategoryDeterministicMatch(
                         ConsultationCategory.WEALTH,
 
-                        ConsultationCategoryDeterministicLayer
-                                .NATAL,
+                        ConsultationCategoryDeterministicLayer.NATAL,
 
                         RULE_CODE,
 
-                        finalStatus,
+                        status,
 
                         null,
 
@@ -353,11 +371,11 @@ public class WealthCoreStructureCapacityRule
                         List.of(),
 
                         summaryOf(
-                                finalStatus
+                                status
                         ),
 
                         List.copyOf(
-                                sourceMatches
+                                structureMatches
                         ),
 
                         List.copyOf(
@@ -367,20 +385,19 @@ public class WealthCoreStructureCapacityRule
         );
     }
 
+
     /*
      * =================================================
      * Natal Source 조회
      * =================================================
      *
-     * summary / reasons 문자열은
-     * 판단에 사용하지 않는다.
-     *
-     * 공식 구조 필드:
+     * 공식 구조 필드만 사용한다.
      *
      * - domain
      * - ruleCode
      *
-     * 만 사용한다.
+     * summary / reasons 문자열은
+     * 판단에 사용하지 않는다.
      */
 
     private List<LifeDomainRuleMatch>
@@ -392,6 +409,17 @@ public class WealthCoreStructureCapacityRule
 
     ) {
 
+        Objects.requireNonNull(
+                view,
+                "WEALTH Evidence View가 필요합니다."
+        );
+
+        String normalizedRuleCode =
+                requireText(
+                        sourceRuleCode,
+                        "WEALTH Source ruleCode가 필요합니다."
+                );
+
         List<LifeDomainRuleMatch> result =
                 new ArrayList<>();
 
@@ -400,13 +428,14 @@ public class WealthCoreStructureCapacityRule
                 : view.natalMatches()
         ) {
 
-            Objects.requireNonNull(
-                    match,
-                    "WEALTH Natal Match는 null일 수 없습니다."
-            );
+            LifeDomainRuleMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "WEALTH Natal Match는 null일 수 없습니다."
+                    );
 
             if (
-                    match.domain()
+                    normalized.domain()
                             != LifeDomain.WEALTH
             ) {
 
@@ -414,8 +443,8 @@ public class WealthCoreStructureCapacityRule
             }
 
             if (
-                    !sourceRuleCode.equals(
-                            match.ruleCode()
+                    !normalizedRuleCode.equals(
+                            normalized.ruleCode()
                     )
             ) {
 
@@ -423,7 +452,7 @@ public class WealthCoreStructureCapacityRule
             }
 
             result.add(
-                    match
+                    normalized
             );
         }
 
@@ -432,43 +461,62 @@ public class WealthCoreStructureCapacityRule
         );
     }
 
+
     /*
      * =================================================
-     * Source Family Status
+     * Primary Wealth Structure Status
      * =================================================
      *
-     * Match 수를 비교하지 않는다.
+     * 서로 다른 Source Family를 넣지 않는다.
      *
-     * 해당 Source Family 안에
-     * 어떤 공식 Status가 존재하는지만 본다.
+     * 오직:
+     *
+     * WEALTH_PRIMARY_WEALTH_STRUCTURE
+     *
+     * Family 내부의 공식 Status만 정규화한다.
      */
 
     private ConsultationCategoryDeterministicStatus
-    resolveFamilyStatus(
-            List<LifeDomainRuleMatch> matches
+    resolveStructureStatus(
+            List<LifeDomainRuleMatch> structureMatches
     ) {
+
+        Objects.requireNonNull(
+                structureMatches,
+                "WEALTH Primary Structure Match 목록이 필요합니다."
+        );
+
+        if (
+                structureMatches.isEmpty()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "WEALTH Primary Structure Status 계산에는 최소 하나의 Match가 필요합니다."
+            );
+        }
 
         boolean supportiveExists =
                 hasStatus(
-                        matches,
+                        structureMatches,
                         LifeDomainSignalStatus.SUPPORTIVE
                 );
 
         boolean pressureExists =
                 hasStatus(
-                        matches,
+                        structureMatches,
                         LifeDomainSignalStatus.PRESSURE
                 );
 
         boolean mixedExists =
                 hasStatus(
-                        matches,
+                        structureMatches,
                         LifeDomainSignalStatus.MIXED
                 );
 
         /*
-         * 기존 Source가 이미 MIXED를
-         * 확정했다면 우선 보존한다.
+         * =================================================
+         * upstream MIXED 보존
+         * =================================================
          */
 
         if (
@@ -479,9 +527,10 @@ public class WealthCoreStructureCapacityRule
         }
 
         /*
-         * 하나의 Family 안에
-         * SUPPORTIVE와 PRESSURE가
-         * 동시에 존재해도 MIXED다.
+         * =================================================
+         * 동일 Source Family 내부에
+         * 두 공식 방향이 모두 실제 존재
+         * =================================================
          */
 
         if (
@@ -509,146 +558,6 @@ public class WealthCoreStructureCapacityRule
         return ConsultationCategoryDeterministicStatus.CONTEXTUAL;
     }
 
-    /*
-     * =================================================
-     * WEALTH 전용 결합 Matrix
-     * =================================================
-     *
-     * structureStatus:
-     *
-     * 재성이 원국 중심 구조로
-     * 어떤 상태로 관여하는가.
-     *
-     * capacityStatus:
-     *
-     * 그 재성 기능을
-     * 실제로 감당하는 과정에서
-     * 어떤 수용/부담 상태가 존재하는가.
-     *
-     * =================================================
-     *
-     * 핵심:
-     *
-     * 재성격이 성립했다고 해서
-     * Capacity 부담을 지워버리지 않는다.
-     *
-     * 반대로 Capacity가 지지 방향이라고 해서
-     * 주격 구조가 성립하지 않은 상태를
-     * 재성 중심 구조 SUPPORTIVE로
-     * 자동 승격하지 않는다.
-     */
-
-    private ConsultationCategoryDeterministicStatus
-    resolveCombinedStatus(
-
-            ConsultationCategoryDeterministicStatus structureStatus,
-
-            ConsultationCategoryDeterministicStatus capacityStatus
-
-    ) {
-
-        /*
-         * =================================================
-         * 어느 한 축 자체가 MIXED
-         * =================================================
-         */
-
-        if (
-                structureStatus
-                        == ConsultationCategoryDeterministicStatus.MIXED
-                        || capacityStatus
-                        == ConsultationCategoryDeterministicStatus.MIXED
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.MIXED;
-        }
-
-        /*
-         * =================================================
-         * 재성 중심 구조가 SUPPORTIVE
-         * =================================================
-         */
-
-        if (
-                structureStatus
-                        == ConsultationCategoryDeterministicStatus.SUPPORTIVE
-        ) {
-
-            /*
-             * 중심축은 성립하지만
-             * 실제 감당 구조에 부담이 있다.
-             */
-
-            if (
-                    capacityStatus
-                            == ConsultationCategoryDeterministicStatus.PRESSURE
-            ) {
-
-                return ConsultationCategoryDeterministicStatus.MIXED;
-            }
-
-            /*
-             * Capacity가 CONTEXTUAL이라고 해서
-             * 이미 성립된 주격 구조를
-             * 무효로 만들지 않는다.
-             */
-
-            return ConsultationCategoryDeterministicStatus.SUPPORTIVE;
-        }
-
-        /*
-         * =================================================
-         * 재성 중심 구조가 PRESSURE
-         * =================================================
-         */
-
-        if (
-                structureStatus
-                        == ConsultationCategoryDeterministicStatus.PRESSURE
-        ) {
-
-            /*
-             * 중심 구조에는 부담이 있지만
-             * 수용 축은 지지된다면
-             * 한 방향으로 단순화하지 않는다.
-             */
-
-            if (
-                    capacityStatus
-                            == ConsultationCategoryDeterministicStatus.SUPPORTIVE
-            ) {
-
-                return ConsultationCategoryDeterministicStatus.MIXED;
-            }
-
-            return ConsultationCategoryDeterministicStatus.PRESSURE;
-        }
-
-        /*
-         * =================================================
-         * 중심 구조가 CONTEXTUAL
-         * =================================================
-         *
-         * 실제 수용 축에 PRESSURE가 존재한다면
-         * 그 부담은 보존한다.
-         */
-
-        if (
-                capacityStatus
-                        == ConsultationCategoryDeterministicStatus.PRESSURE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.PRESSURE;
-        }
-
-        /*
-         * Capacity SUPPORTIVE만으로
-         * 재성 주격 중심 구조 자체를
-         * SUPPORTIVE로 승격하지 않는다.
-         */
-
-        return ConsultationCategoryDeterministicStatus.CONTEXTUAL;
-    }
 
     /*
      * =================================================
@@ -664,6 +573,16 @@ public class WealthCoreStructureCapacityRule
 
     ) {
 
+        Objects.requireNonNull(
+                matches,
+                "WEALTH Match 목록이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                status,
+                "LifeDomainSignalStatus가 필요합니다."
+        );
+
         return matches
                 .stream()
                 .anyMatch(
@@ -673,92 +592,179 @@ public class WealthCoreStructureCapacityRule
                 );
     }
 
+
     /*
      * =================================================
-     * Combination Reason
+     * Status Provenance
      * =================================================
      */
 
-    private void appendCombinationReason(
+    private void appendStatusReason(
 
             List<String> reasons,
 
-            ConsultationCategoryDeterministicStatus structureStatus,
+            List<LifeDomainRuleMatch> structureMatches,
 
-            ConsultationCategoryDeterministicStatus capacityStatus,
-
-            ConsultationCategoryDeterministicStatus finalStatus
+            ConsultationCategoryDeterministicStatus status
 
     ) {
 
+        Objects.requireNonNull(
+                reasons,
+                "WEALTH reasons가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                structureMatches,
+                "WEALTH Primary Structure Match 목록이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                status,
+                "WEALTH Primary Structure Status가 필요합니다."
+        );
+
+        boolean supportiveExists =
+                hasStatus(
+                        structureMatches,
+                        LifeDomainSignalStatus.SUPPORTIVE
+                );
+
+        boolean pressureExists =
+                hasStatus(
+                        structureMatches,
+                        LifeDomainSignalStatus.PRESSURE
+                );
+
+        boolean mixedExists =
+                hasStatus(
+                        structureMatches,
+                        LifeDomainSignalStatus.MIXED
+                );
+
         if (
-                finalStatus
-                        == ConsultationCategoryDeterministicStatus.MIXED
+                mixedExists
         ) {
 
             reasons.add(
-                    "재성 중심축의 성립 방향과 실제 수용·부담 방향이 한쪽으로 일치하지 않거나, 두 축 중 하나에 이미 혼재가 존재하여 MIXED로 판단합니다."
+                    "WEALTH_PRIMARY_WEALTH_STRUCTURE Source Family에 upstream MIXED 상태가 존재하므로 재성 중심 구조 Status를 MIXED로 보존합니다."
             );
 
             return;
         }
 
         if (
-                finalStatus
+                supportiveExists
+                        && pressureExists
+        ) {
+
+            reasons.add(
+                    "WEALTH_PRIMARY_WEALTH_STRUCTURE Source Family 내부에 SUPPORTIVE와 PRESSURE가 모두 실제 존재하므로 어느 한 방향을 삭제하지 않고 MIXED로 보존합니다."
+            );
+
+            return;
+        }
+
+        if (
+                status
                         == ConsultationCategoryDeterministicStatus.PRESSURE
         ) {
 
             reasons.add(
-                    "재성 중심 구조 또는 재성 수용 구조에 확인된 부담이 다른 축에서 충분히 상쇄되지 않아 PRESSURE로 판단합니다."
+                    "WEALTH_PRIMARY_WEALTH_STRUCTURE Source Family에 PRESSURE 상태가 존재하고 SUPPORTIVE 또는 MIXED 상태가 없어 재성 중심 구조 Status를 PRESSURE로 확정합니다."
             );
 
             return;
         }
 
         if (
-                finalStatus
+                status
                         == ConsultationCategoryDeterministicStatus.SUPPORTIVE
         ) {
 
             reasons.add(
-                    "재성 중심 구조가 성립된 방향이고 수용 구조에서 이를 뒤집는 부담이 확인되지 않아 SUPPORTIVE로 판단합니다."
+                    "WEALTH_PRIMARY_WEALTH_STRUCTURE Source Family에 SUPPORTIVE 상태가 존재하고 PRESSURE 또는 MIXED 상태가 없어 재성 중심 구조 Status를 SUPPORTIVE로 확정합니다."
             );
 
             return;
         }
 
         reasons.add(
-                "재성 중심축의 관여와 수용 구조는 확인되지만 현재 공식 status만으로 한 방향의 재물 운용 구조를 확정하지 않아 CONTEXTUAL로 유지합니다."
+                "WEALTH_PRIMARY_WEALTH_STRUCTURE Source Family는 존재하지만 SUPPORTIVE·PRESSURE·MIXED 방향이 확정되지 않아 재성 중심 구조 Status를 CONTEXTUAL로 유지합니다."
         );
     }
 
+
     /*
      * =================================================
-     * Internal Summary
+     * Internal Deterministic Summary
      * =================================================
      *
-     * 최종 사용자 storyText가 아니다.
+     * 최종 사용자 Story가 아니다.
+     *
+     * Capacity와 연결하지 않는다.
+     * 재물 사건으로 변환하지 않는다.
      */
 
     private String summaryOf(
             ConsultationCategoryDeterministicStatus status
     ) {
 
+        Objects.requireNonNull(
+                status,
+                "WEALTH Primary Structure Status가 필요합니다."
+        );
+
         return switch (
                 status
                 ) {
 
             case SUPPORTIVE ->
-                    "원국에서 재성 중심 구조와 이를 감당하는 수용 구조가 비교적 함께 성립하는 방향입니다.";
+                    "원국의 재성 중심 구조에 SUPPORTIVE 상태가 확인됩니다.";
 
             case PRESSURE ->
-                    "원국에서 재성 기능이 중요한 축으로 관여하지만 이를 감당하거나 유지하는 과정에 부담 구조가 함께 존재합니다.";
+                    "원국의 재성 중심 구조에 PRESSURE 상태가 확인됩니다.";
 
             case MIXED ->
-                    "원국에서 재성 중심 구조의 성립 요소와 실제 수용·부담 요소가 함께 작동하는 복합적인 재물 구조입니다.";
+                    "원국의 재성 중심 구조에 MIXED 상태가 확인됩니다.";
 
             case CONTEXTUAL ->
-                    "원국에서 재성 중심축과 수용 구조가 관여하지만 현재 근거만으로 재물 구조를 한 방향으로 단정하지 않습니다.";
+                    "원국의 재성 중심 구조가 확인되며 방향은 CONTEXTUAL로 유지됩니다.";
         };
+    }
+
+
+    /*
+     * =================================================
+     * Text
+     * =================================================
+     */
+
+    private static String requireText(
+
+            String value,
+
+            String message
+
+    ) {
+
+        Objects.requireNonNull(
+                value,
+                message
+        );
+
+        String normalized =
+                value.trim();
+
+        if (
+                normalized.isBlank()
+        ) {
+
+            throw new IllegalArgumentException(
+                    message
+            );
+        }
+
+        return normalized;
     }
 }

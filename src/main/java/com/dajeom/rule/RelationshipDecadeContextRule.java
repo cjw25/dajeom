@@ -13,8 +13,6 @@ import com.dajeom.type.StructureTenGodType;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,20 +37,38 @@ import java.util.Set;
  * DAY Palace 관련 Context
  *
  * 2.
- * 재성 관련 Context
- *
- * DIRECT_WEALTH
- * INDIRECT_WEALTH
+ * DIRECT_WEALTH 관련 Context
  *
  * 3.
- * 관살 관련 Context
+ * INDIRECT_WEALTH 관련 Context
  *
- * DIRECT_OFFICER
- * SEVEN_KILLINGS
+ * 4.
+ * DIRECT_OFFICER 관련 Context
+ *
+ * 5.
+ * SEVEN_KILLINGS 관련 Context
  *
  * =================================================
  *
  * 중요한 원칙:
+ *
+ * 각각의 축은 독립 Match로 유지한다.
+ *
+ * 서로 다른 축이 같은 대운에
+ * 동시에 존재한다는 이유만으로:
+ *
+ * - 새로운 관계
+ * - 새로운 인과
+ * - 새로운 순서
+ * - 강화
+ * - 약화
+ * - 상쇄
+ * - 복합 상태
+ * - 추가 종합 의미
+ *
+ * 를 생성하지 않는다.
+ *
+ * =================================================
  *
  * DAY Palace
  * =
@@ -75,8 +91,9 @@ import java.util.Set;
  *
  * 같은 선택을 하지 않는다.
  *
- * 재성과 관살 모두
- * 관계 영역의 구조적 Context로 보존한다.
+ * 각 재성·관살 Signal은
+ * 해당 StructureTenGodType의
+ * 독립적인 관계영역 Context로 보존한다.
  *
  * =================================================
  *
@@ -94,7 +111,7 @@ import java.util.Set;
  *
  * =================================================
  *
- * 상태 변환:
+ * 동일 축 내부 상태 변환:
  *
  * SUPPORTED
  * -> SUPPORTIVE
@@ -108,8 +125,19 @@ import java.util.Set;
  * CONFLICTED 존재
  * -> MIXED
  *
+ * 동일 축 내부에
  * 지원 계열과 약화 계열 동시 존재
  * -> MIXED
+ *
+ * =================================================
+ *
+ * 위 상태 변환은 하나의 동일 Palace/TenGod 축 안에서
+ * 13-6이 이미 계산한 Signal 상태를
+ * LifeDomainSignalStatus로 변환하는
+ * Java deterministic 계산이다.
+ *
+ * 서로 다른 독립 축을 합쳐
+ * 새로운 상태를 계산하지 않는다.
  *
  * =================================================
  *
@@ -235,16 +263,6 @@ public class RelationshipDecadeContextRule
          * 1.
          * DAY Palace 대운 Context
          * =================================================
-         *
-         * DAY 궁위에 관여하는 모든 13-6 Signal을
-         * 그대로 읽는다.
-         *
-         * Axis를 특정하지 않는다.
-         *
-         * PALACE뿐 아니라
-         * RELATION / TRANSFORMATION 등에서
-         * DAY가 직접 태깅된 Signal도
-         * 함께 보존될 수 있다.
          */
 
         List<DecadeLuckContextSignal>
@@ -291,11 +309,15 @@ public class RelationshipDecadeContextRule
             );
 
             reasons.add(
-                    "DAY 궁위를 배우자 자체로 고정하지 않고 관계 영역의 주요 위치 Context로만 사용합니다."
+                    "DAY 궁위를 배우자 자체로 고정하지 않고 관계 영역의 위치 Context로만 사용합니다."
             );
 
             reasons.add(
                     "DAY 궁위의 대운 작동을 연애·결혼·이별 같은 실제 관계 사건으로 직접 환산하지 않습니다."
+            );
+
+            reasons.add(
+                    "이 Match는 DAY 궁위 축만 판정하며 재성·관살 축과 결합하여 새로운 상태를 만들지 않습니다."
             );
 
             matches.add(
@@ -319,245 +341,194 @@ public class RelationshipDecadeContextRule
         /*
          * =================================================
          * 2.
-         * 재성 + 관살 대운 Context
+         * DIRECT_WEALTH 대운 Context
          * =================================================
-         *
-         * 성별 정보가 없으므로
-         * 어느 한 Family도 배우자성으로 선택하지 않는다.
-         *
-         * 정재 / 편재 / 정관 / 칠살
-         * 네 종류의 Signal을 모두 읽는다.
          */
 
-        List<DecadeLuckContextSignal>
-                directWealthSignals =
-                decadeContext
-                        .signalsOf(
-                                StructureTenGodType
-                                        .DIRECT_WEALTH
-                        );
-
-        List<DecadeLuckContextSignal>
-                indirectWealthSignals =
-                decadeContext
-                        .signalsOf(
-                                StructureTenGodType
-                                        .INDIRECT_WEALTH
-                        );
-
-        List<DecadeLuckContextSignal>
-                directOfficerSignals =
-                decadeContext
-                        .signalsOf(
-                                StructureTenGodType
-                                        .DIRECT_OFFICER
-                        );
-
-        List<DecadeLuckContextSignal>
-                sevenKillingsSignals =
-                decadeContext
-                        .signalsOf(
-                                StructureTenGodType
-                                        .SEVEN_KILLINGS
-                        );
-
-        List<DecadeLuckContextSignal>
-                relationshipTenGodSignals =
-                mergeIdentityUnique(
-                        directWealthSignals,
-                        indirectWealthSignals,
-                        directOfficerSignals,
-                        sevenKillingsSignals
-                );
-
-        if (
-                !relationshipTenGodSignals
-                        .isEmpty()
-        ) {
-
-            SignalCounts counts =
-                    countStatuses(
-                            relationshipTenGodSignals
-                    );
-
-            LifeDomainSignalStatus status =
-                    resolveStatus(
-                            counts
-                    );
-
-            List<String> reasons =
-                    baseReasons(
-                            decadeContext
-                    );
-
-            reasons.add(
-                    "정재 관련 Decade Context Signal은 "
-                            + directWealthSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "편재 관련 Decade Context Signal은 "
-                            + indirectWealthSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "정관 관련 Decade Context Signal은 "
-                            + directOfficerSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "칠살 관련 Decade Context Signal은 "
-                            + sevenKillingsSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "Object Identity 중복 제거 후 관계영역 십성 Context Signal은 "
-                            + relationshipTenGodSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    statusSummary(
-                            counts
-                    )
-            );
-
-            appendSignalReasons(
-                    reasons,
-                    relationshipTenGodSignals
-            );
-
-            reasons.add(
-                    "현재 18차 Evidence에는 성별 정보가 없으므로 재성 또는 관살 중 하나를 배우자성으로 임의 선택하지 않습니다."
-            );
-
-            reasons.add(
-                    "재성·관살 관련 대운 Context를 배우자 등장·연애·결혼·관계 단절 같은 실제 사건으로 직접 환산하지 않습니다."
-            );
-
-            matches.add(
-                    new LifeDomainRuleMatch(
-                            LifeDomain.RELATIONSHIP,
-                            RULE_CODE,
-                            status,
-                            summaryOfTenGod(
-                                    status
-                            ),
-                            List.of(
-                                    decadeReference
-                            ),
-                            List.copyOf(
-                                    reasons
-                            )
-                    )
-            );
-        }
+        addTenGodMatch(
+                matches,
+                decadeReference,
+                decadeContext,
+                StructureTenGodType.DIRECT_WEALTH,
+                decadeContext.signalsOf(
+                        StructureTenGodType.DIRECT_WEALTH
+                )
+        );
 
         /*
          * =================================================
          * 3.
-         * DAY Palace + 관계 십성 동시 관여
+         * INDIRECT_WEALTH 대운 Context
          * =================================================
-         *
-         * 위치 축과 십성 축이
-         * 같은 대운에서 동시에 존재하는 사실을
-         * 별도 Evidence로 보존한다.
-         *
-         * 동시 존재
-         * =
-         * 관계 사건 확률 상승
-         *
-         * 으로 해석하지 않는다.
          */
 
-        if (
-                !dayPalaceSignals.isEmpty()
-                        && !relationshipTenGodSignals.isEmpty()
-        ) {
+        addTenGodMatch(
+                matches,
+                decadeReference,
+                decadeContext,
+                StructureTenGodType.INDIRECT_WEALTH,
+                decadeContext.signalsOf(
+                        StructureTenGodType.INDIRECT_WEALTH
+                )
+        );
 
-            List<DecadeLuckContextSignal>
-                    combinedSignals =
-                    mergeIdentityUnique(
-                            dayPalaceSignals,
-                            relationshipTenGodSignals
-                    );
+        /*
+         * =================================================
+         * 4.
+         * DIRECT_OFFICER 대운 Context
+         * =================================================
+         */
 
-            SignalCounts counts =
-                    countStatuses(
-                            combinedSignals
-                    );
+        addTenGodMatch(
+                matches,
+                decadeReference,
+                decadeContext,
+                StructureTenGodType.DIRECT_OFFICER,
+                decadeContext.signalsOf(
+                        StructureTenGodType.DIRECT_OFFICER
+                )
+        );
 
-            LifeDomainSignalStatus status =
-                    resolveStatus(
-                            counts
-                    );
+        /*
+         * =================================================
+         * 5.
+         * SEVEN_KILLINGS 대운 Context
+         * =================================================
+         */
 
-            List<String> reasons =
-                    baseReasons(
-                            decadeContext
-                    );
-
-            reasons.add(
-                    "DAY 궁위 Context와 재성·관살 Context가 같은 대운에서 함께 존재합니다."
-            );
-
-            reasons.add(
-                    "DAY 궁위 Signal은 "
-                            + dayPalaceSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "관계 십성 Signal은 "
-                            + relationshipTenGodSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "Object Identity 중복 제거 후 두 축을 합친 Signal은 "
-                            + combinedSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    statusSummary(
-                            counts
-                    )
-            );
-
-            appendSignalReasons(
-                    reasons,
-                    combinedSignals
-            );
-
-            reasons.add(
-                    "궁위 축과 십성 축의 동시 관여를 별도로 보존하지만 이를 연애·결혼·이별 같은 실제 관계 사건으로 승격하지 않습니다."
-            );
-
-            matches.add(
-                    new LifeDomainRuleMatch(
-                            LifeDomain.RELATIONSHIP,
-                            RULE_CODE,
-                            status,
-                            summaryOfCombined(
-                                    status
-                            ),
-                            List.of(
-                                    decadeReference
-                            ),
-                            List.copyOf(
-                                    reasons
-                            )
-                    )
-            );
-        }
+        addTenGodMatch(
+                matches,
+                decadeReference,
+                decadeContext,
+                StructureTenGodType.SEVEN_KILLINGS,
+                decadeContext.signalsOf(
+                        StructureTenGodType.SEVEN_KILLINGS
+                )
+        );
 
         return List.copyOf(
                 matches
+        );
+    }
+
+    /*
+     * =================================================
+     * TenGod 독립 Match
+     * =================================================
+     */
+
+    private void addTenGodMatch(
+
+            List<LifeDomainRuleMatch> matches,
+
+            LifeDomainEvidenceReference<?> decadeReference,
+
+            DecadeLuckPeriodContextAnalysis decadeContext,
+
+            StructureTenGodType tenGodType,
+
+            List<DecadeLuckContextSignal> signals
+
+    ) {
+
+        Objects.requireNonNull(
+                matches,
+                "Relationship Decade Match 목록이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                decadeReference,
+                "Decade Evidence Reference가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                decadeContext,
+                "DecadeLuckPeriodContextAnalysis가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                tenGodType,
+                "StructureTenGodType이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                signals,
+                "Decade Context Signal 목록은 null일 수 없습니다."
+        );
+
+        if (
+                signals.isEmpty()
+        ) {
+
+            return;
+        }
+
+        SignalCounts counts =
+                countStatuses(
+                        signals
+                );
+
+        LifeDomainSignalStatus status =
+                resolveStatus(
+                        counts
+                );
+
+        List<String> reasons =
+                baseReasons(
+                        decadeContext
+                );
+
+        reasons.add(
+                tenGodType.name()
+                        + " 관련 Decade Context Signal은 "
+                        + signals.size()
+                        + "개입니다."
+        );
+
+        reasons.add(
+                statusSummary(
+                        counts
+                )
+        );
+
+        appendSignalReasons(
+                reasons,
+                signals
+        );
+
+        reasons.add(
+                "현재 LifeDomain Evidence에는 성별 정보가 없으므로 "
+                        + tenGodType.name()
+                        + "을 배우자성으로 임의 확정하지 않습니다."
+        );
+
+        reasons.add(
+                tenGodType.name()
+                        + " 관련 대운 Context를 배우자 등장·연애·결혼·관계 단절 같은 실제 사건으로 직접 환산하지 않습니다."
+        );
+
+        reasons.add(
+                "이 Match는 "
+                        + tenGodType.name()
+                        + " 축만 판정하며 다른 재성·관살·궁위 축과 결합하여 새로운 상태를 생성하지 않습니다."
+        );
+
+        matches.add(
+                new LifeDomainRuleMatch(
+                        LifeDomain.RELATIONSHIP,
+                        RULE_CODE,
+                        status,
+                        summaryOfTenGod(
+                                tenGodType,
+                                status
+                        ),
+                        List.of(
+                                decadeReference
+                        ),
+                        List.copyOf(
+                                reasons
+                        )
+                )
         );
     }
 
@@ -597,16 +568,6 @@ public class RelationshipDecadeContextRule
      * =================================================
      * 원 Signal 근거 전달
      * =================================================
-     *
-     * 13-6의 deterministic:
-     *
-     * - code
-     * - summary
-     * - axis
-     * - status
-     * - reasons
-     *
-     * 를 LifeDomainRuleMatch까지 전달한다.
      */
 
     private void appendSignalReasons(
@@ -650,7 +611,7 @@ public class RelationshipDecadeContextRule
 
     /*
      * =================================================
-     * 상태 집계
+     * 동일 축 내부 상태 집계
      * =================================================
      */
 
@@ -704,25 +665,8 @@ public class RelationshipDecadeContextRule
 
     /*
      * =================================================
-     * 13-6 -> 18차 상태
+     * 동일 축 13-6 -> LifeDomain 상태
      * =================================================
-     *
-     * CONFLICTED
-     * -> MIXED
-     *
-     * SUPPORTED / QUALIFIED
-     * +
-     * WEAKENED
-     * -> MIXED
-     *
-     * WEAKENED만 존재
-     * -> PRESSURE
-     *
-     * SUPPORTED 존재
-     * -> SUPPORTIVE
-     *
-     * QUALIFIED만 존재
-     * -> CONTEXTUAL
      */
 
     private LifeDomainSignalStatus resolveStatus(
@@ -809,7 +753,7 @@ public class RelationshipDecadeContextRule
                     "현재 대운에서 DAY 궁위 관련 Context에 관계영역 부담 방향이 존재합니다.";
 
             case MIXED ->
-                    "현재 대운의 DAY 궁위 Context에 지원과 약화 또는 상충 근거가 함께 존재합니다.";
+                    "현재 대운의 DAY 궁위 Context 내부에 지원과 약화 또는 상충 상태가 함께 존재합니다.";
 
             case CONTEXTUAL ->
                     "현재 대운에서 DAY 궁위 관련 Context가 존재하지만 관계 방향을 단독으로 확정할 수준은 아닙니다.";
@@ -817,111 +761,46 @@ public class RelationshipDecadeContextRule
     }
 
     private String summaryOfTenGod(
+
+            StructureTenGodType tenGodType,
+
             LifeDomainSignalStatus status
+
     ) {
+
+        String axis =
+                tenGodType.name();
 
         return switch (
                 status
                 ) {
 
             case SUPPORTIVE ->
-                    "현재 대운에서 재성·관살 관련 Context가 관계 영역을 지지하는 방향으로 나타납니다.";
+                    "현재 대운에서 "
+                            + axis
+                            + " 관련 Context가 관계 영역의 지지 방향으로 나타납니다.";
 
             case PRESSURE ->
-                    "현재 대운에서 재성·관살 관련 Context에 관계영역 부담 방향이 존재합니다.";
+                    "현재 대운에서 "
+                            + axis
+                            + " 관련 Context에 관계영역 부담 방향이 존재합니다.";
 
             case MIXED ->
-                    "현재 대운의 재성·관살 Context에 지원과 약화 또는 상충 근거가 함께 존재합니다.";
+                    "현재 대운의 "
+                            + axis
+                            + " Context 내부에 지원과 약화 또는 상충 상태가 함께 존재합니다.";
 
             case CONTEXTUAL ->
-                    "현재 대운에서 재성·관살 관련 Context가 존재하지만 관계 방향을 단독으로 확정할 수준은 아닙니다.";
+                    "현재 대운에서 "
+                            + axis
+                            + " 관련 Context가 존재하지만 관계 방향을 단독으로 확정할 수준은 아닙니다.";
         };
-    }
-
-    private String summaryOfCombined(
-            LifeDomainSignalStatus status
-    ) {
-
-        return switch (
-                status
-                ) {
-
-            case SUPPORTIVE ->
-                    "현재 대운에서 DAY 궁위와 관계 십성 Context가 함께 지지 방향을 형성합니다.";
-
-            case PRESSURE ->
-                    "현재 대운에서 DAY 궁위와 관계 십성 Context가 함께 부담 방향을 포함합니다.";
-
-            case MIXED ->
-                    "현재 대운에서 DAY 궁위와 관계 십성 축에 지원·약화·상충 근거가 함께 존재합니다.";
-
-            case CONTEXTUAL ->
-                    "현재 대운에서 DAY 궁위와 관계 십성 축이 함께 관여하지만 단독 관계 결과로 확정할 수준은 아닙니다.";
-        };
-    }
-
-    /*
-     * =================================================
-     * Object Identity 중복 제거
-     * =================================================
-     */
-
-    @SafeVarargs
-    private final List<DecadeLuckContextSignal>
-    mergeIdentityUnique(
-            List<DecadeLuckContextSignal>... signalLists
-    ) {
-
-        Set<DecadeLuckContextSignal> unique =
-                Collections
-                        .newSetFromMap(
-                                new IdentityHashMap<>()
-                        );
-
-        for (
-                List<DecadeLuckContextSignal> signals
-                : signalLists
-        ) {
-
-            if (
-                    signals == null
-            ) {
-
-                continue;
-            }
-
-            unique.addAll(
-                    signals
-            );
-        }
-
-        return List.copyOf(
-                unique
-        );
     }
 
     /*
      * =================================================
      * Temporal Evidence 조회
      * =================================================
-     *
-     * 0개:
-     *
-     * Natal Bundle 또는
-     * ACTIVE 대운 Context가 없는 Segment.
-     *
-     * 정상.
-     *
-     * 1개:
-     *
-     * 정상적인 대운 Context.
-     *
-     * 2개 이상:
-     *
-     * 동일 Segment Bundle 구성 오류.
-     *
-     * Rule에서 어느 대운이 맞는지
-     * 임의 선택하지 않는다.
      */
 
     private Optional<LifeDomainEvidenceReference<?>>

@@ -16,49 +16,25 @@ import java.util.Objects;
 
 /**
  * CAREER 카테고리의
- * 원국 직업 기능 교차 연결 Pattern Rule.
+ * 원국 직업 기능 교차검증 Pattern 보존 Rule.
  *
  * =================================================
- *
  * 목적
  * =================================================
  *
- * CareerCoreRoleStructureRule과
- * 다른 질문을 담당한다.
+ * LifeDomain.CAREER에서 이미 계산된:
  *
- * CareerCoreRoleStructureRule:
+ * CAREER_CROSS_VALIDATED_PATTERN
  *
- * - CAREER_PRIMARY_OFFICER_STRUCTURE
- * - CAREER_OFFICER_STRUCTURE
- *
- * 를 결합하여
- *
- * "관성이 원국의 역할·책임 중심축으로
- * 실제 성립하며 어떻게 작동하는가"
- *
- * 를 판단한다.
- *
- * -------------------------------------------------
- *
- * 이 Rule:
- *
- * CAREER_CROSS_VALIDATED_PATTERN에서
- * 이미 교차검증된 직업·사회 관련
- * 십성 Pattern Family를 사용하여
- *
- * "표현·산출·자원·역할·책임·학습 기능이
- * 원국 안에서 서로 어떤 방향으로
- * 연결되거나 긴장하는가"
- *
- * 를 별도의 CAREER 축으로 판단한다.
+ * 결과를 ConsultationCategory.CAREER의
+ * 독립 deterministic 결과로 보존한다.
  *
  * =================================================
- *
- * 기존 Source가 포함할 수 있는 구조
+ * Upstream 계산
  * =================================================
  *
  * CAREER_CROSS_VALIDATED_PATTERN은
- * 기존 18차에서:
+ * 기존 LifeDomain 계산에서 이미:
  *
  * - 식신제살
  * - 상관견관
@@ -74,15 +50,14 @@ import java.util.Objects;
  * - 관살 -> 인성
  * - 식상 -> 재성 -> 관살 -> 인성
  *
- * 등의 Family Chain을
- * 이미 계산한 결과다.
+ * 등의 Pattern / Family Chain을
+ * 계산한 결과다.
  *
  * =================================================
- *
  * Upstream 교차검증
  * =================================================
  *
- * 해당 Source는 기존 10차에서:
+ * 해당 Source는 기존 계산에서:
  *
  * - 핵심 십성 Pattern
  * - 격국
@@ -90,124 +65,297 @@ import java.util.Objects;
  * - 용신
  * - 합화
  *
- * 등을 이미 교차검증한 상태를 사용한다.
+ * 등과 교차검증된 결과를 사용할 수 있다.
  *
- * 따라서 이 Rule에서는
- * 위 내용을 다시 계산하지 않는다.
+ * 이 Category Rule에서는
+ * 위 계산을 다시 수행하지 않는다.
  *
  * =================================================
- *
- * 매우 중요한 제한
+ * 매우 중요한 원칙
  * =================================================
  *
- * LifeDomainRuleMatch에는 현재:
+ * Java upstream에서 실제 계산된:
  *
- * "이 Match가 정확히 식신제살인지"
- * "상관견관인지"
- * "정관생인인지"
+ * - 생 관계
+ * - 극 관계
+ * - Family Chain
+ * - Core Pattern
+ * - Cross Validation
  *
- * 를 나타내는 별도의 구조화된
- * patternType 필드가 없다.
+ * 자체는 유효한 deterministic 계산이다.
+ *
+ * 관계형 풀이 금지는
+ * upstream Java가 실제 계산한 관계를
+ * 삭제한다는 뜻이 아니다.
+ *
+ * 이 Rule에서 금지하는 것은:
+ *
+ * 이미 계산된 서로 다른 Pattern 결과를
+ * 다시 임의로 연결하거나 합성하여
+ * 새로운 의미를 만드는 것이다.
+ *
+ * =================================================
+ * 기존 문제
+ * =================================================
+ *
+ * 기존에는 여러:
+ *
+ * CAREER_CROSS_VALIDATED_PATTERN
+ *
+ * Match의 Status를 한꺼번에 모아:
+ *
+ * MIXED 존재
+ * -> MIXED
+ *
+ * SUPPORTIVE + PRESSURE
+ * -> MIXED
+ *
+ * PRESSURE 존재
+ * -> PRESSURE
+ *
+ * SUPPORTIVE 존재
+ * -> SUPPORTIVE
+ *
+ * 같은 방식으로
+ * 하나의 Category finalStatus를 만들었다.
+ *
+ * 이제 그렇게 하지 않는다.
+ *
+ * =================================================
+ * 1 : 1 보존
+ * =================================================
+ *
+ * LifeDomainRuleMatch 하나
+ *
+ * ->
+ *
+ * ConsultationCategoryDeterministicMatch 하나
+ *
+ * 로 그대로 보존한다.
+ *
+ * 예:
+ *
+ * Pattern A = SUPPORTIVE
+ * Pattern B = PRESSURE
+ * Pattern C = CONTEXTUAL
+ *
+ * 이라면:
+ *
+ * Category Match A = SUPPORTIVE
+ * Category Match B = PRESSURE
+ * Category Match C = CONTEXTUAL
+ *
+ * 로 각각 남긴다.
+ *
+ * A + B + C를 합쳐
+ * 새로운 MIXED를 만들지 않는다.
+ *
+ * =================================================
+ * Structured subtype 제한
+ * =================================================
+ *
+ * 현재 LifeDomainRuleMatch에는:
+ *
+ * - 식신제살
+ * - 상관견관
+ * - 정관생인
+ * - 칠살생인
+ * - 재생정관
+ *
+ * 중 정확히 어느 Pattern인지 나타내는
+ * 별도의 구조화된 patternType 필드가 없다.
  *
  * 따라서 이 Rule은:
  *
- * - summary 문자열
- * - reasons 문자열
+ * - summary
+ * - reasons
  *
- * 을 파싱하여
- * 개별 Pattern을 재분류하지 않는다.
+ * 문자열을 파싱하여
+ * Pattern subtype을 재구성하지 않는다.
  *
- * 공식적으로 사용할 수 있는:
- *
- * - domain
- * - ruleCode
- * - status
- *
- * 만 사용한다.
+ * 원본 LifeDomainRuleMatch 자체를
+ * sourceMatches에 그대로 보존한다.
  *
  * =================================================
+ * CAREER 다른 원국 계산과의 분리
+ * =================================================
  *
- * Status 의미
+ * 이 Rule에서는:
+ *
+ * CAREER_PRIMARY_OFFICER_STRUCTURE
+ * CAREER_OFFICER_STRUCTURE
+ *
+ * 를 사용하지 않는다.
+ *
+ * -------------------------------------------------
+ *
+ * CAREER_PRIMARY_OFFICER_STRUCTURE
+ *
+ * ->
+ *
+ * CareerCoreRoleStructureRule
+ *
+ * -------------------------------------------------
+ *
+ * CAREER_OFFICER_STRUCTURE
+ *
+ * ->
+ *
+ * CareerOfficerStructureDeterministicRule
+ *
+ * -------------------------------------------------
+ *
+ * CAREER_CROSS_VALIDATED_PATTERN
+ *
+ * ->
+ *
+ * 이 Rule
+ *
+ * -------------------------------------------------
+ *
+ * 각각 독립적인 deterministic 결과다.
+ *
+ * =================================================
+ * Status
+ * =================================================
+ *
+ * 각 CAREER_CROSS_VALIDATED_PATTERN
+ * LifeDomainRuleMatch의 공식 Status를
+ * 그대로 1:1 변환한다.
+ *
+ * SUPPORTIVE
+ * -> SUPPORTIVE
+ *
+ * PRESSURE
+ * -> PRESSURE
+ *
+ * MIXED
+ * -> MIXED
+ *
+ * CONTEXTUAL
+ * -> CONTEXTUAL
+ *
+ * =================================================
+ * 관계형 풀이 금지
+ * =================================================
+ *
+ * 서로 다른 Pattern Match를 보고:
+ *
+ * - A 때문에 B
+ * - A가 B로 이어진다
+ * - A와 B가 함께 작동한다
+ * - A가 B를 강화한다
+ * - A가 B를 약화한다
+ * - A를 B가 보완한다
+ * - 먼저 A가 나타나고 이후 B가 된다
+ *
+ * 같은 새로운 관계를 생성하지 않는다.
+ *
+ * =================================================
+ * 실제 계산된 관계와의 구분
+ * =================================================
+ *
+ * 예를 들어 upstream Java가 실제로:
+ *
+ * OUTPUT_CONTROLS_PRESSURE
+ *
+ * 또는:
+ *
+ * RESOURCE_GENERATES_RESPONSIBILITY
+ *
+ * 같은 관계를 확정했다면
+ * 그 계산 결과 자체는 보존할 수 있다.
+ *
+ * 하지만:
+ *
+ * 서로 별개로 존재하는 Pattern A와 Pattern B를
+ * 이 Rule에서 새로 연결하지 않는다.
+ *
+ * =================================================
+ * 특정 직업 대응 금지
+ * =================================================
+ *
+ * 식신제살
+ * != 특정 전문직
+ *
+ * 정관생인
+ * != 공무원
+ *
+ * 칠살생인
+ * != 군인
+ * != 경찰
+ *
+ * 상관견관
+ * != 조직생활 불가
+ *
+ * 재생관
+ * != 사업 성공
+ *
+ * Pattern을 특정 직업으로
+ * 직접 치환하지 않는다.
+ *
+ * =================================================
+ * 사건 생성 금지
  * =================================================
  *
  * SUPPORTIVE
- *
- * ->
- *
- * 교차검증된 직업·사회 Pattern Family에서
- * 지지 방향이 확인되고
- * 이를 뒤집는 부담 방향이 없음.
- *
- * -------------------------------------------------
+ * != 취업 성공
+ * != 승진
  *
  * PRESSURE
- *
- * ->
- *
- * 역할·규범과 표현·산출 등의 기능 사이에서
- * 교차검증된 부담 방향이 존재함.
- *
- * -------------------------------------------------
+ * != 퇴사
+ * != 해고
+ * != 직장 갈등
  *
  * MIXED
- *
- * ->
- *
- * 이미 MIXED Pattern이 존재하거나
- * SUPPORTIVE와 PRESSURE가
- * 동시에 존재함.
- *
- * -------------------------------------------------
+ * != 이직
+ * != 직업 변동
  *
  * CONTEXTUAL
+ * != 직업운 없음
  *
- * ->
+ * 또한:
  *
- * 연결 구조는 존재하지만
- * 공식 근거만으로 방향을
- * 지지 또는 부담으로 확정할 수 없음.
+ * - 취업
+ * - 승진
+ * - 이직
+ * - 퇴사
+ * - 창업
+ * - 사업 성공
+ *
+ * 같은 실제 사건을 생성하지 않는다.
  *
  * =================================================
- *
- * Match 개수
+ * Match 개수 금지
  * =================================================
  *
- * Pattern Match의 개수를 세어서:
+ * Pattern Match가 여러 개 존재한다고:
  *
  * - 직업운이 강하다
  * - 직업 능력이 높다
  * - 성공 가능성이 높다
- * - 사업가 기질이 강하다
+ * - 사회적 지위가 높다
  *
- * 같은 점수를 만들지 않는다.
- *
- * 개수 비교가 아니라
- * 공식 Status의 존재 조합만 사용한다.
+ * 로 계산하지 않는다.
  *
  * =================================================
- *
- * 금지
+ * 하지 않는 것
  * =================================================
  *
- * 이 Rule은:
- *
- * - 취업한다
- * - 승진한다
- * - 퇴사한다
- * - 이직한다
- * - 창업한다
- * - 사업에 성공한다
- * - 조직에서 갈등한다
- *
- * 같은 실제 사건을 확정하지 않는다.
- *
- * 또한:
- *
- * 식신제살 -> 특정 직업
- * 정관생인 -> 공무원
- * 칠살생인 -> 군경
- *
- * 같은 직업 대응도 하지 않는다.
+ * - 십성 재계산
+ * - Family Chain 재계산
+ * - Core Pattern 재계산
+ * - Cross Validation 재계산
+ * - Pattern 간 Status 합성
+ * - 다른 CAREER Source와 Status 합성
+ * - Pattern Match 개수 점수화
+ * - summary 문자열 파싱
+ * - reasons 문자열 파싱
+ * - 새로운 관계 생성
+ * - 새로운 인과 생성
+ * - 새로운 순서 생성
+ * - 특정 직업군 생성
+ * - 실제 직업 사건 생성
  */
 @Component
 public class CareerFunctionIntegrationPatternRule
@@ -220,17 +368,20 @@ public class CareerFunctionIntegrationPatternRule
             CROSS_VALIDATED_PATTERN_RULE_CODE =
             "CAREER_CROSS_VALIDATED_PATTERN";
 
+
     @Override
     public ConsultationCategory category() {
 
         return ConsultationCategory.CAREER;
     }
 
+
     @Override
     public String code() {
 
         return RULE_CODE;
     }
+
 
     @Override
     public List<ConsultationCategoryDeterministicMatch>
@@ -245,7 +396,7 @@ public class CareerFunctionIntegrationPatternRule
 
         /*
          * =================================================
-         * Category 검증
+         * Category
          * =================================================
          */
 
@@ -261,7 +412,7 @@ public class CareerFunctionIntegrationPatternRule
 
         /*
          * =================================================
-         * unavailable View
+         * unavailable
          * =================================================
          */
 
@@ -274,26 +425,15 @@ public class CareerFunctionIntegrationPatternRule
 
         /*
          * =================================================
-         * 핵심 Source
+         * 공식 Source
          * =================================================
-         *
-         * CAREER_CROSS_VALIDATED_PATTERN만 사용한다.
-         *
-         * 이번 Rule은
-         * 관성 중심성 자체를 다시 판단하지 않는다.
          */
 
-        List<LifeDomainRuleMatch>
-                patternMatches =
+        List<LifeDomainRuleMatch> patternMatches =
                 findNatalMatches(
                         view,
                         CROSS_VALIDATED_PATTERN_RULE_CODE
                 );
-
-        /*
-         * 교차검증된 직업 Pattern이 없다면
-         * 이번 질문에 답할 근거가 없다.
-         */
 
         if (
                 patternMatches.isEmpty()
@@ -304,99 +444,134 @@ public class CareerFunctionIntegrationPatternRule
 
         /*
          * =================================================
-         * Pattern Family Status
+         * Match 1개 -> Category Match 1개
          * =================================================
+         *
+         * 여러 Pattern Match를
+         * 하나의 finalStatus로 합성하지 않는다.
          */
 
-        ConsultationCategoryDeterministicStatus
-                finalStatus =
-                resolvePatternStatus(
-                        patternMatches
-                );
-
-        /*
-         * =================================================
-         * Reasons
-         * =================================================
-         */
-
-        List<String> reasons =
+        List<ConsultationCategoryDeterministicMatch> result =
                 new ArrayList<>();
 
-        reasons.add(
-                "직업·사회 영역에서 이미 교차검증된 십성 Pattern들을 하나의 사건으로 재해석하지 않고, 표현·산출·자원·역할·책임·학습 기능 사이의 구조적 연결 상태를 별도 CAREER 축으로 확인했습니다."
-        );
+        for (
+                LifeDomainRuleMatch patternMatch
+                : patternMatches
+        ) {
 
-        reasons.add(
-                "CAREER_CROSS_VALIDATED_PATTERN 내부의 개별 Pattern subtype은 현재 LifeDomainRuleMatch의 별도 구조 필드로 노출되지 않으므로 summary 또는 reasons 문자열을 파싱해 재분류하지 않았습니다."
-        );
+            LifeDomainRuleMatch normalized =
+                    Objects.requireNonNull(
+                            patternMatch,
+                            "CAREER Cross Validated Pattern Match는 null일 수 없습니다."
+                    );
 
-        appendStatusReason(
-                reasons,
-                finalStatus
-        );
+            ConsultationCategoryDeterministicStatus status =
+                    toCategoryStatus(
+                            normalized.status()
+                    );
 
-        reasons.add(
-                "Pattern Match 개수의 많고 적음을 직업 능력, 성취 규모, 승진 가능성, 사업 성공 가능성 또는 사회적 지위 점수로 사용하지 않았습니다."
-        );
+            /*
+             * =================================================
+             * Reasons
+             * =================================================
+             *
+             * 사용자 Story가 아니다.
+             * deterministic provenance 기록이다.
+             */
 
-        reasons.add(
-                "이 결과는 원국의 직업·사회 기능들이 서로 연결되거나 긴장하는 구조를 설명하며 취업, 승진, 이직, 퇴사, 창업, 사업 성공 같은 실제 사건을 확정하지 않습니다."
-        );
+            List<String> reasons =
+                    new ArrayList<>();
 
-        /*
-         * =================================================
-         * Result
-         * =================================================
-         */
+            reasons.add(
+                    "CAREER_CROSS_VALIDATED_PATTERN에서 이미 계산된 하나의 LifeDomain Match를 독립적인 CAREER Category Match로 보존했습니다."
+            );
 
-        return List.of(
-                new ConsultationCategoryDeterministicMatch(
-                        ConsultationCategory.CAREER,
+            reasons.add(
+                    "해당 LifeDomainRuleMatch의 공식 Status를 다른 CAREER_CROSS_VALIDATED_PATTERN Match와 결합하지 않고 1:1로 Category Status에 보존했습니다."
+            );
 
-                        ConsultationCategoryDeterministicLayer
-                                .NATAL,
+            reasons.add(
+                    "CAREER_PRIMARY_OFFICER_STRUCTURE와 CAREER_OFFICER_STRUCTURE는 이 Rule의 Source 또는 Status 계산에 사용하지 않았습니다."
+            );
 
-                        RULE_CODE,
+            reasons.add(
+                    "Upstream Java에서 실제 계산된 십성 Pattern, Family Chain, Core Pattern 및 Cross Validation 결과 자체는 그대로 인정하며 이 Category Rule에서 다시 계산하지 않았습니다."
+            );
 
-                        finalStatus,
+            reasons.add(
+                    "CAREER_CROSS_VALIDATED_PATTERN의 세부 Pattern subtype은 현재 LifeDomainRuleMatch의 구조화된 별도 필드로 노출되지 않으므로 summary 또는 reasons 문자열을 파싱하여 재분류하지 않았습니다."
+            );
 
-                        null,
+            reasons.add(
+                    "다른 CAREER_CROSS_VALIDATED_PATTERN Match가 존재하더라도 서로 연결하여 새로운 SUPPORTIVE·PRESSURE·MIXED 상태를 만들지 않았습니다."
+            );
 
-                        null,
+            reasons.add(
+                    "Pattern Match의 존재 또는 반복 개수를 직업운 강도·직업 능력·사회적 지위·승진 가능성·사업 성공 가능성의 점수로 사용하지 않았습니다."
+            );
 
-                        List.of(),
+            reasons.add(
+                    "이 결과를 취업·승진·이직·퇴사·해고·창업·사업 성공 같은 실제 직업 사건이나 특정 직업군으로 변환하지 않습니다."
+            );
 
-                        summaryOf(
-                                finalStatus
-                        ),
+            /*
+             * =================================================
+             * Result
+             * =================================================
+             */
 
-                        List.copyOf(
-                                patternMatches
-                        ),
+            result.add(
+                    new ConsultationCategoryDeterministicMatch(
+                            ConsultationCategory.CAREER,
 
-                        List.copyOf(
-                                reasons
-                        )
-                )
+                            ConsultationCategoryDeterministicLayer
+                                    .NATAL,
+
+                            RULE_CODE,
+
+                            status,
+
+                            null,
+
+                            null,
+
+                            List.of(),
+
+                            summaryOf(
+                                    status
+                            ),
+
+                            List.of(
+                                    normalized
+                            ),
+
+                            List.copyOf(
+                                    reasons
+                            )
+                    )
+            );
+        }
+
+        return List.copyOf(
+                result
         );
     }
+
 
     /*
      * =================================================
      * Natal Source 조회
      * =================================================
      *
-     * 공식 구조값:
+     * Source 선택에는:
      *
      * - domain
      * - ruleCode
      *
-     * 로만 Source Family를 선택한다.
+     * 만 사용한다.
      *
      * summary / reasons 문자열은
-     * Source 선택이나 Pattern 분류에
-     * 사용하지 않는다.
+     * Source 판별에 사용하지 않는다.
      */
 
     private List<LifeDomainRuleMatch>
@@ -410,18 +585,14 @@ public class CareerFunctionIntegrationPatternRule
 
         Objects.requireNonNull(
                 view,
-                "ConsultationCategoryEvidenceView가 필요합니다."
+                "CAREER Evidence View가 필요합니다."
         );
 
-        if (
-                sourceRuleCode == null
-                        || sourceRuleCode.isBlank()
-        ) {
-
-            throw new IllegalArgumentException(
-                    "CAREER Source ruleCode가 필요합니다."
-            );
-        }
+        String normalizedRuleCode =
+                requireText(
+                        sourceRuleCode,
+                        "CAREER Cross Validated Pattern sourceRuleCode가 필요합니다."
+                );
 
         List<LifeDomainRuleMatch> result =
                 new ArrayList<>();
@@ -431,32 +602,23 @@ public class CareerFunctionIntegrationPatternRule
                 : view.natalMatches()
         ) {
 
-            Objects.requireNonNull(
-                    match,
-                    "CAREER Natal Match는 null일 수 없습니다."
-            );
-
-            /*
-             * 다른 LifeDomain Evidence는
-             * 이번 Rule에 사용하지 않는다.
-             */
+            LifeDomainRuleMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "CAREER Natal Match는 null일 수 없습니다."
+                    );
 
             if (
-                    match.domain()
+                    normalized.domain()
                             != LifeDomain.CAREER
             ) {
 
                 continue;
             }
 
-            /*
-             * 공식 Rule Code로만
-             * Source Family를 확인한다.
-             */
-
             if (
-                    !sourceRuleCode.equals(
-                            match.ruleCode()
+                    !normalizedRuleCode.equals(
+                            normalized.ruleCode()
                     )
             ) {
 
@@ -464,7 +626,7 @@ public class CareerFunctionIntegrationPatternRule
             }
 
             result.add(
-                    match
+                    normalized
             );
         }
 
@@ -473,200 +635,58 @@ public class CareerFunctionIntegrationPatternRule
         );
     }
 
+
     /*
      * =================================================
-     * Pattern Family Status
+     * Status 1:1 변환
      * =================================================
      *
-     * Match 수를 비교하지 않는다.
-     *
-     * 해당 Family 내부에
-     * 어떤 공식 Status가 존재하는지만 본다.
-     *
-     * -------------------------------------------------
-     *
-     * MIXED 존재
-     * -> MIXED
-     *
-     * SUPPORTIVE + PRESSURE
-     * -> MIXED
-     *
-     * PRESSURE 존재
-     * -> PRESSURE
-     *
-     * SUPPORTIVE 존재
-     * -> SUPPORTIVE
-     *
-     * 나머지
-     * -> CONTEXTUAL
+     * 다른 Pattern Match 또는
+     * 다른 CAREER Source를 참조하지 않는다.
      */
 
     private ConsultationCategoryDeterministicStatus
-    resolvePatternStatus(
-            List<LifeDomainRuleMatch> matches
+    toCategoryStatus(
+            LifeDomainSignalStatus sourceStatus
     ) {
 
         Objects.requireNonNull(
-                matches,
-                "CAREER Pattern Match 목록이 필요합니다."
+                sourceStatus,
+                "CAREER Cross Validated Pattern에는 LifeDomainSignalStatus가 필요합니다."
         );
 
-        boolean supportiveExists =
-                hasStatus(
-                        matches,
-                        LifeDomainSignalStatus.SUPPORTIVE
-                );
-
-        boolean pressureExists =
-                hasStatus(
-                        matches,
-                        LifeDomainSignalStatus.PRESSURE
-                );
-
-        boolean mixedExists =
-                hasStatus(
-                        matches,
-                        LifeDomainSignalStatus.MIXED
-                );
-
-        /*
-         * 이미 상류 Pattern이
-         * MIXED를 확정한 경우
-         * 그대로 보존한다.
-         */
-
-        if (
-                mixedExists
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.MIXED;
-        }
-
-        /*
-         * 서로 다른 직업 기능에서
-         * SUPPORTIVE와 PRESSURE가
-         * 동시에 확인되면
-         * 한쪽으로 단순화하지 않는다.
-         */
-
-        if (
-                supportiveExists
-                        && pressureExists
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.MIXED;
-        }
-
-        if (
-                pressureExists
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.PRESSURE;
-        }
-
-        if (
-                supportiveExists
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.SUPPORTIVE;
-        }
-
-        return ConsultationCategoryDeterministicStatus.CONTEXTUAL;
-    }
-
-    /*
-     * =================================================
-     * Status 존재 여부
-     * =================================================
-     */
-
-    private boolean hasStatus(
-
-            List<LifeDomainRuleMatch> matches,
-
-            LifeDomainSignalStatus status
-
-    ) {
-
-        Objects.requireNonNull(
-                matches,
-                "CAREER Match 목록이 필요합니다."
-        );
-
-        Objects.requireNonNull(
-                status,
-                "LifeDomainSignalStatus가 필요합니다."
-        );
-
-        return matches
-                .stream()
-                .anyMatch(
-                        match ->
-                                match.status()
-                                        == status
-                );
-    }
-
-    /*
-     * =================================================
-     * Status Reason
-     * =================================================
-     */
-
-    private void appendStatusReason(
-
-            List<String> reasons,
-
-            ConsultationCategoryDeterministicStatus status
-
-    ) {
-
-        Objects.requireNonNull(
-                reasons,
-                "reasons가 필요합니다."
-        );
-
-        Objects.requireNonNull(
-                status,
-                "CAREER deterministic status가 필요합니다."
-        );
-
-        switch (
-                status
-        ) {
+        return switch (
+                sourceStatus
+                ) {
 
             case SUPPORTIVE ->
-
-                    reasons.add(
-                            "교차검증된 직업·사회 Pattern Family에서 지지 방향이 확인되고 이를 뒤집는 PRESSURE 또는 MIXED 상태가 없어 SUPPORTIVE로 판단합니다."
-                    );
+                    ConsultationCategoryDeterministicStatus
+                            .SUPPORTIVE;
 
             case PRESSURE ->
-
-                    reasons.add(
-                            "교차검증된 직업·사회 Pattern Family에서 역할·규범과 표현·산출 기능 사이의 부담 방향이 공식 PRESSURE로 확인되어 이를 보존합니다."
-                    );
+                    ConsultationCategoryDeterministicStatus
+                            .PRESSURE;
 
             case MIXED ->
-
-                    reasons.add(
-                            "교차검증된 직업·사회 Pattern Family에 이미 MIXED가 존재하거나 SUPPORTIVE와 PRESSURE가 함께 존재하여 한 방향으로 단순화하지 않고 MIXED로 판단합니다."
-                    );
+                    ConsultationCategoryDeterministicStatus
+                            .MIXED;
 
             case CONTEXTUAL ->
-
-                    reasons.add(
-                            "직업·사회 기능 사이의 연결 구조는 확인되지만 현재 공식 status만으로 지지 또는 부담 방향을 확정할 수 없어 CONTEXTUAL로 유지합니다."
-                    );
-        }
+                    ConsultationCategoryDeterministicStatus
+                            .CONTEXTUAL;
+        };
     }
+
 
     /*
      * =================================================
-     * Internal Summary
+     * Internal Deterministic Summary
      * =================================================
      *
-     * 최종 사용자용 storyText가 아니다.
+     * 최종 사용자 Story가 아니다.
+     *
+     * Pattern subtype을 추측하지 않는다.
+     * 해당 Match 하나의 공식 방향만 보존한다.
      */
 
     private String summaryOf(
@@ -675,7 +695,7 @@ public class CareerFunctionIntegrationPatternRule
 
         Objects.requireNonNull(
                 status,
-                "CAREER deterministic status가 필요합니다."
+                "CAREER Cross Validated Pattern Status가 필요합니다."
         );
 
         return switch (
@@ -683,16 +703,51 @@ public class CareerFunctionIntegrationPatternRule
                 ) {
 
             case SUPPORTIVE ->
-                    "원국에서 표현·산출·자원·역할·학습 기능이 직업·사회 영역에서 비교적 지지되는 방향으로 연결됩니다.";
+                    "교차검증된 하나의 CAREER Pattern 결과가 SUPPORTIVE 상태로 보존됩니다.";
 
             case PRESSURE ->
-                    "원국의 직업·사회 기능 연결에서 역할·규범과 표현·산출 또는 다른 기능 사이의 구조적 부담이 확인됩니다.";
+                    "교차검증된 하나의 CAREER Pattern 결과가 PRESSURE 상태로 보존됩니다.";
 
             case MIXED ->
-                    "원국의 직업·사회 기능 연결에서 지지되는 흐름과 부담 또는 복수의 작동 방식이 함께 존재합니다.";
+                    "교차검증된 하나의 CAREER Pattern 결과가 MIXED 상태로 보존됩니다.";
 
             case CONTEXTUAL ->
-                    "원국에서 표현·산출·자원·역할·학습 기능 사이의 연결은 확인되지만 현재 근거만으로 직업·사회 구조의 방향을 단정하지 않습니다.";
+                    "교차검증된 하나의 CAREER Pattern 결과가 CONTEXTUAL 상태로 보존됩니다.";
         };
+    }
+
+
+    /*
+     * =================================================
+     * Text
+     * =================================================
+     */
+
+    private static String requireText(
+
+            String value,
+
+            String message
+
+    ) {
+
+        Objects.requireNonNull(
+                value,
+                message
+        );
+
+        String normalized =
+                value.trim();
+
+        if (
+                normalized.isBlank()
+        ) {
+
+            throw new IllegalArgumentException(
+                    message
+            );
+        }
+
+        return normalized;
     }
 }

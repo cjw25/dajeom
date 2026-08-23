@@ -16,242 +16,352 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * CAREER 카테고리의
- * 현재 Timeline 세운 × 월운 활성 Rule.
+ * CAREER 현재 월 Context deterministic Rule.
  *
  * =================================================
  * 목적
  * =================================================
  *
- * CareerCurrentStructuralFlowRule과
- * 서로 다른 시간 질문을 담당한다.
+ * 현재 Timeline Segment에 실제 존재하는:
  *
- * -------------------------------------------------
+ * CAREER_MONTHLY_CONTEXT
  *
- * CareerCurrentStructuralFlowRule
+ * 의 공식 상태만
+ * ConsultationCategory.CAREER의
+ * 현재 월 deterministic 결과로 보존한다.
+ *
+ * =================================================
+ * 중요한 변경
+ * =================================================
+ *
+ * 기존에는:
+ *
+ * CAREER_ANNUAL_CONTEXT
+ * +
+ * CAREER_MONTHLY_CONTEXT
+ *
+ * 를 결합하여
+ * 세운 × 월운 Status Matrix를 계산했다.
+ *
+ * 이제 그렇게 하지 않는다.
+ *
+ * =================================================
+ * 시간층 분리
+ * =================================================
+ *
+ * 대운:
+ *
+ * CAREER_DECADE_CONTEXT
  *
  * ->
  *
- * 대운
- * +
- * 세운
- *
- * 을 결합하여:
- *
- * "현재 명리연도의 직업·사회 기능이
- * 어떤 장기 역할·책임 배경 위에서
- * 작동하는가"
- *
- * 를 판단한다.
+ * CareerDecadeContextDeterministicRule
  *
  * -------------------------------------------------
- *
- * 이 Rule
- *
- * ->
- *
- * 세운
- * +
- * 월운
- *
- * 을 결합하여:
- *
- * "해당 명리연도 안에서
- * 현재 월의 역할·책임·직업 기능이
- * 어떤 방향으로 단기 활성되는가"
- *
- * 를 판단한다.
- *
- * =================================================
- * 시간층 의미
- * =================================================
  *
  * 세운:
  *
- * 해당 명리연도에서 유지되는:
+ * CAREER_ANNUAL_CONTEXT
  *
- * - 역할
- * - 책임
- * - 규범
- * - 사회적 요구
- * - 직업 기능
+ * ->
  *
- * 의 연간 배경.
+ * CareerCurrentStructuralFlowRule
  *
  * -------------------------------------------------
  *
  * 월운:
  *
- * 그 연간 배경 위에서
- * 더 짧게 들어오는:
- *
- * - 역할 활성
- * - 책임 부담
- * - 사회적 요구
- * - 직업 기능의 지지 / 약화 / 충돌
- *
- * 의 단기 Context.
- *
- * =================================================
- * Source 1
- * CAREER_ANNUAL_CONTEXT
- * =================================================
- *
- * 기존 CareerAnnualContextRule에서
- * 이미 계산된 세운 CAREER Context를 사용한다.
- *
- * 이 Rule에서:
- *
- * - 정관 / 칠살
- * - 세운 십성
- * - 원국 × 세운
- * - 대운 × 세운
- * - 용신
- * - 격국
- * - 합충
- * - 합화
- *
- * 등을 다시 계산하지 않는다.
- *
- * =================================================
- * Source 2
  * CAREER_MONTHLY_CONTEXT
+ *
+ * ->
+ *
+ * 이 Rule
+ *
+ * =================================================
+ * 공식 Status Anchor
  * =================================================
  *
- * 기존 CareerMonthlyContextRule에서
- * 이미 계산된 월운 CAREER Context를 사용한다.
+ * 이 Rule의 공식 Status Anchor는:
  *
- * 이 Rule에서도:
+ * CAREER_MONTHLY_CONTEXT
+ *
+ * 하나뿐이다.
+ *
+ * =================================================
+ * Upstream 계산 보존
+ * =================================================
+ *
+ * CareerMonthlyContextRule은
+ * MonthlyLuckContextAnalysis.signalsOf(
+ *     DIRECT_OFFICER
+ * )
+ *
+ * 및:
+ *
+ * MonthlyLuckContextAnalysis.signalsOf(
+ *     SEVEN_KILLINGS
+ * )
+ *
+ * 를 이용하여
+ * 현재 월의 관살 관련 Context를
+ * 이미 계산한다.
+ *
+ * =================================================
+ * 중요한 시간층 경계
+ * =================================================
+ *
+ * CareerMonthlyContextRule은:
+ *
+ * MonthlyLuckContextAnalysis.allSignals()
+ *
+ * 를 사용하지 않는다.
+ *
+ * 월운 자체에서 확정 가능한:
+ *
+ * monthlySignals
+ *
+ * 만 사용한다.
+ *
+ * 따라서 Decade Context Signal을
+ * 월운 LifeDomain Rule에서
+ * 중복 집계하지 않는다.
+ *
+ * =================================================
+ * 실제 Java 계산된 월운 관계
+ * =================================================
+ *
+ * 15-7 MonthlyLuckContextAnalysis 안에는
+ * upstream Java가 실제 계산한:
  *
  * - 월운 십성
- * - 원국 × 월운
- * - 대운 / 세운 Context
- * - 관계
- * - 합화
- * - 기능 변화
+ * - 원국 × 월운 관계
+ * - 세운 × 월운 관계
+ * - 가능한 경우 대운 × 월운 관계
+ * - 용신 Context
+ * - 격국 Context
+ * - 궁위 Context
+ * - 합화 / 기능 변화
+ * - 다층 관계
  *
- * 를 다시 계산하지 않는다.
+ * 등이 Monthly Signal에 반영될 수 있다.
+ *
+ * 이러한 실제 upstream 계산은
+ * 유효한 deterministic 계산이다.
+ *
+ * 이 Category Rule에서는
+ * 그것을 다시 계산하지 않는다.
  *
  * =================================================
- * 두 Source 모두 필수
+ * 세운과의 분리
  * =================================================
+ *
+ * 이 Rule에서는:
  *
  * CAREER_ANNUAL_CONTEXT
+ *
+ * 를 조회하지 않는다.
+ *
+ * 따라서 다음 Matrix를 사용하지 않는다.
+ *
+ * ANNUAL SUPPORTIVE
  * +
+ * MONTHLY PRESSURE
+ * =
+ * MIXED
+ *
+ * -------------------------------------------------
+ *
+ * ANNUAL PRESSURE
+ * +
+ * MONTHLY SUPPORTIVE
+ * =
+ * MIXED
+ *
+ * -------------------------------------------------
+ *
+ * MONTHLY CONTEXTUAL
+ * +
+ * ANNUAL PRESSURE
+ * =
+ * PRESSURE
+ *
+ * -------------------------------------------------
+ *
+ * MONTHLY CONTEXTUAL
+ * +
+ * ANNUAL SUPPORTIVE
+ * =
+ * SUPPORTIVE
+ *
+ * =================================================
+ * 이유
+ * =================================================
+ *
+ * 세운과 월운에 각각 Status가 존재한다는
+ * 사실만으로 Category 단계에서:
+ *
+ * - 같은 방향
+ * - 반대 방향
+ * - 강화
+ * - 약화
+ * - 상쇄
+ * - 보완
+ * - 전환
+ *
+ * 을 새로 계산하지 않는다.
+ *
+ * 세운 × 월운 관계가 실제로 계산되어 있다면
+ * 그것은 upstream MonthlyLuckContextAnalysis의
+ * 실제 Signal 계산 안에서만 인정한다.
+ *
+ * =================================================
+ * Monthly Source Family Status
+ * =================================================
+ *
+ * 동일한:
+ *
  * CAREER_MONTHLY_CONTEXT
  *
- * 가 같은 현재 Segment에
- * 모두 존재할 때만 Match를 생성한다.
+ * Source Family 내부에서:
  *
- * 세운 없이 월운 하나만으로:
- *
- * "이번 달 직업운"
- *
- * 을 생성하지 않는다.
- *
- * =================================================
- * 결합 원칙
- * =================================================
- *
- * annualStatus:
- *
- * 해당 명리연도에서
- * 역할·책임·직업 기능이 놓인
- * 연간 구조적 방향.
- *
- * -------------------------------------------------
- *
- * monthlyStatus:
- *
- * 그 연간 배경 위에서
- * 현재 월에 추가되는
- * 단기 활성 방향.
- *
- * -------------------------------------------------
- *
- * 이번 Rule에서는
- * monthlyStatus를
- * 현재 월 활성 방향의 중심으로 본다.
- *
- * annualStatus는
- * 월운이 연간 흐름과
- * 같은 방향인지 다른 방향인지
- * 판단하는 배경이다.
- *
- * =================================================
- * Matrix
- * =================================================
- *
- * 어느 한 Family가 MIXED
+ * MIXED 존재
  * -> MIXED
  *
- * -------------------------------------------------
- *
- * annual SUPPORTIVE
- * +
- * monthly PRESSURE
+ * SUPPORTIVE + PRESSURE 존재
  * -> MIXED
  *
- * 연간 역할·책임 흐름은 지지되지만
- * 현재 월에는 부담 방향이 들어온다.
- *
- * -------------------------------------------------
- *
- * annual PRESSURE
- * +
- * monthly SUPPORTIVE
- * -> MIXED
- *
- * 연간 배경에는 부담이 있지만
- * 현재 월에는 지지 방향이 들어온다.
- *
- * -------------------------------------------------
- *
- * monthly PRESSURE
- * +
- * annual PRESSURE / CONTEXTUAL
+ * PRESSURE만 존재
  * -> PRESSURE
  *
- * -------------------------------------------------
- *
- * monthly SUPPORTIVE
- * +
- * annual SUPPORTIVE / CONTEXTUAL
+ * SUPPORTIVE만 존재
  * -> SUPPORTIVE
  *
- * -------------------------------------------------
- *
- * monthly CONTEXTUAL
- * +
- * annual PRESSURE
- * -> PRESSURE
- *
- * 현재 월이 연간 부담을
- * 뒤집는 공식 지지 방향을
- * 제공하지 않는다.
- *
- * -------------------------------------------------
- *
- * monthly CONTEXTUAL
- * +
- * annual SUPPORTIVE
- * -> SUPPORTIVE
- *
- * 현재 월이 연간 지지 흐름을
- * 뒤집는 공식 부담 방향을
- * 제공하지 않는다.
- *
- * -------------------------------------------------
- *
- * 둘 다 CONTEXTUAL
+ * 그 외
  * -> CONTEXTUAL
+ *
+ * =================================================
+ * 중요한 경계
+ * =================================================
+ *
+ * 위 MIXED는:
+ *
+ * 세운 × 월운 합성 결과가 아니다.
+ *
+ * 동일한 CAREER_MONTHLY_CONTEXT
+ * Source Family 안에서
+ * upstream Java가 이미 확정한 공식 방향들이
+ * 실제로 함께 존재하는 경우만
+ * Category 수준에서 정규화한 것이다.
+ *
+ * =================================================
+ * 대운과의 분리
+ * =================================================
+ *
+ * 이 Rule에서는:
+ *
+ * CAREER_DECADE_CONTEXT
+ *
+ * 를 조회하지 않는다.
+ *
+ * 대운 Status를 월운 Status에
+ * 추가하지 않는다.
+ *
+ * =================================================
+ * 원국과의 분리
+ * =================================================
+ *
+ * 다음 Source도 사용하지 않는다.
+ *
+ * CAREER_PRIMARY_OFFICER_STRUCTURE
+ * CAREER_OFFICER_STRUCTURE
+ * CAREER_CROSS_VALIDATED_PATTERN
+ *
+ * 원국 CAREER 구조와
+ * 월운 CAREER Context를
+ * Category 단계에서 합성하지 않는다.
+ *
+ * =================================================
+ * Functional과의 분리
+ * =================================================
+ *
+ * CAREER_MONTHLY_FUNCTIONAL
+ *
+ * 계산이 존재한다면
+ * CAREER_MONTHLY_CONTEXT와
+ * 이 Rule에서 합치지 않는다.
+ *
+ * Functional 계산은 별도 확인 후
+ * 독립 deterministic 결과로 처리한다.
+ *
+ * =================================================
+ * 관계형 풀이 금지
+ * =================================================
+ *
+ * 다음 의미를 새로 생성하지 않는다.
+ *
+ * - 연간 직업 배경 위에서 월운이 작동한다
+ * - 세운 때문에 이번 달 책임이 커진다
+ * - 월운이 세운의 부담을 완화한다
+ * - 세운과 월운이 같은 방향이라 강해진다
+ * - 책임이 반복될수록 부담이 커진다
+ * - 책임을 맡은 뒤 상태가 달라진다
+ * - A 때문에 B
+ * - A가 B로 이어진다
+ * - A와 B가 함께 작동한다
+ * - 먼저 A이고 이후 B가 된다
+ *
+ * =================================================
+ * 실제 사건 생성 금지
+ * =================================================
+ *
+ * SUPPORTIVE
+ * != 취업
+ * != 승진
+ * != 합격
+ *
+ * PRESSURE
+ * != 퇴사
+ * != 해고
+ * != 직장 갈등
+ *
+ * MIXED
+ * != 이직
+ * != 직업 변동
+ *
+ * CONTEXTUAL
+ * != 직업운 없음
+ *
+ * =================================================
+ * 특정 직업 추론 금지
+ * =================================================
+ *
+ * 정관 월운
+ * != 공무원
+ *
+ * 칠살 월운
+ * != 군인
+ * != 경찰
+ * != 법조인
+ *
+ * =================================================
+ * Timeline 불확실성
+ * =================================================
+ *
+ * 가능한 Segment가 여러 개라면
+ * 각각 독립적으로 보존한다.
+ *
+ * 특정 Segment 하나를
+ * 대표 Timeline으로 임의 선택하지 않는다.
  *
  * =================================================
  * monthIndex
  * =================================================
  *
- * 현재 Timeline의 monthIndex를
- * 그대로 보존한다.
+ * 현재 Timeline이 계산한:
+ *
+ * monthIndex
+ *
+ * 를 그대로 보존한다.
  *
  * monthIndex == 0도
  * 유효한 Timeline 값이다.
@@ -265,48 +375,45 @@ import java.util.Objects;
  * 으로 해석하지 않는다.
  *
  * =================================================
- * Timeline 불확실성
- * =================================================
- *
- * 가능한 Segment가 여러 개라면
- * 각각 독립 계산한다.
- *
- * 특정 Segment 하나를
- * 대표 Timeline으로 선택하지 않는다.
- *
- * =================================================
- * 사건 예측 금지
- * =================================================
- *
- * SUPPORTIVE
- * ->
- * 승진한다
- * 취업한다
- *
- * PRESSURE
- * ->
- * 퇴사한다
- * 해고된다
- * 상사와 싸운다
- *
- * MIXED
- * ->
- * 이직한다
- *
- * 로 변환하지 않는다.
- *
- * =================================================
  * Match 개수 금지
  * =================================================
  *
- * Annual Match와 Monthly Match의
- * 개수를 비교하여:
+ * CAREER_MONTHLY_CONTEXT Match 개수를:
  *
- * - 월운이 강하다
- * - 세운이 더 강하다
- * - 직업 변화가 크다
+ * - 직업운 강도
+ * - 책임 크기
+ * - 사회적 영향력
+ * - 승진 가능성
+ * - 직업 변화 가능성
  *
- * 같은 점수를 만들지 않는다.
+ * 의 점수로 사용하지 않는다.
+ *
+ * =================================================
+ * 하지 않는 것
+ * =================================================
+ *
+ * - CAREER_ANNUAL_CONTEXT 조회
+ * - CAREER_DECADE_CONTEXT 조회
+ * - 원국 CAREER Source 조회
+ * - 세운 × 월운 Status 합성
+ * - 대운 × 월운 Status 합성
+ * - 원국 × 월운 Status 합성
+ * - 월운 십성 재계산
+ * - 원국 × 월운 관계 재계산
+ * - 세운 × 월운 관계 재계산
+ * - 대운 × 월운 관계 재계산
+ * - 용신 재계산
+ * - 격국 재계산
+ * - 합충형파해 재계산
+ * - 합화 재계산
+ * - Match 개수 점수화
+ * - summary 문자열 파싱
+ * - reasons 문자열 파싱
+ * - 새로운 관계 생성
+ * - 새로운 인과 생성
+ * - 새로운 순서 생성
+ * - 특정 직업군 생성
+ * - 실제 직업 사건 생성
  */
 @Component
 public class CareerCurrentMonthlyActivationRule
@@ -316,12 +423,9 @@ public class CareerCurrentMonthlyActivationRule
             "CAREER_CURRENT_MONTHLY_ACTIVATION";
 
     private static final String
-            ANNUAL_CONTEXT_RULE_CODE =
-            "CAREER_ANNUAL_CONTEXT";
-
-    private static final String
             MONTHLY_CONTEXT_RULE_CODE =
             "CAREER_MONTHLY_CONTEXT";
+
 
     @Override
     public ConsultationCategory category() {
@@ -329,11 +433,13 @@ public class CareerCurrentMonthlyActivationRule
         return ConsultationCategory.CAREER;
     }
 
+
     @Override
     public String code() {
 
         return RULE_CODE;
     }
+
 
     @Override
     public List<ConsultationCategoryDeterministicMatch>
@@ -348,7 +454,7 @@ public class CareerCurrentMonthlyActivationRule
 
         /*
          * =================================================
-         * Category 검증
+         * Category
          * =================================================
          */
 
@@ -393,7 +499,7 @@ public class CareerCurrentMonthlyActivationRule
 
         /*
          * =================================================
-         * 가능한 Segment별 독립 계산
+         * 가능한 Segment별 독립 처리
          * =================================================
          */
 
@@ -402,48 +508,31 @@ public class CareerCurrentMonthlyActivationRule
                 : view.segmentEvidences()
         ) {
 
-            Objects.requireNonNull(
-                    segment,
-                    "CAREER Current Timeline Segment는 null일 수 없습니다."
-            );
-
-            /*
-             * =================================================
-             * Source 1
-             * 세운
-             * =================================================
-             */
-
-            List<LifeDomainRuleMatch>
-                    annualMatches =
-                    findSegmentMatches(
+            ConsultationCategorySegmentEvidence normalizedSegment =
+                    Objects.requireNonNull(
                             segment,
-                            ANNUAL_CONTEXT_RULE_CODE
+                            "CAREER Monthly Context Segment는 null일 수 없습니다."
                     );
 
             /*
              * =================================================
-             * Source 2
-             * 월운
+             * Monthly 공식 Status Anchor
              * =================================================
              */
 
-            List<LifeDomainRuleMatch>
-                    monthlyMatches =
+            List<LifeDomainRuleMatch> monthlyMatches =
                     findSegmentMatches(
-                            segment,
+                            normalizedSegment,
                             MONTHLY_CONTEXT_RULE_CODE
                     );
 
             /*
-             * =================================================
-             * 세운 + 월운 모두 필요
-             * =================================================
+             * 현재 Segment에 월운 CAREER Context가 없으면
+             * 세운이나 대운을 대신 사용하지 않는다.
              */
 
             if (
-                    annualMatches.isEmpty()
-                            || monthlyMatches.isEmpty()
+                    monthlyMatches.isEmpty()
             ) {
 
                 continue;
@@ -451,82 +540,51 @@ public class CareerCurrentMonthlyActivationRule
 
             /*
              * =================================================
-             * 시간층별 Status
+             * Monthly Status
              * =================================================
              */
 
-            ConsultationCategoryDeterministicStatus
-                    annualStatus =
-                    resolveFamilyStatus(
-                            annualMatches
-                    );
-
-            ConsultationCategoryDeterministicStatus
-                    monthlyStatus =
-                    resolveFamilyStatus(
+            ConsultationCategoryDeterministicStatus monthlyStatus =
+                    resolveMonthlyStatus(
                             monthlyMatches
                     );
 
             /*
              * =================================================
-             * 세운 × 월운
-             * =================================================
-             */
-
-            ConsultationCategoryDeterministicStatus
-                    finalStatus =
-                    resolveMonthlyActivationStatus(
-                            annualStatus,
-                            monthlyStatus
-                    );
-
-            /*
-             * =================================================
-             * Source Provenance
-             * =================================================
-             */
-
-            List<LifeDomainRuleMatch> sourceMatches =
-                    new ArrayList<>();
-
-            sourceMatches.addAll(
-                    annualMatches
-            );
-
-            sourceMatches.addAll(
-                    monthlyMatches
-            );
-
-            /*
-             * =================================================
              * Reasons
              * =================================================
+             *
+             * 최종 사용자 Story가 아니라
+             * deterministic provenance 기록이다.
              */
 
             List<String> reasons =
                     new ArrayList<>();
 
             reasons.add(
-                    "현재 Timeline Segment에서 해당 세운의 직업·사회 Context와 현재 월운의 직업·사회 Context를 서로 다른 시간층으로 확인했습니다."
+                    "현재 월 CAREER Status는 CAREER_MONTHLY_CONTEXT Source Family만 공식 Status Anchor로 사용했습니다."
             );
 
-            reasons.add(
-                    "CAREER_ANNUAL_CONTEXT Source Family의 상태는 "
-                            + annualStatus.name()
-                            + "이며, 해당 명리연도의 역할·책임·직업 기능 배경으로 사용했습니다."
-            );
-
-            reasons.add(
-                    "CAREER_MONTHLY_CONTEXT Source Family의 상태는 "
-                            + monthlyStatus.name()
-                            + "이며, 현재 월에 추가되는 역할·책임·직업 기능의 단기 활성 방향으로 사용했습니다."
-            );
-
-            appendCombinationReason(
+            appendMonthlyStatusReason(
                     reasons,
-                    annualStatus,
-                    monthlyStatus,
-                    finalStatus
+                    monthlyMatches,
+                    monthlyStatus
+            );
+
+            reasons.add(
+                    "CAREER_ANNUAL_CONTEXT를 이 Rule의 Source 또는 Status 계산에 사용하지 않았으며 세운 CAREER Context는 CareerCurrentStructuralFlowRule이 독립적으로 담당합니다."
+            );
+
+            reasons.add(
+                    "CAREER_DECADE_CONTEXT를 이 Rule에 사용하지 않았으며 대운 CAREER Context는 CareerDecadeContextDeterministicRule이 독립적으로 담당합니다."
+            );
+
+            reasons.add(
+                    "원국의 CAREER_PRIMARY_OFFICER_STRUCTURE, CAREER_OFFICER_STRUCTURE, CAREER_CROSS_VALIDATED_PATTERN을 현재 Monthly Status와 합성하지 않았습니다."
+            );
+
+            reasons.add(
+                    "CareerMonthlyContextRule이 MonthlyLuckContextAnalysis의 monthlySignals를 사용해 이미 계산한 관살 관련 월운 Context를 그대로 Category 수준에 보존하며 upstream 관계를 다시 계산하지 않았습니다."
             );
 
             /*
@@ -536,39 +594,62 @@ public class CareerCurrentMonthlyActivationRule
              */
 
             if (
-                    segment.timelineUncertaintyExists()
+                    normalizedSegment
+                            .timelineUncertaintyExists()
             ) {
 
                 reasons.add(
-                        "현재 Timeline에는 출생시간·대운 경계 또는 다른 시간 조건에 따른 불확실성이 존재하므로 이 월 Segment를 유일한 가능성으로 확정하지 않습니다."
+                        "현재 Timeline에 불확실성이 존재하므로 이 Segment를 유일한 CAREER Monthly Context 경로로 확정하지 않습니다."
                 );
             }
 
             if (
-                    !segment.fullyDefinite()
+                    !normalizedSegment
+                            .fullyDefinite()
             ) {
 
                 reasons.add(
-                        "현재 Segment는 완전 확정된 Timeline이 아니므로 동일 명리연도·월 좌표에 다른 가능한 Segment가 존재할 수 있으며 각 Source 경로를 별도 결과로 보존합니다."
+                        "현재 Segment가 완전히 확정되지 않았으므로 동일 명리연도·월 좌표의 다른 가능한 Segment가 존재하면 각각 별도 결과로 보존합니다."
                 );
             }
 
+            /*
+             * =================================================
+             * 계산 경계
+             * =================================================
+             */
+
             reasons.add(
-                    "Annual Match와 Monthly Match의 개수를 비교해 어느 시간층의 직업 영향력이 더 강한지 판단하지 않았습니다."
+                    "세운·대운·원국 Status와 현재 Monthly Status를 결합하여 새로운 SUPPORTIVE·PRESSURE·MIXED 상태를 만들지 않았습니다."
             );
 
             reasons.add(
-                    "monthIndex는 기존 Timeline이 계산한 값을 그대로 보존하며 0도 정상적인 값으로 취급합니다."
+                    "Category 단계에서 세운과 월운 사이의 새로운 강화·약화·상쇄·충돌·보완·전환 관계를 생성하지 않았습니다."
             );
 
             reasons.add(
-                    "이번 Rule은 해당 명리연도의 직업·사회 흐름 안에서 현재 월의 역할·책임 기능이 어떤 방향으로 단기 활성되는지만 설명하며 취업, 승진, 이직, 퇴사, 조직 갈등 또는 실제 직업 사건을 확정하지 않습니다."
+                    "CAREER_MONTHLY_CONTEXT Match의 반복 개수를 직업운 강도·책임 크기·사회적 영향력·승진 가능성의 점수로 사용하지 않았습니다."
+            );
+
+            reasons.add(
+                    "Source의 summary 또는 reasons 문자열을 판단 조건으로 사용하지 않았습니다."
+            );
+
+            reasons.add(
+                    "monthIndex는 기존 Timeline 계산값을 그대로 보존하며 0도 유효한 값으로 취급합니다."
+            );
+
+            reasons.add(
+                    "이 결과는 현재 월의 CAREER deterministic Context만 보존하며 취업·승진·합격·이직·퇴사·해고·직장 갈등 같은 실제 직업 사건을 생성하지 않습니다."
             );
 
             /*
              * =================================================
              * Result
              * =================================================
+             *
+             * sourceMatches에는
+             * CAREER_MONTHLY_CONTEXT만 들어간다.
              */
 
             result.add(
@@ -580,20 +661,22 @@ public class CareerCurrentMonthlyActivationRule
 
                             RULE_CODE,
 
-                            finalStatus,
+                            monthlyStatus,
 
-                            segment.sajuYear(),
+                            normalizedSegment
+                                    .sajuYear(),
 
-                            segment.monthIndex(),
+                            normalizedSegment
+                                    .monthIndex(),
 
                             List.of(),
 
                             summaryOf(
-                                    finalStatus
+                                    monthlyStatus
                             ),
 
                             List.copyOf(
-                                    sourceMatches
+                                    monthlyMatches
                             ),
 
                             List.copyOf(
@@ -607,6 +690,7 @@ public class CareerCurrentMonthlyActivationRule
                 result
         );
     }
+
 
     /*
      * =================================================
@@ -628,15 +712,11 @@ public class CareerCurrentMonthlyActivationRule
                 "ConsultationCategorySegmentEvidence가 필요합니다."
         );
 
-        if (
-                sourceRuleCode == null
-                        || sourceRuleCode.isBlank()
-        ) {
-
-            throw new IllegalArgumentException(
-                    "CAREER Timeline Source ruleCode가 필요합니다."
-            );
-        }
+        String normalizedRuleCode =
+                requireText(
+                        sourceRuleCode,
+                        "CAREER Monthly Context sourceRuleCode가 필요합니다."
+                );
 
         List<LifeDomainRuleMatch> result =
                 new ArrayList<>();
@@ -646,19 +726,20 @@ public class CareerCurrentMonthlyActivationRule
                 : segment.matches()
         ) {
 
-            Objects.requireNonNull(
-                    match,
-                    "CAREER Segment Match는 null일 수 없습니다."
-            );
+            LifeDomainRuleMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "CAREER Segment Match는 null일 수 없습니다."
+                    );
 
             /*
              * =================================================
-             * CAREER Domain만 사용
+             * CAREER Domain만
              * =================================================
              */
 
             if (
-                    match.domain()
+                    normalized.domain()
                             != LifeDomain.CAREER
             ) {
 
@@ -667,13 +748,16 @@ public class CareerCurrentMonthlyActivationRule
 
             /*
              * =================================================
-             * 공식 Rule Code
+             * 공식 Rule Code만
              * =================================================
+             *
+             * summary / reasons 문자열은
+             * Source 판별 조건으로 사용하지 않는다.
              */
 
             if (
-                    !sourceRuleCode.equals(
-                            match.ruleCode()
+                    !normalizedRuleCode.equals(
+                            normalized.ruleCode()
                     )
             ) {
 
@@ -681,7 +765,7 @@ public class CareerCurrentMonthlyActivationRule
             }
 
             result.add(
-                    match
+                    normalized
             );
         }
 
@@ -690,42 +774,57 @@ public class CareerCurrentMonthlyActivationRule
         );
     }
 
+
     /*
      * =================================================
-     * 시간층 Family Status
+     * Monthly Source Family Status
      * =================================================
      *
-     * Match 개수를 사용하지 않는다.
+     * 다른 시간층 또는
+     * 다른 Source Family를 사용하지 않는다.
      *
-     * 공식 LifeDomainSignalStatus의
-     * 존재 여부만 사용한다.
+     * 오직:
+     *
+     * CAREER_MONTHLY_CONTEXT
+     *
+     * 내부의 공식 LifeDomainSignalStatus만
+     * Category Status로 정규화한다.
      */
 
     private ConsultationCategoryDeterministicStatus
-    resolveFamilyStatus(
-            List<LifeDomainRuleMatch> matches
+    resolveMonthlyStatus(
+            List<LifeDomainRuleMatch> monthlyMatches
     ) {
 
         Objects.requireNonNull(
-                matches,
-                "CAREER Timeline Match 목록이 필요합니다."
+                monthlyMatches,
+                "CAREER Monthly Match 목록이 필요합니다."
         );
+
+        if (
+                monthlyMatches.isEmpty()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "CAREER Monthly Status 계산에는 최소 하나의 Monthly Match가 필요합니다."
+            );
+        }
 
         boolean supportiveExists =
                 hasStatus(
-                        matches,
+                        monthlyMatches,
                         LifeDomainSignalStatus.SUPPORTIVE
                 );
 
         boolean pressureExists =
                 hasStatus(
-                        matches,
+                        monthlyMatches,
                         LifeDomainSignalStatus.PRESSURE
                 );
 
         boolean mixedExists =
                 hasStatus(
-                        matches,
+                        monthlyMatches,
                         LifeDomainSignalStatus.MIXED
                 );
 
@@ -744,7 +843,8 @@ public class CareerCurrentMonthlyActivationRule
 
         /*
          * =================================================
-         * 같은 시간층에 양방향 존재
+         * 동일 Monthly Source Family 내부에
+         * 양방향 상태가 실제 함께 존재
          * =================================================
          */
 
@@ -773,126 +873,6 @@ public class CareerCurrentMonthlyActivationRule
         return ConsultationCategoryDeterministicStatus.CONTEXTUAL;
     }
 
-    /*
-     * =================================================
-     * CAREER 세운 × 월운 Matrix
-     * =================================================
-     *
-     * monthlyStatus를
-     * 현재 월의 직접 활성 방향으로 본다.
-     */
-
-    private ConsultationCategoryDeterministicStatus
-    resolveMonthlyActivationStatus(
-
-            ConsultationCategoryDeterministicStatus annualStatus,
-
-            ConsultationCategoryDeterministicStatus monthlyStatus
-
-    ) {
-
-        Objects.requireNonNull(
-                annualStatus,
-                "CAREER annualStatus가 필요합니다."
-        );
-
-        Objects.requireNonNull(
-                monthlyStatus,
-                "CAREER monthlyStatus가 필요합니다."
-        );
-
-        /*
-         * =================================================
-         * 어느 한 시간층이 이미 MIXED
-         * =================================================
-         */
-
-        if (
-                annualStatus
-                        == ConsultationCategoryDeterministicStatus.MIXED
-                        || monthlyStatus
-                        == ConsultationCategoryDeterministicStatus.MIXED
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.MIXED;
-        }
-
-        /*
-         * =================================================
-         * 연간 방향과 월 활성 방향이 반대
-         * =================================================
-         */
-
-        if (
-                annualStatus
-                        == ConsultationCategoryDeterministicStatus.SUPPORTIVE
-                        && monthlyStatus
-                        == ConsultationCategoryDeterministicStatus.PRESSURE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.MIXED;
-        }
-
-        if (
-                annualStatus
-                        == ConsultationCategoryDeterministicStatus.PRESSURE
-                        && monthlyStatus
-                        == ConsultationCategoryDeterministicStatus.SUPPORTIVE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.MIXED;
-        }
-
-        /*
-         * =================================================
-         * 월운이 명확한 방향을 가진 경우
-         * =================================================
-         */
-
-        if (
-                monthlyStatus
-                        == ConsultationCategoryDeterministicStatus.PRESSURE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.PRESSURE;
-        }
-
-        if (
-                monthlyStatus
-                        == ConsultationCategoryDeterministicStatus.SUPPORTIVE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.SUPPORTIVE;
-        }
-
-        /*
-         * =================================================
-         * 월운 CONTEXTUAL
-         * =================================================
-         *
-         * 월운이 세운 방향을
-         * 뒤집는 공식 근거를
-         * 제공하지 않은 상태다.
-         */
-
-        if (
-                annualStatus
-                        == ConsultationCategoryDeterministicStatus.PRESSURE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.PRESSURE;
-        }
-
-        if (
-                annualStatus
-                        == ConsultationCategoryDeterministicStatus.SUPPORTIVE
-        ) {
-
-            return ConsultationCategoryDeterministicStatus.SUPPORTIVE;
-        }
-
-        return ConsultationCategoryDeterministicStatus.CONTEXTUAL;
-    }
 
     /*
      * =================================================
@@ -910,7 +890,7 @@ public class CareerCurrentMonthlyActivationRule
 
         Objects.requireNonNull(
                 matches,
-                "CAREER Timeline Match 목록이 필요합니다."
+                "CAREER Monthly Match 목록이 필요합니다."
         );
 
         Objects.requireNonNull(
@@ -927,102 +907,178 @@ public class CareerCurrentMonthlyActivationRule
                 );
     }
 
+
     /*
      * =================================================
-     * Combination Reason
+     * Monthly Status Provenance
      * =================================================
      */
 
-    private void appendCombinationReason(
+    private void appendMonthlyStatusReason(
 
             List<String> reasons,
 
-            ConsultationCategoryDeterministicStatus annualStatus,
+            List<LifeDomainRuleMatch> monthlyMatches,
 
-            ConsultationCategoryDeterministicStatus monthlyStatus,
-
-            ConsultationCategoryDeterministicStatus finalStatus
+            ConsultationCategoryDeterministicStatus monthlyStatus
 
     ) {
 
         Objects.requireNonNull(
                 reasons,
-                "reasons가 필요합니다."
+                "CAREER reasons가 필요합니다."
         );
 
+        Objects.requireNonNull(
+                monthlyMatches,
+                "CAREER Monthly Match 목록이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                monthlyStatus,
+                "CAREER Monthly Status가 필요합니다."
+        );
+
+        boolean supportiveExists =
+                hasStatus(
+                        monthlyMatches,
+                        LifeDomainSignalStatus.SUPPORTIVE
+                );
+
+        boolean pressureExists =
+                hasStatus(
+                        monthlyMatches,
+                        LifeDomainSignalStatus.PRESSURE
+                );
+
+        boolean mixedExists =
+                hasStatus(
+                        monthlyMatches,
+                        LifeDomainSignalStatus.MIXED
+                );
+
         if (
-                finalStatus
-                        == ConsultationCategoryDeterministicStatus.MIXED
+                mixedExists
         ) {
 
             reasons.add(
-                    "해당 세운의 역할·책임·직업 기능 배경과 현재 월운의 단기 활성 방향이 서로 다르거나 어느 한 시간층에 이미 혼재가 존재하여 MIXED로 판단합니다."
+                    "CAREER_MONTHLY_CONTEXT Source Family에 upstream MIXED 상태가 존재하므로 현재 월 CAREER Status를 MIXED로 보존합니다."
             );
 
             return;
         }
 
         if (
-                finalStatus
+                supportiveExists
+                        && pressureExists
+        ) {
+
+            reasons.add(
+                    "CAREER_MONTHLY_CONTEXT Source Family 내부에 SUPPORTIVE와 PRESSURE가 모두 실제 존재하므로 어느 한 방향을 삭제하지 않고 MIXED로 보존합니다."
+            );
+
+            return;
+        }
+
+        if (
+                monthlyStatus
                         == ConsultationCategoryDeterministicStatus.PRESSURE
         ) {
 
             reasons.add(
-                    "현재 월의 역할·책임·직업 기능에서 부담 방향이 확인되거나, 월운이 CONTEXTUAL인 상태에서 기존 세운의 부담 방향을 뒤집는 공식 지지 근거가 없어 PRESSURE로 판단합니다."
+                    "CAREER_MONTHLY_CONTEXT Source Family에 PRESSURE 상태가 존재하고 SUPPORTIVE 또는 MIXED 상태가 없어 현재 월 CAREER Status를 PRESSURE로 확정합니다."
             );
 
             return;
         }
 
         if (
-                finalStatus
+                monthlyStatus
                         == ConsultationCategoryDeterministicStatus.SUPPORTIVE
         ) {
 
             reasons.add(
-                    "현재 월의 역할·책임·직업 기능에서 지지 방향이 확인되거나, 월운이 CONTEXTUAL인 상태에서 기존 세운의 지지 방향을 뒤집는 공식 부담 근거가 없어 SUPPORTIVE로 판단합니다."
+                    "CAREER_MONTHLY_CONTEXT Source Family에 SUPPORTIVE 상태가 존재하고 PRESSURE 또는 MIXED 상태가 없어 현재 월 CAREER Status를 SUPPORTIVE로 확정합니다."
             );
 
             return;
         }
 
         reasons.add(
-                "해당 세운과 현재 월 모두 역할·책임·직업 기능의 Context는 존재하지만 공식 근거만으로 현재 월의 단기 활성 방향을 확정할 수 없어 CONTEXTUAL로 유지합니다."
+                "CAREER_MONTHLY_CONTEXT Source Family는 존재하지만 SUPPORTIVE·PRESSURE·MIXED 방향이 확정되지 않아 현재 월 CAREER Status를 CONTEXTUAL로 유지합니다."
         );
     }
 
+
     /*
      * =================================================
-     * Internal Summary
+     * Internal Deterministic Summary
      * =================================================
      *
-     * 최종 사용자용 storyText가 아니다.
+     * 최종 사용자 Story가 아니다.
+     *
+     * 세운·대운·원국과 연결하지 않는다.
      */
 
     private String summaryOf(
-            ConsultationCategoryDeterministicStatus status
+            ConsultationCategoryDeterministicStatus monthlyStatus
     ) {
 
         Objects.requireNonNull(
-                status,
-                "CAREER Current Monthly status가 필요합니다."
+                monthlyStatus,
+                "CAREER Monthly Status가 필요합니다."
         );
 
         return switch (
-                status
+                monthlyStatus
                 ) {
 
             case SUPPORTIVE ->
-                    "해당 세운의 역할·책임 배경 위에서 현재 월의 직업·사회 기능이 비교적 지지되는 방향으로 활성됩니다.";
+                    "현재 월의 CAREER Context 계산 결과가 SUPPORTIVE 상태로 보존됩니다.";
 
             case PRESSURE ->
-                    "해당 세운의 역할·책임 배경 위에서 현재 월의 직업·사회 기능에 구조적인 요구·압박 방향이 활성됩니다.";
+                    "현재 월의 CAREER Context 계산 결과가 PRESSURE 상태로 보존됩니다.";
 
             case MIXED ->
-                    "해당 세운의 역할·책임 배경과 현재 월의 직업·사회 기능이 서로 다른 방향으로 작동하거나 복합적인 조건이 함께 존재합니다.";
+                    "현재 월의 CAREER Context 계산 결과가 MIXED 상태로 보존됩니다.";
 
             case CONTEXTUAL ->
-                    "해당 세운과 현재 월에서 역할·책임·직업 기능은 관여하지만 현재 월의 단기 활성 방향을 한쪽으로 단정하지 않습니다.";
+                    "현재 월의 CAREER Context 계산 결과가 CONTEXTUAL 상태로 보존됩니다.";
         };
+    }
+
+
+    /*
+     * =================================================
+     * Text
+     * =================================================
+     */
+
+    private static String requireText(
+
+            String value,
+
+            String message
+
+    ) {
+
+        Objects.requireNonNull(
+                value,
+                message
+        );
+
+        String normalized =
+                value.trim();
+
+        if (
+                normalized.isBlank()
+        ) {
+
+            throw new IllegalArgumentException(
+                    message
+            );
+        }
+
+        return normalized;
     }
 }

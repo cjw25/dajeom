@@ -114,27 +114,14 @@ public class ConsultationCategoryDeterministicRuleEngine {
 
     /*
      * =================================================
-     * Backward-Compatible Constructor
+     * Official Spring Constructor
      * =================================================
-     */
-
-    public ConsultationCategoryDeterministicRuleEngine(
-
-            List<ConsultationCategoryDeterministicRule> rules
-
-    ) {
-
-        this(
-                rules,
-                List.of()
-        );
-    }
-
-
-    /*
-     * =================================================
-     * Spring Constructor
-     * =================================================
+     *
+     * Base Rule과 Synthesis Rule을
+     * 항상 함께 주입받는다.
+     *
+     * Synthesis Rule을 생략하는
+     * 우회 생성 경로는 제공하지 않는다.
      */
 
     @Autowired

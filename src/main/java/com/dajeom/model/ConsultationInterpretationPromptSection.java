@@ -10,64 +10,223 @@ import java.util.Optional;
 /**
  * 정밀화 20차 / 21차 Range
  * +
- * Personality Direct-Natal Prompt 확장.
+ * Personality Direct-Natal Prompt 확장
+ * +
+ * Category NATAL Deterministic Prompt 확장.
  *
  * 하나의 ConsultationCategory를
  * 외부 LLM에 전달하기 위한
  * 최종 deterministic Prompt Section.
  *
  * =================================================
- *
- * 기존:
- *
- * - 상담 분야
- * - 제목
- * - 사용 가능 여부
- * - Category Constraint
- * - 원국 Evidence
- * - 현재 Timeline Scenario
- * - 과거/미래 Timeline Range
- *
+ * 공식 생성 계약
  * =================================================
  *
- * PERSONALITY 추가:
+ * Prompt Section은 canonical constructor로
+ * 현재 구조 전체를 명시해서 생성한다.
+ *
+ * 다음 필드를 생략하는
+ * 과거 호환 생성 경로는 제공하지 않는다.
+ *
+ * - natalDeterministicConclusions
+ * - timelineYears
+ * - personalityStatementContract
+ *
+ * =================================================
+ * natalEvidences
+ * =================================================
+ *
+ * LifeDomain 기반
+ * 원국 Grounding Evidence.
+ *
+ * 이것은:
+ *
+ * - 계산 근거
+ * - provenance
+ * - LifeDomain 상태
+ *
+ * 를 보존한다.
+ *
+ * =================================================
+ * natalDeterministicConclusions
+ * =================================================
+ *
+ * ConsultationCategoryDeterministicRuleEngine이
+ * 해당 Category의 NATAL Layer에서
+ * Java로 확정한 공식 Meaning Contract.
+ *
+ * raw natalEvidences와
+ * 서로 다른 구조로 유지한다.
+ *
+ * =================================================
+ * Current Timeline
+ * =================================================
+ *
+ * timelineScenarios 안에는:
+ *
+ * - raw evidences
+ * - CURRENT_TIMELINE deterministicConclusions
+ *
+ * 가 이미 함께 전달된다.
+ *
+ * 단 두 List는 Scenario 내부에서도
+ * 서로 독립적으로 유지된다.
+ *
+ * =================================================
+ * PAST_LUCK / FUTURE_LUCK
+ * =================================================
+ *
+ * timelineYears 안에는:
+ *
+ * ConsultationGroundingTimelineYear
+ * .deterministicContract
+ *
+ * 가 이미 포함되어 있다.
+ *
+ * 연도별 raw Evidence와
+ * deterministicContract를 합치지 않는다.
+ *
+ * =================================================
+ * PERSONALITY
+ * =================================================
  *
  * personalityStatementContract
  *
+ * =
+ *
+ * PERSONALITY 전용 공식
+ * Direct-Natal 의미 Source.
+ *
+ * =================================================
+ * PERSONALITY에서는
  * =================================================
  *
- * PERSONALITY에서는:
- *
  * personalityStatementContract
+ *
  * =
  * 공식 기본성향 의미 Source
  *
  * natalEvidences
+ *
  * =
- * legacy 보조 검증 Source
+ * 세부 계산 근거와 provenance 설명 자료
  *
  * =================================================
+ * 중요한 우선순위
+ * =================================================
  *
- * 매우 중요한 원칙:
+ * 일반 Category:
+ *
+ * natalDeterministicConclusions
+ *
+ * =
+ * Java 확정 NATAL Meaning Boundary
+ *
+ * natalEvidences
+ *
+ * =
+ * 세부 계산 근거
+ *
+ * -------------------------------------------------
+ *
+ * PERSONALITY:
+ *
+ * personalityStatementContract
+ *
+ * =
+ * 공식 Direct-Natal Meaning Boundary
+ *
+ * =================================================
+ * 관계형 풀이 금지
+ * =================================================
+ *
+ * natalEvidences가 여러 개 있다는 이유로:
+ *
+ * - A 때문에 B
+ * - A가 B로 이어진다
+ * - A와 B가 같이 있으므로 C다
+ * - A 이후 B가 나타난다
+ * - 여러 Evidence가 같은 방향이라 더 강하다
+ *
+ * 같은 의미를 Prompt 모델에서
+ * 새로 만들지 않는다.
+ *
+ * 관계·인과·결합·순서 의미가 필요하면
+ * 반드시 upstream Java 계산 결과로
+ * 이미 존재해야 한다.
+ *
+ * =================================================
+ * Status 합성 금지
+ * =================================================
+ *
+ * 예:
+ *
+ * natalEvidence A = SUPPORTIVE
+ *
+ * natalEvidence B = PRESSURE
+ *
+ * 라고 해서:
+ *
+ * Category = MIXED
+ *
+ * 로 계산하지 않는다.
+ *
+ * Java Category Rule이 실제로
+ * MIXED Conclusion을 계산한 경우에만
+ * natalDeterministicConclusions에 존재한다.
+ *
+ * =================================================
+ * CURRENT_YEAR_LUCK
+ * =================================================
+ *
+ * CURRENT_YEAR_LUCK에
+ * 여러 Domain의 시간운 결과가 존재해도:
+ *
+ * - 전체 SUPPORTIVE
+ * - 전체 PRESSURE
+ * - 전체 MIXED
+ *
+ * 같은 새로운 종합 Status를
+ * 이 Prompt 모델에서 계산하지 않는다.
+ *
+ * 각 시간운 Category Deterministic Conclusion은
+ * Timeline Scenario 내부에
+ * 독립적으로 보존된다.
+ *
+ * =================================================
+ * 매우 중요한 원칙
+ * =================================================
  *
  * Personality Contract와
- * legacy natalEvidences를
+ * natalEvidences를
  * 합산하거나 다수결하지 않는다.
  *
  * 둘이 의미상 충돌할 경우
  * Personality Contract가
  * 기본성향 표현 범위를 결정한다.
  *
- * =================================================
+ * 일반 Category에서도:
  *
- * 여기서는:
+ * natalDeterministicConclusions와
+ * natalEvidences를 합산하지 않는다.
+ *
+ * =================================================
+ * 여기서는 하지 않는 것
+ * =================================================
  *
  * - 새로운 사주 계산
  * - Evidence 재판정
  * - Grounding 승격
+ * - Category Status 재계산
+ * - Evidence 다수결
+ * - Conclusion 다수결
+ * - NATAL + Timeline 합성
+ * - Cross-Domain 자동 합성
+ * - Cross-Temporal 자동 합성
+ * - 새로운 관계 생성
+ * - 새로운 인과 생성
+ * - 새로운 순서 생성
  * - 사건 예측
- *
- * 을 하지 않는다.
  */
 public record ConsultationInterpretationPromptSection(
 
@@ -86,6 +245,9 @@ public record ConsultationInterpretationPromptSection(
         List<ConsultationGroundingEvidence>
         natalEvidences,
 
+        List<ConsultationGroundingDeterministicConclusion>
+        natalDeterministicConclusions,
+
         List<ConsultationGroundingTimelineScenario>
         timelineScenarios,
 
@@ -96,93 +258,6 @@ public record ConsultationInterpretationPromptSection(
         personalityStatementContract
 
 ) {
-
-    /*
-     * =================================================
-     * 기존 20차 호출 호환 Constructor
-     * =================================================
-     */
-
-    public ConsultationInterpretationPromptSection(
-
-            int order,
-
-            ConsultationCategory category,
-
-            String title,
-
-            boolean available,
-
-            Optional<String> unavailableReason,
-
-            List<String> constraints,
-
-            List<ConsultationGroundingEvidence>
-                    natalEvidences,
-
-            List<ConsultationGroundingTimelineScenario>
-                    timelineScenarios
-
-    ) {
-
-        this(
-                order,
-                category,
-                title,
-                available,
-                unavailableReason,
-                constraints,
-                natalEvidences,
-                timelineScenarios,
-                List.of(),
-                Optional.empty()
-        );
-    }
-
-    /*
-     * =================================================
-     * 기존 21차 호출 호환 Constructor
-     * =================================================
-     */
-
-    public ConsultationInterpretationPromptSection(
-
-            int order,
-
-            ConsultationCategory category,
-
-            String title,
-
-            boolean available,
-
-            Optional<String> unavailableReason,
-
-            List<String> constraints,
-
-            List<ConsultationGroundingEvidence>
-                    natalEvidences,
-
-            List<ConsultationGroundingTimelineScenario>
-                    timelineScenarios,
-
-            List<ConsultationGroundingTimelineYear>
-                    timelineYears
-
-    ) {
-
-        this(
-                order,
-                category,
-                title,
-                available,
-                unavailableReason,
-                constraints,
-                natalEvidences,
-                timelineScenarios,
-                timelineYears,
-                Optional.empty()
-        );
-    }
 
     /*
      * =================================================
@@ -226,6 +301,11 @@ public record ConsultationInterpretationPromptSection(
         natalEvidences =
                 normalizeNatalEvidences(
                         natalEvidences
+                );
+
+        natalDeterministicConclusions =
+                normalizeNatalDeterministicConclusions(
+                        natalDeterministicConclusions
                 );
 
         timelineScenarios =
@@ -316,18 +396,27 @@ public record ConsultationInterpretationPromptSection(
 
         /*
          * =================================================
-         * unavailable에는 기존 Evidence 금지.
+         * unavailable에는 Grounding 입력 금지
+         * =================================================
+         *
+         * 다음은 unavailable Section에
+         * 함께 둘 수 없다.
+         *
+         * - natalEvidences
+         * - natalDeterministicConclusions
+         * - timelineScenarios
+         * - timelineYears
          *
          * Personality Contract 자체는
          * 내부 Reference/Audit 보존을 위해
          * 존재할 수 있다.
-         * =================================================
          */
 
         if (
                 !available
                         && (
                         !natalEvidences.isEmpty()
+                                || !natalDeterministicConclusions.isEmpty()
                                 || !timelineScenarios.isEmpty()
                                 || !timelineYears.isEmpty()
                 )
@@ -335,7 +424,8 @@ public record ConsultationInterpretationPromptSection(
 
             throw new IllegalArgumentException(
                     "사용 불가 Prompt Section에는 "
-                            + "기존 Evidence를 함께 넣을 수 없습니다: "
+                            + "Evidence 또는 Category Deterministic Conclusion을 "
+                            + "함께 넣을 수 없습니다: "
                             + category
             );
         }
@@ -343,7 +433,7 @@ public record ConsultationInterpretationPromptSection(
         /*
          * =================================================
          * 출력 가능한 Personality Contract가 있는데
-         * unavailable인 상태 금지.
+         * unavailable인 상태 금지
          * =================================================
          */
 
@@ -375,6 +465,7 @@ public record ConsultationInterpretationPromptSection(
         }
     }
 
+
     /*
      * =================================================
      * Availability
@@ -386,9 +477,10 @@ public record ConsultationInterpretationPromptSection(
         return !available;
     }
 
+
     /*
      * =================================================
-     * Natal
+     * Natal Raw Evidence
      * =================================================
      */
 
@@ -397,6 +489,34 @@ public record ConsultationInterpretationPromptSection(
         return !natalEvidences
                 .isEmpty();
     }
+
+
+    public int natalEvidenceCount() {
+
+        return natalEvidences
+                .size();
+    }
+
+
+    /*
+     * =================================================
+     * Natal Deterministic Conclusion
+     * =================================================
+     */
+
+    public boolean hasNatalDeterministicConclusions() {
+
+        return !natalDeterministicConclusions
+                .isEmpty();
+    }
+
+
+    public int natalDeterministicConclusionCount() {
+
+        return natalDeterministicConclusions
+                .size();
+    }
+
 
     /*
      * =================================================
@@ -410,6 +530,7 @@ public record ConsultationInterpretationPromptSection(
                 .isPresent();
     }
 
+
     public NatalPersonalityStatementContract
     requirePersonalityStatementContract() {
 
@@ -422,9 +543,10 @@ public record ConsultationInterpretationPromptSection(
                 );
     }
 
+
     /**
      * PERSONALITY에서
-     * 새 direct-natal Contract가
+     * direct-natal Contract가
      * 공식 의미 Source인지.
      */
     public boolean personalityDirectNatalPrimary() {
@@ -435,6 +557,7 @@ public record ConsultationInterpretationPromptSection(
                 && personalityStatementContract
                 .isPresent();
     }
+
 
     /**
      * Contract에서 실제 사용자 설명 가능한
@@ -464,6 +587,7 @@ public record ConsultationInterpretationPromptSection(
                 );
     }
 
+
     /*
      * =================================================
      * Current Timeline
@@ -475,6 +599,47 @@ public record ConsultationInterpretationPromptSection(
         return !timelineScenarios
                 .isEmpty();
     }
+
+
+    public int timelineScenarioCount() {
+
+        return timelineScenarios
+                .size();
+    }
+
+
+    /*
+     * =================================================
+     * Current Timeline Deterministic Conclusion
+     * =================================================
+     *
+     * Scenario별 Conclusion 존재 여부만 조회한다.
+     *
+     * 여기서 서로 합치지 않는다.
+     */
+
+    public boolean hasTimelineDeterministicConclusions() {
+
+        return timelineScenarios
+                .stream()
+                .anyMatch(
+                        ConsultationGroundingTimelineScenario
+                                ::hasDeterministicConclusions
+                );
+    }
+
+
+    public int timelineDeterministicConclusionCount() {
+
+        return timelineScenarios
+                .stream()
+                .mapToInt(
+                        ConsultationGroundingTimelineScenario
+                                ::deterministicConclusionCount
+                )
+                .sum();
+    }
+
 
     /*
      * =================================================
@@ -488,17 +653,20 @@ public record ConsultationInterpretationPromptSection(
                 .isEmpty();
     }
 
+
     public int timelineYearCount() {
 
         return timelineYears
                 .size();
     }
 
+
     public boolean hasAnyTimeline() {
 
         return hasTimelineScenarios()
                 || hasTimelineYears();
     }
+
 
     /*
      * =================================================
@@ -531,13 +699,19 @@ public record ConsultationInterpretationPromptSection(
                 );
     }
 
+
     /*
      * =================================================
-     * 기존 Evidence Count
+     * Raw Evidence Count
      * =================================================
      *
-     * Personality Contract를
-     * 가짜 Evidence 개수로 환산하지 않는다.
+     * 다음을 가짜 Evidence 개수로
+     * 환산하지 않는다.
+     *
+     * - natalDeterministicConclusions
+     * - Scenario deterministicConclusions
+     * - Timeline Year deterministicContract
+     * - Personality Contract
      */
 
     public int evidenceCount() {
@@ -569,25 +743,65 @@ public record ConsultationInterpretationPromptSection(
         return result;
     }
 
+
     public boolean hasAnyEvidence() {
 
         return evidenceCount() > 0;
     }
 
-    /**
-     * 기존 Grounding 또는
-     * Personality Contract 중
-     * 하나라도 존재하는가.
-     */
-    public boolean hasAnyGroundingInput() {
-
-        return hasAnyEvidence()
-                || hasPersonalityStatementContract();
-    }
 
     /*
      * =================================================
-     * Natal Normalize
+     * Category Deterministic Grounding
+     * =================================================
+     *
+     * NATAL과 CURRENT_TIMELINE에
+     * Category Deterministic Conclusion이
+     * 존재하는지 확인한다.
+     *
+     * 두 Layer를 하나의 의미로
+     * 합성하지 않는다.
+     *
+     * PAST/FUTURE Timeline Year Contract는
+     * 별도 구조이므로 이 Helper에 포함하지 않는다.
+     */
+
+    public boolean hasAnyCategoryDeterministicConclusion() {
+
+        return hasNatalDeterministicConclusions()
+                || hasTimelineDeterministicConclusions();
+    }
+
+
+    public int categoryDeterministicConclusionCount() {
+
+        return natalDeterministicConclusionCount()
+                + timelineDeterministicConclusionCount();
+    }
+
+
+    /*
+     * =================================================
+     * 전체 Grounding Input
+     * =================================================
+     *
+     * 존재 여부 확인용이다.
+     *
+     * 서로 다른 Grounding Source를
+     * 의미적으로 합친다는 뜻이 아니다.
+     */
+
+    public boolean hasAnyGroundingInput() {
+
+        return hasAnyEvidence()
+                || hasAnyCategoryDeterministicConclusion()
+                || hasPersonalityStatementContract();
+    }
+
+
+    /*
+     * =================================================
+     * Natal Raw Evidence Normalize
      * =================================================
      */
 
@@ -628,6 +842,73 @@ public record ConsultationInterpretationPromptSection(
                 result
         );
     }
+
+
+    /*
+     * =================================================
+     * Natal Deterministic Conclusion Normalize
+     * =================================================
+     *
+     * 이미 Java Category Rule이 계산한
+     * Conclusion을 그대로 보존한다.
+     *
+     * 여기서는:
+     *
+     * - Status 비교
+     * - Conclusion 병합
+     * - 대표 Conclusion 선택
+     * - 동일 방향 강화
+     * - 반대 방향 MIXED 생성
+     * - 관계 생성
+     * - 인과 생성
+     *
+     * 을 하지 않는다.
+     */
+
+    private static List<
+            ConsultationGroundingDeterministicConclusion
+            >
+    normalizeNatalDeterministicConclusions(
+
+            List<
+                    ConsultationGroundingDeterministicConclusion
+                    > source
+
+    ) {
+
+        if (
+                source == null
+                        || source.isEmpty()
+        ) {
+
+            return List.of();
+        }
+
+        List<ConsultationGroundingDeterministicConclusion>
+                result =
+                new ArrayList<>(
+                        source.size()
+                );
+
+        for (
+                ConsultationGroundingDeterministicConclusion
+                        conclusion
+                : source
+        ) {
+
+            result.add(
+                    Objects.requireNonNull(
+                            conclusion,
+                            "Prompt Section의 Natal Deterministic Conclusion은 null일 수 없습니다."
+                    )
+            );
+        }
+
+        return List.copyOf(
+                result
+        );
+    }
+
 
     /*
      * =================================================
@@ -673,6 +954,7 @@ public record ConsultationInterpretationPromptSection(
                 result
         );
     }
+
 
     /*
      * =================================================
@@ -726,6 +1008,7 @@ public record ConsultationInterpretationPromptSection(
         );
     }
 
+
     /*
      * =================================================
      * Personality Contract Normalize
@@ -754,6 +1037,7 @@ public record ConsultationInterpretationPromptSection(
                 )
         );
     }
+
 
     /*
      * =================================================
@@ -788,6 +1072,7 @@ public record ConsultationInterpretationPromptSection(
 
         return normalized;
     }
+
 
     /*
      * =================================================
@@ -828,6 +1113,7 @@ public record ConsultationInterpretationPromptSection(
                 value
         );
     }
+
 
     /*
      * =================================================

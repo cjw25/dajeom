@@ -13,8 +13,6 @@ import com.dajeom.type.StructureTenGodType;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,66 +31,102 @@ import java.util.Set;
  *
  * =================================================
  *
- * 관계 영역에서 읽는 월운 Context:
+ * 관계 영역에서 참조하는 월운 Signal:
  *
- * 1.
- * DAY 궁위 관련 Signal
- *
- * 2.
- * 재성 관련 Signal
- *
- * - DIRECT_WEALTH
- * - INDIRECT_WEALTH
- *
- * 3.
- * 관살 관련 Signal
- *
- * - DIRECT_OFFICER
- * - SEVEN_KILLINGS
- *
- * 4.
- * DAY 궁위와 관계 십성의 동시 관여
+ * - DAY 궁위가 실제 태깅된 Signal
+ * - DIRECT_WEALTH가 실제 태깅된 Signal
+ * - INDIRECT_WEALTH가 실제 태깅된 Signal
+ * - DIRECT_OFFICER가 실제 태깅된 Signal
+ * - SEVEN_KILLINGS가 실제 태깅된 Signal
  *
  * =================================================
  *
  * 중요한 원칙:
  *
- * DAY 궁위는 관계 해석에서 중요한 위치이지만
- * 배우자 자체 또는 실제 관계 사건을 의미하지 않는다.
+ * MonthlyLuckContextSignal은
+ * 15-7에서 이미 계산된
+ * 최소 deterministic Evidence 단위다.
+ *
+ * 따라서 이 Rule에서는:
+ *
+ * MonthlyLuckContextSignal 1개
+ * ->
+ * LifeDomainRuleMatch 1개
+ *
+ * 로 보존한다.
  *
  * =================================================
  *
- * 현재 18차 Evidence에는 Gender가 없다.
+ * 서로 다른 Monthly Signal을:
  *
- * 따라서:
+ * - 합치지 않는다.
+ * - 개수로 점수화하지 않는다.
+ * - 하나의 대표 상태로 다시 집계하지 않는다.
+ * - DAY + 재성/관살을 결합하지 않는다.
+ * - 재성 + 관살을 결합하지 않는다.
+ * - 서로 다른 Axis를 결합하지 않는다.
  *
- * 남성 -> 재성 = 배우자성
- * 여성 -> 관살 = 배우자성
+ * 단순 공존만으로:
  *
- * 같은 성별 기반 선택을 하지 않는다.
+ * - 새로운 관계
+ * - 새로운 인과
+ * - 새로운 순서
+ * - 강화
+ * - 약화
+ * - 상쇄
+ * - 복합 상태
+ * - 추가 종합 의미
  *
- * 재성과 관살 모두 관계영역의
- * 구조적 Context로 보존한다.
+ * 를 생성하지 않는다.
+ *
+ * =================================================
+ *
+ * MonthlyLuckContextAxis는
+ * 15-7의 독립 분석축이다.
+ *
+ * USEFUL_GOD
+ * STRUCTURE
+ * TEN_GOD
+ * PALACE
+ * NATAL_RELATION
+ * ANNUAL_INTERACTION
+ * DECADE_INTERACTION
+ * TRANSFORMATION
+ * THREE_LAYER_RELATION
+ * FOUR_LAYER_RELATION
+ *
+ * 등의 서로 다른 Axis를
+ * 관계영역이라는 이유로 다시 하나의 상태로
+ * 강제 축약하지 않는다.
+ *
+ * =================================================
+ *
+ * 관계 계산 자체는 유지한다.
+ *
+ * 예:
+ *
+ * NATAL_RELATION
+ * ANNUAL_INTERACTION
+ * DECADE_INTERACTION
+ * THREE_LAYER_RELATION
+ * FOUR_LAYER_RELATION
+ *
+ * 같은 Axis가 존재한다면
+ * 그것은 15-7 이전 Java 계산층에서
+ * 실제 계산된 관계 결과다.
+ *
+ * 이 Rule은 그 계산 결과를 다시 관계형으로
+ * 확장하지 않고 해당 Signal 그대로 보존한다.
  *
  * =================================================
  *
  * 시간층 경계:
  *
  * 반드시 MonthlyLuckContextAnalysis의
+ * monthlySignals만 사용한다.
  *
- * signalsOf(...)
- *
- * API만 사용한다.
- *
- * 이 API는 monthlySignals만 조회한다.
- *
- * allSignals()는:
- *
- * monthlySignals
- * +
- * decadeContexts.segmentSignals
- *
- * 이므로 사용하지 않는다.
+ * decadeContexts.segmentSignals를 포함하는
+ * allSignals()는 사용하지 않는다.
  *
  * 대운 Context는 별도의
  * DECADE_CONTEXT Rule이 담당한다.
@@ -104,20 +138,22 @@ import java.util.Set;
  *
  * 상태 변환:
  *
+ * 하나의 MonthlyLuckContextSignal에 대해서만:
+ *
  * SUPPORTED
  * -> SUPPORTIVE
  *
- * QUALIFIED만 존재
+ * QUALIFIED
  * -> CONTEXTUAL
  *
- * WEAKENED만 존재
+ * WEAKENED
  * -> PRESSURE
  *
- * CONFLICTED 존재
+ * CONFLICTED
  * -> MIXED
  *
- * 지원 계열과 약화 계열 동시 존재
- * -> MIXED
+ * 여러 Signal의 상태를 합쳐
+ * 새로운 MIXED 등을 만들지 않는다.
  *
  * =================================================
  *
@@ -142,24 +178,6 @@ import java.util.Set;
  * -> 관계 단절
  *
  * 같은 실제 사건 확정.
- *
- * =================================================
- *
- * 최종 사용자 풀이에서는
- * DAY, 재성, 관살, SUPPORTED 등의
- * 내부 명리 용어를 그대로 보여주는 것이 아니라
- *
- * 관계의:
- *
- * - 가까워지는 방식
- * - 거리 조정
- * - 기대와 부담
- * - 관계에서의 긴장
- * - 관계 접점 증가
- * - 현실적인 관계 조언
- *
- * 등 생활언어로 변환할 수 있도록
- * deterministic 근거를 보존한다.
  */
 @Component
 public class RelationshipMonthlyContextRule
@@ -173,6 +191,15 @@ public class RelationshipMonthlyContextRule
             Set.of(
                     LifeDomainEvidenceSourceType
                             .MONTHLY_CONTEXT
+            );
+
+    private static final Set<StructureTenGodType>
+            RELATIONSHIP_TEN_GOD_TYPES =
+            Set.of(
+                    StructureTenGodType.DIRECT_WEALTH,
+                    StructureTenGodType.INDIRECT_WEALTH,
+                    StructureTenGodType.DIRECT_OFFICER,
+                    StructureTenGodType.SEVEN_KILLINGS
             );
 
     @Override
@@ -237,7 +264,8 @@ public class RelationshipMonthlyContextRule
 
         LifeDomainEvidenceReference<?>
                 monthlyReference =
-                monthlyReferenceOptional.orElseThrow();
+                monthlyReferenceOptional
+                        .orElseThrow();
 
         MonthlyLuckContextAnalysis monthlyContext =
                 monthlyReference
@@ -250,47 +278,38 @@ public class RelationshipMonthlyContextRule
 
         /*
          * =================================================
-         * 1.
-         * DAY 궁위 관련 월운 Context
+         * Monthly Signal 단위 독립 Match
          * =================================================
          *
-         * signalsOf(PalacePosition.DAY)는
-         * monthlySignals 중 DAY가 직접 태깅된
-         * 모든 Signal을 읽는다.
+         * monthlySignals는 15-7의
+         * 최소 deterministic Evidence 단위다.
          *
-         * PALACE Axis로만 제한하지 않는다.
-         *
-         * 따라서:
-         *
-         * - PALACE
-         * - NATAL_RELATION
-         * - TRANSFORMATION
-         * - THREE_LAYER_RELATION
-         * - FOUR_LAYER_RELATION
-         *
-         * 등에서 DAY가 실제 관여했다면
-         * 그 Signal도 보존될 수 있다.
+         * 관계영역 관련 태그가 존재하는 Signal만
+         * 하나씩 독립적으로 보존한다.
          */
 
-        List<MonthlyLuckContextSignal>
-                dayPalaceSignals =
-                monthlyContext
-                        .signalsOf(
-                                PalacePosition.DAY
-                        );
-
-        if (
-                !dayPalaceSignals.isEmpty()
+        for (
+                MonthlyLuckContextSignal signal
+                : monthlyContext.monthlySignals()
         ) {
 
-            SignalCounts counts =
-                    countStatuses(
-                            dayPalaceSignals
-                    );
+            Objects.requireNonNull(
+                    signal,
+                    "MonthlyLuckContextAnalysis의 monthlySignal은 null일 수 없습니다."
+            );
+
+            if (
+                    !relationshipRelevant(
+                            signal
+                    )
+            ) {
+
+                continue;
+            }
 
             LifeDomainSignalStatus status =
                     resolveStatus(
-                            counts
+                            signal
                     );
 
             List<String> reasons =
@@ -299,268 +318,88 @@ public class RelationshipMonthlyContextRule
                     );
 
             reasons.add(
-                    "DAY 궁위에 관여하는 Monthly Context Signal은 "
-                            + dayPalaceSignals.size()
-                            + "개입니다."
+                    "15-7 Monthly Signal code는 "
+                            + signal.code()
+                            + "입니다."
             );
 
             reasons.add(
-                    statusSummary(
-                            counts
+                    "Monthly Signal axis는 "
+                            + signal.axis().name()
+                            + "입니다."
+            );
+
+            reasons.add(
+                    "Monthly Signal 원래 status는 "
+                            + signal.status().name()
+                            + "입니다."
+            );
+
+            reasons.add(
+                    "Monthly Signal summary: "
+                            + signal.summary()
+            );
+
+            if (
+                    signal.involves(
+                            PalacePosition.DAY
                     )
-            );
+            ) {
 
-            appendSignalReasons(
-                    reasons,
-                    dayPalaceSignals
-            );
-
-            reasons.add(
-                    "DAY 궁위는 관계영역의 중요한 위치 Context로 사용하지만 배우자 자체로 고정하지 않습니다."
-            );
-
-            reasons.add(
-                    "DAY 궁위의 월운 작동을 연애 시작·결혼·이별·재결합 같은 실제 관계 사건으로 직접 환산하지 않습니다."
-            );
-
-            matches.add(
-                    new LifeDomainRuleMatch(
-                            LifeDomain.RELATIONSHIP,
-                            RULE_CODE,
-                            status,
-                            summaryOfDayPalace(
-                                    status
-                            ),
-                            List.of(
-                                    monthlyReference
-                            ),
-                            List.copyOf(
-                                    reasons
-                            )
-                    )
-            );
-        }
-
-        /*
-         * =================================================
-         * 2.
-         * 재성 + 관살 관련 월운 Context
-         * =================================================
-         *
-         * 현재 Evidence에는 Gender가 없으므로
-         * 재성 또는 관살 중 하나를
-         * 배우자성으로 선택하지 않는다.
-         */
-
-        List<MonthlyLuckContextSignal>
-                directWealthSignals =
-                monthlyContext
-                        .signalsOf(
-                                StructureTenGodType
-                                        .DIRECT_WEALTH
-                        );
-
-        List<MonthlyLuckContextSignal>
-                indirectWealthSignals =
-                monthlyContext
-                        .signalsOf(
-                                StructureTenGodType
-                                        .INDIRECT_WEALTH
-                        );
-
-        List<MonthlyLuckContextSignal>
-                directOfficerSignals =
-                monthlyContext
-                        .signalsOf(
-                                StructureTenGodType
-                                        .DIRECT_OFFICER
-                        );
-
-        List<MonthlyLuckContextSignal>
-                sevenKillingsSignals =
-                monthlyContext
-                        .signalsOf(
-                                StructureTenGodType
-                                        .SEVEN_KILLINGS
-                        );
-
-        List<MonthlyLuckContextSignal>
-                relationshipTenGodSignals =
-                mergeIdentityUnique(
-                        directWealthSignals,
-                        indirectWealthSignals,
-                        directOfficerSignals,
-                        sevenKillingsSignals
+                reasons.add(
+                        "이 Monthly Signal에는 DAY 궁위가 실제 태깅되어 있습니다."
                 );
+            }
 
-        if (
-                !relationshipTenGodSignals.isEmpty()
-        ) {
-
-            SignalCounts counts =
-                    countStatuses(
-                            relationshipTenGodSignals
-                    );
-
-            LifeDomainSignalStatus status =
-                    resolveStatus(
-                            counts
-                    );
-
-            List<String> reasons =
-                    baseReasons(
-                            monthlyContext
-                    );
-
-            reasons.add(
-                    "정재 관련 Monthly Context Signal은 "
-                            + directWealthSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "편재 관련 Monthly Context Signal은 "
-                            + indirectWealthSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "정관 관련 Monthly Context Signal은 "
-                            + directOfficerSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "칠살 관련 Monthly Context Signal은 "
-                            + sevenKillingsSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    "Object Identity 중복 제거 후 관계영역 십성 Signal은 "
-                            + relationshipTenGodSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    statusSummary(
-                            counts
-                    )
-            );
-
-            appendSignalReasons(
-                    reasons,
-                    relationshipTenGodSignals
-            );
-
-            reasons.add(
-                    "현재 18차 Evidence에는 성별 정보가 없으므로 재성 또는 관살 중 하나를 배우자성으로 임의 선택하지 않습니다."
-            );
-
-            reasons.add(
-                    "재성·관살 관련 월운 Context는 관계영역의 접점·기대·역할·부담을 해석하기 위한 근거이며 배우자 등장이나 결혼 여부를 직접 의미하지 않습니다."
-            );
-
-            matches.add(
-                    new LifeDomainRuleMatch(
-                            LifeDomain.RELATIONSHIP,
-                            RULE_CODE,
-                            status,
-                            summaryOfTenGod(
-                                    status
-                            ),
-                            List.of(
-                                    monthlyReference
-                            ),
-                            List.copyOf(
-                                    reasons
+            List<StructureTenGodType>
+                    relevantTenGodTypes =
+                    signal
+                            .tenGodTypes()
+                            .stream()
+                            .filter(
+                                    RELATIONSHIP_TEN_GOD_TYPES
+                                            ::contains
                             )
-                    )
-            );
-        }
+                            .toList();
 
-        /*
-         * =================================================
-         * 3.
-         * DAY 궁위 + 관계 십성 동시 관여
-         * =================================================
-         *
-         * 관계의 위치 축과
-         * 재성·관살 기능축이
-         * 같은 월운 안에서 함께 관여하는 사실을
-         * 별도 Match로 보존한다.
-         *
-         * 동시 관여
-         * !=
-         * 실제 관계 사건 성립.
-         */
+            if (
+                    !relevantTenGodTypes.isEmpty()
+            ) {
 
-        if (
-                !dayPalaceSignals.isEmpty()
-                        && !relationshipTenGodSignals.isEmpty()
-        ) {
+                reasons.add(
+                        "이 Monthly Signal에 실제 태깅된 관계영역 참조 십성 유형은 "
+                                + relevantTenGodTypes
+                                + "입니다."
+                );
+            }
 
-            List<MonthlyLuckContextSignal>
-                    combinedSignals =
-                    mergeIdentityUnique(
-                            dayPalaceSignals,
-                            relationshipTenGodSignals
-                    );
+            for (
+                    String reason
+                    : signal.reasons()
+            ) {
 
-            SignalCounts counts =
-                    countStatuses(
-                            combinedSignals
-                    );
-
-            LifeDomainSignalStatus status =
-                    resolveStatus(
-                            counts
-                    );
-
-            List<String> reasons =
-                    baseReasons(
-                            monthlyContext
-                    );
+                reasons.add(
+                        "Monthly Signal ["
+                                + signal.code()
+                                + "] 근거: "
+                                + reason
+                );
+            }
 
             reasons.add(
-                    "DAY 궁위 Context와 재성·관살 Context가 같은 월운에서 함께 존재합니다."
+                    "이 Match는 하나의 MonthlyLuckContextSignal만 보존하며 다른 Monthly Signal의 상태와 합산하지 않습니다."
             );
 
             reasons.add(
-                    "DAY 궁위 관련 Signal은 "
-                            + dayPalaceSignals.size()
-                            + "개입니다."
+                    "DAY 궁위·재성·관살 태그가 같은 Signal 안에 함께 존재하더라도 그것은 해당 Signal의 upstream 계산 결과이며, 이 Rule에서 별도의 Combined 상태를 추가 생성하지 않습니다."
             );
 
             reasons.add(
-                    "관계 십성 관련 Signal은 "
-                            + relationshipTenGodSignals.size()
-                            + "개입니다."
+                    "현재 Evidence에는 성별 정보가 없으므로 재성 또는 관살을 배우자성으로 임의 확정하지 않습니다."
             );
 
             reasons.add(
-                    "Object Identity 중복 제거 후 두 축을 합친 Signal은 "
-                            + combinedSignals.size()
-                            + "개입니다."
-            );
-
-            reasons.add(
-                    statusSummary(
-                            counts
-                    )
-            );
-
-            appendSignalReasons(
-                    reasons,
-                    combinedSignals
-            );
-
-            reasons.add(
-                    "관계 위치축과 관계 기능축의 동시 관여를 보존하지만 이를 실제 만남·연애·결혼·이별 확률로 변환하지 않습니다."
-            );
-
-            reasons.add(
-                    "최종 사용자 풀이에서는 관계에 대한 관심·접점·거리조정·기대·부담이 함께 두드러지는 시기인지 설명하는 근거로 사용할 수 있습니다."
+                    "이 Monthly Signal을 연애 시작·배우자 등장·결혼·이별·재결합 같은 실제 관계 사건으로 직접 환산하지 않습니다."
             );
 
             matches.add(
@@ -568,8 +407,8 @@ public class RelationshipMonthlyContextRule
                             LifeDomain.RELATIONSHIP,
                             RULE_CODE,
                             status,
-                            summaryOfCombined(
-                                    status
+                            summaryOf(
+                                    signal
                             ),
                             List.of(
                                     monthlyReference
@@ -584,6 +423,43 @@ public class RelationshipMonthlyContextRule
         return List.copyOf(
                 matches
         );
+    }
+
+    /*
+     * =================================================
+     * 관계영역 관련 Signal
+     * =================================================
+     */
+
+    private boolean relationshipRelevant(
+            MonthlyLuckContextSignal signal
+    ) {
+
+        if (
+                signal.involves(
+                        PalacePosition.DAY
+                )
+        ) {
+
+            return true;
+        }
+
+        for (
+                StructureTenGodType tenGodType
+                : RELATIONSHIP_TEN_GOD_TYPES
+        ) {
+
+            if (
+                    signal.involves(
+                            tenGodType
+                    )
+            ) {
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /*
@@ -675,144 +551,37 @@ public class RelationshipMonthlyContextRule
 
     /*
      * =================================================
-     * 원 Signal deterministic 근거 보존
+     * 단일 Signal 상태 변환
      * =================================================
-     */
-
-    private void appendSignalReasons(
-
-            List<String> target,
-
-            List<MonthlyLuckContextSignal> signals
-
-    ) {
-
-        for (
-                MonthlyLuckContextSignal signal
-                : signals
-        ) {
-
-            target.add(
-                    "Monthly Signal ["
-                            + signal.code()
-                            + "] "
-                            + signal.summary()
-                            + " / axis="
-                            + signal.axis().name()
-                            + " / status="
-                            + signal.status().name()
-            );
-
-            for (
-                    String reason
-                    : signal.reasons()
-            ) {
-
-                target.add(
-                        "Monthly Signal ["
-                                + signal.code()
-                                + "] 근거: "
-                                + reason
-                );
-            }
-        }
-    }
-
-    /*
-     * =================================================
-     * 상태 집계
-     * =================================================
-     */
-
-    private SignalCounts countStatuses(
-            List<MonthlyLuckContextSignal> signals
-    ) {
-
-        long supported =
-                signals
-                        .stream()
-                        .filter(
-                                MonthlyLuckContextSignal
-                                        ::supported
-                        )
-                        .count();
-
-        long qualified =
-                signals
-                        .stream()
-                        .filter(
-                                MonthlyLuckContextSignal
-                                        ::qualified
-                        )
-                        .count();
-
-        long weakened =
-                signals
-                        .stream()
-                        .filter(
-                                MonthlyLuckContextSignal
-                                        ::weakened
-                        )
-                        .count();
-
-        long conflicted =
-                signals
-                        .stream()
-                        .filter(
-                                MonthlyLuckContextSignal
-                                        ::conflicted
-                        )
-                        .count();
-
-        return new SignalCounts(
-                supported,
-                qualified,
-                weakened,
-                conflicted
-        );
-    }
-
-    /*
-     * =================================================
-     * 15-7 -> 18차 상태 변환
-     * =================================================
-     *
-     * 상태는 길흉 점수가 아니다.
-     *
-     * 여러 근거가 겹치는 경우
-     * 한 방향으로 삭제하거나 평균내지 않는다.
      */
 
     private LifeDomainSignalStatus resolveStatus(
-            SignalCounts counts
+            MonthlyLuckContextSignal signal
     ) {
 
-        boolean supportiveSide =
-                counts.supported() > 0
-                        || counts.qualified() > 0;
-
-        boolean pressureSide =
-                counts.weakened() > 0;
+        Objects.requireNonNull(
+                signal,
+                "MonthlyLuckContextSignal이 필요합니다."
+        );
 
         if (
-                counts.conflicted() > 0
+                signal.supported()
         ) {
 
             return LifeDomainSignalStatus
-                    .MIXED;
+                    .SUPPORTIVE;
         }
 
         if (
-                supportiveSide
-                        && pressureSide
+                signal.qualified()
         ) {
 
             return LifeDomainSignalStatus
-                    .MIXED;
+                    .CONTEXTUAL;
         }
 
         if (
-                pressureSide
+                signal.weakened()
         ) {
 
             return LifeDomainSignalStatus
@@ -820,30 +589,17 @@ public class RelationshipMonthlyContextRule
         }
 
         if (
-                counts.supported() > 0
+                signal.conflicted()
         ) {
 
             return LifeDomainSignalStatus
-                    .SUPPORTIVE;
+                    .MIXED;
         }
 
-        return LifeDomainSignalStatus
-                .CONTEXTUAL;
-    }
-
-    private String statusSummary(
-            SignalCounts counts
-    ) {
-
-        return "SUPPORTED="
-                + counts.supported()
-                + ", QUALIFIED="
-                + counts.qualified()
-                + ", WEAKENED="
-                + counts.weakened()
-                + ", CONFLICTED="
-                + counts.conflicted()
-                + "입니다.";
+        throw new IllegalStateException(
+                "지원하지 않는 MonthlyLuckContextSignal 상태입니다: "
+                        + signal.status()
+        );
     }
 
     /*
@@ -851,117 +607,22 @@ public class RelationshipMonthlyContextRule
      * 내부 Summary
      * =================================================
      *
-     * 최종 사용자용 점사 문장이 아니다.
+     * 새로운 관계 의미를 생성하지 않는다.
      *
-     * 이후 AI Grounding에서
-     * 생활언어로 변환하기 위한
-     * 의미 요약이다.
+     * 15-7 Signal의 code / axis / summary를
+     * LifeDomain Match 경계에 그대로 노출한다.
      */
 
-    private String summaryOfDayPalace(
-            LifeDomainSignalStatus status
+    private String summaryOf(
+            MonthlyLuckContextSignal signal
     ) {
 
-        return switch (
-                status
-                ) {
-
-            case SUPPORTIVE ->
-                    "현재 월운에서 가까운 관계의 위치 Context를 지지하는 근거가 존재합니다.";
-
-            case PRESSURE ->
-                    "현재 월운에서 가까운 관계의 위치 Context에 조정·부담 근거가 존재합니다.";
-
-            case MIXED ->
-                    "현재 월운에서 가까운 관계의 위치 Context에 지원과 약화 또는 상충 근거가 함께 존재합니다.";
-
-            case CONTEXTUAL ->
-                    "현재 월운에서 가까운 관계의 위치 Context가 관여하지만 관계 결과를 단독으로 확정할 수준은 아닙니다.";
-        };
-    }
-
-    private String summaryOfTenGod(
-            LifeDomainSignalStatus status
-    ) {
-
-        return switch (
-                status
-                ) {
-
-            case SUPPORTIVE ->
-                    "현재 월운에서 관계의 기대·역할·현실적 접점에 지지 방향의 근거가 존재합니다.";
-
-            case PRESSURE ->
-                    "현재 월운에서 관계의 기대·역할·현실적 접점에 부담 또는 약화 근거가 존재합니다.";
-
-            case MIXED ->
-                    "현재 월운에서 관계의 기대·역할·현실적 접점에 지원과 부담 또는 상충 근거가 함께 존재합니다.";
-
-            case CONTEXTUAL ->
-                    "현재 월운에서 관계의 기대·역할·현실적 접점이 두드러지지만 관계 결과를 단독으로 확정할 수준은 아닙니다.";
-        };
-    }
-
-    private String summaryOfCombined(
-            LifeDomainSignalStatus status
-    ) {
-
-        return switch (
-                status
-                ) {
-
-            case SUPPORTIVE ->
-                    "현재 월운에서 가까운 관계의 위치와 관계 기능이 함께 지지되는 근거가 존재합니다.";
-
-            case PRESSURE ->
-                    "현재 월운에서 가까운 관계의 위치와 관계 기능에 함께 조정·부담 근거가 존재합니다.";
-
-            case MIXED ->
-                    "현재 월운에서 가까운 관계의 위치와 관계 기능에 지원·약화·상충 근거가 함께 존재합니다.";
-
-            case CONTEXTUAL ->
-                    "현재 월운에서 가까운 관계의 위치와 관계 기능이 함께 관여하지만 실제 관계 사건을 확정할 수준은 아닙니다.";
-        };
-    }
-
-    /*
-     * =================================================
-     * Object Identity 중복 제거
-     * =================================================
-     */
-
-    @SafeVarargs
-    private final List<MonthlyLuckContextSignal>
-    mergeIdentityUnique(
-            List<MonthlyLuckContextSignal>... signalLists
-    ) {
-
-        Set<MonthlyLuckContextSignal> unique =
-                Collections
-                        .newSetFromMap(
-                                new IdentityHashMap<>()
-                        );
-
-        for (
-                List<MonthlyLuckContextSignal> signals
-                : signalLists
-        ) {
-
-            if (
-                    signals == null
-            ) {
-
-                continue;
-            }
-
-            unique.addAll(
-                    signals
-            );
-        }
-
-        return List.copyOf(
-                unique
-        );
+        return "현재 월운의 "
+                + signal.axis().name()
+                + " Signal ["
+                + signal.code()
+                + "]을 관계영역 Context로 보존합니다: "
+                + signal.summary();
     }
 
     /*
@@ -1020,24 +681,5 @@ public class RelationshipMonthlyContextRule
                         0
                 )
         );
-    }
-
-    /*
-     * =================================================
-     * 내부 상태 집계
-     * =================================================
-     */
-
-    private record SignalCounts(
-
-            long supported,
-
-            long qualified,
-
-            long weakened,
-
-            long conflicted
-
-    ) {
     }
 }

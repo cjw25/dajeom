@@ -12,49 +12,30 @@ import java.util.Set;
 /**
  * 정밀화 18차-2.
  *
- * 3~17차 및 이후 확장된 deterministic 분석 결과를
- * 18차 생활영역 Evidence 구조로 변환한 결과.
+ * 기존 deterministic 분석 결과를 LifeDomain Evidence 구조로 보존한다.
  *
- * =================================================
+ * natalEvidences:
+ * - 원국 기반 Evidence
+ * - CORE_STRUCTURE / STRUCTURAL_CONTEXT / NATAL SHINSAL
  *
- * natalEvidences
+ * segmentEvidences:
+ * - DECADE_CONTEXT
+ * - ANNUAL_CONTEXT
+ * - ANNUAL_FUNCTIONAL_CONTEXT
+ * - MONTHLY_CONTEXT
+ * - MONTHLY_FUNCTIONAL_CONTEXT
+ * - 운 SHINSAL
  *
- * 원국 기반 Evidence.
- *
- * CORE_STRUCTURE
- * STRUCTURAL_CONTEXT
- * NATAL SHINSAL
- *
- * =================================================
- *
- * segmentEvidences
- *
- * 각 16차 Timeline Segment별:
- *
- * DECADE_CONTEXT
- * ANNUAL_CONTEXT
- * ANNUAL_FUNCTIONAL_CONTEXT
- * MONTHLY_CONTEXT
- * 운 SHINSAL
- *
- * =================================================
- *
- * 원국 Evidence는 Segment마다 복제하지 않는다.
+ * 원국 Evidence는 Timeline Segment마다 복제하지 않는다.
  */
 public record LifeDomainEvidenceResolution(
-
         LuckIntegratedAnalysis luckIntegratedAnalysis,
-
         ShinsalAnalysis shinsalAnalysis,
-
         List<LifeDomainEvidenceReference<?>> natalEvidences,
-
         List<LifeDomainSegmentEvidence> segmentEvidences
-
 ) {
 
     public LifeDomainEvidenceResolution {
-
         Objects.requireNonNull(
                 luckIntegratedAnalysis,
                 "LifeDomainEvidenceResolution에는 LuckIntegratedAnalysis가 필요합니다."
@@ -65,12 +46,7 @@ public record LifeDomainEvidenceResolution(
                 "LifeDomainEvidenceResolution에는 ShinsalAnalysis가 필요합니다."
         );
 
-        if (
-                shinsalAnalysis
-                        .luckIntegratedAnalysis()
-                        != luckIntegratedAnalysis
-        ) {
-
+        if (shinsalAnalysis.luckIntegratedAnalysis() != luckIntegratedAnalysis) {
             throw new IllegalArgumentException(
                     "ShinsalAnalysis와 LuckIntegratedAnalysis의 Anchor가 일치하지 않습니다."
             );
@@ -90,39 +66,44 @@ public record LifeDomainEvidenceResolution(
                         segmentEvidences
                 );
 
-        /*
-         * =================================================
-         * Natal Evidence
-         * =================================================
-         */
+        validateNatalEvidences(
+                luckIntegratedAnalysis,
+                shinsalAnalysis,
+                natalEvidences
+        );
 
+        validateSegmentCoverage(
+                luckIntegratedAnalysis,
+                segmentEvidences
+        );
+    }
+
+    private static void validateNatalEvidences(
+            LuckIntegratedAnalysis luckIntegratedAnalysis,
+            ShinsalAnalysis shinsalAnalysis,
+            List<LifeDomainEvidenceReference<?>> natalEvidences
+    ) {
         Set<String> natalKeys =
                 new HashSet<>();
 
-        for (
-                LifeDomainEvidenceReference<?> evidence
-                : natalEvidences
-        ) {
+        for (LifeDomainEvidenceReference<?> evidence
+                : natalEvidences) {
 
             Objects.requireNonNull(
                     evidence,
                     "Natal Evidence는 null일 수 없습니다."
             );
 
-            if (
+            /*
+             * 모든 시간축 Source는
+             * natalEvidences에 들어올 수 없다.
+             *
+             * MONTHLY_FUNCTIONAL_CONTEXT 역시
+             * 명시적으로 차단한다.
+             */
+            if (temporalSource(
                     evidence.sourceType()
-                            == LifeDomainEvidenceSourceType.DECADE_CONTEXT
-
-                            || evidence.sourceType()
-                            == LifeDomainEvidenceSourceType.ANNUAL_CONTEXT
-
-                            || evidence.sourceType()
-                            == LifeDomainEvidenceSourceType
-                            .ANNUAL_FUNCTIONAL_CONTEXT
-
-                            || evidence.sourceType()
-                            == LifeDomainEvidenceSourceType.MONTHLY_CONTEXT
-            ) {
+            )) {
 
                 throw new IllegalArgumentException(
                         "natalEvidences에는 시간축 Context Source를 넣을 수 없습니다: "
@@ -131,18 +112,13 @@ public record LifeDomainEvidenceResolution(
             }
 
             /*
-             * =================================================
-             * PALACE
-             * =================================================
+             * Palace Identity.
              */
+            if (evidence.sourceType()
+                    == LifeDomainEvidenceSourceType.PALACE
 
-            if (
-                    evidence.sourceType()
-                            == LifeDomainEvidenceSourceType.PALACE
-
-                            && evidence.source()
-                            != luckIntegratedAnalysis.natalAnalysis()
-            ) {
+                    && evidence.source()
+                    != luckIntegratedAnalysis.natalAnalysis()) {
 
                 throw new IllegalArgumentException(
                         "PALACE Evidence는 현재 LuckIntegratedAnalysis의 PalaceAnalysis를 참조해야 합니다."
@@ -150,53 +126,15 @@ public record LifeDomainEvidenceResolution(
             }
 
             /*
-             * =================================================
-             * NATAL SHINSAL
-             * =================================================
+             * Natal Shinsal.
              */
+            if (evidence.sourceType()
+                    == LifeDomainEvidenceSourceType.SHINSAL) {
 
-            if (
-                    evidence.sourceType()
-                            == LifeDomainEvidenceSourceType.SHINSAL
-            ) {
-
-                if (
-                        !(evidence.source()
-                                instanceof ShinsalEvidence shinsalEvidence)
-                ) {
-
-                    throw new IllegalArgumentException(
-                            "SHINSAL Source는 ShinsalEvidence여야 합니다."
-                    );
-                }
-
-                if (
-                        !shinsalEvidence.natalEvidence()
-                ) {
-
-                    throw new IllegalArgumentException(
-                            "natalEvidences에는 원국 ShinsalEvidence만 들어갈 수 있습니다."
-                    );
-                }
-
-                boolean known =
-                        shinsalAnalysis
-                                .natalEvidences()
-                                .stream()
-                                .anyMatch(
-                                        candidate ->
-                                                candidate
-                                                        == shinsalEvidence
-                                );
-
-                if (
-                        !known
-                ) {
-
-                    throw new IllegalArgumentException(
-                            "ShinsalAnalysis에 존재하지 않는 원국 ShinsalEvidence가 연결되었습니다."
-                    );
-                }
+                validateNatalShinsal(
+                        shinsalAnalysis,
+                        evidence
+                );
             }
 
             String key =
@@ -204,48 +142,85 @@ public record LifeDomainEvidenceResolution(
                             + "|"
                             + evidence.sourceKey();
 
-            if (
-                    !natalKeys.add(
-                            key
-                    )
-            ) {
-
+            if (!natalKeys.add(key)) {
                 throw new IllegalArgumentException(
                         "원국 생활영역 Evidence가 중복되었습니다: "
                                 + key
                 );
             }
         }
+    }
 
-        /*
-         * =================================================
-         * Timeline Segment 수
-         * =================================================
-         */
+    private static boolean temporalSource(
+            LifeDomainEvidenceSourceType sourceType
+    ) {
+        return sourceType
+                == LifeDomainEvidenceSourceType.DECADE_CONTEXT
 
-        if (
-                segmentEvidences.size()
-                        != luckIntegratedAnalysis
-                        .segmentAnalyses()
-                        .size()
-        ) {
+                || sourceType
+                == LifeDomainEvidenceSourceType.ANNUAL_CONTEXT
+
+                || sourceType
+                == LifeDomainEvidenceSourceType.ANNUAL_FUNCTIONAL_CONTEXT
+
+                || sourceType
+                == LifeDomainEvidenceSourceType.MONTHLY_CONTEXT
+
+                || sourceType
+                == LifeDomainEvidenceSourceType.MONTHLY_FUNCTIONAL_CONTEXT;
+    }
+
+    private static void validateNatalShinsal(
+            ShinsalAnalysis shinsalAnalysis,
+            LifeDomainEvidenceReference<?> evidence
+    ) {
+        if (!(evidence.source()
+                instanceof ShinsalEvidence shinsalEvidence)) {
+
+            throw new IllegalArgumentException(
+                    "SHINSAL Source는 ShinsalEvidence여야 합니다."
+            );
+        }
+
+        if (!shinsalEvidence.natalEvidence()) {
+            throw new IllegalArgumentException(
+                    "natalEvidences에는 원국 ShinsalEvidence만 들어갈 수 있습니다."
+            );
+        }
+
+        boolean known =
+                shinsalAnalysis
+                        .natalEvidences()
+                        .stream()
+                        .anyMatch(
+                                candidate ->
+                                        candidate == shinsalEvidence
+                        );
+
+        if (!known) {
+            throw new IllegalArgumentException(
+                    "ShinsalAnalysis에 존재하지 않는 원국 ShinsalEvidence가 연결되었습니다."
+            );
+        }
+    }
+
+    private static void validateSegmentCoverage(
+            LuckIntegratedAnalysis luckIntegratedAnalysis,
+            List<LifeDomainSegmentEvidence> segmentEvidences
+    ) {
+        if (segmentEvidences.size()
+                != luckIntegratedAnalysis
+                .segmentAnalyses()
+                .size()) {
 
             throw new IllegalArgumentException(
                     "LifeDomainSegmentEvidence 수와 LuckIntegratedSegmentAnalysis 수가 일치하지 않습니다."
             );
         }
 
-        /*
-         * =================================================
-         * Timeline 순서 / Identity
-         * =================================================
-         */
-
-        for (
-                int index = 0;
-                index < segmentEvidences.size();
-                index++
-        ) {
+        for (int index = 0;
+             index < segmentEvidences.size();
+             index++) {
 
             LifeDomainSegmentEvidence segmentEvidence =
                     Objects.requireNonNull(
@@ -258,10 +233,8 @@ public record LifeDomainEvidenceResolution(
                             .segmentAnalyses()
                             .get(index);
 
-            if (
-                    segmentEvidence.segmentAnalysis()
-                            != expected
-            ) {
+            if (segmentEvidence.segmentAnalysis()
+                    != expected) {
 
                 throw new IllegalArgumentException(
                         "생활영역 Segment Evidence 순서가 LuckIntegratedAnalysis와 일치하지 않습니다: "
@@ -271,21 +244,10 @@ public record LifeDomainEvidenceResolution(
         }
     }
 
-    /*
-     * =================================================
-     * Segment 조회
-     * =================================================
-     */
-
-    public Optional<LifeDomainSegmentEvidence>
-    segmentEvidenceOf(
+    public Optional<LifeDomainSegmentEvidence> segmentEvidenceOf(
             LuckIntegratedSegmentAnalysis segmentAnalysis
     ) {
-
-        if (
-                segmentAnalysis == null
-        ) {
-
+        if (segmentAnalysis == null) {
             return Optional.empty();
         }
 
@@ -299,15 +261,11 @@ public record LifeDomainEvidenceResolution(
                 .findFirst();
     }
 
-    public LifeDomainSegmentEvidence
-    segmentEvidenceAt(
+    public LifeDomainSegmentEvidence segmentEvidenceAt(
             int index
     ) {
-
-        if (
-                index < 0
-                        || index >= segmentEvidences.size()
-        ) {
+        if (index < 0
+                || index >= segmentEvidences.size()) {
 
             throw new IndexOutOfBoundsException(
                     "LifeDomainSegmentEvidence index가 범위를 벗어났습니다: "
@@ -315,27 +273,23 @@ public record LifeDomainEvidenceResolution(
             );
         }
 
-        return segmentEvidences
-                .get(index);
+        return segmentEvidences.get(
+                index
+        );
     }
 
-    /*
-     * =================================================
-     * 특정 Segment에 적용되는 전체 Source
+    /**
+     * 특정 Timeline Segment에서 사용할 전체 Source.
      *
      * 원국
      * +
-     * 대운/세운/Annual Functional/월운
+     * 현재 Segment temporal
      * +
-     * 해당 운 신살
-     * =================================================
+     * 현재 Segment shinsal.
      */
-
-    public List<LifeDomainEvidenceReference<?>>
-    evidencesForSegment(
+    public List<LifeDomainEvidenceReference<?>> evidencesForSegment(
             LuckIntegratedSegmentAnalysis segmentAnalysis
     ) {
-
         LifeDomainSegmentEvidence segmentEvidence =
                 segmentEvidenceOf(
                         segmentAnalysis
@@ -368,20 +322,14 @@ public record LifeDomainEvidenceResolution(
     }
 
     public int segmentCount() {
-
-        return segmentEvidences
-                .size();
+        return segmentEvidences.size();
     }
 
     public boolean completeChart() {
-
-        return luckIntegratedAnalysis
-                .completeChart();
+        return luckIntegratedAnalysis.completeChart();
     }
 
     public boolean uncertaintyExists() {
-
-        return luckIntegratedAnalysis
-                .uncertaintyExists();
+        return luckIntegratedAnalysis.uncertaintyExists();
     }
 }

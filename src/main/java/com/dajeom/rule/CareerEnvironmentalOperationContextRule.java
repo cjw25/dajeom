@@ -15,155 +15,383 @@ import java.util.Objects;
 
 /**
  * CAREER 카테고리의
- * 원국 환경·사회적 작동 Context Rule.
+ * 원국 환경·사회적 작동 Palace Context Rule.
  *
  * =================================================
  * 목적
  * =================================================
  *
- * 기존 18차:
+ * LifeDomain.CAREER에서 이미 계산된:
  *
  * CAREER_ENVIRONMENTAL_PALACE_CONTEXT
  *
- * 를 단순히 CAREER Category로 복사하지 않는다.
+ * 결과를 ConsultationCategory.CAREER의
+ * 독립적인 NATAL Context로 보존한다.
  *
- * 기존 Source는 12차 PalaceAnalysis의
- * MONTH Palace를 사용하며,
+ * =================================================
+ * Upstream
+ * =================================================
  *
- * MONTH
- * =
+ * CareerEnvironmentalPalaceContextRule은
+ * 12차 PalaceAnalysis의:
+ *
+ * MONTH Palace
+ *
+ * 를 사용한다.
+ *
+ * MONTH Palace의 공식 위치 Context는:
+ *
  * ENVIRONMENTAL_OPERATION
  *
- * 즉:
+ * 이다.
  *
- * - 외부 환경과 맞물리는 방식
- * - 사회적 작동 위치
- * - 역할이 작동하는 환경 Context
- * - 조직·사회 조건과 접촉하는 위치
+ * 즉 이 Source 자체가 이미:
  *
- * 를 보존한다.
+ * - 환경·사회적 작동 위치
+ * - 원국 MONTH 위치
+ * - 해당 위치의 TenGod Evidence
+ * - 12운성 Context
+ * - 천간 관계 Reference
+ * - 지지 관계 Reference
+ * - Transformation Context
+ * - 실제 합화 Activation 여부
+ * - 원기능 감소 여부
+ *
+ * 를 Java에서 계산하여 보존한다.
  *
  * 이 Category Rule에서는
- * 별도의 실제 CAREER 구조 Anchor가 존재하는 경우에만
- * 해당 MONTH Context를
- * 직업·사회 기능의 환경 작동 Context로 채택한다.
+ * 해당 계산을 다시 수행하지 않는다.
  *
  * =================================================
- * 구조 Anchor
+ * 중요한 변경
  * =================================================
  *
- * 다음 중 최소 하나가 필요하다.
+ * 기존에는:
  *
- * 1.
+ * CAREER_ENVIRONMENTAL_PALACE_CONTEXT
+ *
+ * 가 존재하더라도 추가로:
+ *
  * CAREER_PRIMARY_OFFICER_STRUCTURE
- *
- * 2.
  * CAREER_OFFICER_STRUCTURE
- *
- * 3.
  * CAREER_CROSS_VALIDATED_PATTERN
+ *
+ * 중 최소 하나가 있어야
+ * CAREER Category Match를 생성했다.
+ *
+ * 그리고 해당 Anchor Match들을
+ * 환경 Palace Match와 같은 sourceMatches에
+ * 함께 넣었다.
+ *
+ * 이제 그렇게 하지 않는다.
+ *
+ * =================================================
+ * 독립 Context
+ * =================================================
+ *
+ * CAREER_ENVIRONMENTAL_PALACE_CONTEXT는
+ * 그 자체로 이미:
+ *
+ * "원국 MONTH Palace의 공식
+ * ENVIRONMENTAL_OPERATION Context"
+ *
+ * 를 계산한 결과다.
+ *
+ * 다른 CAREER 구조가 존재해야만
+ * 유효해지는 Source로 취급하지 않는다.
+ *
+ * =================================================
+ * 구조 Anchor 제거
+ * =================================================
+ *
+ * 이 Rule에서는 더 이상:
+ *
+ * CAREER_PRIMARY_OFFICER_STRUCTURE
+ * CAREER_OFFICER_STRUCTURE
+ * CAREER_CROSS_VALIDATED_PATTERN
+ *
+ * 을 조회하지 않는다.
  *
  * 따라서:
  *
- * MONTH Palace Context 존재
+ * Environmental Palace
+ * +
+ * Primary Officer Structure
+ *
+ * 또는:
+ *
+ * Environmental Palace
+ * +
+ * Officer Structure
+ *
+ * 또는:
+ *
+ * Environmental Palace
+ * +
+ * Cross Validated Pattern
+ *
+ * 을 이용한 새로운 Category 의미를 만들지 않는다.
+ *
+ * =================================================
+ * 다른 CAREER 원국 계산과의 분리
+ * =================================================
+ *
+ * CAREER_PRIMARY_OFFICER_STRUCTURE
  *
  * ->
  *
- * CAREER Category Match 자동 생성
+ * CareerCoreRoleStructureRule
  *
- * 을 하지 않는다.
+ * -------------------------------------------------
  *
- * 실제 직업·사회 구조가 확인된 경우에만
- * 환경 Context를 연결한다.
+ * CAREER_OFFICER_STRUCTURE
+ *
+ * ->
+ *
+ * CareerOfficerStructureDeterministicRule
+ *
+ * -------------------------------------------------
+ *
+ * CAREER_CROSS_VALIDATED_PATTERN
+ *
+ * ->
+ *
+ * CareerFunctionIntegrationPatternRule
+ *
+ * -------------------------------------------------
+ *
+ * CAREER_ENVIRONMENTAL_PALACE_CONTEXT
+ *
+ * ->
+ *
+ * 이 Rule
+ *
+ * -------------------------------------------------
+ *
+ * 각각 독립적인 deterministic 결과다.
+ *
+ * =================================================
+ * 1 : 1 보존
+ * =================================================
+ *
+ * LifeDomainRuleMatch 하나
+ *
+ * ->
+ *
+ * ConsultationCategoryDeterministicMatch 하나
+ *
+ * 로 보존한다.
+ *
+ * 현재 upstream은 MONTH Palace Context 하나를
+ * 생성하지만 Category Rule은
+ * Source Match별 1:1 구조를 유지한다.
  *
  * =================================================
  * Status
  * =================================================
  *
- * 이 Rule의 final status는
- * 항상 CONTEXTUAL이다.
+ * 이 Rule의 Status는 항상:
  *
- * MONTH Palace는:
+ * CONTEXTUAL
  *
- * - 직업 성공
+ * 이다.
+ *
+ * Palace 위치는:
+ *
+ * - 취업 성공
+ * - 승진 가능성
+ * - 직장 안정성
+ * - 조직 적응력
  * - 직업 실패
- * - 조직 적응 성공
- * - 이직 가능성
  *
  * 같은 방향성 Evidence가 아니기 때문이다.
  *
  * =================================================
- * 방향성 전이 금지
+ * Source Status 전이 금지
  * =================================================
  *
- * 예를 들어:
+ * upstream
+ * CAREER_ENVIRONMENTAL_PALACE_CONTEXT 역시
+ * CONTEXTUAL이다.
  *
- * CAREER_OFFICER_STRUCTURE = PRESSURE
+ * 이 Rule에서는 다른 CAREER Source의:
  *
- * 라고 해도
+ * SUPPORTIVE
+ * PRESSURE
+ * MIXED
  *
- * MONTH Palace 자체를 PRESSURE로 바꾸지 않는다.
- *
- * 반대로:
- *
- * CAREER_PRIMARY_OFFICER_STRUCTURE = SUPPORTIVE
- *
- * 라고 해도
- *
- * MONTH Palace 자체를 SUPPORTIVE로 바꾸지 않는다.
- *
- * 방향성 판단은:
- *
- * CareerCoreRoleStructureRule
- * CareerFunctionIntegrationPatternRule
- *
- * 등의 책임이다.
+ * 상태를 가져와
+ * Palace Context에 전이하지 않는다.
  *
  * =================================================
- * 전통명리 해석 제한
+ * 실제 Java Palace 계산 보존
  * =================================================
  *
- * MONTH
- * ->
- * 직장
+ * upstream PalaceAnalysis에서 실제 계산된:
  *
- * MONTH 정관
- * ->
- * 승진
- *
- * MONTH 칠살
- * ->
- * 조직 갈등
- *
- * MONTH 재성
- * ->
- * 돈 버는 직업
- *
- * MONTH 충
- * ->
- * 이직
- *
- * MONTH 합
- * ->
- * 취업
- *
- * 같은 사건 대응을 만들지 않는다.
- *
- * =================================================
- * 12운성 / 관계 / 합화
- * =================================================
- *
- * 기존 CareerEnvironmentalPalaceContextRule이
- * 이미 보존하는:
- *
+ * - TenGod 존재
  * - 12운성
  * - 천간 관계
  * - 지지 관계
- * - 합화 Context
- * - 합화 Activation
- * - 원기능 감소
+ * - Transformation 후보
+ * - activated Transformation
+ * - original function reduction
  *
- * 등을 이 Rule에서 다시 길흉으로 해석하지 않는다.
+ * 자체는 그대로 유효하다.
+ *
+ * 관계형 풀이 금지는
+ * 이러한 실제 계산된 Palace 구조를
+ * 삭제한다는 뜻이 아니다.
+ *
+ * =================================================
+ * Category 단계 관계 생성 금지
+ * =================================================
+ *
+ * 다음을 생성하지 않는다.
+ *
+ * - 관살 구조가 있으므로
+ *   MONTH Palace가 직업적으로 중요하다
+ *
+ * - 주격 관성이 있기 때문에
+ *   환경 작동성이 강화된다
+ *
+ * - Cross Validated Pattern이 있으므로
+ *   환경에서 해당 Pattern이 나타난다
+ *
+ * - Palace Context 때문에
+ *   직업 구조가 강화된다
+ *
+ * - 직업 구조 때문에
+ *   환경 부담이 커진다
+ *
+ * - A 때문에 B
+ *
+ * - A가 B로 이어진다
+ *
+ * - A와 B가 함께 작동한다
+ *
+ * =================================================
+ * MONTH 의미 확대 금지
+ * =================================================
+ *
+ * MONTH
+ * != 직장
+ *
+ * MONTH
+ * != 회사
+ *
+ * MONTH
+ * != 상사
+ *
+ * MONTH
+ * != 조직생활 결과
+ *
+ * MONTH의 공식 의미는
+ * upstream PalaceAnalysis가 확정한:
+ *
+ * ENVIRONMENTAL_OPERATION
+ *
+ * Context까지만 보존한다.
+ *
+ * =================================================
+ * 특정 사건 생성 금지
+ * =================================================
+ *
+ * MONTH 정관
+ * != 승진
+ *
+ * MONTH 칠살
+ * != 직장 갈등
+ *
+ * MONTH 재성
+ * != 돈 버는 직업
+ *
+ * MONTH 충
+ * != 이직
+ *
+ * MONTH 합
+ * != 취업
+ *
+ * MONTH 합화
+ * != 직업 전환
+ *
+ * =================================================
+ * 특정 직업 생성 금지
+ * =================================================
+ *
+ * MONTH 정관
+ * != 공무원
+ *
+ * MONTH 칠살
+ * != 군인
+ * != 경찰
+ *
+ * MONTH 인성
+ * != 교사
+ *
+ * MONTH 재성
+ * != 금융업
+ *
+ * =================================================
+ * 12운성 길흉 변환 금지
+ * =================================================
+ *
+ * 장생
+ * 건록
+ * 제왕
+ *
+ * != SUPPORTIVE
+ *
+ * 병
+ * 사
+ * 묘
+ * 절
+ *
+ * != PRESSURE
+ *
+ * 12운성은 upstream Palace Context에
+ * 포함된 구조 정보로만 보존한다.
+ *
+ * =================================================
+ * 관계 길흉 변환 금지
+ * =================================================
+ *
+ * 합
+ * != SUPPORTIVE
+ *
+ * 충
+ * != PRESSURE
+ *
+ * 형
+ * != 직장 갈등
+ *
+ * 파
+ * != 퇴사
+ *
+ * 해
+ * != 조직 문제
+ *
+ * PalaceAnalysis에 실제 관계 Reference가
+ * 존재한다는 사실만 보존하며
+ * Category 단계에서 재판정하지 않는다.
+ *
+ * =================================================
+ * Transformation 경계
+ * =================================================
+ *
+ * 다음 세 상태를 동일하게 취급하지 않는다.
+ *
+ * hasTransformations()
+ *
+ * !=
+ *
+ * hasActivatedTransformation()
+ *
+ * !=
+ *
+ * hasReducedOriginalFunction()
+ *
+ * 이 구분은 upstream Java 계산을 그대로 따른다.
  *
  * =================================================
  * 문자열 파싱 금지
@@ -174,23 +402,65 @@ import java.util.Objects;
  * - summary
  * - reasons
  *
- * 를 파싱해서
- * 십성, 관계, 합화, 사건 등을
- * 재구성하지 않는다.
+ * 문자열을 파싱하여:
+ *
+ * - TenGod
+ * - 12운성
+ * - 관계
+ * - 합화
+ * - 직업 사건
+ * - 직종
+ *
+ * 을 새로 구성하지 않는다.
  *
  * =================================================
- * Match 개수
+ * Match 개수 금지
  * =================================================
  *
- * Match 개수는:
+ * Environmental Palace Match 개수를:
  *
  * - 직업 능력
- * - 성공 가능성
- * - 승진 가능성
+ * - 사회적 성공
  * - 조직 적응력
- * - 사회적 지위
+ * - 승진 가능성
+ * - 직업 안정성
  *
- * 점수가 아니다.
+ * 점수로 사용하지 않는다.
+ *
+ * =================================================
+ * 출생시간 미상
+ * =================================================
+ *
+ * MONTH Palace는 출생시간 미상이어도
+ * 기존 PalaceAnalysis에서 계산될 수 있다.
+ *
+ * HOUR가 미확정이라고 해서
+ * MONTH Context를 삭제하거나
+ * 가짜 HOUR 정보를 추가하지 않는다.
+ *
+ * =================================================
+ * 하지 않는 것
+ * =================================================
+ *
+ * - Palace 재계산
+ * - MONTH 위치 재계산
+ * - TenGod 재계산
+ * - 12운성 재계산
+ * - 천간 관계 재계산
+ * - 지지 관계 재계산
+ * - Transformation 재계산
+ * - CAREER 구조 Anchor 요구
+ * - 다른 CAREER Source 조회
+ * - 다른 CAREER Source와 결합
+ * - Status 합성
+ * - Match 개수 점수화
+ * - summary 문자열 파싱
+ * - reasons 문자열 파싱
+ * - 새로운 관계 생성
+ * - 새로운 인과 생성
+ * - 새로운 순서 생성
+ * - 특정 직업군 생성
+ * - 실제 직업 사건 생성
  */
 @Component
 public class CareerEnvironmentalOperationContextRule
@@ -199,33 +469,10 @@ public class CareerEnvironmentalOperationContextRule
     private static final String RULE_CODE =
             "CAREER_ENVIRONMENTAL_OPERATION_CONTEXT";
 
-    /*
-     * =================================================
-     * 환경 Context Source
-     * =================================================
-     */
-
     private static final String
             ENVIRONMENTAL_PALACE_RULE_CODE =
             "CAREER_ENVIRONMENTAL_PALACE_CONTEXT";
 
-    /*
-     * =================================================
-     * CAREER 구조 Anchor
-     * =================================================
-     */
-
-    private static final String
-            PRIMARY_OFFICER_STRUCTURE_RULE_CODE =
-            "CAREER_PRIMARY_OFFICER_STRUCTURE";
-
-    private static final String
-            OFFICER_STRUCTURE_RULE_CODE =
-            "CAREER_OFFICER_STRUCTURE";
-
-    private static final String
-            CROSS_VALIDATED_PATTERN_RULE_CODE =
-            "CAREER_CROSS_VALIDATED_PATTERN";
 
     @Override
     public ConsultationCategory category() {
@@ -233,11 +480,13 @@ public class CareerEnvironmentalOperationContextRule
         return ConsultationCategory.CAREER;
     }
 
+
     @Override
     public String code() {
 
         return RULE_CODE;
     }
+
 
     @Override
     public List<ConsultationCategoryDeterministicMatch>
@@ -252,7 +501,7 @@ public class CareerEnvironmentalOperationContextRule
 
         /*
          * =================================================
-         * Category 검증
+         * Category
          * =================================================
          */
 
@@ -268,7 +517,7 @@ public class CareerEnvironmentalOperationContextRule
 
         /*
          * =================================================
-         * unavailable View
+         * unavailable
          * =================================================
          */
 
@@ -281,21 +530,15 @@ public class CareerEnvironmentalOperationContextRule
 
         /*
          * =================================================
-         * MONTH 환경·사회적 작동 Context
+         * 공식 Source
          * =================================================
          */
 
-        List<LifeDomainRuleMatch>
-                environmentalMatches =
+        List<LifeDomainRuleMatch> environmentalMatches =
                 findNatalMatches(
                         view,
                         ENVIRONMENTAL_PALACE_RULE_CODE
                 );
-
-        /*
-         * MONTH 환경 Context가 없다면
-         * 이번 질문에 답할 수 없다.
-         */
 
         if (
                 environmentalMatches.isEmpty()
@@ -306,169 +549,125 @@ public class CareerEnvironmentalOperationContextRule
 
         /*
          * =================================================
-         * CAREER 구조 Anchor
+         * Match 하나 -> Category Match 하나
          * =================================================
          */
 
-        List<LifeDomainRuleMatch>
-                primaryStructureMatches =
-                findNatalMatches(
-                        view,
-                        PRIMARY_OFFICER_STRUCTURE_RULE_CODE
-                );
+        List<ConsultationCategoryDeterministicMatch> result =
+                new ArrayList<>();
 
-        List<LifeDomainRuleMatch>
-                officerStructureMatches =
-                findNatalMatches(
-                        view,
-                        OFFICER_STRUCTURE_RULE_CODE
-                );
-
-        List<LifeDomainRuleMatch>
-                crossValidatedMatches =
-                findNatalMatches(
-                        view,
-                        CROSS_VALIDATED_PATTERN_RULE_CODE
-                );
-
-        /*
-         * =================================================
-         * 최소 하나의 독립 CAREER Anchor 필요
-         * =================================================
-         */
-
-        boolean careerAnchorExists =
-                !primaryStructureMatches.isEmpty()
-                        || !officerStructureMatches.isEmpty()
-                        || !crossValidatedMatches.isEmpty();
-
-        if (
-                !careerAnchorExists
+        for (
+                LifeDomainRuleMatch environmentalMatch
+                : environmentalMatches
         ) {
 
-            return List.of();
+            LifeDomainRuleMatch normalized =
+                    Objects.requireNonNull(
+                            environmentalMatch,
+                            "CAREER Environmental Palace Match는 null일 수 없습니다."
+                    );
+
+            /*
+             * =================================================
+             * Reasons
+             * =================================================
+             *
+             * 최종 사용자 Story가 아니라
+             * deterministic provenance 기록이다.
+             */
+
+            List<String> reasons =
+                    new ArrayList<>();
+
+            reasons.add(
+                    "CAREER_ENVIRONMENTAL_PALACE_CONTEXT에서 이미 계산된 하나의 MONTH ENVIRONMENTAL_OPERATION Context Match를 독립적인 CAREER Category Context로 보존했습니다."
+            );
+
+            reasons.add(
+                    "CAREER_PRIMARY_OFFICER_STRUCTURE, CAREER_OFFICER_STRUCTURE, CAREER_CROSS_VALIDATED_PATTERN 같은 별도 CAREER 구조 Anchor의 존재를 이 Match의 생성 조건으로 요구하지 않았습니다."
+            );
+
+            reasons.add(
+                    "다른 CAREER 원국 Match를 이 Category Match의 sourceMatches에 포함하지 않았습니다."
+            );
+
+            reasons.add(
+                    "MONTH Palace Context 자체는 직업적 길흉 방향을 결정하는 Evidence가 아니므로 Category Status를 CONTEXTUAL로 유지합니다."
+            );
+
+            reasons.add(
+                    "Upstream PalaceAnalysis에서 실제 계산된 TenGod, 12운성, 천간·지지 관계, Transformation 후보·활성·원기능 감소 구분은 그대로 인정하며 이 Rule에서 다시 계산하지 않았습니다."
+            );
+
+            reasons.add(
+                    "MONTH Palace의 공식 위치 의미는 ENVIRONMENTAL_OPERATION까지이며 이를 특정 직장·회사·직종·취업·승진·이직·퇴사 사건으로 확대하지 않았습니다."
+            );
+
+            reasons.add(
+                    "Source의 summary 또는 reasons 문자열을 파싱하여 새로운 TenGod 관계, 직업 구조, 사건 또는 직종을 생성하지 않았습니다."
+            );
+
+            reasons.add(
+                    "다른 CAREER Source와의 새로운 강화·약화·상쇄·인과·순서 관계를 생성하지 않았습니다."
+            );
+
+            /*
+             * =================================================
+             * Result
+             * =================================================
+             */
+
+            result.add(
+                    new ConsultationCategoryDeterministicMatch(
+                            ConsultationCategory.CAREER,
+
+                            ConsultationCategoryDeterministicLayer
+                                    .NATAL,
+
+                            RULE_CODE,
+
+                            ConsultationCategoryDeterministicStatus
+                                    .CONTEXTUAL,
+
+                            null,
+
+                            null,
+
+                            List.of(),
+
+                            "원국 MONTH Palace에서 계산된 ENVIRONMENTAL_OPERATION Context를 독립적으로 보존하며 해당 위치 자체에는 직업적 길흉이나 실제 직업 사건을 부여하지 않습니다.",
+
+                            List.of(
+                                    normalized
+                            ),
+
+                            List.copyOf(
+                                    reasons
+                            )
+                    )
+            );
         }
 
-        /*
-         * =================================================
-         * Source Provenance
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch> sourceMatches =
-                new ArrayList<>();
-
-        sourceMatches.addAll(
-                environmentalMatches
-        );
-
-        sourceMatches.addAll(
-                primaryStructureMatches
-        );
-
-        sourceMatches.addAll(
-                officerStructureMatches
-        );
-
-        sourceMatches.addAll(
-                crossValidatedMatches
-        );
-
-        /*
-         * =================================================
-         * Reasons
-         * =================================================
-         */
-
-        List<String> reasons =
-                new ArrayList<>();
-
-        reasons.add(
-                "원국에서 MONTH 환경·사회적 작동 Palace Context가 확인되었고 별도의 CAREER 구조 Anchor도 존재하여, 직업·사회 기능이 외부 환경과 맞물리는 위치 Context로 채택했습니다."
-        );
-
-        appendAnchorReasons(
-                reasons,
-                primaryStructureMatches,
-                officerStructureMatches,
-                crossValidatedMatches
-        );
-
-        reasons.add(
-                "MONTH Palace의 공식 위치 의미는 ENVIRONMENTAL_OPERATION이며 특정 직장, 회사, 직종 또는 직업 성패로 치환하지 않았습니다."
-        );
-
-        reasons.add(
-                "MONTH Palace에 연결된 십성, 12운성, 천간·지지 관계, 합화 Context를 이 Rule에서 다시 SUPPORTIVE 또는 PRESSURE로 변환하지 않았습니다."
-        );
-
-        reasons.add(
-                "CAREER 구조 Anchor의 방향성 Status 역시 환경 위치 자체의 방향성으로 전이하지 않았습니다."
-        );
-
-        reasons.add(
-                "환경·사회적 작동 Context와 직업 구조가 함께 존재한다는 사실만 보존하며 취업, 승진, 이직, 퇴사, 조직 갈등 같은 실제 사건을 생성하지 않습니다."
-        );
-
-        reasons.add(
-                "LifeDomain Match 개수를 직업 적합도, 조직 적응력, 사회적 성공, 승진 가능성 또는 직업 안정성 점수로 사용하지 않았습니다."
-        );
-
-        reasons.add(
-                "이 결과의 역할은 직업·사회 기능과 원국의 환경·사회적 작동 위치 사이의 연결 Context를 보존하는 것이므로 final status는 CONTEXTUAL로 유지합니다."
-        );
-
-        /*
-         * =================================================
-         * Result
-         * =================================================
-         */
-
-        return List.of(
-                new ConsultationCategoryDeterministicMatch(
-                        ConsultationCategory.CAREER,
-
-                        ConsultationCategoryDeterministicLayer
-                                .NATAL,
-
-                        RULE_CODE,
-
-                        ConsultationCategoryDeterministicStatus
-                                .CONTEXTUAL,
-
-                        null,
-
-                        null,
-
-                        List.of(),
-
-                        "원국의 직업·사회 기능이 MONTH의 환경·사회적 작동 Context와 연결되어 있으나 그 위치 자체에는 직업적 길흉이나 사건 방향을 부여하지 않습니다.",
-
-                        List.copyOf(
-                                sourceMatches
-                        ),
-
-                        List.copyOf(
-                                reasons
-                        )
-                )
+        return List.copyOf(
+                result
         );
     }
+
 
     /*
      * =================================================
      * Natal Source 조회
      * =================================================
      *
-     * 공식 구조값:
+     * Source 판별에는:
      *
      * - domain
      * - ruleCode
      *
      * 만 사용한다.
      *
-     * summary / reasons는
-     * Source 판단에 사용하지 않는다.
+     * summary / reasons 문자열은
+     * Source 판별 조건으로 사용하지 않는다.
      */
 
     private List<LifeDomainRuleMatch>
@@ -482,18 +681,14 @@ public class CareerEnvironmentalOperationContextRule
 
         Objects.requireNonNull(
                 view,
-                "ConsultationCategoryEvidenceView가 필요합니다."
+                "CAREER Evidence View가 필요합니다."
         );
 
-        if (
-                sourceRuleCode == null
-                        || sourceRuleCode.isBlank()
-        ) {
-
-            throw new IllegalArgumentException(
-                    "CAREER Source ruleCode가 필요합니다."
-            );
-        }
+        String normalizedRuleCode =
+                requireText(
+                        sourceRuleCode,
+                        "CAREER Environmental Palace sourceRuleCode가 필요합니다."
+                );
 
         List<LifeDomainRuleMatch> result =
                 new ArrayList<>();
@@ -503,32 +698,23 @@ public class CareerEnvironmentalOperationContextRule
                 : view.natalMatches()
         ) {
 
-            Objects.requireNonNull(
-                    match,
-                    "CAREER Natal Match는 null일 수 없습니다."
-            );
-
-            /*
-             * 다른 LifeDomain Evidence는
-             * 이번 Rule의 Source가 될 수 없다.
-             */
+            LifeDomainRuleMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "CAREER Natal Match는 null일 수 없습니다."
+                    );
 
             if (
-                    match.domain()
+                    normalized.domain()
                             != LifeDomain.CAREER
             ) {
 
                 continue;
             }
 
-            /*
-             * 공식 ruleCode 기준으로만
-             * Source Family를 구분한다.
-             */
-
             if (
-                    !sourceRuleCode.equals(
-                            match.ruleCode()
+                    !normalizedRuleCode.equals(
+                            normalized.ruleCode()
                     )
             ) {
 
@@ -536,7 +722,7 @@ public class CareerEnvironmentalOperationContextRule
             }
 
             result.add(
-                    match
+                    normalized
             );
         }
 
@@ -545,63 +731,38 @@ public class CareerEnvironmentalOperationContextRule
         );
     }
 
+
     /*
      * =================================================
-     * Anchor Provenance
+     * Text
      * =================================================
-     *
-     * Anchor 존재 여부만 기록한다.
-     *
-     * Match 개수나 Status를
-     * 환경 Context의 방향성으로
-     * 변환하지 않는다.
      */
 
-    private void appendAnchorReasons(
+    private static String requireText(
 
-            List<String> reasons,
+            String value,
 
-            List<LifeDomainRuleMatch>
-                    primaryStructureMatches,
-
-            List<LifeDomainRuleMatch>
-                    officerStructureMatches,
-
-            List<LifeDomainRuleMatch>
-                    crossValidatedMatches
+            String message
 
     ) {
 
         Objects.requireNonNull(
-                reasons,
-                "reasons가 필요합니다."
+                value,
+                message
         );
 
+        String normalized =
+                value.trim();
+
         if (
-                !primaryStructureMatches.isEmpty()
+                normalized.isBlank()
         ) {
 
-            reasons.add(
-                    "정관·칠살의 주격 중심 구조 Evidence가 존재하여 MONTH 환경 Context를 직업·사회 영역과 연결할 중심 구조 Anchor가 확인됩니다."
+            throw new IllegalArgumentException(
+                    message
             );
         }
 
-        if (
-                !officerStructureMatches.isEmpty()
-        ) {
-
-            reasons.add(
-                    "관살의 복합 작동 구조 Evidence가 존재하여 MONTH 환경 Context를 직업·사회 영역과 연결할 역할·책임 Anchor가 확인됩니다."
-            );
-        }
-
-        if (
-                !crossValidatedMatches.isEmpty()
-        ) {
-
-            reasons.add(
-                    "교차검증된 CAREER Pattern Evidence가 존재하여 MONTH 환경 Context를 직업·사회 기능 연결과 함께 볼 Pattern Anchor가 확인됩니다."
-            );
-        }
+        return normalized;
     }
 }

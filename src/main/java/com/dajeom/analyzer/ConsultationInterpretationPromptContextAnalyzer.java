@@ -25,7 +25,77 @@ import java.util.Objects;
  * 일반 Category
  * =================================================
  *
- * 기존 LifeDomain Grounding 구조 유지.
+ * 기존 LifeDomain Grounding 구조
+ *
+ * +
+ *
+ * Category Deterministic Meaning Contract
+ *
+ * 를 함께 전달한다.
+ *
+ * =================================================
+ * NATAL
+ * =================================================
+ *
+ * 일반 Category의:
+ *
+ * natalDeterministicConclusions
+ *
+ * 가 존재하면
+ * 해당 Category의 공식 NATAL Meaning Boundary다.
+ *
+ * natalEvidences는:
+ *
+ * - 계산 근거
+ * - provenance
+ * - 세부 설명 자료
+ *
+ * 로 사용한다.
+ *
+ * raw natalEvidences를 다시 합산하여
+ * 새로운 Category 결론을 만들지 않는다.
+ *
+ * =================================================
+ * CURRENT_TIMELINE
+ * =================================================
+ *
+ * ConsultationGroundingTimelineScenario 내부의:
+ *
+ * deterministicConclusions
+ *
+ * 가 존재하면
+ * 해당 Scenario에서 Java가 확정한
+ * 공식 CURRENT_TIMELINE Meaning Boundary다.
+ *
+ * Scenario의 raw evidences는
+ * 그 결과를 설명하는 세부 근거다.
+ *
+ * =================================================
+ * CURRENT_TIMELINE 독립성
+ * =================================================
+ *
+ * 같은 Scenario 안에:
+ *
+ * - 대운 Context
+ * - 세운 Context
+ * - 세운 Functional
+ * - 월운 Context
+ * - 월운 Functional
+ *
+ * 결과가 여러 개 존재하더라도
+ * 단순 공존만으로:
+ *
+ * - 하나의 종합 Status
+ * - 새로운 인과
+ * - 새로운 순서
+ * - 새로운 강화/약화 관계
+ *
+ * 를 만들지 않는다.
+ *
+ * 관계·인과·결합 의미는
+ * Java Deterministic Conclusion 자체가
+ * 명시적으로 계산한 경우에만
+ * 그 범위에서 설명한다.
  *
  * =================================================
  * PERSONALITY
@@ -33,6 +103,10 @@ import java.util.Objects;
  *
  * NatalPersonalityStatementContract가
  * 공식 직접 원국 Meaning Contract.
+ *
+ * 일반 Category의
+ * natalDeterministicConclusions 구조와
+ * PERSONALITY Contract를 합치지 않는다.
  *
  * =================================================
  * PAST_LUCK / FUTURE_LUCK
@@ -45,8 +119,8 @@ import java.util.Objects;
  * 를 공식 연도 해석 Meaning Contract로 사용한다.
  *
  * =================================================
- *
- * deterministicContract:
+ * Timeline Year deterministicContract
+ * =================================================
  *
  * OVERALL_NARRATIVE
  * BIG_FLOW
@@ -56,8 +130,9 @@ import java.util.Objects;
  * TURNING_POINT
  *
  * =================================================
+ * raw Timeline Year Evidence
+ * =================================================
  *
- * raw Timeline Year evidences는
  * 위 결과를 설명하기 위한
  * 세부 Grounding Source다.
  *
@@ -67,18 +142,38 @@ import java.util.Objects;
  *
  * 외부 LLM은 raw Evidence를 다시 합산하여:
  *
+ * - 새로운 NATAL Category Status
+ * - 새로운 CURRENT_TIMELINE 종합 Status
  * - 새로운 BIG_FLOW
  * - 새로운 Primary Domain
  * - 새로운 Cross-Domain Pattern
  * - 새로운 Turning Point
  *
  * 를 만들 수 없다.
+ *
+ * =================================================
+ * 관계형 풀이 금지
+ * =================================================
+ *
+ * 서로 다른 독립 Conclusion이
+ * 같은 Prompt Section에 있다는 이유만으로:
+ *
+ * - A 때문에 B
+ * - A가 B로 이어진다
+ * - A와 B가 함께 있으므로 C다
+ * - 먼저 A, 이후 B
+ * - A가 커질수록 B
+ *
+ * 같은 관계·인과·순서를 만들지 않는다.
+ *
+ * 그런 의미는 별도의 Java 계산 결과가
+ * 실제로 존재할 때만 허용한다.
  */
 @Component
 public class ConsultationInterpretationPromptContextAnalyzer {
 
     public static final String GROUNDING_VERSION =
-            "DAJEOM_AI_GROUNDING_24_TIMELINE_YEAR_DETERMINISTIC_CONTRACT";
+            "DAJEOM_AI_GROUNDING_26_OFFICIAL_MEANING_ONLY";
 
 
     private static final List<String>
@@ -101,15 +196,35 @@ public class ConsultationInterpretationPromptContextAnalyzer {
 
                     "같은 방향의 Evidence가 반복되어도 반대 방향 Evidence가 존재하면 반대 방향을 삭제하거나 약화시키지 않는다.",
 
-                    "서로 다른 방향의 Evidence가 동시에 존재하면 하나를 제거하거나 평균내지 말고 각각의 의미와 조건을 함께 설명한다.",
+                    "서로 다른 방향의 Evidence가 동시에 존재하면 하나를 제거하거나 평균내지 말고 각각의 의미와 조건을 보존한다.",
 
                     "낮은 narrativePriority는 Evidence가 틀리거나 불필요하다는 뜻이 아니며 높은 우선순위 Evidence를 설명한 뒤 필요한 경우 보충적으로 사용한다.",
 
+                    "일반 ConsultationCategory의 natalDeterministicConclusions가 존재하면 그것이 해당 Category의 공식 NATAL 의미 계약이며 natalEvidences는 그 결론을 설명하는 세부 근거로 사용한다.",
+
+                    "natalDeterministicConclusions가 존재하는 Category에서 raw natalEvidences를 다시 합산하거나 개수를 비교하여 새로운 NATAL Status, 새로운 결론 또는 새로운 관계를 만들지 않는다.",
+
+                    "서로 다른 natalDeterministicConclusions는 각각 Java에서 계산된 독립 결과로 유지하며 단순히 함께 존재한다는 이유로 서로의 원인, 결과, 전후 단계 또는 강화 조건으로 연결하지 않는다.",
+
+                    "하나의 natalDeterministicConclusion 자체가 Java에서 명시적으로 계산한 관계 또는 조건을 포함하는 경우에는 그 Conclusion이 허용한 의미 범위만 자연어로 설명하고 추가 관계를 확장하지 않는다.",
+
+                    "현재 Timeline Scenario의 deterministicConclusions가 존재하면 그것이 해당 Scenario의 공식 CURRENT_TIMELINE 의미 계약이며 Scenario의 raw evidences는 그 결과를 설명하는 세부 근거로만 사용한다.",
+
+                    "같은 Timeline Scenario 안에 대운, 세운, 세운 Functional, 월운, 월운 Functional 결과가 함께 존재해도 별도 Java 계산 없이 서로를 강화·약화시키거나 원인과 결과로 연결하지 않는다.",
+
+                    "같은 Timeline Scenario 안의 서로 다른 deterministicConclusions를 하나의 SUPPORTIVE, PRESSURE 또는 MIXED 종합 상태로 다시 계산하지 않는다.",
+
+                    "CURRENT_YEAR_LUCK에 여러 LifeDomain의 deterministicConclusions가 존재하더라도 이를 하나의 전체 현재연도 Status로 합성하지 않고 각 Domain 및 시간층의 독립 계산 결과로 유지한다.",
+
+                    "서로 다른 LifeDomain의 deterministicConclusions가 같은 Scenario에 존재한다는 이유만으로 A 때문에 B, A가 B로 이어진다, A와 B가 결합되어 C다 같은 새로운 Cross-Domain 의미를 만들지 않는다.",
+
                     "현재 Timeline Scenario가 여러 개이면 하나를 실제 Scenario로 임의 선택하지 않고 가능한 흐름이 복수임을 보존한다.",
+
+                    "서로 다른 Timeline Scenario의 deterministicConclusions 또는 evidences를 하나의 Scenario처럼 합치거나 다수결하지 않는다.",
 
                     "Timeline Year Range는 실제 여러 시점의 deterministic 계산을 연도별로 정리한 결과이며 특정 사건 기록이나 사건 예측이 아니다.",
 
-                    "PAST_LUCK 또는 FUTURE_LUCK의 Timeline Year에 deterministicContract가 존재하면 그것이 해당 명리연도 해석의 공식 상위 계약이며 raw evidences는 그 계약을 설명하는 세부 근거로만 사용한다.",
+                    "PAST_LUCK 또는 FUTURE_LUCK의 각 Timeline Year의 deterministicContract는 해당 명리연도 해석의 공식 상위 계약이며 raw evidences는 그 계약을 설명하는 세부 근거로만 사용한다.",
 
                     "Timeline Year deterministicContract의 OVERALL_NARRATIVE와 BIG_FLOW가 정한 연도 전체 방향을 raw LifeDomain Evidence를 다시 합산하거나 개수를 비교하여 변경하지 않는다.",
 
@@ -129,7 +244,7 @@ public class ConsultationInterpretationPromptContextAnalyzer {
 
                     "PAST_LUCK의 Timeline Year는 과거에 실제 특정 사건이 발생했다는 뜻이 아니며 당시의 deterministic 생활 흐름 수준에서 설명한다.",
 
-                    "FUTURE_LUCK의 Timeline Year는 미래 사건 확정이 아니며 해당 시기에 나타날 수 있는 선택, 부담, 활동 방향 수준에서 설명한다.",
+                    "FUTURE_LUCK의 Timeline Year는 미래 사건 확정이 아니며 해당 연도의 deterministicContract와 공식 판단메모가 실제로 명시한 의미 범위에서만 설명한다.",
 
                     "출생시간이 알려지지 않은 경우 시주나 시주 기반 의미를 추측해서 보완하지 않는다.",
 
@@ -139,11 +254,13 @@ public class ConsultationInterpretationPromptContextAnalyzer {
 
                     "재물 획득, 취업, 합격, 승진, 결혼, 이별, 소송, 질병 발생 등 구체적인 미래 사건을 확정적으로 예언하지 않는다.",
 
-                    "건강 관련 명리 구조는 생활 리듬과 관리 경향 수준에서 설명하며 특정 장기, 질병, 진단 또는 치료 판단으로 변환하지 않는다.",
+                    "건강 관련 판단은 특정 장기, 질병, 진단 또는 치료 판단으로 변환하지 않는다. 생활 리듬, 관리, 활동, 휴식, 회복 같은 구체적인 생활 의미도 공식 deterministic 판단메모 또는 허용된 Evidence에 실제로 존재할 때만 사용한다.",
 
-                    "법률 관련 내용은 실제 법적 결과나 승패를 예측하지 않고 계약, 확인, 기록, 조율 같은 일반적인 주의 방향으로만 설명한다.",
+                    "법률 관련 내용은 실제 법적 결과나 승패를 예측하지 않는다. 계약, 확인, 기록, 조율, 책임 범위 같은 구체적인 생활 의미도 공식 deterministic 판단메모 또는 전용 Java 분석 결과에 실제로 존재할 때만 사용한다.",
 
-                    "내부 명리 용어를 그대로 나열하기보다 사용자가 이해할 수 있는 생각 방식, 행동 패턴, 관계 방식, 돈의 운용, 일의 부담과 역할, 학습과 표현, 생활 리듬 같은 일상 언어로 번역한다.",
+                    "내부 명리 용어를 그대로 나열하지 말고 각 공식 판단메모가 실제로 허용한 의미만 사용자가 이해할 수 있는 일상 한국어로 번역한다. ConsultationCategory, LifeDomain, Status 이름 자체는 의미 Evidence가 아니므로 카테고리명·도메인명·상태명만 보고 행동, 심리, 관계 방식, 돈의 운용, 역할, 학습 방식, 생활 습관 같은 구체 의미를 추가하지 않는다.",
+
+                    "Evidence 또는 deterministicConclusion에 없는 관계, 인과, 심리적 시간순서, 사건 연결을 자연스러운 문장을 만들기 위해 임의로 추가하지 않는다.",
 
                     "Evidence에 없는 내용을 전문적인 명리 지식으로 보충하지 않는다.",
 
@@ -258,19 +375,40 @@ public class ConsultationInterpretationPromptContextAnalyzer {
 
         /*
          * =================================================
+         * Deterministic Grounding 전달
+         * =================================================
+         *
+         * NATAL:
+         *
+         * natalDeterministicConclusions를
+         * PromptSection의 독립 필드로 그대로 전달한다.
+         *
+         * -------------------------------------------------
+         *
+         * CURRENT_TIMELINE:
+         *
+         * ConsultationGroundingTimelineScenario 안에
+         * deterministicConclusions가 이미 있으므로
+         * timelineScenarios 자체를 그대로 전달한다.
+         *
+         * -------------------------------------------------
+         *
+         * PAST / FUTURE:
+         *
+         * ConsultationGroundingTimelineYear 안에
+         * deterministicContract가 이미 있으므로
+         * timelineYears 자체를 그대로 전달한다.
+         *
+         * =================================================
          * 중요
          * =================================================
          *
-         * ConsultationGroundingTimelineYear 안에
-         * deterministicContract가 포함되어 있으므로
+         * 여기서는:
          *
-         * GroundingSection
-         * ->
-         * PromptSection
-         *
-         * 에서는 timelineYears를 그대로 넘긴다.
-         *
-         * 별도 복사/재구성하지 않는다.
+         * - 복사 과정에서 재계산하지 않는다.
+         * - Evidence를 Conclusion으로 승격하지 않는다.
+         * - Conclusion을 병합하지 않는다.
+         * - Status를 합성하지 않는다.
          */
 
         return new ConsultationInterpretationPromptSection(
@@ -295,6 +433,9 @@ public class ConsultationInterpretationPromptContextAnalyzer {
 
                 groundingSection
                         .natalEvidences(),
+
+                groundingSection
+                        .natalDeterministicConclusions(),
 
                 groundingSection
                         .timelineScenarios(),
@@ -350,6 +491,17 @@ public class ConsultationInterpretationPromptContextAnalyzer {
 
         /*
          * =================================================
+         * 일반 Category Deterministic Contract
+         * =================================================
+         */
+
+        appendCategoryDeterministicConstraints(
+                groundingSection,
+                result
+        );
+
+        /*
+         * =================================================
          * PAST / FUTURE Timeline Year Contract
          * =================================================
          */
@@ -400,7 +552,7 @@ public class ConsultationInterpretationPromptContextAnalyzer {
         result.add(
                 "PERSONALITY에서는 personalityStatementContract를 "
                         + "기본성향 의미의 최우선 deterministic source로 사용한다. "
-                        + "기존 natalEvidences는 보조 교차검증 자료이며 "
+                        + "natalEvidences는 세부 계산 근거와 provenance 설명 자료이며 "
                         + "Contract가 허용하지 않은 성향을 새로 만들어내거나 "
                         + "Contract의 표현 강도를 끌어올리는 데 사용하지 않는다."
         );
@@ -451,6 +603,119 @@ public class ConsultationInterpretationPromptContextAnalyzer {
 
     /*
      * =================================================
+     * 일반 Category Deterministic Constraint
+     * =================================================
+     */
+
+    private void appendCategoryDeterministicConstraints(
+
+            ConsultationGroundingSection groundingSection,
+
+            List<String> result
+
+    ) {
+
+        Objects.requireNonNull(
+                groundingSection,
+                "Category Deterministic Constraint 생성에는 Grounding Section이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                result,
+                "Category Deterministic Constraint 대상 List가 필요합니다."
+        );
+
+        /*
+         * =================================================
+         * PERSONALITY
+         * =================================================
+         *
+         * PERSONALITY의 공식 의미 Contract는
+         * NatalPersonalityStatementContract다.
+         *
+         * Grounding Policy에서 일반 Category
+         * deterministic conclusion의 존재를
+         * 이미 금지한다.
+         */
+
+        if (
+                groundingSection.category()
+                        == ConsultationCategory.PERSONALITY
+        ) {
+
+            return;
+        }
+
+        /*
+         * =================================================
+         * NATAL
+         * =================================================
+         */
+
+        if (
+                groundingSection
+                        .hasNatalDeterministicConclusions()
+        ) {
+
+            result.add(
+                    "이 상담 분야의 natalDeterministicConclusions는 Java가 확정한 공식 NATAL 의미 계약이다. natalEvidences는 그 결론의 세부 근거로만 사용하고 raw Evidence를 다시 합산하여 새로운 NATAL 결론을 만들지 않는다."
+            );
+
+            result.add(
+                    "여러 natalDeterministicConclusions가 존재하면 각각을 독립 계산 결과로 유지한다. 한 Conclusion이 다른 Conclusion의 원인, 결과, 전후 단계 또는 강화 조건이라고 별도 Java 계산 없이 연결하지 않는다."
+            );
+
+            result.add(
+                    "natalDeterministicConclusions 사이에 SUPPORTIVE와 PRESSURE가 함께 존재하더라도 이를 자동으로 MIXED로 합성하지 않는다. MIXED는 Java가 해당 Deterministic Conclusion에서 직접 계산한 경우에만 사용한다."
+            );
+
+            result.add(
+                    "natalDeterministicConclusion에 명시되지 않은 관계·인과·순서를 natalEvidences의 공존만으로 만들어내지 않는다."
+            );
+        }
+
+        /*
+         * =================================================
+         * CURRENT_TIMELINE
+         * =================================================
+         */
+
+        if (
+                groundingSection
+                        .hasTimelineDeterministicConclusions()
+        ) {
+
+            result.add(
+                    "Timeline Scenario의 deterministicConclusions는 해당 Scenario에서 Java가 확정한 공식 CURRENT_TIMELINE 의미 계약이다. Scenario의 raw evidences는 그 결과를 설명하는 세부 근거로만 사용한다."
+            );
+
+            result.add(
+                    "같은 Scenario의 대운, 세운, 세운 Functional, 월운, 월운 Functional 결과는 각각 독립 계산 결과이며 별도 Java 교차 계산이 없으면 서로 강화·약화·원인·결과·전후 단계로 연결하지 않는다."
+            );
+
+            result.add(
+                    "같은 Scenario에 서로 다른 Status의 deterministicConclusions가 존재해도 하나의 SUPPORTIVE, PRESSURE 또는 MIXED 전체 상태로 다시 계산하지 않는다."
+            );
+
+            result.add(
+                    "서로 다른 Timeline Scenario의 deterministicConclusions를 합치거나 다수결하지 않으며 하나의 Scenario를 실제 정답 Scenario로 임의 선택하지 않는다."
+            );
+
+            if (
+                    groundingSection.category()
+                            == ConsultationCategory.CURRENT_YEAR_LUCK
+            ) {
+
+                result.add(
+                        "CURRENT_YEAR_LUCK의 deterministicConclusions는 여러 생활영역과 시간층의 독립 결과 집합이다. 여러 Domain의 결과를 하나의 현재연도 전체 Status나 하나의 종합 서사로 새로 합성하지 않는다."
+                );
+            }
+        }
+    }
+
+
+    /*
+     * =================================================
      * PAST / FUTURE Contract Constraint
      * =================================================
      */
@@ -478,32 +743,14 @@ public class ConsultationInterpretationPromptContextAnalyzer {
             return;
         }
 
-        boolean contractExists =
-                groundingSection
-                        .timelineYears()
-                        .stream()
-                        .anyMatch(
-                                timelineYear ->
-                                        timelineYear
-                                                .hasDeterministicContract()
-                        );
-
         /*
-         * 기존 직접 생성 호환 경로에서는
-         * Contract가 없을 수 있다.
+         * ConsultationGroundingTimelineYear는
+         * 생성 시점부터 deterministicContract를
+         * 반드시 가지는 공식 PAST/FUTURE 연도 모델이다.
          *
-         * 실제 Spring 공식 실행에서
-         * Rule Engine이 연결되어 있다면
-         * GroundingAnalyzer가 Contract 누락을
-         * 먼저 검증한다.
+         * 따라서 Contract 존재 여부를 다시 추정하거나
+         * 없는 경우 조용히 건너뛰는 분기를 두지 않는다.
          */
-
-        if (
-                !contractExists
-        ) {
-
-            return;
-        }
 
         result.add(
                 "이 상담 분야의 Timeline Year에서는 deterministicContract를 각 명리연도의 공식 최상위 의미 계약으로 사용한다."

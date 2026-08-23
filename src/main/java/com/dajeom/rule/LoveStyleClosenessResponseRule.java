@@ -15,172 +15,182 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 관계 카테고리 정밀화.
- *
- * LOVE_STYLE의
- * 친밀도 상승 시 반응 구조 Rule.
+ * LOVE_STYLE 원국 관계망 Anchor deterministic Rule.
  *
  * =================================================
+ * 공식 Source Family
+ * =================================================
  *
+ * RELATIONSHIP_NATAL_RELATION_OVERLAP
+ *
+ * 하나만 사용한다.
+ *
+ * =================================================
  * 목적
  * =================================================
  *
- * 연애 성향을 단순히
- * 기존 RELATIONSHIP 결과의 복사본으로
- * 만들지 않는다.
- *
- * 이 Rule은:
- *
- * - 관계가 가까워졌을 때
- * - 친밀감이 높아졌을 때
- * - 가까운 관계 안에서 마찰이 생겼을 때
- * - 현실적인 기대나 역할 요구가 함께 커졌을 때
- *
- * 나타나는 반응 구조를
- * LOVE_STYLE 관점에서
- * deterministic하게 판단한다.
+ * LOVE_STYLE에서 참조할 수 있는
+ * 원국 관계망 구조의 공식 상태를
+ * Category 수준의 독립 Conclusion으로 보존한다.
  *
  * =================================================
- *
- * 중요한 제한
+ * 핵심 원칙
  * =================================================
  *
- * 현재 공식 Evidence만으로는:
+ * 이 Rule은 하나의 Source Family만 소비한다.
  *
- * - 먼저 고백하는가
- * - 감정을 직접 표현하는가
- * - 연락을 자주 하는가
- * - 상대 반응을 어떻게 확인하는가
+ * 다음 Source는 이 Rule에 결합하지 않는다.
  *
- * 같은 구체적 행동을
- * deterministic하게 확정할 수 없다.
+ * - RELATIONSHIP_TEN_GOD_CONTEXT
+ * - RELATIONSHIP_SPOUSE_PALACE
+ * - RELATIONSHIP_PEACH_BLOSSOM_AUXILIARY
  *
- * 따라서 그런 내용을
- * 이 Rule에서 새로 만들어내지 않는다.
+ * 이 Source들이 upstream LifeDomain 계산에서
+ * 삭제되는 것은 아니다.
+ *
+ * 단지 이 LOVE_STYLE Conclusion의
+ * 계산 Source가 아닐 뿐이다.
  *
  * =================================================
- *
- * 핵심 Source
+ * 공식 Status Anchor
  * =================================================
  *
  * RELATIONSHIP_NATAL_RELATION_OVERLAP
  *
- * 가까운 관계망에:
- *
- * - 결합과 압박의 혼재
- * - 직접적인 압박
- * - 관계 중첩 Context
- *
- * 가 존재하는지를 사용한다.
- *
- * =================================================
- *
- * 추가 핵심 Source
- * =================================================
- *
- * RELATIONSHIP_TEN_GOD_CONTEXT
- *
- * 가까운 관계에서:
- *
- * - 현실적 요구
- * - 역할
- * - 책임
- * - 통제
- * - 수용 부담
- *
- * 등이 친밀한 관계 안에서
- * 부담 Context로 작동하는지를
- * 함께 사용한다.
- *
- * =================================================
- *
- * Context Source
- * =================================================
- *
- * RELATIONSHIP_SPOUSE_PALACE
- *
- * 이름을 배우자 전용 의미로 사용하지 않는다.
- *
- * 기존 18차 정책대로
- * 가까운 관계와 밀접 상호작용에서
- * 중요하게 참조되는 위치 Context로만 사용한다.
- *
- * 이 Source의 CONTEXTUAL Match는
- * 단독으로 LOVE_STYLE 방향을 결정하지 않는다.
- *
- * =================================================
- *
- * Auxiliary Source
- * =================================================
- *
- * RELATIONSHIP_PEACH_BLOSSOM_AUXILIARY
- *
- * 사람과의 접점·주목·상호작용 Context를
- * 보조하는 근거로만 사용한다.
- *
- * 이 Source는
- * LOVE_STYLE Status를 변경하지 않는다.
- *
- * =================================================
- *
- * 금지
- * =================================================
- *
- * - summary 문자열 검색
- * - reasons 문자열 검색
- * - 도화 = 연애 성공
- * - DAY 궁위 = 배우자
- * - PRESSURE = 이별
- * - MIXED = 불안정한 연애
- * - Match 개수를 강도 점수로 사용
- * - 특정 연애 사건 생성
- *
- * =================================================
- *
- * Status 계산
- * =================================================
- *
- * 방향 계산에는:
- *
- * RELATIONSHIP_NATAL_RELATION_OVERLAP
- * +
- * RELATIONSHIP_TEN_GOD_CONTEXT
- *
- * 두 Source Family만 사용한다.
+ * Source Family 내부의
+ * 공식 LifeDomainSignalStatus만 사용한다.
  *
  * MIXED 존재
  * -> MIXED
  *
- * SUPPORTIVE + PRESSURE
+ * SUPPORTIVE + PRESSURE가
+ * 같은 Source Family 안에 실제 존재
  * -> MIXED
  *
- * PRESSURE 존재
+ * PRESSURE만 존재
  * -> PRESSURE
  *
- * SUPPORTIVE 존재
+ * SUPPORTIVE만 존재
  * -> SUPPORTIVE
  *
- * 방향성 Source가 CONTEXTUAL뿐이면
+ * 그 외
  * -> CONTEXTUAL
  *
  * =================================================
- *
- * 이 Rule이 묻는 질문
+ * 중요한 경계
  * =================================================
  *
- * "사람을 전반적으로 어떻게 대하는가?"
+ * 동일 Source Family 내부의
+ * 공식 상태를 Category 수준으로 정규화하는 것과
  *
- * 가 아니다.
+ * 서로 다른 Source Family를
+ * 하나의 연애 성향으로 합성하는 것은
+ * 완전히 다른 작업이다.
  *
- * "관계가 가까워지고 친밀도가 높아졌을 때,
- * 관계 안의 마찰·기대·역할 요구에
- * 어떤 구조적 반응이 나타나는가?"
+ * 이 Rule은 후자를 하지 않는다.
  *
- * 를 계산한다.
+ * =================================================
+ * 관계형 풀이 금지
+ * =================================================
+ *
+ * 이 Rule은 다음을 만들지 않는다.
+ *
+ * - 관계가 가까워졌을 때
+ * - 친밀도가 높아졌을 때
+ * - 가까워질수록
+ * - 마음이 커질수록
+ * - 기대가 커질수록
+ * - 역할 요구가 커질수록
+ * - 관계가 깊어진 뒤
+ * - 마찰이 생긴 뒤
+ * - 거리 조절 과정
+ * - 처음에는 A, 이후에는 B
+ * - A 때문에 B
+ * - A가 B로 이어진다
+ *
+ * 현재 Source에는
+ * 이런 관계 단계나 시간순서를
+ * 직접 계산한 데이터가 없다.
+ *
+ * =================================================
+ * 행동 추론 금지
+ * =================================================
+ *
+ * 이 Conclusion만으로 다음을 확정하지 않는다.
+ *
+ * - 먼저 고백하는가
+ * - 감정을 직접 표현하는가
+ * - 연락을 자주 하는가
+ * - 밀고 당기는가
+ * - 상대를 확인하는가
+ * - 집착하는가
+ * - 회피하는가
+ *
+ * 이런 항목은 해당 행동을 직접 계산하는
+ * 별도 deterministic Rule이 있어야 한다.
+ *
+ * =================================================
+ * 사건 생성 금지
+ * =================================================
+ *
+ * SUPPORTIVE
+ * != 연애가 잘 된다
+ *
+ * PRESSURE
+ * != 연애가 어렵다
+ *
+ * MIXED
+ * != 연애가 불안정하다
+ *
+ * CONTEXTUAL
+ * != 연애운이 없다
+ *
+ * 어떤 Status도 다음 사건으로 변환하지 않는다.
+ *
+ * - 연애 시작
+ * - 고백
+ * - 재회
+ * - 결혼
+ * - 이별
+ * - 외도
+ *
+ * =================================================
+ * 하지 않는 것
+ * =================================================
+ *
+ * - 십성 재계산
+ * - 합충형파해 재계산
+ * - 배우자성 선택
+ * - 성별 기반 배우자성 추론
+ * - 궁위 재계산
+ * - 용신 재계산
+ * - 다른 Source Family 결합
+ * - Match 개수 점수화
+ * - summary 문자열 파싱
+ * - reasons 문자열 파싱
+ * - 관계 단계 생성
+ * - 관계 인과 생성
+ * - 관계 순서 생성
  */
 @Component
 public class LoveStyleClosenessResponseRule
         implements ConsultationCategoryDeterministicRule {
+
+    /*
+     * =================================================
+     * Compatibility
+     * =================================================
+     *
+     * 기존 Rule Code는 유지한다.
+     *
+     * 이름에 CLOSENESS_RESPONSE가 남아 있지만
+     * 현재 Rule은 친밀도 변화나
+     * 전후 반응을 계산하지 않는다.
+     *
+     * identifier 변경은
+     * 전체 Grounding / Contract 참조를
+     * 별도로 확인한 뒤 진행한다.
+     */
 
     private static final String RULE_CODE =
             "LOVE_STYLE_CLOSENESS_RESPONSE";
@@ -189,24 +199,11 @@ public class LoveStyleClosenessResponseRule
             NATAL_RELATION_OVERLAP_RULE_CODE =
             "RELATIONSHIP_NATAL_RELATION_OVERLAP";
 
-    private static final String
-            TEN_GOD_CONTEXT_RULE_CODE =
-            "RELATIONSHIP_TEN_GOD_CONTEXT";
-
-    private static final String
-            SPOUSE_PALACE_RULE_CODE =
-            "RELATIONSHIP_SPOUSE_PALACE";
-
-    private static final String
-            PEACH_BLOSSOM_AUXILIARY_RULE_CODE =
-            "RELATIONSHIP_PEACH_BLOSSOM_AUXILIARY";
-
 
     @Override
     public ConsultationCategory category() {
 
-        return ConsultationCategory
-                .LOVE_STYLE;
+        return ConsultationCategory.LOVE_STYLE;
     }
 
 
@@ -228,6 +225,12 @@ public class LoveStyleClosenessResponseRule
                 "LoveStyleClosenessResponseRule에는 ConsultationCategoryEvidenceView가 필요합니다."
         );
 
+        /*
+         * =================================================
+         * Category
+         * =================================================
+         */
+
         if (
                 view.category()
                         != ConsultationCategory.LOVE_STYLE
@@ -238,6 +241,12 @@ public class LoveStyleClosenessResponseRule
             );
         }
 
+        /*
+         * =================================================
+         * unavailable
+         * =================================================
+         */
+
         if (
                 view.unavailable()
         ) {
@@ -247,48 +256,18 @@ public class LoveStyleClosenessResponseRule
 
         /*
          * =================================================
-         * 핵심 Source 1
-         * 가까운 관계망
+         * 단일 공식 Source Family
          * =================================================
          */
 
-        List<LifeDomainRuleMatch>
-                relationOverlapMatches =
+        List<LifeDomainRuleMatch> relationOverlapMatches =
                 findNatalMatches(
                         view,
                         NATAL_RELATION_OVERLAP_RULE_CODE
                 );
 
-        /*
-         * =================================================
-         * 핵심 Source 2
-         * 가까운 관계의 현실 요구 / 역할 / 부담
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch>
-                tenGodMatches =
-                findNatalMatches(
-                        view,
-                        TEN_GOD_CONTEXT_RULE_CODE
-                );
-
-        /*
-         * =================================================
-         * 최소 핵심 근거
-         * =================================================
-         *
-         * 둘 중 하나도 없다면
-         * 이 Rule이 묻는 친밀도 상승 반응을
-         * 계산할 공식 Source가 없다.
-         *
-         * PALACE나 AUXILIARY만으로
-         * LOVE_STYLE Match를 만들지 않는다.
-         */
-
         if (
                 relationOverlapMatches.isEmpty()
-                        && tenGodMatches.isEmpty()
         ) {
 
             return List.of();
@@ -296,159 +275,77 @@ public class LoveStyleClosenessResponseRule
 
         /*
          * =================================================
-         * 가까운 관계 위치 Context
+         * Status
          * =================================================
+         *
+         * 오직
+         * RELATIONSHIP_NATAL_RELATION_OVERLAP
+         * Source Family 내부 상태만 사용한다.
          */
-
-        List<LifeDomainRuleMatch>
-                palaceMatches =
-                findNatalMatches(
-                        view,
-                        SPOUSE_PALACE_RULE_CODE
-                );
-
-        /*
-         * =================================================
-         * Auxiliary Context
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch>
-                peachBlossomMatches =
-                findNatalMatches(
-                        view,
-                        PEACH_BLOSSOM_AUXILIARY_RULE_CODE
-                );
-
-        /*
-         * =================================================
-         * 방향 계산 Source
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch>
-                directionalMatches =
-                new ArrayList<>();
-
-        directionalMatches.addAll(
-                relationOverlapMatches
-        );
-
-        directionalMatches.addAll(
-                tenGodMatches
-        );
 
         ConsultationCategoryDeterministicStatus status =
-                resolveStatus(
-                        directionalMatches
+                resolveAnchorStatus(
+                        relationOverlapMatches
                 );
-
-        /*
-         * =================================================
-         * 실제 Provenance
-         * =================================================
-         */
-
-        List<LifeDomainRuleMatch> sourceMatches =
-                new ArrayList<>();
-
-        sourceMatches.addAll(
-                relationOverlapMatches
-        );
-
-        sourceMatches.addAll(
-                tenGodMatches
-        );
-
-        sourceMatches.addAll(
-                palaceMatches
-        );
-
-        sourceMatches.addAll(
-                peachBlossomMatches
-        );
 
         /*
          * =================================================
          * Reasons
          * =================================================
+         *
+         * 사용자 Story가 아니라
+         * deterministic provenance 기록이다.
          */
 
         List<String> reasons =
                 new ArrayList<>();
 
         reasons.add(
-                "원국의 가까운 관계망과 관계 안의 현실적 요구·역할·책임에 대한 deterministic 결과를 LOVE_STYLE의 친밀도 상승 반응 관점으로 조합했습니다."
-        );
-
-        if (
-                !relationOverlapMatches.isEmpty()
-        ) {
-
-            reasons.add(
-                    "가까운 관계망에서 결합·마찰·중첩 또는 압박 방향을 설명하는 공식 원국 Evidence가 실제로 존재합니다."
-            );
-        }
-
-        if (
-                !tenGodMatches.isEmpty()
-        ) {
-
-            reasons.add(
-                    "가까운 관계에서 현실적인 요구·역할·책임과 그 수용 부담을 설명하는 공식 deterministic Evidence가 실제로 존재합니다."
-            );
-        }
-
-        if (
-                !palaceMatches.isEmpty()
-        ) {
-
-            reasons.add(
-                    "가까운 관계와 밀접 상호작용에서 중요하게 참조되는 위치 Context가 함께 존재합니다."
-            );
-
-            reasons.add(
-                    "해당 위치 Context는 친밀한 관계가 작동하는 배경 근거로 사용하며 배우자 자체 또는 특정 연애 사건으로 해석하지 않습니다."
-            );
-        }
-
-        if (
-                !peachBlossomMatches.isEmpty()
-        ) {
-
-            reasons.add(
-                    "사람과의 접점·주목·상호작용이 두드러지는 Auxiliary Context가 함께 존재합니다."
-            );
-
-            reasons.add(
-                    "Auxiliary Context는 친밀한 관계의 접점에 대한 보조 근거이며 LOVE_STYLE의 방향 Status를 변경하지 않습니다."
-            );
-        }
-
-        appendStatusReason(
-                reasons,
-                directionalMatches
+                "LOVE_STYLE의 이 원국 판단은 RELATIONSHIP_NATAL_RELATION_OVERLAP Source Family만 사용했습니다."
         );
 
         reasons.add(
-                "Match의 총 개수나 서로 다른 Source Family의 Match 수를 친밀감 또는 연애 강도의 점수로 사용하지 않았습니다."
+                statusReason(
+                        relationOverlapMatches,
+                        status
+                )
         );
 
         reasons.add(
-                "기존 Match의 summary 또는 reasons 문자열을 검색하여 감정 표현 방식이나 연애 행동을 새로 추론하지 않았습니다."
+                "RELATIONSHIP_TEN_GOD_CONTEXT·RELATIONSHIP_SPOUSE_PALACE·RELATIONSHIP_PEACH_BLOSSOM_AUXILIARY를 이 Conclusion의 Source로 결합하지 않았습니다."
         );
 
         reasons.add(
-                "이 결과는 관계가 가까워졌을 때 나타나는 구조적 반응을 설명하며 연애 시작·고백·결혼·이별 같은 실제 사건을 확정하지 않습니다."
+                "다른 Source Family의 Status를 결합하여 새로운 SUPPORTIVE·PRESSURE·MIXED 상태를 만들지 않았습니다."
         );
+
+        reasons.add(
+                "Source Match의 반복 개수를 연애 강도·친밀도·매력·연애 가능성 점수로 사용하지 않았습니다."
+        );
+
+        reasons.add(
+                "Source의 summary 또는 reasons 문자열을 판단 조건으로 사용하지 않았습니다."
+        );
+
+        reasons.add(
+                "친밀도 상승·관계 진행·기대 증가·역할 증가 같은 가상 조건이나 시간순서를 생성하지 않았습니다."
+        );
+
+        reasons.add(
+                "이 결과를 고백·연애 시작·결혼·이별·재회 같은 실제 사건으로 변환하지 않습니다."
+        );
+
+        /*
+         * =================================================
+         * Result
+         * =================================================
+         */
 
         return List.of(
                 new ConsultationCategoryDeterministicMatch(
-                        ConsultationCategory
-                                .LOVE_STYLE,
+                        ConsultationCategory.LOVE_STYLE,
 
-                        ConsultationCategoryDeterministicLayer
-                                .NATAL,
+                        ConsultationCategoryDeterministicLayer.NATAL,
 
                         RULE_CODE,
 
@@ -461,13 +358,10 @@ public class LoveStyleClosenessResponseRule
                         List.of(),
 
                         summaryOf(
-                                status,
-                                !peachBlossomMatches.isEmpty()
+                                status
                         ),
 
-                        List.copyOf(
-                                sourceMatches
-                        ),
+                        relationOverlapMatches,
 
                         List.copyOf(
                                 reasons
@@ -492,6 +386,17 @@ public class LoveStyleClosenessResponseRule
 
     ) {
 
+        Objects.requireNonNull(
+                view,
+                "LOVE_STYLE Evidence View가 필요합니다."
+        );
+
+        String normalizedRuleCode =
+                requireText(
+                        sourceRuleCode,
+                        "LOVE_STYLE Source ruleCode가 필요합니다."
+                );
+
         List<LifeDomainRuleMatch> result =
                 new ArrayList<>();
 
@@ -500,22 +405,35 @@ public class LoveStyleClosenessResponseRule
                 : view.natalMatches()
         ) {
 
-            Objects.requireNonNull(
-                    match,
-                    "LOVE_STYLE Natal Match는 null일 수 없습니다."
-            );
+            LifeDomainRuleMatch normalized =
+                    Objects.requireNonNull(
+                            match,
+                            "LOVE_STYLE Natal Match는 null일 수 없습니다."
+                    );
+
+            /*
+             * =================================================
+             * RELATIONSHIP Domain만
+             * =================================================
+             */
 
             if (
-                    match.domain()
+                    normalized.domain()
                             != LifeDomain.RELATIONSHIP
             ) {
 
                 continue;
             }
 
+            /*
+             * =================================================
+             * 정확한 공식 RuleCode만
+             * =================================================
+             */
+
             if (
-                    !sourceRuleCode.equals(
-                            match.ruleCode()
+                    !normalizedRuleCode.equals(
+                            normalized.ruleCode()
                     )
             ) {
 
@@ -523,7 +441,7 @@ public class LoveStyleClosenessResponseRule
             }
 
             result.add(
-                    match
+                    normalized
             );
         }
 
@@ -535,56 +453,70 @@ public class LoveStyleClosenessResponseRule
 
     /*
      * =================================================
-     * Status 계산
+     * Anchor Status
      * =================================================
      *
-     * Match 개수는 사용하지 않는다.
-     *
-     * 공식 LifeDomainSignalStatus가
-     * 실제 존재하는지만 사용한다.
+     * 이 메서드에는
+     * 하나의 Source Family만 들어온다.
      */
 
     private ConsultationCategoryDeterministicStatus
-    resolveStatus(
-            List<LifeDomainRuleMatch> directionalMatches
+    resolveAnchorStatus(
+
+            List<LifeDomainRuleMatch> anchorMatches
+
     ) {
+
+        Objects.requireNonNull(
+                anchorMatches,
+                "LOVE_STYLE Anchor Match 목록이 필요합니다."
+        );
+
+        if (
+                anchorMatches.isEmpty()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "LOVE_STYLE Anchor Status 계산에는 최소 하나의 Match가 필요합니다."
+            );
+        }
 
         boolean supportiveExists =
                 hasStatus(
-                        directionalMatches,
+                        anchorMatches,
                         LifeDomainSignalStatus.SUPPORTIVE
                 );
 
         boolean pressureExists =
                 hasStatus(
-                        directionalMatches,
+                        anchorMatches,
                         LifeDomainSignalStatus.PRESSURE
                 );
 
         boolean mixedExists =
                 hasStatus(
-                        directionalMatches,
+                        anchorMatches,
                         LifeDomainSignalStatus.MIXED
                 );
 
         /*
-         * Upstream에서 이미 MIXED로
-         * 결정된 구조를 삭제하지 않는다.
+         * =================================================
+         * upstream MIXED 보존
+         * =================================================
          */
 
         if (
                 mixedExists
         ) {
 
-            return ConsultationCategoryDeterministicStatus
-                    .MIXED;
+            return ConsultationCategoryDeterministicStatus.MIXED;
         }
 
         /*
-         * 친밀한 관계의 반응이라는
-         * 동일한 Category 질문 안에서
-         * 지지 방향과 부담 방향이
-         * 실제 함께 존재하면 MIXED.
+         * =================================================
+         * 동일 Source Family 안에서
+         * SUPPORTIVE / PRESSURE 둘 다 실제 존재
+         * =================================================
          */
 
         if (
@@ -592,30 +524,32 @@ public class LoveStyleClosenessResponseRule
                         && pressureExists
         ) {
 
-            return ConsultationCategoryDeterministicStatus
-                    .MIXED;
+            return ConsultationCategoryDeterministicStatus.MIXED;
         }
 
         if (
                 pressureExists
         ) {
 
-            return ConsultationCategoryDeterministicStatus
-                    .PRESSURE;
+            return ConsultationCategoryDeterministicStatus.PRESSURE;
         }
 
         if (
                 supportiveExists
         ) {
 
-            return ConsultationCategoryDeterministicStatus
-                    .SUPPORTIVE;
+            return ConsultationCategoryDeterministicStatus.SUPPORTIVE;
         }
 
-        return ConsultationCategoryDeterministicStatus
-                .CONTEXTUAL;
+        return ConsultationCategoryDeterministicStatus.CONTEXTUAL;
     }
 
+
+    /*
+     * =================================================
+     * Status 존재
+     * =================================================
+     */
 
     private boolean hasStatus(
 
@@ -624,6 +558,16 @@ public class LoveStyleClosenessResponseRule
             LifeDomainSignalStatus status
 
     ) {
+
+        Objects.requireNonNull(
+                matches,
+                "LOVE_STYLE Match 목록이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                status,
+                "LifeDomainSignalStatus가 필요합니다."
+        );
 
         return matches
                 .stream()
@@ -637,33 +581,43 @@ public class LoveStyleClosenessResponseRule
 
     /*
      * =================================================
-     * Status Reason
+     * Status Provenance
      * =================================================
      */
 
-    private void appendStatusReason(
+    private String statusReason(
 
-            List<String> reasons,
+            List<LifeDomainRuleMatch> anchorMatches,
 
-            List<LifeDomainRuleMatch> directionalMatches
+            ConsultationCategoryDeterministicStatus status
 
     ) {
 
+        Objects.requireNonNull(
+                anchorMatches,
+                "LOVE_STYLE Anchor Match 목록이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                status,
+                "LOVE_STYLE deterministic status가 필요합니다."
+        );
+
         boolean supportiveExists =
                 hasStatus(
-                        directionalMatches,
+                        anchorMatches,
                         LifeDomainSignalStatus.SUPPORTIVE
                 );
 
         boolean pressureExists =
                 hasStatus(
-                        directionalMatches,
+                        anchorMatches,
                         LifeDomainSignalStatus.PRESSURE
                 );
 
         boolean mixedExists =
                 hasStatus(
-                        directionalMatches,
+                        anchorMatches,
                         LifeDomainSignalStatus.MIXED
                 );
 
@@ -671,11 +625,7 @@ public class LoveStyleClosenessResponseRule
                 mixedExists
         ) {
 
-            reasons.add(
-                    "가까운 관계망 또는 관계 안의 현실적 요구·역할 구조에 기존 MIXED 판단이 존재하므로 친밀도가 높아질 때 한 방향으로 단순화하기 어려운 복합 반응 구조로 판단합니다."
-            );
-
-            return;
+            return "RELATIONSHIP_NATAL_RELATION_OVERLAP Source Family의 upstream MIXED 상태를 LOVE_STYLE Anchor Status로 보존했습니다.";
         }
 
         if (
@@ -683,86 +633,105 @@ public class LoveStyleClosenessResponseRule
                         && pressureExists
         ) {
 
-            reasons.add(
-                    "친밀한 관계와 관련된 공식 Source에서 SUPPORTIVE와 PRESSURE 방향이 함께 존재하므로 가까워질수록 지지 요소와 조정이 필요한 요소가 함께 작동하는 MIXED 구조로 판단합니다."
-            );
-
-            return;
+            return "RELATIONSHIP_NATAL_RELATION_OVERLAP Source Family 내부에 SUPPORTIVE와 PRESSURE가 모두 존재하여 어느 한 방향을 삭제하지 않고 MIXED로 보존했습니다.";
         }
 
         if (
-                pressureExists
+                status
+                        == ConsultationCategoryDeterministicStatus.PRESSURE
         ) {
 
-            reasons.add(
-                    "친밀한 관계와 관련된 공식 Source에 PRESSURE가 존재하므로 관계가 가까워지고 요구가 커질수록 거리 조절이나 부담 관리가 중요해지는 방향으로 판단합니다."
-            );
-
-            return;
+            return "RELATIONSHIP_NATAL_RELATION_OVERLAP Source Family의 공식 방향을 PRESSURE로 보존했습니다.";
         }
 
         if (
-                supportiveExists
+                status
+                        == ConsultationCategoryDeterministicStatus.SUPPORTIVE
         ) {
 
-            reasons.add(
-                    "친밀한 관계와 관련된 공식 Source에 SUPPORTIVE가 존재하고 PRESSURE 또는 MIXED 방향이 확인되지 않아 관계가 가까워질 때의 반응 구조를 지지 방향으로 판단합니다."
-            );
-
-            return;
+            return "RELATIONSHIP_NATAL_RELATION_OVERLAP Source Family의 공식 방향을 SUPPORTIVE로 보존했습니다.";
         }
 
-        reasons.add(
-                "가까운 관계와 관련된 구조는 실제 존재하지만 SUPPORTIVE·PRESSURE·MIXED 중 하나의 방향으로 확정할 근거가 없어 CONTEXTUAL로 유지합니다."
-        );
+        return "RELATIONSHIP_NATAL_RELATION_OVERLAP Source Family는 존재하지만 방향은 CONTEXTUAL로 유지했습니다.";
     }
 
 
     /*
      * =================================================
-     * Internal Summary
+     * Internal Deterministic Summary
      * =================================================
      *
-     * 최종 사용자 storyText가 아니다.
+     * 최종 사용자 Story가 아니다.
      *
-     * 감정 표현 방식이나 구체적인 연애 행동을
-     * 새로 만들어내지 않는다.
+     * 다른 Source Context,
+     * 연애 행동,
+     * 관계 진행,
+     * 조건,
+     * 인과,
+     * 순서를 추가하지 않는다.
      */
 
     private String summaryOf(
 
-            ConsultationCategoryDeterministicStatus status,
-
-            boolean interactionAuxiliaryExists
+            ConsultationCategoryDeterministicStatus status
 
     ) {
 
-        String base =
-                switch (
-                        status
-                        ) {
+        Objects.requireNonNull(
+                status,
+                "LOVE_STYLE deterministic status가 필요합니다."
+        );
 
-                    case SUPPORTIVE ->
-                            "관계가 가까워지고 친밀도가 높아질 때 상호작용과 관계 안의 요구를 비교적 안정적으로 받아들이는 구조적 근거가 존재합니다.";
+        return switch (
+                status
+                ) {
 
-                    case PRESSURE ->
-                            "관계가 가까워질수록 상대의 기대·역할·현실적 요구에 대한 부담과 거리 조절 필요성이 커질 수 있는 구조가 존재합니다.";
+            case SUPPORTIVE ->
+                    "LOVE_STYLE에서 참조하는 원국 관계망 구조에 SUPPORTIVE 상태가 확인됩니다.";
 
-                    case MIXED ->
-                            "관계가 가까워질 때 연결과 친밀감을 받아들이는 요소와 부담·거리 조절이 필요한 요소가 함께 작동하는 복합적인 반응 구조입니다.";
+            case PRESSURE ->
+                    "LOVE_STYLE에서 참조하는 원국 관계망 구조에 PRESSURE 상태가 확인됩니다.";
 
-                    case CONTEXTUAL ->
-                            "관계가 가까워질 때의 반응 구조가 원국에 관여하지만 감정이나 연애 행동을 한 방향으로 단정할 수준은 아닙니다.";
-                };
+            case MIXED ->
+                    "LOVE_STYLE에서 참조하는 원국 관계망 구조에 MIXED 상태가 확인됩니다.";
+
+            case CONTEXTUAL ->
+                    "LOVE_STYLE에서 참조하는 원국 관계망 구조가 존재하며 방향은 CONTEXTUAL로 유지됩니다.";
+        };
+    }
+
+
+    /*
+     * =================================================
+     * Text
+     * =================================================
+     */
+
+    private static String requireText(
+
+            String value,
+
+            String message
+
+    ) {
+
+        Objects.requireNonNull(
+                value,
+                message
+        );
+
+        String normalized =
+                value.trim();
 
         if (
-                interactionAuxiliaryExists
+                normalized.isBlank()
         ) {
 
-            return base
-                    + " 사람과의 접점이나 상호작용이 두드러지는 보조 Context도 함께 존재합니다.";
+            throw new IllegalArgumentException(
+                    message
+            );
         }
 
-        return base;
+        return normalized;
     }
 }

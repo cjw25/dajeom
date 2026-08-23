@@ -28,6 +28,16 @@ import java.util.Optional;
  * - 기존 16차 Timeline 유지
  * - Annual Functional 계산층과
  *   LifeDomain Evidence 계층의 책임 분리
+ *
+ * =================================================
+ *
+ * 현재 공식 Pipeline에서는
+ * 각 Timeline Segment에 대응하는
+ * AnnualFunctionalBaselineAnalysis가
+ * 반드시 제공되어야 한다.
+ *
+ * 이 Resolver는 계산 결과를 새로 만들거나
+ * 다른 Evidence와 관계형으로 합성하지 않는다.
  */
 @FunctionalInterface
 public interface LifeDomainAnnualFunctionalSourceResolver {
@@ -36,14 +46,4 @@ public interface LifeDomainAnnualFunctionalSourceResolver {
     resolveAnnualFunctionalBaseline(
             LuckIntegratedSegmentAnalysis segmentAnalysis
     );
-
-    /**
-     * 기존 18차 호출부를 깨뜨리지 않기 위한
-     * Functional Evidence 미연결 Resolver.
-     */
-    static LifeDomainAnnualFunctionalSourceResolver none() {
-
-        return segmentAnalysis ->
-                Optional.empty();
-    }
 }

@@ -3,6 +3,7 @@ package com.dajeom.analyzer;
 import com.dajeom.engine.AnnualFunctionalBaselinePipelineEngine;
 import com.dajeom.engine.LifeDomainAnalysisEngine;
 import com.dajeom.engine.LuckIntegratedAnalysisEngine;
+import com.dajeom.engine.MonthlyFunctionalActivationPipelineEngine;
 import com.dajeom.engine.ShinsalAnalysisEngine;
 import com.dajeom.model.AnnualFunctionalBaselineAnalysis;
 import com.dajeom.model.AnnualLuckAnalysis;
@@ -12,6 +13,8 @@ import com.dajeom.model.LifeDomainAnalysis;
 import com.dajeom.model.LifeDomainEvidenceResolution;
 import com.dajeom.model.LuckIntegratedAnalysis;
 import com.dajeom.model.LuckReferenceContext;
+import com.dajeom.model.MonthlyFunctionalActivationAnalysis;
+import com.dajeom.model.MonthlyLuckAnalysis;
 import com.dajeom.model.NatalChartAdvancedAnalysis;
 import com.dajeom.model.PalaceAnalysis;
 import com.dajeom.model.ShinsalAnalysis;
@@ -19,6 +22,7 @@ import com.dajeom.model.TenGodCompositeAnalysis;
 import com.dajeom.resolver.LifeDomainAnnualFunctionalSourceResolver;
 import com.dajeom.resolver.LifeDomainDecadeContextSourceResolver;
 import com.dajeom.resolver.LifeDomainEvidenceResolver;
+import com.dajeom.resolver.LifeDomainMonthlyFunctionalSourceResolver;
 import com.dajeom.resolver.LifeDomainNatalEvidenceSourceResolver;
 import com.dajeom.resolver.LifeDomainNatalEvidenceSourceResolverFactory;
 import com.dajeom.resolver.LuckIntegratedLayerAnalysisResolver;
@@ -62,6 +66,10 @@ import java.util.concurrent.Future;
  *
  * ->
  *
+ * Monthly Functional Activation
+ *
+ * ->
+ *
  * 18차 LifeDomainAnalysis
  *
  * 를 그대로 실행한다.
@@ -87,6 +95,30 @@ import java.util.concurrent.Future;
  *
  * - ANNUAL_FUNCTIONAL_CONTEXT는
  *   별도 derived temporal provenance로 추가한다.
+ *
+ * =================================================
+ *
+ * Monthly Functional 원칙:
+ *
+ * - 현재 기준 시점의 16차 LuckIntegratedAnalysis가
+ *   실제 보유한 MonthlyLuckAnalysis를 사용한다.
+ *
+ * - MonthlyLuckAnalysis를 새로 만들지 않는다.
+ *
+ * - 위에서 생성한 공식 Annual Functional Baseline을
+ *   그대로 입력으로 사용한다.
+ *
+ * - MonthlyLuckAnalysis 객체 Identity를 기준으로
+ *   MonthlyFunctionalActivationAnalysis를 연결한다.
+ *
+ * - 동일 MonthlyLuckAnalysis가 Timeline Segment에서
+ *   재사용되더라도 Pipeline 내부에서 한 번만 계산한다.
+ *
+ * - MONTHLY_FUNCTIONAL_CONTEXT는
+ *   기존 MONTHLY_CONTEXT를 대체하지 않는다.
+ *
+ * - 월운 접촉을 Annual Functional 활성으로
+ *   승격하지 않는다.
  *
  * =================================================
  *
@@ -124,7 +156,7 @@ import java.util.concurrent.Future;
  *
  * - 최대 3개 연도만 동시에 실행한다.
  *
- * - targetYear 숫자로 Annual Functional 결과를
+ * - targetYear 숫자로 Annual / Monthly Functional 결과를
  *   공유하거나 캐시하지 않는다.
  *
  * - 각 연도는 자신만의:
@@ -135,15 +167,8 @@ import java.util.concurrent.Future;
  *
  *   를 사용한다.
  *
- * - 각 기준시점에서 생성되는
- *   LuckReferenceContext
- *   LuckIntegratedAnalysis
- *   AnnualLuckAnalysis
- *   ShinsalAnalysis
- *   LifeDomainEvidenceResolution
- *   LifeDomainAnalysis
- *
- *   객체 Identity는 기존과 동일하게 독립적으로 보존한다.
+ * - 각 기준시점에서 생성되는 객체 Identity는
+ *   기존과 동일하게 독립적으로 보존한다.
  */
 @Component
 public class ConsultationTimelineRangeAnalyzer {
@@ -200,6 +225,16 @@ public class ConsultationTimelineRangeAnalyzer {
 
     /*
      * =================================================
+     * Monthly Functional Activation
+     * =================================================
+     */
+
+    private final MonthlyFunctionalActivationPipelineEngine
+            monthlyFunctionalActivationPipelineEngine;
+
+
+    /*
+     * =================================================
      * 18차
      * =================================================
      */
@@ -233,6 +268,9 @@ public class ConsultationTimelineRangeAnalyzer {
 
             AnnualFunctionalBaselinePipelineEngine
                     annualFunctionalBaselinePipelineEngine,
+
+            MonthlyFunctionalActivationPipelineEngine
+                    monthlyFunctionalActivationPipelineEngine,
 
             LifeDomainEvidenceResolver
                     lifeDomainEvidenceResolver,
@@ -276,6 +314,12 @@ public class ConsultationTimelineRangeAnalyzer {
                 Objects.requireNonNull(
                         annualFunctionalBaselinePipelineEngine,
                         "AnnualFunctionalBaselinePipelineEngine이 필요합니다."
+                );
+
+        this.monthlyFunctionalActivationPipelineEngine =
+                Objects.requireNonNull(
+                        monthlyFunctionalActivationPipelineEngine,
+                        "MonthlyFunctionalActivationPipelineEngine이 필요합니다."
                 );
 
         this.lifeDomainEvidenceResolver =
@@ -360,19 +404,6 @@ public class ConsultationTimelineRangeAnalyzer {
          * =================================================
          * Year Task 구성
          * =================================================
-         *
-         * 전체 10개 명리연도를 먼저 Task로 구성한다.
-         *
-         * Task 자체는:
-         *
-         * 과거 5년
-         * ->
-         * 미래 5년
-         *
-         * 순서로 등록한다.
-         *
-         * 실행은 최대 3개 연도가 병렬로 진행되지만
-         * 결과 수집 순서는 등록 순서 그대로 유지한다.
          */
 
         List<YearTask>
@@ -480,18 +511,6 @@ public class ConsultationTimelineRangeAnalyzer {
 
         try {
 
-            /*
-             * =================================================
-             * 모든 연도 Task 제출
-             * =================================================
-             *
-             * 앞 연도 결과를 기다리면서
-             * 다음 연도를 제출하지 않는다.
-             *
-             * 먼저 전부 제출해야
-             * 최대 3개의 연도가 실제 병렬 실행된다.
-             */
-
             for (
                     YearTask yearTask
                     : yearTasks
@@ -523,19 +542,6 @@ public class ConsultationTimelineRangeAnalyzer {
                                     * 12
                     );
 
-
-            /*
-             * =================================================
-             * 등록 순서대로 결과 회수
-             * =================================================
-             *
-             * Future.get() 순서는 실행 병렬성을 제거하지 않는다.
-             *
-             * 모든 Task는 위에서 이미 제출되었기 때문에
-             * worker thread에서 독립적으로 진행 중이다.
-             *
-             * 결과 List 순서만 deterministic하게 보존한다.
-             */
 
             for (
                     Future<YearAnalysisResult>
@@ -615,24 +621,6 @@ public class ConsultationTimelineRangeAnalyzer {
     }
 
 
-    /*
-     * =================================================
-     * Year Task 생성
-     * =================================================
-     *
-     * Resolver Factory 호출은
-     * 요청 Thread에서 순차적으로 수행한다.
-     *
-     * 각 연도 Task는 서로 다른 Resolver 인스턴스를
-     * 전달받는다.
-     *
-     * 따라서:
-     *
-     * - 연도끼리 Resolver 상태를 공유하지 않는다.
-     * - Factory 자체를 worker thread에서
-     *   동시에 호출하지 않는다.
-     */
-
     private YearTask createYearTask(
 
             int targetYear,
@@ -691,12 +679,6 @@ public class ConsultationTimelineRangeAnalyzer {
     }
 
 
-    /*
-     * =================================================
-     * Year Task 실행
-     * =================================================
-     */
-
     private YearAnalysisResult analyzeYearTask(
             YearTask yearTask
     ) {
@@ -729,26 +711,6 @@ public class ConsultationTimelineRangeAnalyzer {
     }
 
 
-    /*
-     * =================================================
-     * 하나의 명리연도
-     * =================================================
-     *
-     * targetYear:
-     *
-     * 2월 ~ 12월
-     * +
-     * targetYear + 1의 1월
-     *
-     * 총 12개 기준점.
-     *
-     * 실제 Annual / Monthly / Decade Candidate 판단은
-     * 16차가 수행한다.
-     *
-     * 한 명리연도 내부의 12개 날짜는
-     * 의도적으로 순차 실행한다.
-     */
-
     private List<LifeDomainAnalysis> analyzeSajuYear(
 
             int targetYear,
@@ -777,12 +739,6 @@ public class ConsultationTimelineRangeAnalyzer {
                 );
 
 
-        /*
-         * =================================================
-         * targetYear 2월 ~ 12월
-         * =================================================
-         */
-
         for (
                 int month = 2;
                 month <= 12;
@@ -808,16 +764,6 @@ public class ConsultationTimelineRangeAnalyzer {
         }
 
 
-        /*
-         * =================================================
-         * 다음 Gregorian 연도 1월
-         * =================================================
-         *
-         * 명리연도는 아직 targetYear의
-         * 세운 범위 안에 있을 수 있으므로
-         * 16차가 실제 Candidate를 결정한다.
-         */
-
         result.add(
                 analyzeReferenceDate(
                         LocalDate.of(
@@ -841,12 +787,6 @@ public class ConsultationTimelineRangeAnalyzer {
         );
     }
 
-
-    /*
-     * =================================================
-     * 한 기준날짜
-     * =================================================
-     */
 
     private LifeDomainAnalysis analyzeReferenceDate(
 
@@ -1009,14 +949,6 @@ public class ConsultationTimelineRangeAnalyzer {
          * =================================================
          * Annual Functional Baseline
          * =================================================
-         *
-         * 이 Reference Date에서 16차가 실제 생성한
-         * AnnualLuckAnalysis 객체들만 사용한다.
-         *
-         * 별도의 targetYear 계산을 하지 않는다.
-         *
-         * 다른 연도 Task의 AnnualLuckAnalysis와
-         * 숫자가 같더라도 절대 공유하지 않는다.
          */
 
         Map<
@@ -1033,13 +965,30 @@ public class ConsultationTimelineRangeAnalyzer {
 
         /*
          * =================================================
-         * Annual Functional Source Resolver
+         * Monthly Functional Activation
          * =================================================
          *
-         * LifeDomain Segment가 보유한
-         * AnnualLuckAnalysis Identity로만 조회한다.
+         * 방금 계산한 공식 Annual Functional Baseline을
+         * 그대로 사용한다.
          *
-         * 연도 숫자로 조회하지 않는다.
+         * 별도 Annual 재계산 없음.
+         */
+
+        Map<
+                MonthlyLuckAnalysis,
+                MonthlyFunctionalActivationAnalysis
+                > monthlyFunctionalActivations =
+                monthlyFunctionalActivationPipelineEngine
+                        .analyze(
+                                integratedAnalysis,
+                                annualFunctionalBaselines
+                        );
+
+
+        /*
+         * =================================================
+         * Annual Functional Source Resolver
+         * =================================================
          */
 
         LifeDomainAnnualFunctionalSourceResolver
@@ -1099,10 +1048,97 @@ public class ConsultationTimelineRangeAnalyzer {
 
         /*
          * =================================================
-         * 18차 Evidence Resolution
+         * Monthly Functional Source Resolver
          * =================================================
          *
-         * 기존:
+         * 현재 Segment가 실제 보유한
+         * MonthlyLuckAnalysis Identity로만 조회한다.
+         */
+
+        LifeDomainMonthlyFunctionalSourceResolver
+                monthlyFunctionalSourceResolver =
+                segmentAnalysis -> {
+
+                    MonthlyLuckAnalysis
+                            segmentMonthlyLuckAnalysis =
+                            segmentAnalysis
+                                    .monthlyLuckAnalysis();
+
+
+                    MonthlyFunctionalActivationAnalysis activation =
+                            monthlyFunctionalActivations
+                                    .get(
+                                            segmentMonthlyLuckAnalysis
+                                    );
+
+
+                    if (
+                            activation == null
+                    ) {
+
+                        throw new IllegalStateException(
+                                "Timeline Range 18차 Monthly Functional Activation이 "
+                                        + "현재 Segment의 MonthlyLuckAnalysis에 존재하지 않습니다. "
+                                        + "referenceDate="
+                                        + referenceDate
+                                        + ", sajuYear="
+                                        + segmentMonthlyLuckAnalysis.sajuYear()
+                                        + ", monthIndex="
+                                        + segmentMonthlyLuckAnalysis.monthIndex()
+                        );
+                    }
+
+
+                    if (
+                            activation
+                                    .monthlyLuckAnalysis()
+                                    != segmentMonthlyLuckAnalysis
+                    ) {
+
+                        throw new IllegalStateException(
+                                "Timeline Range Monthly Functional Activation이 "
+                                        + "현재 Segment MonthlyLuckAnalysis Identity를 보존하지 않았습니다. "
+                                        + "referenceDate="
+                                        + referenceDate
+                                        + ", sajuYear="
+                                        + segmentMonthlyLuckAnalysis.sajuYear()
+                                        + ", monthIndex="
+                                        + segmentMonthlyLuckAnalysis.monthIndex()
+                        );
+                    }
+
+
+                    if (
+                            activation
+                                    .annualFunctionalBaseline()
+                                    .annualLuckAnalysis()
+                                    != segmentAnalysis
+                                    .annualLuckAnalysis()
+                    ) {
+
+                        throw new IllegalStateException(
+                                "Timeline Range Monthly Functional Activation의 Annual Functional Baseline이 "
+                                        + "현재 Segment AnnualLuckAnalysis Identity를 보존하지 않았습니다. "
+                                        + "referenceDate="
+                                        + referenceDate
+                                        + ", sajuYear="
+                                        + segmentMonthlyLuckAnalysis.sajuYear()
+                                        + ", monthIndex="
+                                        + segmentMonthlyLuckAnalysis.monthIndex()
+                        );
+                    }
+
+
+                    return Optional.of(
+                            activation
+                    );
+                };
+
+
+        /*
+         * =================================================
+         * 18차 Evidence Resolution
+         * =================================================
          *
          * Natal
          * +
@@ -1110,15 +1146,13 @@ public class ConsultationTimelineRangeAnalyzer {
          * +
          * Annual Context
          * +
+         * Annual Functional Context
+         * +
          * Monthly Context
          * +
+         * Monthly Functional Context
+         * +
          * Shinsal
-         *
-         * 에 추가로:
-         *
-         * Annual Functional Context
-         *
-         * 를 같은 Segment에 연결한다.
          */
 
         LifeDomainEvidenceResolution
@@ -1130,7 +1164,8 @@ public class ConsultationTimelineRangeAnalyzer {
                                         shinsalAnalysis,
                                         natalEvidenceResolver,
                                         decadeContextSourceResolver,
-                                        annualFunctionalSourceResolver
+                                        annualFunctionalSourceResolver,
+                                        monthlyFunctionalSourceResolver
                                 ),
                         "Timeline Range 18차 Evidence Resolution이 null을 반환했습니다."
                 );
@@ -1193,12 +1228,6 @@ public class ConsultationTimelineRangeAnalyzer {
     }
 
 
-    /*
-     * =================================================
-     * Future 취소
-     * =================================================
-     */
-
     private static void cancelFutures(
             List<Future<YearAnalysisResult>> futures
     ) {
@@ -1232,12 +1261,6 @@ public class ConsultationTimelineRangeAnalyzer {
         }
     }
 
-
-    /*
-     * =================================================
-     * Worker Exception 전달
-     * =================================================
-     */
 
     private static RuntimeException
     propagateExecutionFailure(
@@ -1279,12 +1302,6 @@ public class ConsultationTimelineRangeAnalyzer {
         );
     }
 
-
-    /*
-     * =================================================
-     * Year Task
-     * =================================================
-     */
 
     private record YearTask(
 
@@ -1352,12 +1369,6 @@ public class ConsultationTimelineRangeAnalyzer {
         }
     }
 
-
-    /*
-     * =================================================
-     * Year Result
-     * =================================================
-     */
 
     private record YearAnalysisResult(
 

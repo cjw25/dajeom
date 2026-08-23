@@ -3,7 +3,6 @@ package com.dajeom.analyzer;
 import com.dajeom.model.ConsultationCategoryEvidenceView;
 import com.dajeom.model.ConsultationCategorySegmentEvidence;
 import com.dajeom.model.LifeDomainAnalysis;
-import com.dajeom.model.LifeDomainEvidenceReference;
 import com.dajeom.model.LifeDomainRuleMatch;
 import com.dajeom.model.LifeDomainSegmentAnalysis;
 import com.dajeom.type.ConsultationCategory;
@@ -11,7 +10,6 @@ import com.dajeom.type.LifeDomain;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -19,83 +17,174 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * 정밀화 21차-LEGAL.
- *
- * LEGAL_RISK 전용 Cross-Domain Evidence Analyzer.
+ * LEGAL_RISK 전용 Evidence Analyzer.
  *
  * =================================================
- *
- * 목적:
- *
- * 단일:
- *
- * - PRESSURE
- * - 충
- * - 형
- * - 관살
- * - 신살
- *
- * 하나만으로 법률/분쟁 위험을 만들지 않는다.
- *
+ * 역할
  * =================================================
  *
- * 공식 교차 대상 Domain:
+ * LifeDomainAnalysis에서:
  *
  * WEALTH
  * CAREER
  * RELATIONSHIP
  *
- * =================================================
+ * 의 LEGAL_RISK 후보를 수집하고,
  *
- * Cross Evidence 성립 조건:
- *
- * 1.
- * PRESSURE 또는 MIXED 상태의
- * 실제 18차 LifeDomainRuleMatch.
- *
- * 2.
- * 최소 2개 서로 다른 LifeDomain.
- *
- * 3.
- * 최소 2개 서로 다른
- * non-AUXILIARY sourceKey.
+ * ConsultationLegalRiskCrossEvaluator가
+ * 공식적으로 계산한 Cross 자격 결과에 따라
+ * LEGAL_RISK Evidence View를 구성한다.
  *
  * =================================================
+ * 중요한 구조
+ * =================================================
  *
- * 중요한 원칙:
+ * 이 클래스는 더 이상:
  *
- * - 새로운 LifeDomainRuleMatch 생성 금지
- * - 기존 Match 상태 변경 금지
- * - 점수 계산 금지
- * - 단일 Evidence로 Legal Risk 생성 금지
- * - 실제 법률 사건 예측 금지
+ * - Domain 개수 계산
+ * - independent provenance 개수 계산
+ * - Annual provenance family 정규화
+ * - Monthly provenance family 정규화
+ *
+ * 를 직접 하지 않는다.
+ *
+ * 위 계산은 모두:
+ *
+ * ConsultationLegalRiskCrossEvaluator
+ *
+ * 한 곳의 공식 계산을 사용한다.
+ *
+ * =================================================
+ * Cross 조건
+ * =================================================
+ *
+ * 공식 Cross 자격 조건은:
+ *
+ * ConsultationLegalRiskCrossEvaluator
+ *
+ * 가 소유한다.
+ *
+ * 이 Analyzer는 그 결과를 이용해:
+ *
+ * - Natal Evidence를 보존할지
+ * - Segment-local Evidence를 보존할지
+ * - LEGAL_RISK를 unavailable로 만들지
+ *
+ * 만 결정한다.
+ *
+ * =================================================
+ * NATAL
+ * =================================================
+ *
+ * Natal Candidate 자체가
+ * Legal Cross 조건을 만족하면
+ * natalMatches에 보존한다.
+ *
+ * =================================================
+ * CURRENT_TIMELINE
+ * =================================================
+ *
+ * 각 Segment에서는:
+ *
+ * Natal Candidate
+ * +
+ * 해당 Segment Candidate
+ *
+ * 를 공식 Cross Evaluator에 전달한다.
+ *
+ * 단:
+ *
+ * Segment-local Candidate가 하나도 없으면
+ * Natal Cross만으로 모든 현재 Segment에
+ * 같은 Legal 결과를 반복하지 않는다.
+ *
+ * =================================================
+ * Provenance 보존
+ * =================================================
+ *
+ * Segment Cross가
+ * Natal + Segment 조합으로 성립하면
+ * 실제 계산에 참여한 Natal Candidate도
+ * 상위 View.natalMatches에 보존한다.
+ *
+ * ConsultationCategorySegmentEvidence에는
+ * 현재 Segment-local Match만 저장한다.
+ *
+ * =================================================
+ * 관계형 풀이 금지
+ * =================================================
+ *
+ * 여기서 Cross는:
+ *
+ * 여러 독립 Evidence가
+ * LEGAL_RISK 전용 자격 조건을
+ * 동시에 충족했는지를 계산하는 것이다.
+ *
+ * 다음을 계산하지 않는다.
+ *
+ * - A 때문에 B
+ * - A가 B로 이어진다
+ * - A가 B를 강화한다
+ * - 먼저 A 이후 B
+ * - 특정 사건으로 이어진다
+ *
+ * =================================================
+ * 사건 예측 금지
+ * =================================================
+ *
+ * 이 Analyzer는:
+ *
+ * - 소송 발생
+ * - 형사 사건
+ * - 민사 사건
+ * - 고소
+ * - 고발
+ * - 계약 분쟁
+ * - 세무 사건
+ * - 승소
+ * - 패소
+ * - 처벌
+ *
+ * 을 생성하거나 예측하지 않는다.
  */
 @Component
 public class ConsultationLegalRiskAnalyzer {
 
-    private static final Set<LifeDomain>
-            LEGAL_RELEVANT_DOMAINS =
-            EnumSet.of(
-                    LifeDomain.WEALTH,
-                    LifeDomain.CAREER,
-                    LifeDomain.RELATIONSHIP
-            );
+    private final ConsultationLegalRiskCrossEvaluator
+            crossEvaluator;
 
-    private static final Set<String>
-            CAUTION_STATUS_NAMES =
-            Set.of(
-                    "PRESSURE",
-                    "MIXED"
-            );
 
     /*
      * =================================================
-     * 공식 API
+     * Constructor
+     * =================================================
+     */
+
+    public ConsultationLegalRiskAnalyzer(
+
+            ConsultationLegalRiskCrossEvaluator
+                    crossEvaluator
+
+    ) {
+
+        this.crossEvaluator =
+                Objects.requireNonNull(
+                        crossEvaluator,
+                        "ConsultationLegalRiskCrossEvaluator가 필요합니다."
+                );
+    }
+
+
+    /*
+     * =================================================
+     * Official API
      * =================================================
      */
 
     public ConsultationCategoryEvidenceView analyze(
+
             LifeDomainAnalysis lifeDomainAnalysis
+
     ) {
 
         Objects.requireNonNull(
@@ -103,9 +192,10 @@ public class ConsultationLegalRiskAnalyzer {
                 "LEGAL_RISK 분석에는 LifeDomainAnalysis가 필요합니다."
         );
 
+
         /*
          * =================================================
-         * Natal 후보
+         * Natal Candidate
          * =================================================
          */
 
@@ -115,9 +205,10 @@ public class ConsultationLegalRiskAnalyzer {
                 );
 
         boolean natalCrossEstablished =
-                crossEvidenceEstablished(
-                        natalCandidates
-                );
+                crossEvaluator
+                        .established(
+                                natalCandidates
+                        );
 
         Set<LifeDomainRuleMatch> selectedNatalMatches =
                 new LinkedHashSet<>();
@@ -131,22 +222,11 @@ public class ConsultationLegalRiskAnalyzer {
             );
         }
 
+
         /*
          * =================================================
-         * Current Timeline Segment
+         * Current Timeline
          * =================================================
-         *
-         * 각 Segment마다:
-         *
-         * Natal Candidate
-         * +
-         * Segment Candidate
-         *
-         * 를 결합해서 실제 Cross 조건을 검증한다.
-         *
-         * 단,
-         * ConsultationCategorySegmentEvidence에는
-         * Segment-local Match만 저장한다.
          */
 
         List<ConsultationCategorySegmentEvidence>
@@ -156,7 +236,7 @@ public class ConsultationLegalRiskAnalyzer {
                                 .segmentCount()
                 );
 
-        boolean segmentCrossEstablished =
+        boolean anySegmentCrossEstablished =
                 false;
 
         for (
@@ -164,14 +244,15 @@ public class ConsultationLegalRiskAnalyzer {
                 : lifeDomainAnalysis.segmentAnalyses()
         ) {
 
-            Objects.requireNonNull(
-                    segmentAnalysis,
-                    "LEGAL_RISK Timeline Segment는 null일 수 없습니다."
-            );
+            LifeDomainSegmentAnalysis normalizedSegment =
+                    Objects.requireNonNull(
+                            segmentAnalysis,
+                            "LEGAL_RISK Timeline Segment는 null일 수 없습니다."
+                    );
 
             List<LifeDomainRuleMatch> segmentCandidates =
                     collectSegmentCandidates(
-                            segmentAnalysis
+                            normalizedSegment
                     );
 
             List<LifeDomainRuleMatch> effectiveCandidates =
@@ -188,34 +269,46 @@ public class ConsultationLegalRiskAnalyzer {
                     segmentCandidates
             );
 
+
             /*
-             * Segment 쪽 실제 변화 Match가 하나도 없는데
-             * Natal Cross만으로 모든 Segment가
-             * 반복 표시되는 것을 방지한다.
+             * =================================================
+             * Segment Cross
+             * =================================================
+             *
+             * Segment Candidate가 실제로 있어야
+             * CURRENT_TIMELINE Legal Cross를 인정한다.
              */
-            boolean thisSegmentCrossEstablished =
+
+            boolean segmentCrossEstablished =
                     !segmentCandidates.isEmpty()
-                            && crossEvidenceEstablished(
-                            effectiveCandidates
-                    );
+
+                            && crossEvaluator
+                            .established(
+                                    effectiveCandidates
+                            );
 
             List<LifeDomainRuleMatch> selectedSegmentMatches;
 
             if (
-                    thisSegmentCrossEstablished
+                    segmentCrossEstablished
             ) {
 
-                segmentCrossEstablished =
+                anySegmentCrossEstablished =
                         true;
 
                 /*
-                 * 이 Segment의 Legal Cross가
-                 * Natal + Segment 조합으로 성립했다면
-                 * 실제 사용된 Natal 후보도 상위 View에 보존한다.
+                 * Segment Cross 계산에 실제 사용된
+                 * Natal 후보를 상위 View에도 보존한다.
                  */
+
                 selectedNatalMatches.addAll(
                         natalCandidates
                 );
+
+                /*
+                 * Segment 객체에는
+                 * Segment-local Match만 저장한다.
+                 */
 
                 selectedSegmentMatches =
                         List.copyOf(
@@ -228,15 +321,19 @@ public class ConsultationLegalRiskAnalyzer {
                         List.of();
             }
 
+
             /*
-             * 가능한 Timeline Scenario 자체는 유지한다.
+             * =================================================
+             * Scenario Identity 보존
+             * =================================================
              *
-             * 해당 Scenario에서 Legal 관련 추가 Evidence가
-             * 없다는 것 역시 deterministic 정보다.
+             * Legal Cross가 없는 가능한 Scenario도
+             * Timeline 구조 자체는 유지한다.
              */
+
             segmentEvidences.add(
                     new ConsultationCategorySegmentEvidence(
-                            segmentAnalysis
+                            normalizedSegment
                                     .segmentAnalysis(),
 
                             selectedSegmentMatches
@@ -244,25 +341,16 @@ public class ConsultationLegalRiskAnalyzer {
             );
         }
 
+
         /*
          * =================================================
-         * Cross 조건 없음
+         * Unavailable
          * =================================================
-         *
-         * 이것은:
-         *
-         * "법적 문제가 없다"
-         *
-         * 라는 의미가 아니다.
-         *
-         * 단지 현재 deterministic 계산 결과만으로
-         * LEGAL_RISK 독립 해석을 만들 정도의
-         * 교차 Evidence가 성립하지 않았다는 뜻이다.
          */
 
         if (
                 !natalCrossEstablished
-                        && !segmentCrossEstablished
+                        && !anySegmentCrossEstablished
         ) {
 
             return unavailable(
@@ -271,7 +359,15 @@ public class ConsultationLegalRiskAnalyzer {
             );
         }
 
+
+        /*
+         * =================================================
+         * Available
+         * =================================================
+         */
+
         return new ConsultationCategoryEvidenceView(
+
                 ConsultationCategory.LEGAL_RISK,
 
                 List.copyOf(
@@ -288,6 +384,7 @@ public class ConsultationLegalRiskAnalyzer {
         );
     }
 
+
     /*
      * =================================================
      * Natal Candidate
@@ -296,7 +393,9 @@ public class ConsultationLegalRiskAnalyzer {
 
     private List<LifeDomainRuleMatch>
     collectNatalCandidates(
+
             LifeDomainAnalysis lifeDomainAnalysis
+
     ) {
 
         Objects.requireNonNull(
@@ -309,7 +408,7 @@ public class ConsultationLegalRiskAnalyzer {
 
         for (
                 LifeDomain domain
-                : LEGAL_RELEVANT_DOMAINS
+                : crossEvaluator.relevantDomains()
         ) {
 
             List<LifeDomainRuleMatch> matches =
@@ -318,7 +417,7 @@ public class ConsultationLegalRiskAnalyzer {
                                     domain
                             );
 
-            addCautionCandidates(
+            addCandidates(
                     result,
                     domain,
                     matches
@@ -330,6 +429,7 @@ public class ConsultationLegalRiskAnalyzer {
         );
     }
 
+
     /*
      * =================================================
      * Segment Candidate
@@ -338,7 +438,9 @@ public class ConsultationLegalRiskAnalyzer {
 
     private List<LifeDomainRuleMatch>
     collectSegmentCandidates(
+
             LifeDomainSegmentAnalysis segmentAnalysis
+
     ) {
 
         Objects.requireNonNull(
@@ -351,7 +453,7 @@ public class ConsultationLegalRiskAnalyzer {
 
         for (
                 LifeDomain domain
-                : LEGAL_RELEVANT_DOMAINS
+                : crossEvaluator.relevantDomains()
         ) {
 
             List<LifeDomainRuleMatch> matches =
@@ -360,7 +462,7 @@ public class ConsultationLegalRiskAnalyzer {
                                     domain
                             );
 
-            addCautionCandidates(
+            addCandidates(
                     result,
                     domain,
                     matches
@@ -372,13 +474,20 @@ public class ConsultationLegalRiskAnalyzer {
         );
     }
 
+
     /*
      * =================================================
      * Candidate Filtering
      * =================================================
+     *
+     * 실제 LEGAL_RISK Candidate 자격은
+     * Cross Evaluator에 위임한다.
+     *
+     * 이 메서드는 expectedDomain 정합성과
+     * 실제 후보 Collection만 담당한다.
      */
 
-    private void addCautionCandidates(
+    private void addCandidates(
 
             List<LifeDomainRuleMatch> target,
 
@@ -408,13 +517,14 @@ public class ConsultationLegalRiskAnalyzer {
                 : matches
         ) {
 
-            Objects.requireNonNull(
-                    match,
-                    "LEGAL_RISK LifeDomainRuleMatch는 null일 수 없습니다."
-            );
+            LifeDomainRuleMatch normalizedMatch =
+                    Objects.requireNonNull(
+                            match,
+                            "LEGAL_RISK LifeDomainRuleMatch는 null일 수 없습니다."
+                    );
 
             if (
-                    match.domain()
+                    normalizedMatch.domain()
                             != expectedDomain
             ) {
 
@@ -423,179 +533,26 @@ public class ConsultationLegalRiskAnalyzer {
                                 + "expected="
                                 + expectedDomain
                                 + ", actual="
-                                + match.domain()
+                                + normalizedMatch.domain()
                                 + ", rule="
-                                + match.ruleCode()
-                );
-            }
-
-            /*
-             * 18차 RuleEngine에서도 막고 있지만
-             * Legal 전용 경계에서 한 번 더 검증한다.
-             */
-            if (
-                    match.auxiliaryOnly()
-            ) {
-
-                throw new IllegalStateException(
-                        "LEGAL_RISK에 AUXILIARY-only Match를 사용할 수 없습니다. "
-                                + "domain="
-                                + match.domain()
-                                + ", rule="
-                                + match.ruleCode()
+                                + normalizedMatch.ruleCode()
                 );
             }
 
             if (
-                    cautionBearing(
-                            match
-                    )
-            ) {
-
-                target.add(
-                        match
-                );
-            }
-        }
-    }
-
-    /*
-     * =================================================
-     * Status
-     * =================================================
-     *
-     * 현재 LifeDomainSignalStatus의 실제 enum 상수를
-     * 직접 추측하지 않고 name()을 사용한다.
-     *
-     * PRESSURE:
-     * 주의 방향 존재.
-     *
-     * MIXED:
-     * 지원과 압력이 함께 존재하므로
-     * Legal Cross 후보로 사용할 수 있다.
-     *
-     * 나머지 Status는 현재 Legal 후보에서 제외한다.
-     */
-
-    private boolean cautionBearing(
-            LifeDomainRuleMatch match
-    ) {
-
-        Objects.requireNonNull(
-                match,
-                "LEGAL_RISK Status 확인에는 LifeDomainRuleMatch가 필요합니다."
-        );
-
-        return CAUTION_STATUS_NAMES
-                .contains(
-                        match
-                                .status()
-                                .name()
-                );
-    }
-
-    /*
-     * =================================================
-     * Cross Evidence
-     * =================================================
-     */
-
-    private boolean crossEvidenceEstablished(
-            List<LifeDomainRuleMatch> matches
-    ) {
-
-        if (
-                matches == null
-                        || matches.size() < 2
-        ) {
-
-            return false;
-        }
-
-        Set<LifeDomain> domains =
-                EnumSet.noneOf(
-                        LifeDomain.class
-                );
-
-        Set<String> primarySourceKeys =
-                new LinkedHashSet<>();
-
-        for (
-                LifeDomainRuleMatch match
-                : matches
-        ) {
-
-            if (
-                    match == null
-                            || !cautionBearing(
-                            match
-                    )
-            ) {
-
-                continue;
-            }
-
-            if (
-                    !LEGAL_RELEVANT_DOMAINS
-                            .contains(
-                                    match.domain()
+                    crossEvaluator
+                            .eligibleCandidate(
+                                    normalizedMatch
                             )
             ) {
 
-                continue;
-            }
-
-            domains.add(
-                    match.domain()
-            );
-
-            for (
-                    LifeDomainEvidenceReference<?> evidence
-                    : match.evidences()
-            ) {
-
-                Objects.requireNonNull(
-                        evidence,
-                        "LEGAL_RISK Match Evidence는 null일 수 없습니다."
-                );
-
-                /*
-                 * AUXILIARY Source는
-                 * 독립 교차 Source 개수에 포함하지 않는다.
-                 */
-                if (
-                        evidence.auxiliary()
-                ) {
-
-                    continue;
-                }
-
-                String sourceKey =
-                        evidence.sourceKey();
-
-                if (
-                        sourceKey == null
-                                || sourceKey.isBlank()
-                ) {
-
-                    throw new IllegalStateException(
-                            "LEGAL_RISK 교차 검증에 사용하는 non-AUXILIARY Evidence에는 sourceKey가 필요합니다. "
-                                    + "domain="
-                                    + match.domain()
-                                    + ", rule="
-                                    + match.ruleCode()
-                    );
-                }
-
-                primarySourceKeys.add(
-                        sourceKey.trim()
+                target.add(
+                        normalizedMatch
                 );
             }
         }
-
-        return domains.size() >= 2
-                && primarySourceKeys.size() >= 2;
     }
+
 
     /*
      * =================================================
@@ -604,7 +561,9 @@ public class ConsultationLegalRiskAnalyzer {
      */
 
     private ConsultationCategoryEvidenceView unavailable(
+
             String reason
+
     ) {
 
         if (
@@ -618,10 +577,15 @@ public class ConsultationLegalRiskAnalyzer {
         }
 
         return new ConsultationCategoryEvidenceView(
+
                 ConsultationCategory.LEGAL_RISK,
+
                 List.of(),
+
                 List.of(),
+
                 List.of(),
+
                 Optional.of(
                         reason.trim()
                 )

@@ -15,8 +15,8 @@ import java.util.Set;
  * LLM Grounding용 형태로 변환한 Evidence.
  *
  * =================================================
- *
- * 보존:
+ * 보존
+ * =================================================
  *
  * - LifeDomain
  * - Rule Code
@@ -27,28 +27,71 @@ import java.util.Set;
  * - deterministic 서술 우선순위 provenance
  *
  * =================================================
+ * prominence
+ * =================================================
  *
- * 하지 않는 것:
+ * prominence는 선택값이 아니다.
+ *
+ * 모든 Grounding Evidence는
+ * 생성 시점부터 자기 Source에 대응하는
+ * ConsultationGroundingProminence를
+ * 반드시 가져야 한다.
+ *
+ * 아직 전체 Slice 안의 최종 순위가
+ * 계산되지 않은 최초 Evidence는:
+ *
+ * ConsultationGroundingProminence.unranked(sources)
+ *
+ * 를 명시적으로 전달한다.
+ *
+ * 이후:
+ *
+ * ConsultationGroundingProminenceAnalyzer
+ *
+ * 가 같은 Slice 안의 Evidence들을 비교하여
+ * 실제 narrativePriority를 계산한
+ * 새로운 Grounding Evidence를 생성한다.
+ *
+ * =================================================
+ * 중요한 경계
+ * =================================================
+ *
+ * prominence가 없다는 상태와
+ * prominence가 아직 순위 계산 전이라는 상태를
+ * 같은 null 값으로 표현하지 않는다.
+ *
+ * 순위 계산 전 상태는:
+ *
+ * narrativePriority == 0
+ *
+ * 인 명시적인 unranked Prominence로 표현한다.
+ *
+ * =================================================
+ * 하지 않는 것
+ * =================================================
  *
  * - 점수 합산
  * - 대표 길흉 선택
  * - 성공 확률 계산
  * - 사건 발생 확정
+ * - prominence null fallback
+ * - prominence 없는 우회 생성
  *
  * =================================================
- *
- * 특히:
+ * 독립 방향 유지
+ * =================================================
  *
  * SUPPORTIVE + PRESSURE
  *
  * 가 동시에 존재하면
  * 두 Evidence를 각각 그대로 유지한다.
  *
- * prominence는 어느 쪽이 더 길하거나 좋은지를
- * 결정하지 않는다.
+ * prominence는 어느 쪽이 더 좋거나
+ * 더 실제적이라는 의미가 아니다.
  *
  * 단지 상담문에서 어떤 Evidence를
- * 먼저 깊게 설명할지 결정하는 내부 정보다.
+ * 먼저 깊게 설명할지 결정하기 위한
+ * deterministic provenance 메타데이터다.
  */
 public record ConsultationGroundingEvidence(
 
@@ -67,48 +110,6 @@ public record ConsultationGroundingEvidence(
         ConsultationGroundingProminence prominence
 
 ) {
-
-    /*
-     * =================================================
-     * 기존 20차 호출 호환 Constructor
-     * =================================================
-     *
-     * 기존 호출부가 prominence를 전달하지 않아도
-     * 컴파일이 깨지지 않게 유지한다.
-     *
-     * 이 경우 prominence는
-     * narrativePriority == 0 상태로 생성되고
-     *
-     * ConsultationGroundingProminenceAnalyzer가
-     * 전체 Slice 안에서 실제 순위를 다시 계산한다.
-     */
-
-    public ConsultationGroundingEvidence(
-
-            LifeDomain domain,
-
-            String ruleCode,
-
-            LifeDomainSignalStatus status,
-
-            String summary,
-
-            List<ConsultationGroundingSource> sources,
-
-            List<String> reasons
-
-    ) {
-
-        this(
-                domain,
-                ruleCode,
-                status,
-                summary,
-                sources,
-                reasons,
-                null
-        );
-    }
 
     /*
      * =================================================
@@ -203,20 +204,25 @@ public record ConsultationGroundingEvidence(
 
         /*
          * =================================================
-         * Prominence
+         * Prominence 필수
          * =================================================
+         *
+         * 최초 변환 단계에서도 null을 사용하지 않는다.
+         *
+         * 아직 Slice 순위가 계산되지 않았다면
+         * 호출부가 반드시:
+         *
+         * ConsultationGroundingProminence.unranked(sources)
+         *
+         * 를 명시적으로 전달한다.
          */
 
-        if (
-                prominence == null
-        ) {
-
-            prominence =
-                    ConsultationGroundingProminence
-                            .unranked(
-                                    sources
-                            );
-        }
+        prominence =
+                Objects.requireNonNull(
+                        prominence,
+                        "Grounding Evidence에는 ConsultationGroundingProminence가 반드시 필요합니다: "
+                                + ruleCode
+                );
 
         validateProminenceAgainstSources(
                 sources,
@@ -225,12 +231,20 @@ public record ConsultationGroundingEvidence(
         );
     }
 
+
+    /*
+     * =================================================
+     * Status Helper
+     * =================================================
+     */
+
     public boolean supportive() {
 
         return status
                 ==
                 LifeDomainSignalStatus.SUPPORTIVE;
     }
+
 
     public boolean pressure() {
 
@@ -239,6 +253,7 @@ public record ConsultationGroundingEvidence(
                 LifeDomainSignalStatus.PRESSURE;
     }
 
+
     public boolean mixed() {
 
         return status
@@ -246,12 +261,20 @@ public record ConsultationGroundingEvidence(
                 LifeDomainSignalStatus.MIXED;
     }
 
+
     public boolean contextual() {
 
         return status
                 ==
                 LifeDomainSignalStatus.CONTEXTUAL;
     }
+
+
+    /*
+     * =================================================
+     * Source Helper
+     * =================================================
+     */
 
     public boolean hasAuxiliarySource() {
 
@@ -263,10 +286,18 @@ public record ConsultationGroundingEvidence(
                 );
     }
 
+
+    /*
+     * =================================================
+     * Prominence Helper
+     * =================================================
+     */
+
     public boolean prominenceRanked() {
 
         return prominence.ranked();
     }
+
 
     /*
      * =================================================
@@ -274,7 +305,18 @@ public record ConsultationGroundingEvidence(
      * =================================================
      *
      * prominence에 들어 있는 직접 Source 수를
-     * 임의로 조작할 수 없게 실제 Source와 비교한다.
+     * 임의로 조작할 수 없게
+     * 실제 Grounding Source와 비교한다.
+     *
+     * 여기서는:
+     *
+     * - narrativePriority의 높고 낮음
+     * - 같은 방향 반복의 의미
+     * - Status의 우열
+     *
+     * 을 계산하지 않는다.
+     *
+     * Source 기반 기본 정합성만 검증한다.
      */
 
     private static void validateProminenceAgainstSources(
@@ -361,6 +403,13 @@ public record ConsultationGroundingEvidence(
         }
     }
 
+
+    /*
+     * =================================================
+     * Text
+     * =================================================
+     */
+
     private static String requireText(
 
             String value,
@@ -388,6 +437,13 @@ public record ConsultationGroundingEvidence(
 
         return normalized;
     }
+
+
+    /*
+     * =================================================
+     * Reason Normalize
+     * =================================================
+     */
 
     private static List<String> normalizeReasons(
 
