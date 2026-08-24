@@ -3,6 +3,9 @@ package com.dajeom.dto;
 import com.dajeom.entity.Gender;
 import com.dajeom.type.CalendarType;
 import com.dajeom.type.ConsultationCategory;
+import com.dajeom.type.ConsultationRelationshipStatus;
+import com.dajeom.type.ConsultationRelationshipTarget;
+import com.dajeom.type.ConsultationWorkStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -222,7 +225,30 @@ public record SajuAnalysisRequest(
                 max = 1000,
                 message = "상담 질문은 1000자 이하로 입력해 주세요."
         )
-        String consultationQuestion
+        String consultationQuestion,
+
+        /**
+         * 상담 전 관계 대상 Context.
+         *
+         * 명리 계산에는 사용하지 않고
+         * 모든 deterministic Judgment가 확정된 뒤
+         * 상담 표현의 호칭/상황 적합성에만 사용한다.
+         */
+        ConsultationRelationshipTarget relationshipTarget,
+
+        /**
+         * 상담 전 현재 관계 상태 Context.
+         *
+         * 사주 결과를 변경하는 Evidence가 아니다.
+         */
+        ConsultationRelationshipStatus relationshipStatus,
+
+        /**
+         * 상담 전 현재 직업/일 상태 Context.
+         *
+         * 사주 결과를 변경하는 Evidence가 아니다.
+         */
+        ConsultationWorkStatus workStatus
 
 ) {
 
@@ -256,6 +282,21 @@ public record SajuAnalysisRequest(
                         normalizeQuestion(
                                 consultationQuestion
                         );
+
+                relationshipTarget =
+                        relationshipTarget == null
+                                ? ConsultationRelationshipTarget.UNSPECIFIED
+                                : relationshipTarget;
+
+                relationshipStatus =
+                        relationshipStatus == null
+                                ? ConsultationRelationshipStatus.UNSPECIFIED
+                                : relationshipStatus;
+
+                workStatus =
+                        workStatus == null
+                                ? ConsultationWorkStatus.UNSPECIFIED
+                                : workStatus;
         }
 
         /*

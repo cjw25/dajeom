@@ -2,9 +2,11 @@ package com.dajeom.engine;
 
 import com.dajeom.model.NatalConditionalResponseAnalysis;
 import com.dajeom.model.NatalCrossFunctionalAnalysis;
+import com.dajeom.model.NatalExactTenGodAnalysis;
 import com.dajeom.model.NatalFunctionalAnalysis;
 import com.dajeom.model.NatalChartAdvancedAnalysis;
 import com.dajeom.model.NatalPersonalityDeterministicAnalysis;
+import com.dajeom.model.NatalPersonalityExactTenGodSelection;
 import com.dajeom.model.NatalPersonalityFindingAnalysis;
 import com.dajeom.model.NatalPersonalityFindingSynthesisAnalysis;
 import com.dajeom.model.NatalPersonalityPatternAnalysis;
@@ -21,82 +23,81 @@ import java.util.Objects;
  * 원국 기본성향 분석 전체 Pipeline.
  *
  * =================================================
- *
- * 이 Engine은 새로운 명리 계산을 하지 않는다.
- *
- * 지금까지 분리해 둔 Personality 분석 계층을
- * 정확한 순서로 실행하는 orchestration layer다.
- *
+ * 공식 사용자 Meaning 우선선
  * =================================================
  *
- * 흐름:
+ * 10-1 정확한 10십성 분포
  *
- * NatalChartAdvancedAnalysis
  * +
- * TenGodCompositeAnalysis
+ *
+ * 5차 실제 주격 정확한 십성
  *
  * ↓
  *
- * NatalFunctionalAnalysis
+ * NatalExactTenGodAnalysis
  *
  * ↓
  *
- * NatalCrossFunctionalAnalysis
+ * NatalPersonalityExactTenGodSelection
  *
  * ↓
  *
- * NatalConditionalResponseAnalysis
+ * Exact TenGod Statement Fact
  *
  * ↓
  *
- * NatalPersonalityPatternAnalysis
+ * Final Personality Contract
  *
- * ↓
+ * =================================================
+ * 전통 Pattern / 호환선
+ * =================================================
  *
- * NatalPersonalityDeterministicAnalysis
+ * 기존 5개 기능축 분석은:
  *
- * ↓
+ * - 전통 Cross Pattern의 성립 확인
+ * - 기존 API 구조 호환
  *
- * NatalPersonalityFindingAnalysis
- *
- * ↓
- *
- * NatalPersonalityFindingSynthesisAnalysis
- *
- * ↓
- *
- * NatalPersonalityStatementFactAnalysis
- *
- * ↓
- *
- * NatalPersonalityStatementSelectionAnalysis
- *
- * ↓
- *
- * NatalPersonalityStatementBundleAnalysis
- *
- * ↓
- *
- * NatalPersonalityStatementContract
+ * 을 위해 유지한다.
  *
  * =================================================
  *
- * 중요한 원칙:
+ * 그러나:
  *
- * 이 Pipeline에서는:
+ * SELF_ASSERTION
+ * EXPRESSION
+ * RESOURCE_REALITY
+ * RESPONSIBILITY
+ * PROCESSING
  *
- * - 새 점수
- * - 새 Threshold
- * - 새 십성 판정
- * - 새 심리판정
+ * 자체가 정확한 10십성을 대신하는
+ * 사용자 Personality Meaning의
+ * 공식 기준이 되지는 않는다.
  *
- * 을 만들지 않는다.
+ * =================================================
  *
- * 각 하위 Engine의 결과를
- * 다음 계층으로 전달하기만 한다.
+ * 2차 Finding Synthesis 역시
+ * 공식 실행에서는 비활성이다.
  */
 @Component
 public class NatalPersonalityStatementContractPipelineEngine {
+
+    /*
+     * =================================================
+     * Exact TenGod
+     * =================================================
+     */
+
+    private final NatalExactTenGodAnalysisEngine
+            natalExactTenGodAnalysisEngine;
+
+    private final NatalPersonalityExactTenGodSelectionEngine
+            natalPersonalityExactTenGodSelectionEngine;
+
+    /*
+     * =================================================
+     * 기존 Pattern / 호환 Pipeline
+     * =================================================
+     */
 
     private final NatalFunctionalAnalysisEngine
             natalFunctionalAnalysisEngine;
@@ -133,6 +134,12 @@ public class NatalPersonalityStatementContractPipelineEngine {
 
     public NatalPersonalityStatementContractPipelineEngine(
 
+            NatalExactTenGodAnalysisEngine
+                    natalExactTenGodAnalysisEngine,
+
+            NatalPersonalityExactTenGodSelectionEngine
+                    natalPersonalityExactTenGodSelectionEngine,
+
             NatalFunctionalAnalysisEngine
                     natalFunctionalAnalysisEngine,
 
@@ -167,6 +174,16 @@ public class NatalPersonalityStatementContractPipelineEngine {
                     natalPersonalityStatementContractEngine
 
     ) {
+
+        this.natalExactTenGodAnalysisEngine =
+                Objects.requireNonNull(
+                        natalExactTenGodAnalysisEngine
+                );
+
+        this.natalPersonalityExactTenGodSelectionEngine =
+                Objects.requireNonNull(
+                        natalPersonalityExactTenGodSelectionEngine
+                );
 
         this.natalFunctionalAnalysisEngine =
                 Objects.requireNonNull(
@@ -245,21 +262,47 @@ public class NatalPersonalityStatementContractPipelineEngine {
         /*
          * =================================================
          * 1.
-         * 원국 기능축
+         * 정확한 10십성 공식 계층
+         * =================================================
+         */
+
+        NatalExactTenGodAnalysis exactTenGodAnalysis =
+                natalExactTenGodAnalysisEngine
+                        .analyze(
+
+                                advancedAnalysis,
+
+                                tenGodCompositeAnalysis
+                        );
+
+        NatalPersonalityExactTenGodSelection exactTenGodSelection =
+                natalPersonalityExactTenGodSelectionEngine
+                        .analyze(
+                                exactTenGodAnalysis
+                        );
+
+        /*
+         * =================================================
+         * 2.
+         * 기존 기능축 분석
+         *
+         * 전통 Pattern/호환 목적.
          * =================================================
          */
 
         NatalFunctionalAnalysis functionalAnalysis =
                 natalFunctionalAnalysisEngine
                         .analyze(
+
                                 advancedAnalysis,
+
                                 tenGodCompositeAnalysis
                         );
 
         /*
          * =================================================
-         * 2.
-         * 기능축 교차작동
+         * 3.
+         * 기존 Cross 분석
          * =================================================
          */
 
@@ -271,13 +314,12 @@ public class NatalPersonalityStatementContractPipelineEngine {
 
         /*
          * =================================================
-         * 3.
-         * 조건부 작동 Pattern
+         * 4.
+         * 조건부 Pattern
          * =================================================
          */
 
-        NatalConditionalResponseAnalysis
-                conditionalResponseAnalysis =
+        NatalConditionalResponseAnalysis conditionalResponseAnalysis =
                 natalConditionalResponseAnalysisEngine
                         .analyze(
                                 crossFunctionalAnalysis
@@ -285,13 +327,12 @@ public class NatalPersonalityStatementContractPipelineEngine {
 
         /*
          * =================================================
-         * 4.
+         * 5.
          * Personality Pattern
          * =================================================
          */
 
-        NatalPersonalityPatternAnalysis
-                personalityPatternAnalysis =
+        NatalPersonalityPatternAnalysis personalityPatternAnalysis =
                 natalPersonalityPatternAnalysisEngine
                         .analyze(
                                 conditionalResponseAnalysis
@@ -299,13 +340,12 @@ public class NatalPersonalityStatementContractPipelineEngine {
 
         /*
          * =================================================
-         * 5.
+         * 6.
          * Deterministic Judgment
          * =================================================
          */
 
-        NatalPersonalityDeterministicAnalysis
-                deterministicAnalysis =
+        NatalPersonalityDeterministicAnalysis deterministicAnalysis =
                 natalPersonalityDeterministicJudgmentEngine
                         .analyze(
                                 personalityPatternAnalysis
@@ -313,13 +353,12 @@ public class NatalPersonalityStatementContractPipelineEngine {
 
         /*
          * =================================================
-         * 6.
+         * 7.
          * Finding
          * =================================================
          */
 
-        NatalPersonalityFindingAnalysis
-                findingAnalysis =
+        NatalPersonalityFindingAnalysis findingAnalysis =
                 natalPersonalityFindingAnalysisEngine
                         .analyze(
                                 deterministicAnalysis
@@ -327,41 +366,82 @@ public class NatalPersonalityStatementContractPipelineEngine {
 
         /*
          * =================================================
-         * 7.
-         * Finding Synthesis
+         * 8.
+         * Legacy Synthesis 호환 경계
          * =================================================
          */
 
-        NatalPersonalityFindingSynthesisAnalysis
-                synthesisAnalysis =
+        NatalPersonalityFindingSynthesisAnalysis synthesisAnalysis =
                 natalPersonalityFindingSynthesisEngine
                         .analyze(
                                 findingAnalysis
                         );
 
-        /*
-         * =================================================
-         * 8.
-         * Statement Fact
-         * =================================================
-         */
+        if (
+                !synthesisAnalysis
+                        .syntheses()
+                        .isEmpty()
+        ) {
 
-        NatalPersonalityStatementFactAnalysis
-                statementFactAnalysis =
-                natalPersonalityStatementFactAnalysisEngine
-                        .analyze(
-                                synthesisAnalysis
-                        );
+            throw new IllegalStateException(
+                    "공식 Personality Pipeline에서는 "
+                            + "2차 Finding Synthesis를 생성할 수 없습니다."
+            );
+        }
 
         /*
          * =================================================
          * 9.
-         * Statement Selection
+         * Statement Fact
+         * =================================================
+         *
+         * 정확한 10십성을
+         * 여기서 공식 Fact로 먼저 보존한다.
+         */
+
+        NatalPersonalityStatementFactAnalysis statementFactAnalysis =
+                natalPersonalityStatementFactAnalysisEngine
+                        .analyze(
+
+                                synthesisAnalysis,
+
+                                exactTenGodSelection
+                        );
+
+        /*
+         * =================================================
+         * Exact TenGod Identity 확인
          * =================================================
          */
 
-        NatalPersonalityStatementSelectionAnalysis
-                selectionAnalysis =
+        if (
+                statementFactAnalysis
+                        .exactTenGodSelection()
+                        .orElseThrow()
+                        != exactTenGodSelection
+        ) {
+
+            throw new IllegalStateException(
+                    "Statement Fact Analysis가 "
+                            + "공식 Exact TenGod Selection Identity를 "
+                            + "보존하지 않았습니다."
+            );
+        }
+
+        /*
+         * =================================================
+         * 10.
+         * 기존 Pattern Selection
+         * =================================================
+         *
+         * Selection Engine은 기존 Finding Fact를
+         * 계속 분류한다.
+         *
+         * exactTenGodFacts는 별도 공식선으로
+         * Contract까지 직접 보존된다.
+         */
+
+        NatalPersonalityStatementSelectionAnalysis selectionAnalysis =
                 natalPersonalityStatementSelectionEngine
                         .analyze(
                                 statementFactAnalysis
@@ -369,13 +449,12 @@ public class NatalPersonalityStatementContractPipelineEngine {
 
         /*
          * =================================================
-         * 10.
-         * Statement Bundle
+         * 11.
+         * 기존 Pattern Bundle
          * =================================================
          */
 
-        NatalPersonalityStatementBundleAnalysis
-                bundleAnalysis =
+        NatalPersonalityStatementBundleAnalysis bundleAnalysis =
                 natalPersonalityStatementBundleEngine
                         .analyze(
                                 selectionAnalysis
@@ -383,17 +462,55 @@ public class NatalPersonalityStatementContractPipelineEngine {
 
         /*
          * =================================================
-         * 11.
-         * 최종 Personality Statement Contract
+         * 12.
+         * 최종 Personality Contract
+         * =================================================
+         *
+         * Contract의 호환 생성자가
+         *
+         * bundleAnalysis
+         * ↓
+         * statementFactAnalysis
+         *
+         * 에 보존된:
+         *
+         * exactTenGodSelection
+         * exactTenGodFacts
+         *
+         * 를 자동 승계한다.
+         */
+
+        NatalPersonalityStatementContract contract =
+                Objects.requireNonNull(
+
+                        natalPersonalityStatementContractEngine
+                                .analyze(
+                                        bundleAnalysis
+                                ),
+
+                        "Personality Statement Contract Engine이 null을 반환했습니다."
+                );
+
+        /*
+         * =================================================
+         * 최종 Contract Identity 검증
          * =================================================
          */
 
-        return Objects.requireNonNull(
-                natalPersonalityStatementContractEngine
-                        .analyze(
-                                bundleAnalysis
-                        ),
-                "Personality Statement Contract Engine이 null을 반환했습니다."
-        );
+        if (
+                contract
+                        .exactTenGodSelection()
+                        .orElseThrow()
+                        != exactTenGodSelection
+        ) {
+
+            throw new IllegalStateException(
+                    "최종 Personality Contract가 "
+                            + "공식 Exact TenGod Selection Identity를 "
+                            + "보존하지 않았습니다."
+            );
+        }
+
+        return contract;
     }
 }

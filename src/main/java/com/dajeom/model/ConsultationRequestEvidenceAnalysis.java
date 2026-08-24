@@ -143,6 +143,7 @@ public record ConsultationRequestEvidenceAnalysis(
 
         validateSelectedViews(
                 requestScopeAnalysis,
+                questionRoutingAnalysis,
                 categoryEvidenceAnalysis,
                 selectedViews
         );
@@ -388,11 +389,13 @@ public record ConsultationRequestEvidenceAnalysis(
 
             if (
                     !questionRouting
+                            .blindAnalysisReady()
+                            && !questionRouting
                             .groundingRequired()
             ) {
 
                 throw new IllegalArgumentException(
-                        "Category Resolution이 필요한 자유 질문은 GROUNDING_REQUIRED 상태여야 합니다."
+                        "Category 미선택 자유 질문은 BLIND_ANALYSIS_READY 또는 GROUNDING_REQUIRED 상태여야 합니다."
                 );
             }
 
@@ -452,6 +455,8 @@ public record ConsultationRequestEvidenceAnalysis(
 
             ConsultationRequestScopeAnalysis requestScope,
 
+            ConsultationQuestionRoutingAnalysis questionRouting,
+
             ConsultationCategoryEvidenceAnalysis evidenceAnalysis,
 
             List<ConsultationCategoryEvidenceView> selectedViews
@@ -468,11 +473,37 @@ public record ConsultationRequestEvidenceAnalysis(
         ) {
 
             if (
+                    questionRouting.blindAnalysisReady()
+            ) {
+
+                List<ConsultationCategory> expectedBlindCategories =
+                        questionRouting.routedCategories();
+
+                if (selectedViews.size() != expectedBlindCategories.size()) {
+                    throw new IllegalArgumentException(
+                            "BLIND_ANALYSIS_READY Category 수와 selectedViews 수가 일치하지 않습니다."
+                    );
+                }
+
+                for (ConsultationCategory category : expectedBlindCategories) {
+                    ConsultationCategoryEvidenceView expected = evidenceAnalysis.get(category);
+                    boolean exists = selectedViews.stream().anyMatch(view -> view == expected);
+                    if (!exists) {
+                        throw new IllegalArgumentException(
+                                "BLIND_ANALYSIS_READY에 필요한 공식 Evidence View가 누락되었습니다: " + category
+                        );
+                    }
+                }
+
+                return;
+            }
+
+            if (
                     !selectedViews.isEmpty()
             ) {
 
                 throw new IllegalArgumentException(
-                        "ConsultationCategory Resolution이 필요한 자유 질문 요청에는 selectedViews를 미리 지정할 수 없습니다."
+                        "GROUNDING_REQUIRED 자유 질문 요청에는 selectedViews를 미리 지정할 수 없습니다."
                 );
             }
 

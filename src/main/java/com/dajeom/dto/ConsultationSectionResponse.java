@@ -82,7 +82,14 @@ import java.util.Objects;
  */
 public record ConsultationSectionResponse(
 
+        /** 공식 ConsultationCategory 고정 순서 */
         int order,
+
+        /** 사용자 질문/Context를 반영한 화면 표시 순서 */
+        int displayOrder,
+
+        /** 현재 사전 질문/Context에서 우선적으로 보여줄 Section인지 */
+        boolean focused,
 
         ConsultationCategory category,
 
@@ -95,6 +102,17 @@ public record ConsultationSectionResponse(
 ) {
 
     public ConsultationSectionResponse {
+
+        if (
+                order < 1
+                        ||
+                        displayOrder < 1
+        ) {
+
+            throw new IllegalArgumentException(
+                    "ConsultationSectionResponse order/displayOrder는 1 이상이어야 합니다."
+            );
+        }
 
         Objects.requireNonNull(
                 category,
@@ -119,13 +137,9 @@ public record ConsultationSectionResponse(
                 );
     }
 
-
     private static List<String> normalizeStoryEmphasis(
-
             String storyText,
-
             List<String> source
-
     ) {
 
         if (
@@ -198,13 +212,9 @@ public record ConsultationSectionResponse(
         );
     }
 
-
     private static String requireText(
-
             String value,
-
             String message
-
     ) {
 
         Objects.requireNonNull(

@@ -1,93 +1,78 @@
 package com.dajeom.engine;
 
+import com.dajeom.model.NatalExactTenGodProfile;
+import com.dajeom.model.NatalPersonalityExactTenGodFact;
+import com.dajeom.model.NatalPersonalityExactTenGodSelection;
 import com.dajeom.model.NatalPersonalityFinding;
 import com.dajeom.model.NatalPersonalityFindingAnalysis;
-import com.dajeom.model.NatalPersonalityFindingSynthesis;
 import com.dajeom.model.NatalPersonalityFindingSynthesisAnalysis;
 import com.dajeom.model.NatalPersonalityStatementFact;
 import com.dajeom.model.NatalPersonalityStatementFactAnalysis;
 import com.dajeom.type.NatalResponseSituationType;
-import com.dajeom.type.PersonalityFindingOriginType;
-import com.dajeom.type.PersonalityFindingTheme;
 import com.dajeom.type.PersonalityJudgmentGroundingLevel;
 import com.dajeom.type.PersonalityStatementExpressionMode;
 import com.dajeom.type.PersonalityStatementFactType;
+import com.dajeom.type.PersonalityStatementSelectionRole;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 /**
- * Personality Finding
+ * Personality Statement Fact 생성 Engine.
  *
- * +
+ * =================================================
+ * 현재 공식 구조
+ * =================================================
  *
- * Personality Synthesis
+ * 정확한 10십성
  *
- * 를
+ * ->
  *
- * 최종 사용자 설명 직전의
- * Statement Fact로 변환한다.
+ * Exact TenGod Statement Fact
  *
  * =================================================
  *
- * 핵심 원칙:
+ * 기존 Finding
+ *
+ * ->
+ *
+ * Legacy / Pattern Statement Fact
+ *
+ * =================================================
+ *
+ * 중요한 원칙
+ * =================================================
  *
  * 1.
- * Finding을 삭제하지 않는다.
- *
- * =================================================
+ * 정확한 10십성을 먼저 보존한다.
  *
  * 2.
- * 강한 Synthesis가 존재하면
- * 그 Synthesis에 포함된 개별 Cross Finding은
- *
- * absorbedByDirectSynthesis = true
- *
- * 로 표시한다.
- *
- * =================================================
+ * 비겁/식상/재성/관살/인성 5축으로
+ * 정확한 십성을 대체하지 않는다.
  *
  * 3.
- * 따라서:
- *
- * 내부 Evidence는 모두 보존하면서
- * 사용자 출력의 반복만 막는다.
- *
- * =================================================
+ * 전통 Cross Pattern은
+ * 기존 Finding으로 별도 유지한다.
  *
  * 4.
- * Function Finding은
- * Synthesis Source에 포함됐다는 이유로
- * 자동 흡수하지 않는다.
- *
- * 이유:
- *
- * 기능 자체에 대한 설명과
- * 기능 간 상호작용 설명은
- * 서로 다른 의미이기 때문이다.
- *
- * =================================================
- *
- * 5.
- * 새 점수 없음.
- *
- * 6.
- * 다수결 없음.
- *
- * 7.
- * 문자열 Parsing 없음.
- *
- * 8.
- * 한국어 성격문장 없음.
+ * 둘 이상의 독립 Finding을 다시 합쳐
+ * Synthesis Fact를 만들지 않는다.
  */
 @Component
 public class NatalPersonalityStatementFactAnalysisEngine {
 
+    /**
+     * =================================================
+     * Legacy 호환 실행
+     * =================================================
+     *
+     * 공식 Personality Pipeline에서는
+     * Exact TenGod Selection을 받는
+     * overload를 사용한다.
+     */
     public NatalPersonalityStatementFactAnalysis analyze(
 
             NatalPersonalityFindingSynthesisAnalysis
@@ -100,6 +85,103 @@ public class NatalPersonalityStatementFactAnalysisEngine {
                 "Personality Finding Synthesis Analysis는 필수입니다."
         );
 
+        return createAnalysis(
+
+                synthesisAnalysis,
+
+                Optional.empty(),
+
+                List.of()
+        );
+    }
+
+    /**
+     * =================================================
+     * 공식 실행
+     * =================================================
+     */
+    public NatalPersonalityStatementFactAnalysis analyze(
+
+            NatalPersonalityFindingSynthesisAnalysis
+                    synthesisAnalysis,
+
+            NatalPersonalityExactTenGodSelection
+                    exactTenGodSelection
+
+    ) {
+
+        Objects.requireNonNull(
+                synthesisAnalysis,
+                "Personality Finding Synthesis Analysis는 필수입니다."
+        );
+
+        Objects.requireNonNull(
+                exactTenGodSelection,
+                "Personality Exact TenGod Selection은 필수입니다."
+        );
+
+        if (
+                synthesisAnalysis
+                        .completeChart()
+                        != exactTenGodSelection
+                        .completeChart()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Synthesis Analysis와 Exact TenGod Selection의 "
+                            + "원국 완전성 상태가 일치하지 않습니다."
+            );
+        }
+
+        List<NatalPersonalityExactTenGodFact> exactFacts =
+                createExactTenGodFacts(
+                        exactTenGodSelection
+                );
+
+        return createAnalysis(
+
+                synthesisAnalysis,
+
+                Optional.of(
+                        exactTenGodSelection
+                ),
+
+                exactFacts
+        );
+    }
+
+    private NatalPersonalityStatementFactAnalysis
+    createAnalysis(
+
+            NatalPersonalityFindingSynthesisAnalysis
+                    synthesisAnalysis,
+
+            Optional<NatalPersonalityExactTenGodSelection>
+                    exactTenGodSelection,
+
+            List<NatalPersonalityExactTenGodFact>
+                    exactTenGodFacts
+
+    ) {
+
+        /*
+         * =================================================
+         * 2차 Synthesis 하드 차단
+         * =================================================
+         */
+
+        if (
+                !synthesisAnalysis
+                        .syntheses()
+                        .isEmpty()
+        ) {
+
+            throw new IllegalStateException(
+                    "현재 Statement Fact 단계에서는 "
+                            + "2차 Personality Synthesis를 소비할 수 없습니다."
+            );
+        }
+
         NatalPersonalityFindingAnalysis findingAnalysis =
                 synthesisAnalysis
                         .findingAnalysis();
@@ -109,26 +191,7 @@ public class NatalPersonalityStatementFactAnalysisEngine {
 
         /*
          * =================================================
-         * 사용자에게 직접 표현 가능한 Synthesis가
-         * 어떤 Finding Theme을 흡수하는지 먼저 계산한다.
-         *
-         * 주의:
-         *
-         * 이것은 Evidence 삭제 목록이 아니라
-         * 출력 중복 방지 목록이다.
-         * =================================================
-         */
-
-        Set<PersonalityFindingTheme>
-                themesAbsorbedByDirectSynthesis =
-                collectThemesAbsorbedByDirectSynthesis(
-                        synthesisAnalysis
-                );
-
-        /*
-         * =================================================
-         * 1.
-         * 모든 Finding을 Statement Fact로 변환
+         * 기존 Finding은 각각 독립 Fact로 보존
          * =================================================
          */
 
@@ -137,40 +200,9 @@ public class NatalPersonalityStatementFactAnalysisEngine {
                 : findingAnalysis.findings()
         ) {
 
-            boolean absorbed =
-                    shouldAbsorbFinding(
-
-                            finding,
-
-                            themesAbsorbedByDirectSynthesis
-                    );
-
             facts.add(
                     createFindingFact(
-                            finding,
-                            absorbed
-                    )
-            );
-        }
-
-        /*
-         * =================================================
-         * 2.
-         * 모든 Synthesis를 Statement Fact로 변환
-         *
-         * REFERENCE/CONTEXTUAL Synthesis도
-         * 삭제하지 않는다.
-         * =================================================
-         */
-
-        for (
-                NatalPersonalityFindingSynthesis synthesis
-                : synthesisAnalysis.syntheses()
-        ) {
-
-            facts.add(
-                    createSynthesisFact(
-                            synthesis
+                            finding
                     )
             );
         }
@@ -179,117 +211,135 @@ public class NatalPersonalityStatementFactAnalysisEngine {
 
                 synthesisAnalysis,
 
+                exactTenGodSelection,
+
+                exactTenGodFacts,
+
                 facts,
 
-                synthesisAnalysis.completeChart()
+                synthesisAnalysis
+                        .completeChart()
         );
     }
 
-    /**
-     * 직접 표현 가능한 Synthesis가
-     * 사용하는 Cross Finding Theme 수집.
+    /*
+     * =================================================
+     * Exact TenGod Fact
+     * =================================================
      */
-    private Set<PersonalityFindingTheme>
-    collectThemesAbsorbedByDirectSynthesis(
 
-            NatalPersonalityFindingSynthesisAnalysis
-                    synthesisAnalysis
+    private List<NatalPersonalityExactTenGodFact>
+    createExactTenGodFacts(
+
+            NatalPersonalityExactTenGodSelection selection
 
     ) {
 
-        Set<PersonalityFindingTheme> result =
-                new LinkedHashSet<>();
+        List<NatalPersonalityExactTenGodFact> result =
+                new ArrayList<>();
 
-        for (
-                NatalPersonalityFindingSynthesis synthesis
-                : synthesisAnalysis
-                .directlyAssertableSyntheses()
-        ) {
+        /*
+         * =================================================
+         * PRIMARY
+         * =================================================
+         */
 
-            for (
-                    NatalPersonalityFinding finding
-                    : synthesis.sourceFindings()
-            ) {
+        appendExactTenGodFacts(
 
-                /*
-                 * Cross Pattern만 흡수 대상으로 한다.
-                 *
-                 * Function 자체 Finding은
-                 * 복합작동 설명과 의미가 다르므로
-                 * 유지한다.
-                 */
-                if (
-                        finding.originType()
-                                == PersonalityFindingOriginType
-                                .CROSS_PATTERN
-                ) {
+                result,
 
-                    result.add(
-                            finding.theme()
-                    );
-                }
-            }
-        }
+                selection
+                        .primaryProfiles(),
 
-        return Set.copyOf(
+                PersonalityStatementSelectionRole
+                        .PRIMARY,
+
+                selection.completeChart()
+        );
+
+        /*
+         * =================================================
+         * SUPPORTING
+         * =================================================
+         */
+
+        appendExactTenGodFacts(
+
+                result,
+
+                selection
+                        .supportingProfiles(),
+
+                PersonalityStatementSelectionRole
+                        .SUPPORTING,
+
+                selection.completeChart()
+        );
+
+        /*
+         * =================================================
+         * REFERENCE
+         * =================================================
+         */
+
+        appendExactTenGodFacts(
+
+                result,
+
+                selection
+                        .referenceProfiles(),
+
+                PersonalityStatementSelectionRole
+                        .INTERNAL_REFERENCE,
+
+                selection.completeChart()
+        );
+
+        return List.copyOf(
                 result
         );
     }
 
-    /**
-     * 개별 Finding을
-     * 사용자 출력에서 Synthesis에 흡수할지.
-     */
-    private boolean shouldAbsorbFinding(
+    private void appendExactTenGodFacts(
 
-            NatalPersonalityFinding finding,
+            List<NatalPersonalityExactTenGodFact> target,
 
-            Set<PersonalityFindingTheme>
-                    themesAbsorbedByDirectSynthesis
+            List<NatalExactTenGodProfile> profiles,
+
+            PersonalityStatementSelectionRole role,
+
+            boolean completeChart
 
     ) {
 
-        if (
-                finding.originType()
-                        != PersonalityFindingOriginType
-                        .CROSS_PATTERN
+        for (
+                NatalExactTenGodProfile profile
+                : profiles
         ) {
 
-            return false;
+            target.add(
+                    new NatalPersonalityExactTenGodFact(
+
+                            profile,
+
+                            role,
+
+                            completeChart
+                    )
+            );
         }
-
-        /*
-         * 직접 출력 가능한 Finding만
-         * 실제 중복 출력 대상이다.
-         *
-         * REFERENCE/CONTEXTUAL은 어차피
-         * 사용자 직접표현 대상이 아니므로
-         * absorbed로 표시하지 않는다.
-         */
-        if (
-                !finding.directAssertionAllowed()
-        ) {
-
-            return false;
-        }
-
-        return themesAbsorbedByDirectSynthesis
-                .contains(
-                        finding.theme()
-                );
     }
 
-    /**
+    /*
      * =================================================
-     * Finding → Statement Fact
+     * 기존 Finding Fact
      * =================================================
      */
+
     private NatalPersonalityStatementFact
     createFindingFact(
 
-            NatalPersonalityFinding finding,
-
-            boolean absorbed
+            NatalPersonalityFinding finding
 
     ) {
 
@@ -318,6 +368,17 @@ public class NatalPersonalityStatementFactAnalysisEngine {
                         finding.qualificationRequired()
                 );
 
+        /*
+         * =================================================
+         * absorbedByDirectSynthesis
+         *
+         * 현재 항상 false.
+         *
+         * 2차 Synthesis가 공식 실행에서
+         * 비활성화되었기 때문이다.
+         * =================================================
+         */
+
         return new NatalPersonalityStatementFact(
 
                 factType,
@@ -336,7 +397,7 @@ public class NatalPersonalityStatementFactAnalysisEngine {
 
                 expressionMode,
 
-                absorbed,
+                false,
 
                 List.of(
                         finding
@@ -348,11 +409,6 @@ public class NatalPersonalityStatementFactAnalysisEngine {
         );
     }
 
-    /**
-     * Finding Origin
-     * →
-     * Statement Fact Type.
-     */
     private PersonalityStatementFactType
     mapFindingFactType(
 
@@ -382,113 +438,12 @@ public class NatalPersonalityStatementFactAnalysisEngine {
         };
     }
 
-    /**
-     * =================================================
-     * Synthesis → Statement Fact
-     * =================================================
-     */
-    private NatalPersonalityStatementFact
-    createSynthesisFact(
-
-            NatalPersonalityFindingSynthesis synthesis
-
-    ) {
-
-        PersonalityStatementExpressionMode expressionMode =
-                determineExpressionMode(
-
-                        synthesis.groundingLevel(),
-
-                        synthesis.directAssertionAllowed(),
-
-                        synthesis.qualificationRequired()
-                );
-
-        List<NatalResponseSituationType> situations =
-                collectSituations(
-                        synthesis
-                );
-
-        return new NatalPersonalityStatementFact(
-
-                PersonalityStatementFactType
-                        .SYNTHESIS,
-
-                Optional.empty(),
-
-                Optional.of(
-                        synthesis.synthesisType()
-                ),
-
-                synthesis.involvedFunctions(),
-
-                situations,
-
-                synthesis.groundingLevel(),
-
-                expressionMode,
-
-                false,
-
-                synthesis.sourceFindings(),
-
-                List.of(
-                        synthesis
-                ),
-
-                synthesis.completeChart()
-        );
-    }
-
-    /**
-     * Synthesis Source Findings가
-     * 가지고 있는 상황을
-     * 중복 제거하여 보존.
-     */
-    private List<NatalResponseSituationType>
-    collectSituations(
-
-            NatalPersonalityFindingSynthesis synthesis
-
-    ) {
-
-        Set<NatalResponseSituationType> situations =
-                new LinkedHashSet<>();
-
-        for (
-                NatalPersonalityFinding finding
-                : synthesis.sourceFindings()
-        ) {
-
-            finding
-                    .situationType()
-                    .ifPresent(
-                            situations::add
-                    );
-        }
-
-        return List.copyOf(
-                situations
-        );
-    }
-
-    /**
+    /*
      * =================================================
      * Grounding
-     * +
-     * direct
-     * +
-     * qualification
-     *
-     * →
-     *
-     * 최종 표현 Mode.
-     *
      * =================================================
-     *
-     * 새 점수나 Threshold를
-     * 사용하지 않는다.
      */
+
     private PersonalityStatementExpressionMode
     determineExpressionMode(
 

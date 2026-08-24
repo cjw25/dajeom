@@ -4,47 +4,35 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 기존 Personality Finding들이
- * 함께 존재할 때 성립하는
- * 구조적 Synthesis 종류.
+ * Legacy Personality Finding Synthesis 식별자.
  *
  * =================================================
- *
- * 중요한 원칙:
- *
- * 여기에 정의된 조합은
- * 기존 Finding Theme의
- * 명시적인 구조 연결만 사용한다.
- *
+ * 현재 공식 정책
  * =================================================
  *
- * 새로운:
+ * 아래 식별자는 과거 모델/API 호환을 위해 유지한다.
  *
- * - 심리이론
- * - 점수
- * - 임의 Threshold
+ * 그러나 공식 Personality Pipeline에서는
+ * 이 조합들로 새로운 사용자 Meaning을 생성하지 않는다.
  *
- * 를 만들지 않는다.
+ * 각각의 requiredThemes가
+ * 실제 전통 Pattern으로 독립 성립했다면
+ * 각 Pattern은 각각의 Finding으로만 해석한다.
  *
- * =================================================
+ * 즉:
  *
- * 또한 requiredThemes 중 하나가
- * REFERENCE라면
+ * A가 성립하고
+ * B가 성립한다
  *
- * Synthesis도 강한 판정으로
- * 임의 승격시키지 않는다.
+ * !=
+ *
+ * 프로젝트가
+ * A + B = C
+ *
+ * 라는 새로운 성격 의미를 만든다.
  */
 public enum PersonalityFindingSynthesisType {
 
-    /**
-     * 상관견관
-     * +
-     * 상관패인
-     *
-     * 표현 ↔ 기준 긴장
-     * +
-     * 인성 → 표현 조절
-     */
     EXPRESSION_STANDARD_TENSION_WITH_PROCESSING_REGULATION(
 
             PersonalityFindingSynthesisKind
@@ -59,17 +47,6 @@ public enum PersonalityFindingSynthesisType {
             )
     ),
 
-    /**
-     * 재생관
-     * +
-     * 관인상생
-     *
-     * 재성
-     * →
-     * 관성
-     * →
-     * 인성
-     */
     REALITY_RESPONSIBILITY_PROCESSING_CHAIN(
 
             PersonalityFindingSynthesisKind
@@ -84,17 +61,6 @@ public enum PersonalityFindingSynthesisType {
             )
     ),
 
-    /**
-     * 살인상생
-     * +
-     * 상관패인
-     *
-     * 압력/관살
-     * →
-     * 인성
-     * →
-     * 표현 조절
-     */
     PRESSURE_PROCESSING_EXPRESSION_CHAIN(
 
             PersonalityFindingSynthesisKind
@@ -109,19 +75,6 @@ public enum PersonalityFindingSynthesisType {
             )
     ),
 
-    /**
-     * 관살혼재
-     * +
-     * 관인상생
-     *
-     * 책임/관성 내부 혼재 구조와
-     * 인성 방향의 작용이
-     * 동시에 존재.
-     *
-     * 관인상생이 혼재를
-     * 자동으로 해결한다고
-     * 판단하지 않는다.
-     */
     RESPONSIBILITY_MIXTURE_WITH_PROCESSING_PATH(
 
             PersonalityFindingSynthesisKind
@@ -136,21 +89,6 @@ public enum PersonalityFindingSynthesisType {
             )
     ),
 
-    /**
-     * 재극인
-     * +
-     * 관인상생
-     *
-     * 재성과 관성이
-     * 서로 다른 방식으로
-     * 인성 기능에 연결된다.
-     *
-     * 한쪽은 CONTROL,
-     * 한쪽은 GENERATION이다.
-     *
-     * 따라서 단순 상생 Chain으로
-     * 취급하지 않는다.
-     */
     REALITY_AND_RESPONSIBILITY_CONVERGE_ON_PROCESSING(
 
             PersonalityFindingSynthesisKind
@@ -165,24 +103,6 @@ public enum PersonalityFindingSynthesisType {
             )
     ),
 
-    /**
-     * 비겁쟁재
-     * +
-     * 재다신약
-     *
-     * 재성 영역에서:
-     *
-     * 비겁의 경쟁/분산 구조
-     *
-     * +
-     *
-     * CoreSelf 수용력 부담 구조
-     *
-     * 가 함께 존재.
-     *
-     * 이것만으로 실제 돈 문제나
-     * 인간관계 사건을 예측하지 않는다.
-     */
     RESOURCE_LOAD_WITH_SELF_ASSERTION_COMPETITION(
 
             PersonalityFindingSynthesisKind
@@ -243,5 +163,14 @@ public enum PersonalityFindingSynthesisType {
     requiredThemes() {
 
         return requiredThemes;
+    }
+
+    /**
+     * 현재 공식 사용자 Meaning 생성에는
+     * 사용하지 않는다.
+     */
+    public boolean userMeaningEnabled() {
+
+        return false;
     }
 }

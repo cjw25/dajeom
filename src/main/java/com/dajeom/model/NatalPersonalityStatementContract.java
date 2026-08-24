@@ -7,6 +7,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -14,45 +15,63 @@ import java.util.Set;
  * 최종 Java Contract.
  *
  * =================================================
+ * 현재 공식 우선순위
+ * =================================================
  *
- * 이 객체가 OpenAI 직전의
- * Grounding Contract가 된다.
+ * 1.
+ * exactTenGodFacts
+ *
+ * 정확한 10십성 자체의
+ * 원국 상태.
  *
  * =================================================
  *
- * 구성:
- *
+ * 2.
  * bundleContracts
  *
- * → 각 성향 묶음에서
- *   무엇을 반드시/보조적으로 설명할지
- *
- * globalBackgroundContexts
- *
- * → 직접 성격판정으로 사용하면 안 되는
- *   전역 Context
- *
- * guardrails
- *
- * → OpenAI가 절대로 넘으면 안 되는
- *   의미적 경계
+ * 실제 전통 Pattern 및
+ * 기존 호환 Finding 구조.
  *
  * =================================================
  *
- * 중요한 원칙:
+ * 3.
+ * globalBackgroundContexts
  *
- * 이 객체가 있더라도
- * OpenAI가 사주를 재계산하면 안 된다.
+ * 직접 성격판정으로 확대하면 안 되는
+ * 전역 Context.
  *
- * OpenAI는:
+ * =================================================
  *
- * Java가 이미 결정한 Fact와 관계를
- * 자연스러운 한국어로 표현하는 역할만 한다.
+ * 중요한 원칙
+ * =================================================
+ *
+ * 기존 5개 기능축 Bundle이 존재하더라도:
+ *
+ * 정재 + 편재
+ * -> 재성이라는 새로운 성격
+ *
+ * 정관 + 편관
+ * -> 관살이라는 새로운 성격
+ *
+ * 식신 + 상관
+ * -> 식상이라는 새로운 성격
+ *
+ * 식으로 정확한 10십성을
+ * 대체해서는 안 된다.
+ *
+ * 정확한 10십성은
+ * exactTenGodFacts에 독립적으로 보존된다.
  */
 public record NatalPersonalityStatementContract(
 
         NatalPersonalityStatementBundleAnalysis
         bundleAnalysis,
+
+        Optional<NatalPersonalityExactTenGodSelection>
+        exactTenGodSelection,
+
+        List<NatalPersonalityExactTenGodFact>
+        exactTenGodFacts,
 
         List<NatalPersonalityStatementBundleContract>
         bundleContracts,
@@ -67,6 +86,64 @@ public record NatalPersonalityStatementContract(
 
 ) {
 
+    /**
+     * =================================================
+     * 기존 ContractEngine 호환 생성자
+     * =================================================
+     *
+     * ContractEngine API를 당장 깨뜨리지 않는다.
+     *
+     * bundleAnalysis
+     * ->
+     * selectionAnalysis
+     * ->
+     * statementFactAnalysis
+     *
+     * 에 이미 보존된 정확한 10십성 Contract를
+     * 자동으로 승계한다.
+     */
+    public NatalPersonalityStatementContract(
+
+            NatalPersonalityStatementBundleAnalysis
+                    bundleAnalysis,
+
+            List<NatalPersonalityStatementBundleContract>
+                    bundleContracts,
+
+            List<NatalPersonalityStatementSelection>
+                    globalBackgroundContexts,
+
+            List<PersonalityStatementContractGuardrail>
+                    guardrails,
+
+            boolean completeChart
+
+    ) {
+
+        this(
+
+                bundleAnalysis,
+
+                requireStatementFactAnalysis(
+                        bundleAnalysis
+                )
+                        .exactTenGodSelection(),
+
+                requireStatementFactAnalysis(
+                        bundleAnalysis
+                )
+                        .exactTenGodFacts(),
+
+                bundleContracts,
+
+                globalBackgroundContexts,
+
+                guardrails,
+
+                completeChart
+        );
+    }
+
     public NatalPersonalityStatementContract {
 
         Objects.requireNonNull(
@@ -74,23 +151,45 @@ public record NatalPersonalityStatementContract(
                 "Personality Statement Bundle Analysis는 필수입니다."
         );
 
+        exactTenGodSelection =
+                exactTenGodSelection == null
+
+                        ? Optional.empty()
+
+                        : exactTenGodSelection;
+
+        exactTenGodFacts =
+                exactTenGodFacts == null
+
+                        ? List.of()
+
+                        : List.copyOf(
+                        exactTenGodFacts
+                );
+
         bundleContracts =
                 bundleContracts == null
+
                         ? List.of()
+
                         : List.copyOf(
                         bundleContracts
                 );
 
         globalBackgroundContexts =
                 globalBackgroundContexts == null
+
                         ? List.of()
+
                         : List.copyOf(
                         globalBackgroundContexts
                 );
 
         guardrails =
                 guardrails == null
+
                         ? List.of()
+
                         : List.copyOf(
                         guardrails
                 );
@@ -114,8 +213,25 @@ public record NatalPersonalityStatementContract(
 
         /*
          * =================================================
+         * Exact TenGod Contract 검증
+         * =================================================
+         */
+
+        validateExactTenGodContract(
+
+                bundleAnalysis,
+
+                exactTenGodSelection,
+
+                exactTenGodFacts,
+
+                completeChart
+        );
+
+        /*
+         * =================================================
          * 모든 Bundle은
-         * 정확히 하나의 Contract를 가져야 한다.
+         * 정확히 하나의 Contract
          * =================================================
          */
 
@@ -139,6 +255,11 @@ public record NatalPersonalityStatementContract(
                 NatalPersonalityStatementBundleContract contract
                 : bundleContracts
         ) {
+
+            Objects.requireNonNull(
+                    contract,
+                    "Personality Bundle Contract는 null일 수 없습니다."
+            );
 
             if (
                     contract.completeChart()
@@ -184,7 +305,7 @@ public record NatalPersonalityStatementContract(
 
         /*
          * =================================================
-         * Global Background Context 정확성
+         * Global Background Context
          * =================================================
          */
 
@@ -195,7 +316,8 @@ public record NatalPersonalityStatementContract(
 
         Set<NatalPersonalityStatementSelection> expectedContexts =
                 new HashSet<>(
-                        bundleAnalysis.globalBackgroundContexts()
+                        bundleAnalysis
+                                .globalBackgroundContexts()
                 );
 
         if (
@@ -213,7 +335,7 @@ public record NatalPersonalityStatementContract(
 
         /*
          * =================================================
-         * Guardrail 중복 금지
+         * Guardrail
          * =================================================
          */
 
@@ -245,17 +367,6 @@ public record NatalPersonalityStatementContract(
             }
         }
 
-        /*
-         * =================================================
-         * 현재 Personality Contract에서는
-         * 정의된 Guardrail 전체를
-         * 반드시 적용한다.
-         *
-         * 일부 Guardrail을 빠뜨린 Contract가
-         * 생성되지 않도록 한다.
-         * =================================================
-         */
-
         Set<PersonalityStatementContractGuardrail> requiredGuardrails =
                 EnumSet.allOf(
                         PersonalityStatementContractGuardrail.class
@@ -274,10 +385,64 @@ public record NatalPersonalityStatementContract(
         }
     }
 
-    /**
-     * 반드시 설명해야 하는
-     * 중심 Bundle Contract.
+    /*
+     * =================================================
+     * Exact TenGod
+     * =================================================
      */
+
+    public boolean hasExactTenGodContract() {
+
+        return exactTenGodSelection
+                .isPresent()
+
+                &&
+                !exactTenGodFacts
+                        .isEmpty();
+    }
+
+    public List<NatalPersonalityExactTenGodFact>
+    primaryExactTenGodFacts() {
+
+        return exactTenGodFacts
+                .stream()
+                .filter(
+                        NatalPersonalityExactTenGodFact
+                                ::primary
+                )
+                .toList();
+    }
+
+    public List<NatalPersonalityExactTenGodFact>
+    supportingExactTenGodFacts() {
+
+        return exactTenGodFacts
+                .stream()
+                .filter(
+                        NatalPersonalityExactTenGodFact
+                                ::supporting
+                )
+                .toList();
+    }
+
+    public List<NatalPersonalityExactTenGodFact>
+    referenceExactTenGodFacts() {
+
+        return exactTenGodFacts
+                .stream()
+                .filter(
+                        NatalPersonalityExactTenGodFact
+                                ::internalReference
+                )
+                .toList();
+    }
+
+    /*
+     * =================================================
+     * Legacy Pattern Bundle
+     * =================================================
+     */
+
     public List<NatalPersonalityStatementBundleContract>
     requiredBundleContracts() {
 
@@ -290,10 +455,6 @@ public record NatalPersonalityStatementContract(
                 .toList();
     }
 
-    /**
-     * 보조적으로 사용할 수 있는
-     * Bundle Contract.
-     */
     public List<NatalPersonalityStatementBundleContract>
     optionalSupportBundleContracts() {
 
@@ -308,10 +469,6 @@ public record NatalPersonalityStatementContract(
                 .toList();
     }
 
-    /**
-     * 조건/상충/중재를
-     * 반드시 함께 설명해야 하는 Contract.
-     */
     public List<NatalPersonalityStatementBundleContract>
     qualifiedBundleContracts() {
 
@@ -324,12 +481,6 @@ public record NatalPersonalityStatementContract(
                 .toList();
     }
 
-    /**
-     * 강한 표현이 허용된 Selection을
-     * 포함한 Contract.
-     *
-     * Contract 전체가 강하다는 뜻은 아니다.
-     */
     public List<NatalPersonalityStatementBundleContract>
     contractsWithStrongSelections() {
 
@@ -340,5 +491,155 @@ public record NatalPersonalityStatementContract(
                                 ::hasStrongSelection
                 )
                 .toList();
+    }
+
+    /*
+     * =================================================
+     * Exact TenGod Validation
+     * =================================================
+     */
+
+    private static void validateExactTenGodContract(
+
+            NatalPersonalityStatementBundleAnalysis bundleAnalysis,
+
+            Optional<NatalPersonalityExactTenGodSelection>
+                    exactTenGodSelection,
+
+            List<NatalPersonalityExactTenGodFact>
+                    exactTenGodFacts,
+
+            boolean completeChart
+
+    ) {
+
+        NatalPersonalityStatementFactAnalysis sourceAnalysis =
+                requireStatementFactAnalysis(
+                        bundleAnalysis
+                );
+
+        if (
+                sourceAnalysis.completeChart()
+                        != completeChart
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Statement Fact Analysis와 최종 Contract의 "
+                            + "원국 완전성 상태가 일치하지 않습니다."
+            );
+        }
+
+        Optional<NatalPersonalityExactTenGodSelection>
+                expectedSelection =
+                sourceAnalysis
+                        .exactTenGodSelection();
+
+        /*
+         * =================================================
+         * Selection 존재 여부
+         * =================================================
+         */
+
+        if (
+                expectedSelection.isPresent()
+                        != exactTenGodSelection.isPresent()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Statement Fact Analysis와 최종 Contract의 "
+                            + "Exact TenGod Selection 존재 상태가 일치하지 않습니다."
+            );
+        }
+
+        /*
+         * =================================================
+         * Selection Identity
+         * =================================================
+         */
+
+        if (
+                expectedSelection.isPresent()
+
+                        &&
+                        expectedSelection
+                                .orElseThrow()
+                                != exactTenGodSelection
+                                .orElseThrow()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "최종 Contract가 공식 "
+                            + "Exact TenGod Selection Identity를 "
+                            + "보존하지 않았습니다."
+            );
+        }
+
+        List<NatalPersonalityExactTenGodFact> expectedFacts =
+                sourceAnalysis
+                        .exactTenGodFacts();
+
+        /*
+         * =================================================
+         * Fact 수
+         * =================================================
+         */
+
+        if (
+                expectedFacts.size()
+                        != exactTenGodFacts.size()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Statement Fact Analysis와 최종 Contract의 "
+                            + "Exact TenGod Fact 수가 일치하지 않습니다."
+            );
+        }
+
+        /*
+         * =================================================
+         * Fact Identity + 순서
+         * =================================================
+         */
+
+        for (
+                int index = 0;
+                index < expectedFacts.size();
+                index++
+        ) {
+
+            if (
+                    expectedFacts.get(
+                            index
+                    )
+                            != exactTenGodFacts.get(
+                            index
+                    )
+            ) {
+
+                throw new IllegalArgumentException(
+                        "최종 Contract가 공식 "
+                                + "Exact TenGod Fact Identity와 순서를 "
+                                + "보존하지 않았습니다. index="
+                                + index
+                );
+            }
+        }
+    }
+
+    private static NatalPersonalityStatementFactAnalysis
+    requireStatementFactAnalysis(
+
+            NatalPersonalityStatementBundleAnalysis bundleAnalysis
+
+    ) {
+
+        Objects.requireNonNull(
+                bundleAnalysis,
+                "Personality Statement Bundle Analysis는 필수입니다."
+        );
+
+        return bundleAnalysis
+                .selectionAnalysis()
+                .statementFactAnalysis();
     }
 }

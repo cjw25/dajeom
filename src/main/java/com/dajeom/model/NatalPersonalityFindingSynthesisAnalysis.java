@@ -3,44 +3,26 @@ package com.dajeom.model;
 import com.dajeom.type.NatalTenGodFunctionType;
 import com.dajeom.type.PersonalityFindingSynthesisKind;
 import com.dajeom.type.PersonalityFindingSynthesisType;
-import com.dajeom.type.PersonalityJudgmentGroundingLevel;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 /**
- * Personality Finding Synthesis 전체 Aggregate.
+ * Personality Finding Synthesis 호환 Aggregate.
  *
  * =================================================
- *
- * 구조:
- *
- * NatalPersonalityFindingAnalysis
- *
- * ↓
- *
- * NatalPersonalityFindingSynthesisAnalysis
- *
+ * 현재 공식 정책
  * =================================================
  *
- * 여기에서는:
+ * 프로젝트가 둘 이상의 독립 Finding을 다시 조합해
+ * 새로운 사용자 Meaning을 만드는 2차 Synthesis는 허용하지 않는다.
  *
- * 각 Finding을 따로 나열하는 것에서 끝내지 않고
+ * 따라서 현재 공식 Pipeline에서
+ * syntheses는 반드시 비어 있어야 한다.
  *
- * 서로 연결되는 구조를
- * 하나의 Synthesis로 보존한다.
- *
- * =================================================
- *
- * REFERENCE Synthesis도 삭제하지 않는다.
- *
- * 단:
- *
- * 직접적인 사용자 성향문장 후보에서는
- * 제외된다.
+ * 이 record와 조회 API는
+ * 기존 코드 호환을 위해 유지한다.
  */
 public record NatalPersonalityFindingSynthesisAnalysis(
 
@@ -72,130 +54,70 @@ public record NatalPersonalityFindingSynthesisAnalysis(
         ) {
 
             throw new IllegalArgumentException(
-                    "Finding Analysis와 "
-                            + "Synthesis Analysis의 "
-                            + "원국 완전성 상태가 "
-                            + "일치하지 않습니다."
+                    "Finding Analysis와 Synthesis Analysis의 "
+                            + "원국 완전성 상태가 일치하지 않습니다."
             );
         }
 
         /*
          * =================================================
-         * 동일 Synthesis 중복 생성 금지
+         * 공식 실행선에서 2차 Synthesis 하드 차단
          * =================================================
          */
 
-        Set<PersonalityFindingSynthesisType> types =
-                new HashSet<>();
-
-        for (
-                NatalPersonalityFindingSynthesis synthesis
-                : syntheses
+        if (
+                !syntheses.isEmpty()
         ) {
 
-            if (
-                    synthesis.completeChart()
-                            != completeChart
-            ) {
-
-                throw new IllegalArgumentException(
-                        "Personality Synthesis의 "
-                                + "원국 완전성 상태가 "
-                                + "일치하지 않습니다."
-                );
-            }
-
-            if (
-                    !types.add(
-                            synthesis.synthesisType()
-                    )
-            ) {
-
-                throw new IllegalArgumentException(
-                        "동일 Personality Synthesis가 "
-                                + "중복 생성되었습니다: "
-                                + synthesis.synthesisType()
-                );
-            }
+            throw new IllegalArgumentException(
+                    "현재 공식 Personality Pipeline에서는 "
+                            + "독립 Finding의 2차 Synthesis를 생성할 수 없습니다."
+            );
         }
     }
 
-    public Optional<NatalPersonalityFindingSynthesis>
-    synthesisOf(
+    /**
+     * 현재 공식 Pipeline에서
+     * Synthesis 생성이 비활성 상태인지.
+     */
+    public boolean synthesisDisabled() {
+
+        return true;
+    }
+
+    /**
+     * Legacy API 호환.
+     *
+     * 현재 공식 실행에서는
+     * 항상 빈 Optional.
+     */
+    public Optional<NatalPersonalityFindingSynthesis> synthesisOf(
 
             PersonalityFindingSynthesisType synthesisType
 
     ) {
 
-        if (
-                synthesisType == null
-        ) {
-
-            return Optional.empty();
-        }
-
-        return syntheses
-                .stream()
-                .filter(
-                        synthesis ->
-                                synthesis.synthesisType()
-                                        == synthesisType
-                )
-                .findFirst();
+        return Optional.empty();
     }
 
-    /**
-     * 사용자에게 직접 표현 가능한
-     * Synthesis.
-     */
     public List<NatalPersonalityFindingSynthesis>
     directlyAssertableSyntheses() {
 
-        return syntheses
-                .stream()
-                .filter(
-                        NatalPersonalityFindingSynthesis
-                                ::userFacingCandidate
-                )
-                .toList();
+        return List.of();
     }
 
-    /**
-     * 가장 강한 Synthesis.
-     */
     public List<NatalPersonalityFindingSynthesis>
     stronglyGroundedSyntheses() {
 
-        return syntheses
-                .stream()
-                .filter(
-                        NatalPersonalityFindingSynthesis
-                                ::stronglyGrounded
-                )
-                .toList();
+        return List.of();
     }
 
-    /**
-     * 약하거나 조건적이어서
-     * 내부에만 보존하는 Synthesis.
-     */
     public List<NatalPersonalityFindingSynthesis>
     internalSyntheses() {
 
-        return syntheses
-                .stream()
-                .filter(
-                        synthesis ->
-                                !synthesis
-                                        .directAssertionAllowed()
-                )
-                .toList();
+        return List.of();
     }
 
-    /**
-     * 특정 기능축이 참여하는
-     * 모든 Synthesis.
-     */
     public List<NatalPersonalityFindingSynthesis>
     synthesesInvolving(
 
@@ -203,29 +125,9 @@ public record NatalPersonalityFindingSynthesisAnalysis(
 
     ) {
 
-        if (
-                functionType == null
-        ) {
-
-            return List.of();
-        }
-
-        return syntheses
-                .stream()
-                .filter(
-                        synthesis ->
-                                synthesis
-                                        .involvedFunctions()
-                                        .contains(
-                                                functionType
-                                        )
-                )
-                .toList();
+        return List.of();
     }
 
-    /**
-     * 구조적 결합 종류로 조회.
-     */
     public List<NatalPersonalityFindingSynthesis>
     synthesesOfKind(
 
@@ -233,69 +135,24 @@ public record NatalPersonalityFindingSynthesisAnalysis(
 
     ) {
 
-        if (
-                kind == null
-        ) {
-
-            return List.of();
-        }
-
-        return syntheses
-                .stream()
-                .filter(
-                        synthesis ->
-                                synthesis.kind()
-                                        == kind
-                )
-                .toList();
+        return List.of();
     }
 
-    /**
-     * 주격 중심 기능이 참여하는
-     * Synthesis.
-     */
     public List<NatalPersonalityFindingSynthesis>
     structurallyCenteredSyntheses() {
 
-        return syntheses
-                .stream()
-                .filter(
-                        NatalPersonalityFindingSynthesis
-                                ::structurallyCentered
-                )
-                .toList();
+        return List.of();
     }
 
-    /**
-     * 조건/충돌 설명을
-     * 같이 해야 하는 Synthesis.
-     */
     public List<NatalPersonalityFindingSynthesis>
     qualifiedSyntheses() {
 
-        return syntheses
-                .stream()
-                .filter(
-                        NatalPersonalityFindingSynthesis
-                                ::qualificationRequired
-                )
-                .toList();
+        return List.of();
     }
 
-    /**
-     * REFERENCE 단계만 조회.
-     */
     public List<NatalPersonalityFindingSynthesis>
     referenceSyntheses() {
 
-        return syntheses
-                .stream()
-                .filter(
-                        synthesis ->
-                                synthesis.groundingLevel()
-                                        == PersonalityJudgmentGroundingLevel
-                                        .REFERENCE
-                )
-                .toList();
+        return List.of();
     }
 }

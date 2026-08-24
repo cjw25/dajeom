@@ -113,11 +113,33 @@ public class ConsultationRequestEvidenceAnalyzer {
 
         /*
          * =================================================
-         * 자유 질문만 존재
+         * 자유 질문만 존재 - 블라인드 전체분석 보존
          * =================================================
          *
-         * Category를 임의로 고르지 않는다.
+         * 질문의 내용은 사주 계산이나 Evidence 판정에 사용하지 않는다.
+         * 이미 계산된 11개 Category View를 모두 보존한 뒤
+         * 후속 Narrative Plan에서 질문과 현재 Context로 서술 우선순위만 정한다.
          */
+
+        if (
+                questionRouting
+                        .blindAnalysisReady()
+        ) {
+
+            List<ConsultationCategoryEvidenceView> blindViews =
+                    questionRouting
+                            .routedCategories()
+                            .stream()
+                            .map(evidenceAnalysis::get)
+                            .toList();
+
+            return new ConsultationRequestEvidenceAnalysis(
+                    requestScope,
+                    questionRouting,
+                    evidenceAnalysis,
+                    blindViews
+            );
+        }
 
         if (
                 questionRouting

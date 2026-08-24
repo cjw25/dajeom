@@ -138,6 +138,27 @@ public record ConsultationQuestionRoutingAnalysis(
                 }
             }
 
+            case BLIND_ANALYSIS_READY -> {
+
+                if (
+                        question.isEmpty()
+                ) {
+
+                    throw new IllegalArgumentException(
+                            "BLIND_ANALYSIS_READY 질문 Routing에는 자유 질문이 필요합니다."
+                    );
+                }
+
+                if (
+                        routedCategories.isEmpty()
+                ) {
+
+                    throw new IllegalArgumentException(
+                            "BLIND_ANALYSIS_READY 상태에는 블라인드 분석을 보존할 ConsultationCategory가 필요합니다."
+                    );
+                }
+            }
+
             case GROUNDING_REQUIRED -> {
 
                 if (
@@ -185,6 +206,12 @@ public record ConsultationQuestionRoutingAnalysis(
                 .explicitlyScoped();
     }
 
+    public boolean blindAnalysisReady() {
+
+        return status
+                .blindAnalysisReady();
+    }
+
     public boolean groundingRequired() {
 
         return status
@@ -200,7 +227,8 @@ public record ConsultationQuestionRoutingAnalysis(
      */
     public boolean categoryResolved() {
 
-        return explicitlyScoped();
+        return explicitlyScoped()
+                || blindAnalysisReady();
     }
 
     public boolean routesTo(

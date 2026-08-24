@@ -5,12 +5,15 @@ import com.dajeom.analyzer.ConsultationCategoryEvidenceAnalyzer;
 import com.dajeom.analyzer.ConsultationGroundingAnalyzer;
 import com.dajeom.analyzer.ConsultationGroundingPolicyAnalyzer;
 import com.dajeom.analyzer.ConsultationInterpretationPromptContextAnalyzer;
+import com.dajeom.analyzer.ConsultationNarrativePlanAnalyzer;
+import com.dajeom.analyzer.ConsultationUserContextAnalyzer;
 import com.dajeom.analyzer.ConsultationRequestEvidenceAnalyzer;
 import com.dajeom.analyzer.ConsultationRequestScopeAnalyzer;
 import com.dajeom.analyzer.ConsultationTimelineRangeAnalyzer;
 import com.dajeom.calculator.KoreanLunarCalendarCalculator;
 import com.dajeom.constant.SajuConstants;
 import com.dajeom.dto.AnnualLuckResponse;
+import com.dajeom.dto.ConsultationPersonalizationResponse;
 import com.dajeom.dto.ConsultationSectionResponse;
 import com.dajeom.dto.DecadeLuckPeriodResponse;
 import com.dajeom.dto.DecadeLuckResponse;
@@ -40,6 +43,8 @@ import com.dajeom.model.ConsultationCategoryEvidenceAnalysis;
 import com.dajeom.model.ConsultationGroundingAnalysis;
 import com.dajeom.model.ConsultationGroundingPolicyAnalysis;
 import com.dajeom.model.ConsultationInterpretationPromptContext;
+import com.dajeom.model.ConsultationNarrativePlan;
+import com.dajeom.model.ConsultationUserContext;
 import com.dajeom.model.ConsultationInterpretationPromptSection;
 import com.dajeom.model.ConsultationRequestEvidenceAnalysis;
 import com.dajeom.model.ConsultationRequestScopeAnalysis;
@@ -97,7 +102,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -249,7 +256,6 @@ public class SajuAnalysisService {
             "현재 계산 근거만으로는 이 분야의 독립적인 해석을 확정하지 않습니다. "
                     + "근거가 없는 내용을 추정해서 채우지 않았습니다.";
 
-
     private final KoreanLunarCalendarCalculator
             koreanLunarCalendarCalculator;
 
@@ -334,6 +340,12 @@ public class SajuAnalysisService {
     private final ConsultationInterpretationPromptContextAnalyzer
             consultationInterpretationPromptContextAnalyzer;
 
+    private final ConsultationUserContextAnalyzer
+            consultationUserContextAnalyzer;
+
+    private final ConsultationNarrativePlanAnalyzer
+            consultationNarrativePlanAnalyzer;
+
     private final ConsultationStoryGenerator
             consultationStoryGenerator;
 
@@ -360,7 +372,6 @@ public class SajuAnalysisService {
 
     private final AnnualLuckContextResolverFactory
             annualLuckContextResolverFactory;
-
 
     public SajuAnalysisService(
 
@@ -447,6 +458,12 @@ public class SajuAnalysisService {
 
             ConsultationInterpretationPromptContextAnalyzer
                     consultationInterpretationPromptContextAnalyzer,
+
+            ConsultationUserContextAnalyzer
+                    consultationUserContextAnalyzer,
+
+            ConsultationNarrativePlanAnalyzer
+                    consultationNarrativePlanAnalyzer,
 
             ConsultationStoryGenerator
                     consultationStoryGenerator,
@@ -617,6 +634,16 @@ public class SajuAnalysisService {
                         consultationInterpretationPromptContextAnalyzer
                 );
 
+        this.consultationUserContextAnalyzer =
+                Objects.requireNonNull(
+                        consultationUserContextAnalyzer
+                );
+
+        this.consultationNarrativePlanAnalyzer =
+                Objects.requireNonNull(
+                        consultationNarrativePlanAnalyzer
+                );
+
         this.consultationStoryGenerator =
                 Objects.requireNonNull(
                         consultationStoryGenerator
@@ -662,7 +689,6 @@ public class SajuAnalysisService {
                         annualLuckContextResolverFactory
                 );
     }
-
 
     public SajuAnalysisResponse analyze(
             SajuAnalysisRequest request
@@ -746,14 +772,19 @@ public class SajuAnalysisService {
                 tenGodCompositeAnalysisEngine
                         .analyzeConservatively(
                                 fourPillars,
+
                                 advancedAnalysis
                                         .elementStrengthAnalysis(),
+
                                 advancedAnalysis
                                         .dayMasterStrengthAnalysis(),
+
                                 advancedAnalysis
                                         .structureAnalysis(),
+
                                 advancedAnalysis
                                         .usefulGodAnalysis(),
+
                                 advancedAnalysis
                                         .combinationTransformationAnalysis()
                         );
@@ -874,13 +905,20 @@ public class SajuAnalysisService {
                     decadeLuckAnalysisEngine
                             .analyze(
                                     birthData.gender(),
+
                                     fourPillars,
+
                                     birthTimeContext
                                             .requireBirthDateTime(),
+
                                     birthData.zoneId(),
+
                                     palaceAnalysis,
+
                                     decadeLuckTenGodSourceResolver,
+
                                     decadeLuckNatalCrossResolver,
+
                                     decadeLuckContextResolver
                             );
 
@@ -890,12 +928,19 @@ public class SajuAnalysisService {
                     decadeLuckAnalysisEngine
                             .analyzeUnknownTime(
                                     birthData.gender(),
+
                                     fourPillars,
+
                                     birthData.solarBirthDate(),
+
                                     birthData.zoneId(),
+
                                     palaceAnalysis,
+
                                     decadeLuckTenGodSourceResolver,
+
                                     decadeLuckNatalCrossResolver,
+
                                     decadeLuckContextResolver
                             );
         }
@@ -1089,6 +1134,49 @@ public class SajuAnalysisService {
             );
         }
 
+        /*
+         * =================================================
+         * 상담 전 사용자 Context 결합 경계
+         * =================================================
+         *
+         * 이 지점까지 원국/대운/세운/LifeDomain/Category Deterministic
+         * Judgment 및 Prompt Context가 모두 확정되어 있다.
+         *
+         * 관계 상태, 직업 상태, 자유 질문은 여기서 처음 결합하며
+         * 앞선 명리 계산값을 절대 변경하지 않는다.
+         */
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] user-context-start"
+        );
+
+        ConsultationUserContext consultationUserContext =
+                consultationUserContextAnalyzer
+                        .analyze(
+                                request
+                        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] user-context-complete hasContext={}",
+                consultationUserContext.hasAnyContext()
+        );
+
+        Optional<ConsultationNarrativePlan> narrativePlan =
+                interpretationPromptContext
+                        .map(
+                                promptContext ->
+                                        consultationNarrativePlanAnalyzer
+                                                .analyze(
+                                                        promptContext,
+                                                        consultationUserContext
+                                                )
+                        );
+
+        log.info(
+                "[SAJU-SERVICE-DIAG] narrative-plan-complete present={}",
+                narrativePlan.isPresent()
+        );
+
         log.info(
                 "[SAJU-SERVICE-DIAG] story-generation-start"
         );
@@ -1096,7 +1184,7 @@ public class SajuAnalysisService {
         Optional<ConsultationStoryGeneration>
                 consultationStoryGeneration =
                 generateConsultationStoriesIfAvailable(
-                        interpretationPromptContext
+                        narrativePlan
                 );
 
         log.info(
@@ -1178,6 +1266,7 @@ public class SajuAnalysisService {
                         decadeLuckAnalysis,
                         annualLuckAnalysis,
                         interpretationPromptContext,
+                        narrativePlan,
                         consultationStoryGeneration,
                         request.targetYear(),
                         targetDateTime
@@ -1194,34 +1283,32 @@ public class SajuAnalysisService {
         return response;
     }
 
-
     private Optional<ConsultationStoryGeneration>
     generateConsultationStoriesIfAvailable(
 
-            Optional<ConsultationInterpretationPromptContext>
-                    interpretationPromptContext
+            Optional<ConsultationNarrativePlan>
+                    narrativePlan
 
     ) {
 
         Objects.requireNonNull(
-                interpretationPromptContext,
-                "외부 LLM 문장화에는 ConsultationInterpretationPromptContext Optional이 필요합니다."
+                narrativePlan,
+                "외부 LLM 문장화에는 ConsultationNarrativePlan Optional이 필요합니다."
         );
 
         if (
-                interpretationPromptContext.isEmpty()
+                narrativePlan.isEmpty()
         ) {
 
             return Optional.empty();
         }
 
-        ConsultationInterpretationPromptContext promptContext =
-                interpretationPromptContext
+        ConsultationNarrativePlan plan =
+                narrativePlan
                         .orElseThrow();
 
         if (
-                promptContext.categoryResolutionRequired()
-                        || !promptContext.hasSections()
+                !plan.hasSections()
         ) {
 
             return Optional.empty();
@@ -1234,7 +1321,7 @@ public class SajuAnalysisService {
         Optional<ConsultationStoryGeneration> generated =
                 consultationStoryGenerator
                         .generate(
-                                promptContext
+                                plan
                         );
 
         log.info(
@@ -1244,20 +1331,20 @@ public class SajuAnalysisService {
 
         if (
                 generated.isPresent()
-                        && generated
-                        .orElseThrow()
-                        .promptContext()
-                        != promptContext
+                        &&
+                        generated
+                                .orElseThrow()
+                                .promptContext()
+                                != plan.promptContext()
         ) {
 
             throw new IllegalStateException(
-                    "외부 LLM Story Generation이 현재 ConsultationInterpretationPromptContext Identity를 보존하지 않았습니다."
+                    "외부 LLM Story Generation이 현재 Narrative Plan의 Prompt Context Identity를 보존하지 않았습니다."
             );
         }
 
         return generated;
     }
-
 
     private Optional<ConsultationInterpretationPromptContext>
     analyzeInterpretationPromptContextIfAvailable(
@@ -1363,7 +1450,6 @@ public class SajuAnalysisService {
         );
     }
 
-
     private Optional<ConsultationRequestScopeAnalysis>
     analyzeConsultationRequestScopeIfAvailable(
 
@@ -1404,7 +1490,6 @@ public class SajuAnalysisService {
                 requestScope
         );
     }
-
 
     private Optional<ConsultationTimelineRangeAnalysis>
     analyzeConsultationTimelineRangeIfRequested(
@@ -1471,7 +1556,8 @@ public class SajuAnalysisService {
 
         if (
                 lifeDomainAnalysis.isEmpty()
-                        && requestScopeAnalysis.isEmpty()
+                        &&
+                        requestScopeAnalysis.isEmpty()
         ) {
 
             return Optional.empty();
@@ -1479,7 +1565,8 @@ public class SajuAnalysisService {
 
         if (
                 lifeDomainAnalysis.isEmpty()
-                        || requestScopeAnalysis.isEmpty()
+                        ||
+                        requestScopeAnalysis.isEmpty()
         ) {
 
             throw new IllegalStateException(
@@ -1507,7 +1594,8 @@ public class SajuAnalysisService {
 
         if (
                 !pastRequested
-                        && !futureRequested
+                        &&
+                        !futureRequested
         ) {
 
             return Optional.empty();
@@ -1547,7 +1635,8 @@ public class SajuAnalysisService {
 
         if (
                 pastRequested
-                        && !analysis.hasPastRange()
+                        &&
+                        !analysis.hasPastRange()
         ) {
 
             throw new IllegalStateException(
@@ -1557,7 +1646,8 @@ public class SajuAnalysisService {
 
         if (
                 futureRequested
-                        && !analysis.hasFutureRange()
+                        &&
+                        !analysis.hasFutureRange()
         ) {
 
             throw new IllegalStateException(
@@ -1569,7 +1659,6 @@ public class SajuAnalysisService {
                 analysis
         );
     }
-
 
     private Optional<ConsultationRequestEvidenceAnalysis>
     analyzeConsultationRequestEvidenceIfAvailable(
@@ -1602,7 +1691,8 @@ public class SajuAnalysisService {
 
         if (
                 requestScopeAnalysis.isEmpty()
-                        && lifeDomainAnalysis.isEmpty()
+                        &&
+                        lifeDomainAnalysis.isEmpty()
         ) {
 
             if (
@@ -1619,7 +1709,8 @@ public class SajuAnalysisService {
 
         if (
                 requestScopeAnalysis.isEmpty()
-                        || lifeDomainAnalysis.isEmpty()
+                        ||
+                        lifeDomainAnalysis.isEmpty()
         ) {
 
             throw new IllegalStateException(
@@ -1681,7 +1772,6 @@ public class SajuAnalysisService {
         );
     }
 
-
     private Optional<LifeDomainAnalysis>
     analyzeLifeDomainIfIntegrated(
 
@@ -1726,7 +1816,8 @@ public class SajuAnalysisService {
 
         if (
                 luckIntegratedAnalysis.isEmpty()
-                        && shinsalAnalysis.isEmpty()
+                        &&
+                        shinsalAnalysis.isEmpty()
         ) {
 
             return Optional.empty();
@@ -1734,7 +1825,8 @@ public class SajuAnalysisService {
 
         if (
                 luckIntegratedAnalysis.isEmpty()
-                        || shinsalAnalysis.isEmpty()
+                        ||
+                        shinsalAnalysis.isEmpty()
         ) {
 
             throw new IllegalStateException(
@@ -2014,7 +2106,6 @@ public class SajuAnalysisService {
         );
     }
 
-
     private Optional<ShinsalAnalysis>
     analyzeShinsalIfIntegrated(
 
@@ -2064,7 +2155,6 @@ public class SajuAnalysisService {
                 analysis
         );
     }
-
 
     private Optional<LuckIntegratedAnalysis>
     analyzeIntegratedLuckIfRequested(
@@ -2187,7 +2277,6 @@ public class SajuAnalysisService {
         );
     }
 
-
     private LuckReferenceContext
     createLuckReferenceContext(
 
@@ -2214,9 +2303,11 @@ public class SajuAnalysisService {
             ZonedDateTime exactDateTime =
                     ZonedDateTime.of(
                             referenceDate,
+
                             request
                                     .luckReferenceTimeOptional()
                                     .orElseThrow(),
+
                             birthData.zoneId()
                     );
 
@@ -2242,7 +2333,6 @@ public class SajuAnalysisService {
                 "luckReferenceDate는 존재하지만 운 분석 기준 Precision을 결정할 수 없습니다."
         );
     }
-
 
     private ZonedDateTime
     resolveDecadeReferenceDateTime(
@@ -2287,7 +2377,6 @@ public class SajuAnalysisService {
         );
     }
 
-
     private BirthTimeContext createBirthTimeContext(
             NormalizedBirthData birthData
     ) {
@@ -2308,7 +2397,6 @@ public class SajuAnalysisService {
                 birthData.zoneId()
         );
     }
-
 
     private NormalizedBirthData normalizeBirthData(
             SajuAnalysisRequest request
@@ -2341,7 +2429,8 @@ public class SajuAnalysisService {
 
         if (
                 request.birthTimeUnknown()
-                        && request.birthTime() != null
+                        &&
+                        request.birthTime() != null
         ) {
 
             throw new IllegalArgumentException(
@@ -2351,7 +2440,8 @@ public class SajuAnalysisService {
 
         if (
                 !request.birthTimeUnknown()
-                        && request.birthTime() == null
+                        &&
+                        request.birthTime() == null
         ) {
 
             throw new IllegalArgumentException(
@@ -2417,7 +2507,6 @@ public class SajuAnalysisService {
         );
     }
 
-
     private SajuAnalysisResponse createResponse(
 
             NormalizedBirthData birthData,
@@ -2433,6 +2522,9 @@ public class SajuAnalysisService {
             Optional<ConsultationInterpretationPromptContext>
                     interpretationPromptContext,
 
+            Optional<ConsultationNarrativePlan>
+                    narrativePlan,
+
             Optional<ConsultationStoryGeneration>
                     consultationStoryGeneration,
 
@@ -2446,7 +2538,13 @@ public class SajuAnalysisService {
                 consultationResponses =
                 createConsultationResponses(
                         interpretationPromptContext,
+                        narrativePlan,
                         consultationStoryGeneration
+                );
+
+        ConsultationPersonalizationResponse personalizationResponse =
+                createConsultationPersonalizationResponse(
+                        narrativePlan
                 );
 
         String fullNarrationText =
@@ -2500,10 +2598,8 @@ public class SajuAnalysisService {
                         .getChineseCharacter(),
 
                 advancedAnalysis
-                        .coreAnalysis()
-                        .strengthAnalysis()
-                        .level()
-                        .getKoreanName(),
+                        .dayMasterStrengthAnalysis()
+                        .levelKorean(),
 
                 advancedAnalysis
                         .structureAnalysis()
@@ -2551,12 +2647,13 @@ public class SajuAnalysisService {
                         annualLuckAnalysis
                 ),
 
+                personalizationResponse,
+
                 consultationResponses,
 
                 fullNarrationText
         );
     }
-
 
     /*
      * =================================================
@@ -2579,6 +2676,9 @@ public class SajuAnalysisService {
             Optional<ConsultationInterpretationPromptContext>
                     interpretationPromptContext,
 
+            Optional<ConsultationNarrativePlan>
+                    narrativePlan,
+
             Optional<ConsultationStoryGeneration>
                     consultationStoryGeneration
 
@@ -2590,45 +2690,181 @@ public class SajuAnalysisService {
         );
 
         Objects.requireNonNull(
+                narrativePlan,
+                "Consultation API Response에는 ConsultationNarrativePlan Optional이 필요합니다."
+        );
+
+        Objects.requireNonNull(
                 consultationStoryGeneration,
                 "Consultation API Response에는 ConsultationStoryGeneration Optional이 필요합니다."
         );
 
-        return Arrays
-                .stream(
-                        ConsultationCategory.values()
-                )
-                .sorted(
-                        (
-                                left,
-                                right
-                        ) ->
-                                Integer.compare(
-                                        left.getOrder(),
-                                        right.getOrder()
-                                )
-                )
-                .map(
-                        category ->
-                                new ConsultationSectionResponse(
-                                        category.getOrder(),
-                                        category,
-                                        category.getKoreanName(),
-                                        resolveStoryText(
-                                                category,
-                                                interpretationPromptContext,
-                                                consultationStoryGeneration
-                                        ),
-                                        resolveStoryEmphasis(
-                                                category,
-                                                interpretationPromptContext,
-                                                consultationStoryGeneration
-                                        )
-                                )
-                )
-                .toList();
+        List<ConsultationCategory> orderedCategories;
+
+        if (
+                narrativePlan.isPresent()
+        ) {
+
+            List<ConsultationCategory> focusedOrder =
+                    narrativePlan
+                            .orElseThrow()
+                            .sections()
+                            .stream()
+                            .map(
+                                    section ->
+                                            section.category()
+                            )
+                            .toList();
+
+            List<ConsultationCategory> remaining =
+                    Arrays
+                            .stream(
+                                    ConsultationCategory.values()
+                            )
+                            .filter(
+                                    category ->
+                                            !focusedOrder.contains(
+                                                    category
+                                            )
+                            )
+                            .sorted(
+                                    Comparator.comparingInt(
+                                            ConsultationCategory::getOrder
+                                    )
+                            )
+                            .toList();
+
+            List<ConsultationCategory> merged =
+                    new ArrayList<>(
+                            focusedOrder
+                    );
+
+            merged.addAll(
+                    remaining
+            );
+
+            orderedCategories =
+                    List.copyOf(
+                            merged
+                    );
+
+        } else {
+
+            orderedCategories =
+                    Arrays
+                            .stream(
+                                    ConsultationCategory.values()
+                            )
+                            .sorted(
+                                    Comparator.comparingInt(
+                                            ConsultationCategory::getOrder
+                                    )
+                            )
+                            .toList();
+        }
+
+        List<ConsultationCategory> focusedCategories =
+                narrativePlan
+                        .map(
+                                ConsultationNarrativePlan::focusedCategories
+                        )
+                        .orElse(
+                                List.of()
+                        );
+
+        List<ConsultationSectionResponse> responses =
+                new ArrayList<>();
+
+        int displayOrder =
+                1;
+
+        for (
+                ConsultationCategory category
+                : orderedCategories
+        ) {
+
+            responses.add(
+                    new ConsultationSectionResponse(
+                            category.getOrder(),
+
+                            displayOrder++,
+
+                            focusedCategories.contains(
+                                    category
+                            ),
+
+                            category,
+
+                            category.getKoreanName(),
+
+                            resolveStoryText(
+                                    category,
+                                    interpretationPromptContext,
+                                    consultationStoryGeneration
+                            ),
+
+                            resolveStoryEmphasis(
+                                    category,
+                                    interpretationPromptContext,
+                                    consultationStoryGeneration
+                            )
+                    )
+            );
+        }
+
+        return List.copyOf(
+                responses
+        );
     }
 
+    private ConsultationPersonalizationResponse
+    createConsultationPersonalizationResponse(
+
+            Optional<ConsultationNarrativePlan> narrativePlan
+
+    ) {
+
+        Objects.requireNonNull(
+                narrativePlan,
+                "ConsultationPersonalizationResponse에는 Narrative Plan Optional이 필요합니다."
+        );
+
+        if (
+                narrativePlan.isEmpty()
+        ) {
+
+            return new ConsultationPersonalizationResponse(
+                    true,
+                    "",
+                    com.dajeom.type.ConsultationRelationshipTarget.UNSPECIFIED,
+                    com.dajeom.type.ConsultationRelationshipStatus.UNSPECIFIED,
+                    com.dajeom.type.ConsultationWorkStatus.UNSPECIFIED,
+                    "",
+                    List.of()
+            );
+        }
+
+        ConsultationNarrativePlan plan =
+                narrativePlan
+                        .orElseThrow();
+
+        ConsultationUserContext context =
+                plan.userContext();
+
+        return new ConsultationPersonalizationResponse(
+                true,
+                plan.planVersion(),
+                context.relationshipTarget(),
+                context.relationshipStatus(),
+                context.workStatus(),
+                context
+                        .consultationQuestion()
+                        .orElse(
+                                ""
+                        ),
+                plan.focusedCategories()
+        );
+    }
 
     /*
      * =================================================
@@ -2735,7 +2971,6 @@ public class SajuAnalysisService {
                 );
     }
 
-
     /*
      * =================================================
      * Story Emphasis
@@ -2827,7 +3062,6 @@ public class SajuAnalysisService {
         );
     }
 
-
     /*
      * =================================================
      * Full Narration
@@ -2857,8 +3091,7 @@ public class SajuAnalysisService {
                 consultationResponses
                         .stream()
                         .map(
-                                ConsultationSectionResponse
-                                        ::storyText
+                                ConsultationSectionResponse::storyText
                         )
                         .filter(
                                 Objects::nonNull
@@ -2873,7 +3106,6 @@ public class SajuAnalysisService {
                         .toList()
         );
     }
-
 
     private List<FiveElement> selectedClimateElements(
             NatalChartAdvancedAnalysis advancedAnalysis
@@ -2903,7 +3135,6 @@ public class SajuAnalysisService {
                 .toList();
     }
 
-
     private List<FiveElement> selectedPassageElements(
             NatalChartAdvancedAnalysis advancedAnalysis
     ) {
@@ -2932,7 +3163,6 @@ public class SajuAnalysisService {
                 .toList();
     }
 
-
     private PillarResponse toPillarResponse(
             Pillar pillar
     ) {
@@ -2944,6 +3174,7 @@ public class SajuAnalysisService {
 
         return new PillarResponse(
                 pillar.koreanName(),
+
                 pillar.chineseName(),
 
                 pillar
@@ -2980,7 +3211,6 @@ public class SajuAnalysisService {
         );
     }
 
-
     private PillarResponse toPillarResponse(
             SexagenaryPillar pillar
     ) {
@@ -2997,7 +3227,6 @@ public class SajuAnalysisService {
                 )
         );
     }
-
 
     private DecadeLuckResponse toDecadeLuckResponse(
 
@@ -3074,19 +3303,21 @@ public class SajuAnalysisService {
 
         boolean definitelyBeforeFirst =
                 firstPeriod != null
-                        && referenceDateTime
-                        .isBefore(
-                                firstPeriod
-                                        .earliestStartDateTime()
-                        );
+                        &&
+                        referenceDateTime
+                                .isBefore(
+                                        firstPeriod
+                                                .earliestStartDateTime()
+                                );
 
         boolean possiblyBeforeFirst =
                 firstPeriod != null
-                        && referenceDateTime
-                        .isBefore(
-                                firstPeriod
-                                        .latestStartDateTime()
-                        );
+                        &&
+                        referenceDateTime
+                                .isBefore(
+                                        firstPeriod
+                                                .latestStartDateTime()
+                                );
 
         return new DecadeLuckResponse(
                 analysis
@@ -3133,7 +3364,6 @@ public class SajuAnalysisService {
         );
     }
 
-
     private DecadeLuckPeriodResponse
     toDecadeLuckPeriodResponse(
             DecadeLuckPeriod period
@@ -3170,7 +3400,6 @@ public class SajuAnalysisService {
                 period.exactTiming()
         );
     }
-
 
     private AnnualLuckResponse toAnnualLuckResponse(
             AnnualLuckAnalysis analysis
@@ -3230,14 +3459,14 @@ public class SajuAnalysisService {
         );
     }
 
-
     private List<String> toElementNames(
             Collection<FiveElement> elements
     ) {
 
         if (
                 elements == null
-                        || elements.isEmpty()
+                        ||
+                        elements.isEmpty()
         ) {
 
             return List.of();

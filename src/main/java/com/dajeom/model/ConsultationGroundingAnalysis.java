@@ -219,6 +219,27 @@ public record ConsultationGroundingAnalysis(
                 }
             }
 
+            case BLIND_ANALYSIS_READY -> {
+
+                if (
+                        question.isEmpty()
+                ) {
+
+                    throw new IllegalArgumentException(
+                            "BLIND_ANALYSIS_READY 상태에는 자유 질문이 필요합니다."
+                    );
+                }
+
+                if (
+                        sections.isEmpty()
+                ) {
+
+                    throw new IllegalArgumentException(
+                            "BLIND_ANALYSIS_READY 상태에는 블라인드 분석 Section이 필요합니다."
+                    );
+                }
+            }
+
             case GROUNDING_REQUIRED -> {
 
                 if (

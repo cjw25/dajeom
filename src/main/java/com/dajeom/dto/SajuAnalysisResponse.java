@@ -77,6 +77,8 @@ public record SajuAnalysisResponse(
 
         AnnualLuckResponse annualLuck,
 
+        ConsultationPersonalizationResponse consultationPersonalization,
+
         List<ConsultationSectionResponse> consultations,
 
         String fullNarrationText

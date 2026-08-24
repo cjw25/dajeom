@@ -23,16 +23,29 @@ package com.dajeom.type;
  *
  * =================================================
  *
+ * BLIND_ANALYSIS_READY
+ *
+ * 자유 질문은 존재하지만
+ * 사용자가 ConsultationCategory를 직접 지정하지 않음.
+ *
+ * 질문 내용으로 사주 계산이나
+ * deterministic Judgment를 바꾸지 않는다.
+ *
+ * 이미 블라인드로 계산된 전체 ConsultationCategory를
+ * 보존한 뒤 후속 Narrative 단계에서
+ * 질문을 서술 우선순위에만 사용한다.
+ *
+ * =================================================
+ *
  * GROUNDING_REQUIRED
  *
  * 자유 질문은 존재하지만
- * 사용자가 ConsultationCategory를 지정하지 않음.
+ * 아직 Category Routing 자체가 해결되지 않은
+ * 호환/예외 상태.
  *
- * 이 상태에서는 19차 Java가
- * 문자열 키워드로 Category를 강제 결정하지 않는다.
- *
- * 이후 Grounding 계층에서
- * 질문 의미를 다룰 수 있도록 원문을 보존한다.
+ * 현재 신규 흐름에서는
+ * 자유 질문만 존재하는 정상 요청은
+ * BLIND_ANALYSIS_READY를 사용한다.
  */
 public enum ConsultationQuestionRoutingStatus {
 
@@ -42,6 +55,10 @@ public enum ConsultationQuestionRoutingStatus {
 
     EXPLICITLY_SCOPED(
             "사용자 지정 분야"
+    ),
+
+    BLIND_ANALYSIS_READY(
+            "블라인드 전체분석 후 질문 우선순위 적용"
     ),
 
     GROUNDING_REQUIRED(
@@ -73,6 +90,12 @@ public enum ConsultationQuestionRoutingStatus {
 
         return this
                 == EXPLICITLY_SCOPED;
+    }
+
+    public boolean blindAnalysisReady() {
+
+        return this
+                == BLIND_ANALYSIS_READY;
     }
 
     public boolean groundingRequired() {
