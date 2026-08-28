@@ -18,21 +18,47 @@ import java.util.Set;
 /**
  * 실제 Claim별 Render 구조를 검증한다.
  *
- * 검증 내용:
+ * =================================================
+ * 검증 내용
+ * =================================================
+ *
  * - Packet ID 동일성
- * - 모든 공식 Claim이 정확히 한 번 존재하는지
+ *
+ * - 모든 공식 Claim이
+ *   정확히 한 번 존재하는지
+ *
  * - 다른 Claim ID가 들어오지 않았는지
- * - sourceClaimText가 Java 공식 원문과 동일한지
- * - Meaning Origin Echo가 Java 공식 Origin과 동일한지
- * - Meaning Authority Echo가 Java 공식 Authority와 동일한지
- * - 서로 다른 Claim을 같은 문장 하나로 뭉개 반복하지 않았는지
+ *
+ * - sourceClaimText가
+ *   Java 공식 원문과 동일한지
+ *
+ * - Meaning Origin Echo가
+ *   Java 공식 Origin과 동일한지
+ *
+ * - Meaning Authority Echo가
+ *   Java 공식 Authority와 동일한지
+ *
+ * - Meaning Specificity Echo가
+ *   Java 공식 Specificity와 동일한지
+ *
+ * - strongExpressionAllowed Echo가
+ *   Java 공식 표현 강도 경계와 동일한지
+ *
+ * - qualificationRequired Echo가
+ *   Java 공식 제한표현 경계와 동일한지
+ *
+ * - 서로 다른 Claim을
+ *   동일 문장으로 뭉개지 않았는지
  */
 @Component
 public class ConsultationClaimCoverageAnalyzer {
 
     public ConsultationClaimCoverageAnalysis analyze(
+
             ConsultationMeaningPacket packet,
+
             ConsultationPacketRender render
+
     ) {
 
         Objects.requireNonNull(
@@ -45,20 +71,51 @@ public class ConsultationClaimCoverageAnalyzer {
                 "Claim Coverage에는 Packet Render가 필요합니다."
         );
 
-        Map<String, ConsultationMeaningClaim> expected =
+        Map<
+                String,
+                ConsultationMeaningClaim
+                > expected =
                 new LinkedHashMap<>();
 
-        for (ConsultationMeaningClaim claim : packet.claims()) {
-            expected.put(claim.claimId(), claim);
+        for (
+                ConsultationMeaningClaim claim
+                : packet.claims()
+        ) {
+
+            expected.put(
+                    claim.claimId(),
+                    claim
+            );
         }
 
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        LinkedHashSet<String> unexpected = new LinkedHashSet<>();
-        LinkedHashSet<String> sourceMismatch = new LinkedHashSet<>();
-        LinkedHashSet<String> originMismatch = new LinkedHashSet<>();
-        LinkedHashSet<String> authorityMismatch = new LinkedHashSet<>();
+        Map<String, Integer> counts =
+                new LinkedHashMap<>();
 
-        for (ConsultationClaimRender claimRender : render.claimRenders()) {
+        LinkedHashSet<String> unexpected =
+                new LinkedHashSet<>();
+
+        LinkedHashSet<String> sourceMismatch =
+                new LinkedHashSet<>();
+
+        LinkedHashSet<String> originMismatch =
+                new LinkedHashSet<>();
+
+        LinkedHashSet<String> authorityMismatch =
+                new LinkedHashSet<>();
+
+        LinkedHashSet<String> specificityMismatch =
+                new LinkedHashSet<>();
+
+        LinkedHashSet<String> strongExpressionMismatch =
+                new LinkedHashSet<>();
+
+        LinkedHashSet<String> qualificationMismatch =
+                new LinkedHashSet<>();
+
+        for (
+                ConsultationClaimRender claimRender
+                : render.claimRenders()
+        ) {
 
             counts.merge(
                     claimRender.claimId(),
@@ -67,105 +124,317 @@ public class ConsultationClaimCoverageAnalyzer {
             );
 
             ConsultationMeaningClaim canonical =
-                    expected.get(claimRender.claimId());
+                    expected.get(
+                            claimRender.claimId()
+                    );
 
-            if (canonical == null) {
-                unexpected.add(claimRender.claimId());
+            if (
+                    canonical == null
+            ) {
+
+                unexpected.add(
+                        claimRender.claimId()
+                );
+
                 continue;
             }
 
-            if (!canonical.text().equals(claimRender.sourceClaimText())) {
-                sourceMismatch.add(claimRender.claimId());
+            /*
+             * =================================================
+             * Source Meaning
+             * =================================================
+             */
+
+            if (
+                    !canonical
+                            .text()
+                            .equals(
+                                    claimRender.sourceClaimText()
+                            )
+            ) {
+
+                sourceMismatch.add(
+                        claimRender.claimId()
+                );
             }
 
-            if (canonical.origin() != claimRender.origin()) {
-                originMismatch.add(claimRender.claimId());
+            /*
+             * =================================================
+             * Origin
+             * =================================================
+             */
+
+            if (
+                    canonical.origin()
+                            != claimRender.origin()
+            ) {
+
+                originMismatch.add(
+                        claimRender.claimId()
+                );
             }
 
-            if (canonical.authority() != claimRender.authority()) {
-                authorityMismatch.add(claimRender.claimId());
+            /*
+             * =================================================
+             * Authority
+             * =================================================
+             */
+
+            if (
+                    canonical.authority()
+                            != claimRender.authority()
+            ) {
+
+                authorityMismatch.add(
+                        claimRender.claimId()
+                );
+            }
+
+            /*
+             * =================================================
+             * Specificity
+             * =================================================
+             */
+
+            if (
+                    canonical.specificity()
+                            != claimRender.specificity()
+            ) {
+
+                specificityMismatch.add(
+                        claimRender.claimId()
+                );
+            }
+
+            /*
+             * =================================================
+             * Strong Expression Boundary
+             * =================================================
+             */
+
+            if (
+                    canonical
+                            .strongExpressionAllowed()
+
+                            != claimRender
+                            .strongExpressionAllowed()
+            ) {
+
+                strongExpressionMismatch.add(
+                        claimRender.claimId()
+                );
+            }
+
+            /*
+             * =================================================
+             * Qualification Boundary
+             * =================================================
+             */
+
+            if (
+                    canonical
+                            .qualificationRequired()
+
+                            != claimRender
+                            .qualificationRequired()
+            ) {
+
+                qualificationMismatch.add(
+                        claimRender.claimId()
+                );
             }
         }
 
-        List<String> missing = new ArrayList<>();
-        List<String> duplicate = new ArrayList<>();
+        List<String> missing =
+                new ArrayList<>();
 
-        for (String claimId : expected.keySet()) {
-            int count = counts.getOrDefault(claimId, 0);
+        List<String> duplicate =
+                new ArrayList<>();
 
-            if (count == 0) {
-                missing.add(claimId);
-            } else if (count > 1) {
-                duplicate.add(claimId);
+        for (
+                String claimId
+                : expected.keySet()
+        ) {
+
+            int count =
+                    counts.getOrDefault(
+                            claimId,
+                            0
+                    );
+
+            if (
+                    count == 0
+            ) {
+
+                missing.add(
+                        claimId
+                );
+
+            } else if (
+                    count > 1
+            ) {
+
+                duplicate.add(
+                        claimId
+                );
             }
         }
 
         List<String> repeatedTextClaimIds =
-                repeatedTextClaimIds(render.claimRenders());
+                repeatedTextClaimIds(
+                        render.claimRenders()
+                );
 
         return new ConsultationClaimCoverageAnalysis(
+
                 packet.packetId(),
-                packet.packetId().equals(render.packetId()),
-                packet.claims().size(),
-                render.claimRenders().size(),
-                List.copyOf(missing),
-                List.copyOf(unexpected),
-                List.copyOf(duplicate),
-                List.copyOf(sourceMismatch),
-                List.copyOf(originMismatch),
-                List.copyOf(authorityMismatch),
+
+                packet
+                        .packetId()
+                        .equals(
+                                render.packetId()
+                        ),
+
+                packet
+                        .claims()
+                        .size(),
+
+                render
+                        .claimRenders()
+                        .size(),
+
+                List.copyOf(
+                        missing
+                ),
+
+                List.copyOf(
+                        unexpected
+                ),
+
+                List.copyOf(
+                        duplicate
+                ),
+
+                List.copyOf(
+                        sourceMismatch
+                ),
+
+                List.copyOf(
+                        originMismatch
+                ),
+
+                List.copyOf(
+                        authorityMismatch
+                ),
+
+                List.copyOf(
+                        specificityMismatch
+                ),
+
+                List.copyOf(
+                        strongExpressionMismatch
+                ),
+
+                List.copyOf(
+                        qualificationMismatch
+                ),
+
                 repeatedTextClaimIds
         );
     }
 
     private List<String> repeatedTextClaimIds(
+
             List<ConsultationClaimRender> renders
+
     ) {
 
-        Map<String, List<String>> idsByText =
+        Map<
+                String,
+                List<String>
+                > idsByText =
                 new LinkedHashMap<>();
 
-        for (ConsultationClaimRender render : renders) {
+        for (
+                ConsultationClaimRender render
+                : renders
+        ) {
 
-            String key = normalizeMeaningText(render.text());
+            String key =
+                    normalizeMeaningText(
+                            render.text()
+                    );
 
-            if (key.length() < 12) {
+            /*
+             * 지나치게 짧은 표현은
+             * 우연히 같을 가능성이 있으므로 제외.
+             */
+
+            if (
+                    key.length()
+                            < 12
+            ) {
+
                 continue;
             }
 
             idsByText
                     .computeIfAbsent(
                             key,
-                            ignored -> new ArrayList<>()
+                            ignored ->
+                                    new ArrayList<>()
                     )
-                    .add(render.claimId());
+                    .add(
+                            render.claimId()
+                    );
         }
 
-        Set<String> result = new LinkedHashSet<>();
+        Set<String> result =
+                new LinkedHashSet<>();
 
-        for (List<String> claimIds : idsByText.values()) {
+        for (
+                List<String> claimIds
+                : idsByText.values()
+        ) {
 
-            if (claimIds.size() < 2) {
+            if (
+                    claimIds.size()
+                            < 2
+            ) {
+
                 continue;
             }
 
-            result.addAll(claimIds);
+            result.addAll(
+                    claimIds
+            );
         }
 
-        return List.copyOf(result);
+        return List.copyOf(
+                result
+        );
     }
 
     private String normalizeMeaningText(
             String value
     ) {
 
-        if (value == null) {
+        if (
+                value == null
+        ) {
+
             return "";
         }
 
         return value
-                .replaceAll("\\s+", "")
-                .replaceAll("[\\p{Punct}]", "")
+                .replaceAll(
+                        "\\s+",
+                        ""
+                )
+                .replaceAll(
+                        "[\\p{Punct}]",
+                        ""
+                )
                 .trim();
     }
 }

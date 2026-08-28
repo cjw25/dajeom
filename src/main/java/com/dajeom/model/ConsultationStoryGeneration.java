@@ -34,6 +34,7 @@ import java.util.Optional;
  * - model
  * - storiesByCategory
  * - emphasisByCategory
+ * - runtimeTraceByCategory
  *
  * 전체를 명시해서 생성한다.
  *
@@ -125,7 +126,9 @@ public record ConsultationStoryGeneration(
 
         Map<ConsultationCategory, String> storiesByCategory,
 
-        Map<ConsultationCategory, List<String>> emphasisByCategory
+        Map<ConsultationCategory, List<String>> emphasisByCategory,
+
+        Map<ConsultationCategory, ConsultationSectionRuntimeTrace> runtimeTraceByCategory
 
 ) {
 
@@ -186,12 +189,6 @@ public record ConsultationStoryGeneration(
                                 "Story Text는 비어 있을 수 없습니다."
                         );
 
-                /*
-                 * =================================================
-                 * Prompt Context Category 경계
-                 * =================================================
-                 */
-
                 ConsultationInterpretationPromptSection promptSection =
                         promptContext
                                 .findSection(
@@ -204,12 +201,6 @@ public record ConsultationStoryGeneration(
                                                                 + category
                                                 )
                                 );
-
-                /*
-                 * =================================================
-                 * unavailable Category 차단
-                 * =================================================
-                 */
 
                 if (
                         promptSection.unavailable()
@@ -239,12 +230,6 @@ public record ConsultationStoryGeneration(
             }
         }
 
-        /*
-         * =================================================
-         * Emphasis Normalize
-         * =================================================
-         */
-
         EnumMap<ConsultationCategory, List<String>> normalizedEmphasis =
                 new EnumMap<>(
                         ConsultationCategory.class
@@ -270,13 +255,6 @@ public record ConsultationStoryGeneration(
                                 category
                         );
 
-                /*
-                 * Story가 없는 Category의 강조값은
-                 * 사용자 출력에 의미가 없으므로 보존하지 않는다.
-                 *
-                 * 강조 메타데이터 때문에
-                 * 정상 Story Generation 전체를 실패시키지 않는다.
-                 */
                 if (
                         storyText == null
                 ) {
@@ -297,12 +275,6 @@ public record ConsultationStoryGeneration(
             }
         }
 
-        /*
-         * Story가 존재하는 모든 Category에는
-         * 강조 목록을 반드시 가진다.
-         *
-         * 강조할 문구가 없으면 빈 List.
-         */
         for (
                 ConsultationCategory category
                 : normalizedStories.keySet()
@@ -316,9 +288,108 @@ public record ConsultationStoryGeneration(
 
         /*
          * =================================================
-         * Immutable
+         * Runtime Provenance / Fallback Trace
          * =================================================
+         *
+         * Story가 실제 생성된 모든 Category는
+         * 반드시 정확히 하나의 Section Runtime Trace를 가진다.
+         *
+         * Trace는 AI Echo가 아니라
+         * Java 공식 MeaningPacket / Claim에서 생성된 provenance다.
          */
+
+        EnumMap<
+                ConsultationCategory,
+                ConsultationSectionRuntimeTrace
+                > normalizedRuntimeTrace =
+                new EnumMap<>(
+                        ConsultationCategory.class
+                );
+
+        if (
+                runtimeTraceByCategory != null
+        ) {
+
+            for (
+                    Map.Entry<
+                            ConsultationCategory,
+                            ConsultationSectionRuntimeTrace
+                            > entry
+                    : runtimeTraceByCategory.entrySet()
+            ) {
+
+                ConsultationCategory category =
+                        Objects.requireNonNull(
+                                entry.getKey(),
+                                "Story Runtime Trace Category는 null일 수 없습니다."
+                        );
+
+                ConsultationSectionRuntimeTrace runtimeTrace =
+                        Objects.requireNonNull(
+                                entry.getValue(),
+                                "Story Runtime Trace는 null일 수 없습니다."
+                        );
+
+                if (
+                        runtimeTrace.category()
+                                != category
+                ) {
+
+                    throw new IllegalArgumentException(
+                            "Story Runtime Trace의 Map Category와 Trace Category가 일치하지 않습니다. mapCategory="
+                                    + category
+                                    + ", traceCategory="
+                                    + runtimeTrace.category()
+                    );
+                }
+
+                if (
+                        !normalizedStories.containsKey(
+                                category
+                        )
+                ) {
+
+                    throw new IllegalArgumentException(
+                            "Story가 없는 Category의 Runtime Trace를 보존할 수 없습니다: "
+                                    + category
+                    );
+                }
+
+                ConsultationSectionRuntimeTrace previous =
+                        normalizedRuntimeTrace.put(
+                                category,
+                                runtimeTrace
+                        );
+
+                if (
+                        previous != null
+                ) {
+
+                    throw new IllegalArgumentException(
+                            "동일 Category의 Runtime Trace가 중복되었습니다: "
+                                    + category
+                    );
+                }
+            }
+        }
+
+        for (
+                ConsultationCategory category
+                : normalizedStories.keySet()
+        ) {
+
+            if (
+                    !normalizedRuntimeTrace.containsKey(
+                            category
+                    )
+            ) {
+
+                throw new IllegalArgumentException(
+                        "최종 Story에는 반드시 Runtime Trace가 필요합니다. category="
+                                + category
+                );
+            }
+        }
 
         storiesByCategory =
                 Collections.unmodifiableMap(
@@ -333,14 +404,14 @@ public record ConsultationStoryGeneration(
                                 normalizedEmphasis
                         )
                 );
+
+        runtimeTraceByCategory =
+                Collections.unmodifiableMap(
+                        new EnumMap<>(
+                                normalizedRuntimeTrace
+                        )
+                );
     }
-
-
-    /*
-     * =================================================
-     * Story
-     * =================================================
-     */
 
     public Optional<String> storyTextOf(
             ConsultationCategory category
@@ -360,7 +431,6 @@ public record ConsultationStoryGeneration(
         );
     }
 
-
     public boolean hasStory(
             ConsultationCategory category
     ) {
@@ -371,19 +441,11 @@ public record ConsultationStoryGeneration(
                 .isPresent();
     }
 
-
     public int storyCount() {
 
         return storiesByCategory
                 .size();
     }
-
-
-    /*
-     * =================================================
-     * Emphasis
-     * =================================================
-     */
 
     public List<String> storyEmphasisOf(
             ConsultationCategory category
@@ -406,7 +468,6 @@ public record ConsultationStoryGeneration(
                 : emphasis;
     }
 
-
     public boolean hasEmphasis(
             ConsultationCategory category
     ) {
@@ -417,12 +478,80 @@ public record ConsultationStoryGeneration(
                 .isEmpty();
     }
 
+    public Optional<ConsultationSectionRuntimeTrace> runtimeTraceOf(
+            ConsultationCategory category
+    ) {
 
-    /*
-     * =================================================
-     * Emphasis Normalize
-     * =================================================
-     */
+        if (
+                category == null
+        ) {
+
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(
+                runtimeTraceByCategory.get(
+                        category
+                )
+        );
+    }
+
+    public boolean fallbackUsed(
+            ConsultationCategory category
+    ) {
+
+        return runtimeTraceOf(
+                category
+        )
+                .map(
+                        ConsultationSectionRuntimeTrace::fallbackUsed
+                )
+                .orElse(
+                        false
+                );
+    }
+
+    public boolean fallbackUsed() {
+
+        return runtimeTraceByCategory
+                .values()
+                .stream()
+                .anyMatch(
+                        ConsultationSectionRuntimeTrace::fallbackUsed
+                );
+    }
+
+    public List<ConsultationCategory> fallbackCategories() {
+
+        return runtimeTraceByCategory
+                .entrySet()
+                .stream()
+                .filter(
+                        entry ->
+                                entry
+                                        .getValue()
+                                        .fallbackUsed()
+                )
+                .map(
+                        Map.Entry::getKey
+                )
+                .toList();
+    }
+
+    public List<String> fallbackPacketIdsOf(
+            ConsultationCategory category
+    ) {
+
+        return runtimeTraceOf(
+                category
+        )
+                .map(
+                        ConsultationSectionRuntimeTrace::fallbackPacketIds
+                )
+                .orElse(
+                        List.of()
+                );
+    }
 
     private static List<String> normalizeEmphasis(
 
@@ -465,10 +594,6 @@ public record ConsultationStoryGeneration(
                 continue;
             }
 
-            /*
-             * 강조는 하나의 문단 안에서
-             * 실제 Story 일부를 지정한다.
-             */
             if (
                     phrase.contains(
                             "\n"
@@ -478,13 +603,6 @@ public record ConsultationStoryGeneration(
                 continue;
             }
 
-            /*
-             * 실제 Story에 없는 강조 후보는
-             * 해당 후보만 버린다.
-             *
-             * 이것 때문에 정상 상담문 전체를
-             * 실패시키지 않는다.
-             */
             if (
                     !storyText.contains(
                             phrase
@@ -503,13 +621,6 @@ public record ConsultationStoryGeneration(
                 normalized
         );
     }
-
-
-    /*
-     * =================================================
-     * Text
-     * =================================================
-     */
 
     private static String requireText(
 

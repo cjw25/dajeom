@@ -38,6 +38,20 @@ import java.util.Set;
  * - 서로 다른 Packet이 동일 문단으로 반복되지 않는지
  * - Packet 문단이 이전 Packet을 전제하는 접속 표현으로 시작하지 않는지
  * - 강조 구절이 자기 Packet 본문에 실제 존재하는지
+ *
+ * =================================================
+ * 135-4
+ * =================================================
+ *
+ * 최종 ConsultationSectionAssemblyAnalysis에
+ * section.packets()도 그대로 전달한다.
+ *
+ * Analysis는 이 공식 Packet metadata에서:
+ *
+ * - timelineYear
+ * - timelineStage
+ *
+ * 만 읽어 표시 Group을 만든다.
  */
 @Component
 public class ConsultationSectionAssemblyAnalyzer {
@@ -75,14 +89,21 @@ public class ConsultationSectionAssemblyAnalyzer {
         List<ConsultationSectionAssemblyEntry> normalizedEntries =
                 entries == null
                         ? List.of()
-                        : entries.stream()
-                        .map(entry -> Objects.requireNonNull(
-                                entry,
-                                "Section Assembly Entry는 null일 수 없습니다."
-                        ))
+                        : entries
+                        .stream()
+                        .map(
+                                entry ->
+                                        Objects.requireNonNull(
+                                                entry,
+                                                "Section Assembly Entry는 null일 수 없습니다."
+                                        )
+                        )
                         .toList();
 
-        EnumMap<ConsultationSectionAssemblyViolationType, List<String>> violations =
+        EnumMap<
+                ConsultationSectionAssemblyViolationType,
+                List<String>
+                > violations =
                 emptyViolations();
 
         validatePacketSetAndOrder(
@@ -104,6 +125,7 @@ public class ConsultationSectionAssemblyAnalyzer {
         return new ConsultationSectionAssemblyAnalysis(
                 section.category(),
                 normalizedEntries,
+                section.packets(),
                 violations
         );
     }
@@ -114,7 +136,10 @@ public class ConsultationSectionAssemblyAnalyzer {
 
             List<ConsultationSectionAssemblyEntry> entries,
 
-            Map<ConsultationSectionAssemblyViolationType, List<String>> violations
+            Map<
+                    ConsultationSectionAssemblyViolationType,
+                    List<String>
+                    > violations
 
     ) {
 
@@ -122,22 +147,32 @@ public class ConsultationSectionAssemblyAnalyzer {
                 section
                         .packets()
                         .stream()
-                        .map(ConsultationMeaningPacket::packetId)
+                        .map(
+                                ConsultationMeaningPacket::packetId
+                        )
                         .toList();
 
         List<String> actualOrder =
                 entries
                         .stream()
-                        .map(ConsultationSectionAssemblyEntry::packetId)
+                        .map(
+                                ConsultationSectionAssemblyEntry::packetId
+                        )
                         .toList();
 
         Set<String> expectedSet =
-                new LinkedHashSet<>(expectedOrder);
+                new LinkedHashSet<>(
+                        expectedOrder
+                );
 
         Map<String, Integer> actualCounts =
                 new LinkedHashMap<>();
 
-        for (String packetId : actualOrder) {
+        for (
+                String packetId
+                : actualOrder
+        ) {
+
             actualCounts.merge(
                     packetId,
                     1,
@@ -145,9 +180,17 @@ public class ConsultationSectionAssemblyAnalyzer {
             );
         }
 
-        for (String expectedId : expectedOrder) {
+        for (
+                String expectedId
+                : expectedOrder
+        ) {
 
-            if (!actualCounts.containsKey(expectedId)) {
+            if (
+                    !actualCounts.containsKey(
+                            expectedId
+                    )
+            ) {
+
                 add(
                         violations,
                         ConsultationSectionAssemblyViolationType.MISSING_PACKET,
@@ -156,9 +199,17 @@ public class ConsultationSectionAssemblyAnalyzer {
             }
         }
 
-        for (Map.Entry<String, Integer> entry : actualCounts.entrySet()) {
+        for (
+                Map.Entry<String, Integer> entry
+                : actualCounts.entrySet()
+        ) {
 
-            if (!expectedSet.contains(entry.getKey())) {
+            if (
+                    !expectedSet.contains(
+                            entry.getKey()
+                    )
+            ) {
+
                 add(
                         violations,
                         ConsultationSectionAssemblyViolationType.UNEXPECTED_PACKET,
@@ -166,7 +217,10 @@ public class ConsultationSectionAssemblyAnalyzer {
                 );
             }
 
-            if (entry.getValue() > 1) {
+            if (
+                    entry.getValue() > 1
+            ) {
+
                 add(
                         violations,
                         ConsultationSectionAssemblyViolationType.DUPLICATE_PACKET,
@@ -176,12 +230,29 @@ public class ConsultationSectionAssemblyAnalyzer {
         }
 
         if (
-                expectedOrder.size() == actualOrder.size()
-                        && expectedSet.equals(new LinkedHashSet<>(actualOrder))
-                        && !expectedOrder.equals(actualOrder)
+                expectedOrder.size()
+                        == actualOrder.size()
+
+                        &&
+
+                        expectedSet.equals(
+                                new LinkedHashSet<>(
+                                        actualOrder
+                                )
+                        )
+
+                        &&
+
+                        !expectedOrder.equals(
+                                actualOrder
+                        )
         ) {
 
-            for (String packetId : actualOrder) {
+            for (
+                    String packetId
+                    : actualOrder
+            ) {
+
                 add(
                         violations,
                         ConsultationSectionAssemblyViolationType.PACKET_ORDER_CHANGED,
@@ -195,18 +266,27 @@ public class ConsultationSectionAssemblyAnalyzer {
 
             List<ConsultationSectionAssemblyEntry> entries,
 
-            Map<ConsultationSectionAssemblyViolationType, List<String>> violations
+            Map<
+                    ConsultationSectionAssemblyViolationType,
+                    List<String>
+                    > violations
 
     ) {
 
         Map<String, List<String>> packetIdsByNormalizedText =
                 new LinkedHashMap<>();
 
-        for (ConsultationSectionAssemblyEntry entry : entries) {
+        for (
+                ConsultationSectionAssemblyEntry entry
+                : entries
+        ) {
 
-            String text = entry.text().trim();
+            String text =
+                    entry.text().trim();
 
-            if (text.isBlank()) {
+            if (
+                    text.isBlank()
+            ) {
 
                 add(
                         violations,
@@ -217,7 +297,11 @@ public class ConsultationSectionAssemblyAnalyzer {
                 continue;
             }
 
-            if (startsWithCrossPacketConnector(text)) {
+            if (
+                    startsWithCrossPacketConnector(
+                            text
+                    )
+            ) {
 
                 add(
                         violations,
@@ -226,18 +310,20 @@ public class ConsultationSectionAssemblyAnalyzer {
                 );
             }
 
-            String normalized = normalizeTextKey(text);
+            String normalized =
+                    normalizeTextKey(
+                            text
+                    );
 
-            /*
-             * 지나치게 짧은 문장은 우연히 같을 수 있으므로
-             * 긴 문단만 동일문장 반복 검증에 사용한다.
-             */
-            if (normalized.length() >= 20) {
+            if (
+                    normalized.length() >= 20
+            ) {
 
                 packetIdsByNormalizedText
                         .computeIfAbsent(
                                 normalized,
-                                ignored -> new ArrayList<>()
+                                ignored ->
+                                        new ArrayList<>()
                         )
                         .add(
                                 entry.packetId()
@@ -245,13 +331,23 @@ public class ConsultationSectionAssemblyAnalyzer {
             }
         }
 
-        for (List<String> packetIds : packetIdsByNormalizedText.values()) {
+        for (
+                List<String> packetIds
+                : packetIdsByNormalizedText.values()
+        ) {
 
-            if (packetIds.size() < 2) {
+            if (
+                    packetIds.size() < 2
+            ) {
+
                 continue;
             }
 
-            for (String packetId : packetIds) {
+            for (
+                    String packetId
+                    : packetIds
+            ) {
+
                 add(
                         violations,
                         ConsultationSectionAssemblyViolationType.REPEATED_PACKET_TEXT,
@@ -265,15 +361,28 @@ public class ConsultationSectionAssemblyAnalyzer {
 
             List<ConsultationSectionAssemblyEntry> entries,
 
-            Map<ConsultationSectionAssemblyViolationType, List<String>> violations
+            Map<
+                    ConsultationSectionAssemblyViolationType,
+                    List<String>
+                    > violations
 
     ) {
 
-        for (ConsultationSectionAssemblyEntry entry : entries) {
+        for (
+                ConsultationSectionAssemblyEntry entry
+                : entries
+        ) {
 
-            for (String phrase : entry.emphasis()) {
+            for (
+                    String phrase
+                    : entry.emphasis()
+            ) {
 
-                if (!entry.text().contains(phrase)) {
+                if (
+                        !entry.text().contains(
+                                phrase
+                        )
+                ) {
 
                     add(
                             violations,
@@ -289,18 +398,50 @@ public class ConsultationSectionAssemblyAnalyzer {
             String text
     ) {
 
-        String normalized = text.stripLeading();
+        String normalized =
+                text.stripLeading();
 
-        for (String connector : CROSS_PACKET_OPENING_CONNECTORS) {
+        for (
+                String connector
+                : CROSS_PACKET_OPENING_CONNECTORS
+        ) {
 
             if (
-                    normalized.equals(connector)
-                            || normalized.startsWith(connector + " ")
-                            || normalized.startsWith(connector + ",")
-                            || normalized.startsWith(connector + ".")
-                            || normalized.startsWith(connector + "는")
-                            || normalized.startsWith(connector + "도")
+                    normalized.equals(
+                            connector
+                    )
+
+                            ||
+
+                            normalized.startsWith(
+                                    connector + " "
+                            )
+
+                            ||
+
+                            normalized.startsWith(
+                                    connector + ","
+                            )
+
+                            ||
+
+                            normalized.startsWith(
+                                    connector + "."
+                            )
+
+                            ||
+
+                            normalized.startsWith(
+                                    connector + "는"
+                            )
+
+                            ||
+
+                            normalized.startsWith(
+                                    connector + "도"
+                            )
             ) {
+
                 return true;
             }
         }
@@ -324,10 +465,16 @@ public class ConsultationSectionAssemblyAnalyzer {
                 .trim();
     }
 
-    private EnumMap<ConsultationSectionAssemblyViolationType, List<String>>
+    private EnumMap<
+            ConsultationSectionAssemblyViolationType,
+            List<String>
+            >
     emptyViolations() {
 
-        EnumMap<ConsultationSectionAssemblyViolationType, List<String>> result =
+        EnumMap<
+                ConsultationSectionAssemblyViolationType,
+                List<String>
+                > result =
                 new EnumMap<>(
                         ConsultationSectionAssemblyViolationType.class
                 );
@@ -336,6 +483,7 @@ public class ConsultationSectionAssemblyAnalyzer {
                 ConsultationSectionAssemblyViolationType type
                 : ConsultationSectionAssemblyViolationType.values()
         ) {
+
             result.put(
                     type,
                     new ArrayList<>()
@@ -347,7 +495,10 @@ public class ConsultationSectionAssemblyAnalyzer {
 
     private void add(
 
-            Map<ConsultationSectionAssemblyViolationType, List<String>> violations,
+            Map<
+                    ConsultationSectionAssemblyViolationType,
+                    List<String>
+                    > violations,
 
             ConsultationSectionAssemblyViolationType type,
 
@@ -358,7 +509,8 @@ public class ConsultationSectionAssemblyAnalyzer {
         violations
                 .computeIfAbsent(
                         type,
-                        ignored -> new ArrayList<>()
+                        ignored ->
+                                new ArrayList<>()
                 )
                 .add(
                         packetId

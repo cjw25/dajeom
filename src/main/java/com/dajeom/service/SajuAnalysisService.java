@@ -6,15 +6,16 @@ import com.dajeom.analyzer.ConsultationGroundingAnalyzer;
 import com.dajeom.analyzer.ConsultationGroundingPolicyAnalyzer;
 import com.dajeom.analyzer.ConsultationInterpretationPromptContextAnalyzer;
 import com.dajeom.analyzer.ConsultationNarrativePlanAnalyzer;
-import com.dajeom.analyzer.ConsultationUserContextAnalyzer;
 import com.dajeom.analyzer.ConsultationRequestEvidenceAnalyzer;
 import com.dajeom.analyzer.ConsultationRequestScopeAnalyzer;
 import com.dajeom.analyzer.ConsultationTimelineRangeAnalyzer;
+import com.dajeom.analyzer.ConsultationUserContextAnalyzer;
 import com.dajeom.calculator.KoreanLunarCalendarCalculator;
 import com.dajeom.constant.SajuConstants;
 import com.dajeom.dto.AnnualLuckResponse;
 import com.dajeom.dto.ConsultationPersonalizationResponse;
 import com.dajeom.dto.ConsultationSectionResponse;
+import com.dajeom.dto.ConsultationSectionResponse.ConsultationSectionStatus;
 import com.dajeom.dto.DecadeLuckPeriodResponse;
 import com.dajeom.dto.DecadeLuckResponse;
 import com.dajeom.dto.PillarResponse;
@@ -43,13 +44,13 @@ import com.dajeom.model.ConsultationCategoryEvidenceAnalysis;
 import com.dajeom.model.ConsultationGroundingAnalysis;
 import com.dajeom.model.ConsultationGroundingPolicyAnalysis;
 import com.dajeom.model.ConsultationInterpretationPromptContext;
-import com.dajeom.model.ConsultationNarrativePlan;
-import com.dajeom.model.ConsultationUserContext;
 import com.dajeom.model.ConsultationInterpretationPromptSection;
+import com.dajeom.model.ConsultationNarrativePlan;
 import com.dajeom.model.ConsultationRequestEvidenceAnalysis;
 import com.dajeom.model.ConsultationRequestScopeAnalysis;
 import com.dajeom.model.ConsultationStoryGeneration;
 import com.dajeom.model.ConsultationTimelineRangeAnalysis;
+import com.dajeom.model.ConsultationUserContext;
 import com.dajeom.model.DecadeLuckAnalysis;
 import com.dajeom.model.DecadeLuckPeriod;
 import com.dajeom.model.FourPillars;
@@ -104,8 +105,8 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -237,6 +238,26 @@ import java.util.Optional;
  * Story Generation 결과만 없는 경우에는
  * 계산되지 않은 의미를 새로 만들지 않았다는
  * 기술적 안내만 반환한다.
+ *
+ * =================================================
+ * 121 API 상태 계약
+ * =================================================
+ *
+ * 프론트는 storyText 내용으로
+ * Section 상태를 추측하지 않는다.
+ *
+ * 각 ConsultationSectionResponse에는
+ * Java가 직접 판정한 status를 제공한다.
+ *
+ * ANALYSIS_UNAVAILABLE
+ * NOT_REQUESTED
+ * UNAVAILABLE
+ * GENERATION_UNAVAILABLE
+ * READY
+ *
+ * focused는 사용자 질문/Context에 따른
+ * 화면 우선 강조 여부이며
+ * status와 독립된 개념이다.
  */
 @Service
 public class SajuAnalysisService {
@@ -1873,12 +1894,6 @@ public class SajuAnalysisService {
                                 palaceAnalysis
                         );
 
-        /*
-         * =================================================
-         * Annual Functional Baseline
-         * =================================================
-         */
-
         log.info(
                 "[SAJU-SERVICE-DIAG] annual-functional-baseline-start"
         );
@@ -1898,12 +1913,6 @@ public class SajuAnalysisService {
                 "[SAJU-SERVICE-DIAG] annual-functional-baseline-complete size={}",
                 annualFunctionalBaselines.size()
         );
-
-        /*
-         * =================================================
-         * Monthly Functional Activation
-         * =================================================
-         */
 
         log.info(
                 "[SAJU-SERVICE-DIAG] monthly-functional-activation-start"
@@ -2277,8 +2286,7 @@ public class SajuAnalysisService {
         );
     }
 
-    private LuckReferenceContext
-    createLuckReferenceContext(
+    private LuckReferenceContext createLuckReferenceContext(
 
             SajuAnalysisRequest request,
 
@@ -2334,8 +2342,7 @@ public class SajuAnalysisService {
         );
     }
 
-    private ZonedDateTime
-    resolveDecadeReferenceDateTime(
+    private ZonedDateTime resolveDecadeReferenceDateTime(
 
             NormalizedBirthData birthData,
 
@@ -2668,6 +2675,10 @@ public class SajuAnalysisService {
      * 사용한다.
      *
      * Legacy ConsultationSection은 사용하지 않는다.
+     *
+     * 121부터는 각 Section의 상태를
+     * storyText 문자열로 추측하지 않고
+     * ConsultationSectionStatus로 Java가 직접 판정한다.
      */
 
     private List<ConsultationSectionResponse>
@@ -2783,6 +2794,13 @@ public class SajuAnalysisService {
                 : orderedCategories
         ) {
 
+            ConsultationSectionStatus status =
+                    resolveConsultationSectionStatus(
+                            category,
+                            interpretationPromptContext,
+                            consultationStoryGeneration
+                    );
+
             responses.add(
                     new ConsultationSectionResponse(
                             category.getOrder(),
@@ -2797,15 +2815,17 @@ public class SajuAnalysisService {
 
                             category.getKoreanName(),
 
+                            status,
+
                             resolveStoryText(
                                     category,
-                                    interpretationPromptContext,
+                                    status,
                                     consultationStoryGeneration
                             ),
 
                             resolveStoryEmphasis(
                                     category,
-                                    interpretationPromptContext,
+                                    status,
                                     consultationStoryGeneration
                             )
                     )
@@ -2815,6 +2835,123 @@ public class SajuAnalysisService {
         return List.copyOf(
                 responses
         );
+    }
+
+    /*
+     * =================================================
+     * Consultation Section Status
+     * =================================================
+     *
+     * 프론트가 storyText 내용을 해석해서
+     * 상태를 추측하지 않도록
+     * Java가 공식 상태를 결정한다.
+     */
+
+    private ConsultationSectionStatus
+    resolveConsultationSectionStatus(
+
+            ConsultationCategory category,
+
+            Optional<ConsultationInterpretationPromptContext>
+                    interpretationPromptContext,
+
+            Optional<ConsultationStoryGeneration>
+                    consultationStoryGeneration
+
+    ) {
+
+        Objects.requireNonNull(
+                category,
+                "Consultation Section Status 판정에는 ConsultationCategory가 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                interpretationPromptContext,
+                "Consultation Section Status 판정에는 ConsultationInterpretationPromptContext Optional이 필요합니다."
+        );
+
+        Objects.requireNonNull(
+                consultationStoryGeneration,
+                "Consultation Section Status 판정에는 ConsultationStoryGeneration Optional이 필요합니다."
+        );
+
+        /*
+         * 상담용 deterministic Prompt Context 자체가 없다.
+         */
+        if (
+                interpretationPromptContext.isEmpty()
+        ) {
+
+            return ConsultationSectionStatus
+                    .ANALYSIS_UNAVAILABLE;
+        }
+
+        ConsultationInterpretationPromptContext promptContext =
+                interpretationPromptContext
+                        .orElseThrow();
+
+        Optional<ConsultationInterpretationPromptSection> promptSection =
+                promptContext
+                        .findSection(
+                                category
+                        );
+
+        /*
+         * 전체 11개 API 구조에는 존재하지만
+         * 이번 요청의 Prompt Section이 아니다.
+         */
+        if (
+                promptSection.isEmpty()
+        ) {
+
+            return ConsultationSectionStatus
+                    .NOT_REQUESTED;
+        }
+
+        /*
+         * 요청됐지만 deterministic Meaning 근거상
+         * 독립적인 사용자 해석을 확정하지 않는다.
+         */
+        if (
+                promptSection
+                        .orElseThrow()
+                        .unavailable()
+        ) {
+
+            return ConsultationSectionStatus
+                    .UNAVAILABLE;
+        }
+
+        /*
+         * Prompt Section은 available이지만
+         * Story Generation 자체가 없다.
+         */
+        if (
+                consultationStoryGeneration.isEmpty()
+        ) {
+
+            return ConsultationSectionStatus
+                    .GENERATION_UNAVAILABLE;
+        }
+
+        ConsultationStoryGeneration generation =
+                consultationStoryGeneration
+                        .orElseThrow();
+
+        /*
+         * 실제 검증된 Story가 존재할 때만 READY.
+         */
+        return generation
+                .storyTextOf(
+                        category
+                )
+                .filter(
+                        story ->
+                                !story.isBlank()
+                )
+                .isPresent()
+                ? ConsultationSectionStatus.READY
+                : ConsultationSectionStatus.GENERATION_UNAVAILABLE;
     }
 
     private ConsultationPersonalizationResponse
@@ -2872,14 +3009,16 @@ public class SajuAnalysisService {
      * =================================================
      *
      * 절대 Legacy narrationText로 fallback하지 않는다.
+     *
+     * 121부터는 status를 먼저 확정하고
+     * 그 상태에 맞는 Text만 반환한다.
      */
 
     private String resolveStoryText(
 
             ConsultationCategory category,
 
-            Optional<ConsultationInterpretationPromptContext>
-                    interpretationPromptContext,
+            ConsultationSectionStatus status,
 
             Optional<ConsultationStoryGeneration>
                     consultationStoryGeneration
@@ -2892,8 +3031,8 @@ public class SajuAnalysisService {
         );
 
         Objects.requireNonNull(
-                interpretationPromptContext,
-                "Story Text 조회에는 ConsultationInterpretationPromptContext Optional이 필요합니다."
+                status,
+                "Story Text 조회에는 ConsultationSectionStatus가 필요합니다."
         );
 
         Objects.requireNonNull(
@@ -2901,88 +3040,87 @@ public class SajuAnalysisService {
                 "Story Text 조회에는 ConsultationStoryGeneration Optional이 필요합니다."
         );
 
-        /*
-         * Grounding Prompt 자체가 없는 경우에는
-         * 상담 Meaning을 임의 생성하지 않는다.
-         */
-        if (
-                interpretationPromptContext.isEmpty()
-        ) {
+        return switch (
+                status
+                ) {
 
-            return "";
-        }
+            /*
+             * 분석 자체가 없거나
+             * 이번 요청 대상이 아닌 Category는
+             * 사용자 Story를 만들지 않는다.
+             */
+            case ANALYSIS_UNAVAILABLE,
+                 NOT_REQUESTED ->
+                    "";
 
-        ConsultationInterpretationPromptContext promptContext =
-                interpretationPromptContext
-                        .orElseThrow();
+            /*
+             * deterministic 근거상
+             * 독립적인 해석을 확정하지 않은 상태.
+             */
+            case UNAVAILABLE ->
+                    CATEGORY_UNAVAILABLE_MESSAGE;
 
-        Optional<ConsultationInterpretationPromptSection> promptSection =
-                promptContext
-                        .findSection(
-                                category
-                        );
+            /*
+             * Java Meaning은 존재하지만
+             * 최종 Story Generation 결과가 없다.
+             */
+            case GENERATION_UNAVAILABLE ->
+                    STORY_GENERATION_UNAVAILABLE_MESSAGE;
 
-        /*
-         * 요청되지 않았거나
-         * 공식 Prompt Section이 존재하지 않는 Category.
-         */
-        if (
-                promptSection.isEmpty()
-        ) {
+            /*
+             * READY는 반드시 실제 생성 Story를 가져야 한다.
+             */
+            case READY -> {
 
-            return "";
-        }
+                ConsultationStoryGeneration generation =
+                        consultationStoryGeneration
+                                .orElseThrow(
+                                        () ->
+                                                new IllegalStateException(
+                                                        "READY 상태인데 ConsultationStoryGeneration이 없습니다. category="
+                                                                + category
+                                                )
+                                );
 
-        ConsultationInterpretationPromptSection section =
-                promptSection
-                        .orElseThrow();
+                String storyText =
+                        generation
+                                .storyTextOf(
+                                        category
+                                )
+                                .filter(
+                                        story ->
+                                                !story.isBlank()
+                                )
+                                .map(
+                                        String::trim
+                                )
+                                .orElseThrow(
+                                        () ->
+                                                new IllegalStateException(
+                                                        "READY 상태인데 실제 Story Text가 없습니다. category="
+                                                                + category
+                                                )
+                                );
 
-        if (
-                section.unavailable()
-        ) {
-
-            return CATEGORY_UNAVAILABLE_MESSAGE;
-        }
-
-        if (
-                consultationStoryGeneration.isEmpty()
-        ) {
-
-            return STORY_GENERATION_UNAVAILABLE_MESSAGE;
-        }
-
-        Optional<String> generatedStory =
-                consultationStoryGeneration
-                        .orElseThrow()
-                        .storyTextOf(
-                                category
-                        );
-
-        return generatedStory
-                .filter(
-                        story ->
-                                !story.isBlank()
-                )
-                .map(
-                        String::trim
-                )
-                .orElse(
-                        STORY_GENERATION_UNAVAILABLE_MESSAGE
-                );
+                yield storyText;
+            }
+        };
     }
 
     /*
      * =================================================
      * Story Emphasis
      * =================================================
+     *
+     * READY 상태의 실제 Story에 대해서만
+     * emphasis를 노출한다.
      */
 
     private List<String> resolveStoryEmphasis(
 
             ConsultationCategory category,
 
-            Optional<ConsultationInterpretationPromptContext>
-                    interpretationPromptContext,
+            ConsultationSectionStatus status,
 
             Optional<ConsultationStoryGeneration>
                     consultationStoryGeneration
@@ -2995,8 +3133,8 @@ public class SajuAnalysisService {
         );
 
         Objects.requireNonNull(
-                interpretationPromptContext,
-                "Story Emphasis 조회에는 ConsultationInterpretationPromptContext Optional이 필요합니다."
+                status,
+                "Story Emphasis 조회에는 ConsultationSectionStatus가 필요합니다."
         );
 
         Objects.requireNonNull(
@@ -3005,40 +3143,8 @@ public class SajuAnalysisService {
         );
 
         if (
-                interpretationPromptContext.isEmpty()
-        ) {
-
-            return List.of();
-        }
-
-        ConsultationInterpretationPromptContext promptContext =
-                interpretationPromptContext
-                        .orElseThrow();
-
-        Optional<ConsultationInterpretationPromptSection> promptSection =
-                promptContext
-                        .findSection(
-                                category
-                        );
-
-        if (
-                promptSection.isEmpty()
-        ) {
-
-            return List.of();
-        }
-
-        if (
-                promptSection
-                        .orElseThrow()
-                        .unavailable()
-        ) {
-
-            return List.of();
-        }
-
-        if (
-                consultationStoryGeneration.isEmpty()
+                status
+                        != ConsultationSectionStatus.READY
         ) {
 
             return List.of();
@@ -3046,7 +3152,13 @@ public class SajuAnalysisService {
 
         ConsultationStoryGeneration generation =
                 consultationStoryGeneration
-                        .orElseThrow();
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "READY 상태인데 ConsultationStoryGeneration이 없습니다. category="
+                                                        + category
+                                        )
+                        );
 
         if (
                 !generation.hasStory(
@@ -3054,7 +3166,10 @@ public class SajuAnalysisService {
                 )
         ) {
 
-            return List.of();
+            throw new IllegalStateException(
+                    "READY 상태인데 Story가 존재하지 않습니다. category="
+                            + category
+            );
         }
 
         return generation.storyEmphasisOf(

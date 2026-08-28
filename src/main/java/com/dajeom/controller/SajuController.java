@@ -3,6 +3,7 @@ package com.dajeom.controller;
 import com.dajeom.dto.SajuAnalysisRequest;
 import com.dajeom.dto.SajuAnalysisResponse;
 import com.dajeom.service.SajuAnalysisService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,8 @@ import java.util.Objects;
  *
  * Request
  *      ↓
+ * Bean Validation
+ *      ↓
  * SajuAnalysisService
  *      ↓
  * SajuAnalysisResponse
@@ -36,25 +39,36 @@ import java.util.Objects;
  *
  * POST /api/saju/calculate
  *
- * 프로필 Entity 저장이나
- * 별도 Analysis Entity 생성 없이
- * 현재 사용자가 입력한 사주정보를
- * deterministic 분석 Service에 직접 전달한다.
+ * =================================================
+ * 122 API 입력 경계
+ * =================================================
+ *
+ * @Valid
+ *
+ * 를 Controller 진입점에 명시하여
+ * SajuAnalysisRequest에 선언된:
+ *
+ * - @NotNull
+ * - @NotBlank
+ * - @Pattern
+ * - @Size
+ *
+ * 검증을 실제 API 요청에서 활성화한다.
  *
  * =================================================
  * Runtime Diagnostic
  * =================================================
  *
- * 현재 분석 요청이:
- *
- * 1. Controller까지 실제로 진입했는지
- * 2. SajuAnalysisService.analyze() 호출에 들어갔는지
- * 3. Service에서 정상 반환됐는지
- *
- * 를 확인하기 위한 최소 진단 로그를 남긴다.
- *
- * 실제 생년월일, 이름, 질문 내용 등
+ * 실제 생년월일,
+ * 질문 내용,
+ * 관계 Context 등
  * 사용자 입력 원문은 로그에 출력하지 않는다.
+ *
+ * 실패 로그에서도 exception message를
+ * 그대로 기록하지 않는다.
+ *
+ * 상세 오류 분류와 안전 응답은
+ * GlobalExceptionHandler가 담당한다.
  */
 @RestController
 @RequestMapping("/api/saju")
@@ -81,7 +95,11 @@ public class SajuController {
 
     @PostMapping("/calculate")
     public ResponseEntity<SajuAnalysisResponse> calculate(
-            @RequestBody SajuAnalysisRequest request
+
+            @Valid
+            @RequestBody
+            SajuAnalysisRequest request
+
     ) {
 
         long controllerStartedAt =
@@ -111,13 +129,9 @@ public class SajuController {
                             );
 
             long elapsedMillis =
-                    (
-                            System.nanoTime()
-                                    -
-                                    controllerStartedAt
-                    )
-                            /
-                            1_000_000L;
+                    elapsedMillis(
+                            controllerStartedAt
+                    );
 
             log.info(
                     "[SAJU-DIAG] service-call-complete elapsedMs={} thread={}",
@@ -143,25 +157,40 @@ public class SajuController {
         ) {
 
             long elapsedMillis =
-                    (
-                            System.nanoTime()
-                                    -
-                                    controllerStartedAt
-                    )
-                            /
-                            1_000_000L;
+                    elapsedMillis(
+                            controllerStartedAt
+                    );
 
-            log.error(
-                    "[SAJU-DIAG] service-call-failed elapsedMs={} exception={} message={}",
+            /*
+             * 여기서는 사용자 입력 원문이 포함될 가능성이 있는
+             * exception.getMessage()를 기록하지 않는다.
+             *
+             * 예상 가능한 400과 실제 500의 최종 구분은
+             * GlobalExceptionHandler가 수행한다.
+             */
+            log.warn(
+                    "[SAJU-DIAG] service-call-failed elapsedMs={} exception={} thread={}",
                     elapsedMillis,
                     exception
                             .getClass()
                             .getName(),
-                    exception
-                            .getMessage()
+                    Thread.currentThread().getName()
             );
 
             throw exception;
         }
+    }
+
+    private long elapsedMillis(
+            long startedAt
+    ) {
+
+        return (
+                System.nanoTime()
+                        -
+                        startedAt
+        )
+                /
+                1_000_000L;
     }
 }

@@ -5,6 +5,9 @@ import com.dajeom.model.ConsultationMeaningPacket;
 import com.dajeom.model.ConsultationNarrativeValidationResult;
 import com.dajeom.model.ConsultationNarrativeValidationViolation;
 import com.dajeom.type.ConsultationCategory;
+import com.dajeom.type.ConsultationMeaningAuthority;
+import com.dajeom.type.ConsultationMeaningOrigin;
+import com.dajeom.type.ConsultationMeaningSpecificity;
 import com.dajeom.type.ConsultationNarrativeViolationType;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +45,54 @@ import java.util.regex.Pattern;
  * 6.
  * 명리 내부 용어와 코드가
  * 사용자에게 노출되지 않았는가.
+ *
+ * 7.
+ * 지지/부담 같은 deterministic 방향을
+ * 임의의 긍정/부정 가치판단으로
+ * 재해석하지 않았는가.
+ *
+ * 8.
+ * Claim에 없는 결과/성과/중요도를
+ * 새로 만들지 않았는가.
+ *
+ * =================================================
+ * 표현 자유
+ * =================================================
+ *
+ * Java Meaning Boundary는 엄격하게 유지한다.
+ *
+ * 다만 qualificationRequired Claim을
+ * 사용자에게 자연스럽게 표현하기 위해:
+ *
+ * - 한쪽으로만 보기 어렵습니다.
+ * - 단정하기 어렵습니다.
+ * - 상황에 따라 달라질 수 있습니다.
+ * - 가능성을 열어두고 봐야 합니다.
+ *
+ * 같은 일반 사용자용 제한 표현도
+ * 공식 Qualification 표현으로 인정한다.
+ *
+ * 이것은 Meaning 확장이 아니라
+ * Expression Freedom 확장이다.
+ *
+ * =================================================
+ * 134-4 Meaning Boundary Hardening
+ * =================================================
+ *
+ * Writer First 구조 적용 후
+ * 실제 Runtime에서 확인된 의미 확장:
+ *
+ * - 노력 -> 가시적인 결과
+ * - 지지 -> 긍정적 흐름
+ * - 부담 -> 부정적 흐름
+ * - 서로 다른 방향 -> 서로 다른 영향
+ * - 일반 특징 -> 가장 큰 특징
+ *
+ * 을 Java Boundary에서 추가 차단한다.
+ *
+ * 단,
+ * source Claim 자체에 해당 표현이 존재한다면
+ * 새로 발명한 의미가 아니므로 허용한다.
  *
  * =================================================
  * 중요한 구조
@@ -188,18 +239,6 @@ public class ConsultationNarrativeOutputValidator {
      * =================================================
      * 현실 사건 보호어
      * =================================================
-     *
-     * AI 출력에 아래 표현이 등장하려면
-     * 현재 실제 사용 Claim 원문에도
-     * 동일 표현이 존재해야 한다.
-     *
-     * 즉:
-     *
-     * 성향 Claim
-     * ↓
-     * AI가 결혼/퇴사/합격 등 사건 생성
-     *
-     * 을 차단한다.
      */
 
     private static final List<String> SENSITIVE_EVENT_TERMS =
@@ -272,11 +311,145 @@ public class ConsultationNarrativeOutputValidator {
 
     /*
      * =================================================
+     * 134-4
+     * Claim에 없는 결과 구체화
+     * =================================================
+     *
+     * 단순 지지/부담/작동 방향을
+     * 실제 성과나 눈에 보이는 결과로
+     * 확장하는 것을 차단한다.
+     *
+     * source Claim 자체에 동일 표현이 있다면
+     * 허용한다.
+     */
+
+    private static final List<String> UNSUPPORTED_OUTCOME_TERMS =
+            List.of(
+
+                    "가시적인 결과",
+
+                    "눈에 보이는 결과",
+
+                    "뚜렷한 결과",
+
+                    "구체적인 결과",
+
+                    "실질적인 결과",
+
+                    "성과",
+
+                    "결실",
+
+                    "보상"
+            );
+
+    /*
+     * =================================================
+     * 134-4
+     * 가치판단 의미 확장
+     * =================================================
+     *
+     * 프로젝트 공식 원칙:
+     *
+     * 지지
+     * !=
+     * 좋은 사건 / 긍정적 사건
+     *
+     * 부담
+     * !=
+     * 나쁜 사건 / 부정적 사건
+     *
+     * deterministic Claim에
+     * 해당 가치판단이 직접 존재할 때만 허용한다.
+     */
+
+    private static final List<String> UNSUPPORTED_EVALUATIVE_TERMS =
+            List.of(
+
+                    "긍정적",
+
+                    "부정적",
+
+                    "좋은 흐름",
+
+                    "좋은 방향",
+
+                    "좋은 쪽",
+
+                    "나쁜 흐름",
+
+                    "나쁜 방향",
+
+                    "나쁜 쪽",
+
+                    "좋아지는",
+
+                    "좋아질",
+
+                    "좋아집니다",
+
+                    "좋습니다",
+
+                    "나빠지는",
+
+                    "나빠질",
+
+                    "나빠집니다",
+
+                    "나쁩니다",
+
+                    "악화"
+            );
+
+    /*
+     * =================================================
+     * 134-4
+     * 중요도 재판단
+     * =================================================
+     *
+     * Java가 중요도/대표성을 정하지 않았는데
+     * AI가 임의로:
+     *
+     * - 가장 큰 특징
+     * - 가장 중요한 특징
+     * - 대표 특징
+     *
+     * 으로 승격하는 것을 차단한다.
+     */
+
+    private static final List<String> UNSUPPORTED_IMPORTANCE_TERMS =
+            List.of(
+
+                    "가장 큰 특징",
+
+                    "가장 중요한",
+
+                    "가장 핵심",
+
+                    "핵심적인 특징",
+
+                    "핵심 특징",
+
+                    "대표적인 특징",
+
+                    "대표 특징",
+
+                    "가장 두드러",
+
+                    "특히 두드러"
+            );
+
+    /*
+     * =================================================
      * 관계 발명 탐지
      * =================================================
      *
-     * Claim 원문 자체에 존재하지 않는다면
-     * AI가 임의로 삽입할 수 없다.
+     * 완성형뿐 아니라
+     * 한국어 활용형 전체를 잡을 수 있도록
+     * 일부 항목은 어간 단위로 둔다.
+     *
+     * source Claim 자체에 같은 표현이 있으면
+     * 허용된다.
      */
 
     private static final List<String> CAUSAL_CONNECTORS =
@@ -291,6 +464,10 @@ public class ConsultationNarrativeOutputValidator {
                     "이로 인해",
 
                     "그로 인해",
+
+                    "로 인해",
+
+                    "으로 인해",
 
                     "따라서",
 
@@ -308,7 +485,70 @@ public class ConsultationNarrativeOutputValidator {
 
                     "이후",
 
-                    "나중에"
+                    "나중에",
+
+                    "작동하여",
+
+                    "작용하여",
+
+                    "활성되어",
+
+                    "활성되면서",
+
+                    /*
+                     * 134-4:
+                     * "영향을 주어"만 검사하면
+                     * "영향을 줍니다",
+                     * "영향을 줄 수 있습니다"
+                     * 등을 놓칠 수 있다.
+                     */
+                    "영향을 주",
+
+                    "영향을 미치",
+
+                    "영향을 받",
+
+                    /*
+                     * 이어집니다 / 이어질 / 이어지게 /
+                     * 이어지는 / 이어졌습니다 등을
+                     * 하나의 어간으로 검증한다.
+                     */
+                    "이어지",
+
+                    /*
+                     * 연결되어 / 연결될 / 연결되는
+                     */
+                    "연결되",
+
+                    /*
+                     * 초래합니다 / 초래할 / 초래하는
+                     */
+                    "초래하",
+
+                    /*
+                     * 불러옵니다 / 불러올 / 불러오는
+                     */
+                    "불러오",
+
+                    /*
+                     * 발생시켜 / 발생시킵니다 /
+                     * 발생시키는
+                     */
+                    "발생시키",
+
+                    "만들어내",
+
+                    "만들어 냅",
+
+                    /*
+                     * 강화하여 / 강화합니다 / 강화할
+                     */
+                    "강화하",
+
+                    /*
+                     * 약화하여 / 약화합니다 / 약화할
+                     */
+                    "약화하"
             );
 
     /*
@@ -345,6 +585,30 @@ public class ConsultationNarrativeOutputValidator {
      * =================================================
      * qualificationRequired 대응 표현
      * =================================================
+     *
+     * 정밀화 133.
+     *
+     * 기존에는:
+     *
+     * - 가능성이
+     * - 수 있습니다
+     * - 조건에 따라
+     *
+     * 등의 제한 표현만 인정했다.
+     *
+     * 이 경우 Writer가 같은 Meaning을
+     * 일반 사용자에게 더 자연스럽게:
+     *
+     * - 한쪽으로만 보기 어렵습니다.
+     * - 단정하기 어렵습니다.
+     * - 가능성을 열어두고 봐야 합니다.
+     * - 상황에 따라 달라질 수 있습니다.
+     *
+     * 로 표현해도 Java Validation에서
+     * qualification 누락으로 판단될 수 있었다.
+     *
+     * 아래 표현들은 새로운 의미가 아니라
+     * 모두 "단일 확정 금지"를 표현한다.
      */
 
     private static final List<String> QUALIFICATION_MARKERS =
@@ -372,13 +636,49 @@ public class ConsultationNarrativeOutputValidator {
 
                     "조건에 따라",
 
+                    "상황에 따라",
+
                     "정도로",
 
                     "보일 수",
 
                     "느낄 수",
 
-                    "나타날 수"
+                    "나타날 수",
+
+                    "달라질 수",
+
+                    "다르게 나타날 수",
+
+                    "다르게 드러날 수",
+
+                    "단정하기 어렵",
+
+                    "확정하기 어렵",
+
+                    "한쪽으로 보기 어렵",
+
+                    "한쪽으로만 보기 어렵",
+
+                    "한 가지로 보기 어렵",
+
+                    "한 가지로 정하기 어렵",
+
+                    "일률적으로 보기 어렵",
+
+                    "고정해서 보기 어렵",
+
+                    "하나로 고정하기 어렵",
+
+                    "여지를 두고",
+
+                    "가능성을 열어두고",
+
+                    "열어두고 봐야",
+
+                    "단정할 수 없",
+
+                    "볼 수는 없"
             );
 
     private static final List<String>
@@ -558,8 +858,7 @@ public class ConsultationNarrativeOutputValidator {
 
         if (
                 emphasis == null
-                        ||
-                        emphasis.isEmpty()
+                        || emphasis.isEmpty()
         ) {
 
             return;
@@ -624,10 +923,9 @@ public class ConsultationNarrativeOutputValidator {
                 text.contains(
                         "**"
                 )
-                        ||
-                        text.contains(
-                                "__"
-                        )
+                        || text.contains(
+                        "__"
+                )
         ) {
 
             add(
@@ -670,12 +968,6 @@ public class ConsultationNarrativeOutputValidator {
             );
         }
 
-        /*
-         * =================================================
-         * 명리 내부 용어
-         * =================================================
-         */
-
         for (
                 String term
                 : FORBIDDEN_SAJU_TERMS
@@ -704,8 +996,8 @@ public class ConsultationNarrativeOutputValidator {
          */
 
         if (
-                !categoryAllowsYear(
-                        packet.category()
+                !packetAllowsYear(
+                        packet
                 )
                         &&
                         YEAR_PATTERN
@@ -719,7 +1011,7 @@ public class ConsultationNarrativeOutputValidator {
                     violations,
                     packet,
                     ConsultationNarrativeViolationType.YEAR_SCOPE_EXCEEDED,
-                    "연도 허용 Category가 아닌데 연도 표현이 생성되었습니다."
+                    "공식 Timeline 범위가 아닌 Packet에 연도 표현이 생성되었습니다."
             );
         }
 
@@ -838,7 +1130,28 @@ public class ConsultationNarrativeOutputValidator {
                 violations
         );
 
+        validateUnsupportedOutcomeTerms(
+                packet,
+                allowedSourceText,
+                text,
+                violations
+        );
+
         validateCausalConnectors(
+                packet,
+                allowedSourceText,
+                text,
+                violations
+        );
+
+        validateUnsupportedEvaluativeTerms(
+                packet,
+                allowedSourceText,
+                text,
+                violations
+        );
+
+        validateUnsupportedImportanceTerms(
                 packet,
                 allowedSourceText,
                 text,
@@ -906,6 +1219,51 @@ public class ConsultationNarrativeOutputValidator {
 
     /*
      * =================================================
+     * 134-4
+     * 결과/성과 발명
+     * =================================================
+     */
+
+    private void validateUnsupportedOutcomeTerms(
+
+            ConsultationMeaningPacket packet,
+
+            String allowedSourceText,
+
+            String text,
+
+            List<ConsultationNarrativeValidationViolation> violations
+
+    ) {
+
+        for (
+                String term
+                : UNSUPPORTED_OUTCOME_TERMS
+        ) {
+
+            if (
+                    text.contains(
+                            term
+                    )
+                            &&
+                            !allowedSourceText.contains(
+                                    term
+                            )
+            ) {
+
+                add(
+                        violations,
+                        packet,
+                        ConsultationNarrativeViolationType.SENSITIVE_EVENT_INVENTED,
+                        "현재 사용 Claim에 없는 구체적인 결과·성과 의미가 추가되었습니다: "
+                                + term
+                );
+            }
+        }
+    }
+
+    /*
+     * =================================================
      * 관계 발명
      * =================================================
      */
@@ -950,6 +1308,100 @@ public class ConsultationNarrativeOutputValidator {
 
     /*
      * =================================================
+     * 134-4
+     * 가치판단 의미 발명
+     * =================================================
+     *
+     * 지지/부담을
+     * 긍정/부정, 좋음/나쁨으로
+     * 자동 변환하지 못하게 한다.
+     */
+
+    private void validateUnsupportedEvaluativeTerms(
+
+            ConsultationMeaningPacket packet,
+
+            String allowedSourceText,
+
+            String text,
+
+            List<ConsultationNarrativeValidationViolation> violations
+
+    ) {
+
+        for (
+                String term
+                : UNSUPPORTED_EVALUATIVE_TERMS
+        ) {
+
+            if (
+                    text.contains(
+                            term
+                    )
+                            &&
+                            !allowedSourceText.contains(
+                                    term
+                            )
+            ) {
+
+                add(
+                        violations,
+                        packet,
+                        ConsultationNarrativeViolationType.UNKNOWN_CLAIM,
+                        "현재 사용 Claim에 없는 긍정/부정 가치판단 의미가 추가되었습니다: "
+                                + term
+                );
+            }
+        }
+    }
+
+    /*
+     * =================================================
+     * 134-4
+     * 중요도 재판단 방지
+     * =================================================
+     */
+
+    private void validateUnsupportedImportanceTerms(
+
+            ConsultationMeaningPacket packet,
+
+            String allowedSourceText,
+
+            String text,
+
+            List<ConsultationNarrativeValidationViolation> violations
+
+    ) {
+
+        for (
+                String term
+                : UNSUPPORTED_IMPORTANCE_TERMS
+        ) {
+
+            if (
+                    text.contains(
+                            term
+                    )
+                            &&
+                            !allowedSourceText.contains(
+                                    term
+                            )
+            ) {
+
+                add(
+                        violations,
+                        packet,
+                        ConsultationNarrativeViolationType.UNKNOWN_CLAIM,
+                        "현재 사용 Claim에 없는 중요도·대표성 판단이 추가되었습니다: "
+                                + term
+                );
+            }
+        }
+    }
+
+    /*
+     * =================================================
      * 강한 단정 초과
      * =================================================
      */
@@ -965,12 +1417,6 @@ public class ConsultationNarrativeOutputValidator {
             List<ConsultationNarrativeValidationViolation> violations
 
     ) {
-
-        /*
-         * 사용한 Claim 모두가
-         * strongExpressionAllowed일 때만
-         * 강한 단정을 허용한다.
-         */
 
         boolean strongAllowed =
                 !usedClaims.isEmpty()
@@ -1070,22 +1516,48 @@ public class ConsultationNarrativeOutputValidator {
      * =================================================
      */
 
-    private boolean categoryAllowsYear(
-            ConsultationCategory category
+    private boolean packetAllowsYear(
+            ConsultationMeaningPacket packet
     ) {
 
-        return category
-                == ConsultationCategory.PAST_LUCK
+        Objects.requireNonNull(
+                packet,
+                "Year Scope 판정에는 Meaning Packet이 필요합니다."
+        );
 
-                ||
+        ConsultationCategory category =
+                packet.category();
 
+        if (
                 category
-                        == ConsultationCategory.CURRENT_YEAR_LUCK
+                        == ConsultationCategory.PAST_LUCK
 
-                ||
+                        ||
 
-                category
-                        == ConsultationCategory.FUTURE_LUCK;
+                        category
+                                == ConsultationCategory.CURRENT_YEAR_LUCK
+
+                        ||
+
+                        category
+                                == ConsultationCategory.FUTURE_LUCK
+        ) {
+
+            return true;
+        }
+
+        return packet.specificity()
+                == ConsultationMeaningSpecificity.TIMING
+
+                &&
+
+                packet.origin()
+                        == ConsultationMeaningOrigin.TIMELINE_CONTRACT
+
+                &&
+
+                packet.authority()
+                        == ConsultationMeaningAuthority.TIMELINE_CONTRACT_RESULT;
     }
 
     /*

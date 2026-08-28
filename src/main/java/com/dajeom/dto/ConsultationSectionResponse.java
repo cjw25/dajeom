@@ -28,57 +28,74 @@ import java.util.Objects;
  * 하나를 공식 상담문으로 사용한다.
  *
  * =================================================
- * 제거한 Legacy 필드
+ * API 상태 계약
  * =================================================
  *
- * 다음 V1 numeric 상담 필드는 제거한다.
+ * 프론트에서는 storyText 문자열을 분석해서
+ * 현재 Section 상태를 추측하지 않는다.
  *
- * - polarity
- * - intensity
- * - confidence
- * - openingMessage
- * - summaryMessage
- * - guidanceMessage
- * - narrationText
- * - basisLabels
- * - evidenceCount
+ * status가 공식 상태값이다.
  *
- * 해당 값들은:
+ * ANALYSIS_UNAVAILABLE
  *
- * InterpretationEvidence
- * ->
- * supportWeight / cautionWeight
- * ->
- * InterpretationSignal
- * ->
- * ConsultationRule
+ * =
  *
- * 경로에서 생성되던
- * 구형 Category Meaning이므로
- * 신규 deterministic 상담 API에 포함하지 않는다.
+ * 상담용 deterministic 분석 실행선 자체가
+ * 현재 요청에서 준비되지 않은 상태.
+ *
+ * NOT_REQUESTED
+ *
+ * =
+ *
+ * 상담 전체 API 구조에는 존재하지만
+ * 현재 요청의 Prompt Section에는 포함되지 않은 Category.
+ *
+ * UNAVAILABLE
+ *
+ * =
+ *
+ * Category는 요청되었지만
+ * 현재 Java deterministic 근거만으로
+ * 독립적인 사용자 Meaning을 확정하지 않은 상태.
+ *
+ * GENERATION_UNAVAILABLE
+ *
+ * =
+ *
+ * Java Meaning / Prompt Section은 준비되었지만
+ * 외부 Story Generation 결과가 없는 상태.
+ *
+ * READY
+ *
+ * =
+ *
+ * Java 경계를 통과한 최종 storyText가
+ * 실제로 존재하는 상태.
  *
  * =================================================
- * storyText
+ * focused와 status는 다른 개념
  * =================================================
  *
- * ConsultationInterpretationPromptContext를
- * 외부 LLM이 사용자용 한국어 상담문으로
- * 문장화한 순수 텍스트.
+ * focused
  *
- * Markdown / HTML 강조 정보를 섞지 않는다.
+ * =
  *
- * =================================================
- * storyEmphasis
- * =================================================
+ * 사용자 질문 / 관계 Context / 직업 Context 등에 의해
+ * 화면상 우선 강조되는 Section인지 여부.
  *
- * storyText 안에 실제로 존재하는
- * 문장 또는 구절 중
- * 화면에서 진한 글씨로 표시할 부분.
+ * status
  *
- * 새로운 사주 계산값이 아니다.
+ * =
  *
- * 잘못된 강조값 하나 때문에
- * API 전체를 실패시키지 않는다.
+ * 해당 Section의 데이터 준비 상태.
+ *
+ * 따라서:
+ *
+ * focused=false
+ * +
+ * status=READY
+ *
+ * 는 정상적인 조합이다.
  */
 public record ConsultationSectionResponse(
 
@@ -88,18 +105,53 @@ public record ConsultationSectionResponse(
         /** 사용자 질문/Context를 반영한 화면 표시 순서 */
         int displayOrder,
 
-        /** 현재 사전 질문/Context에서 우선적으로 보여줄 Section인지 */
+        /** 사용자 질문/Context 기준 화면 우선 강조 여부 */
         boolean focused,
 
         ConsultationCategory category,
 
         String title,
 
+        /** 현재 Section의 공식 API 준비 상태 */
+        ConsultationSectionStatus status,
+
         String storyText,
 
         List<String> storyEmphasis
 
 ) {
+
+    public enum ConsultationSectionStatus {
+
+        /**
+         * 상담용 deterministic 분석 실행선 자체가
+         * 현재 요청에서 준비되지 않았다.
+         */
+        ANALYSIS_UNAVAILABLE,
+
+        /**
+         * 전체 Category 구조에는 존재하지만
+         * 현재 요청 Prompt Section에는 포함되지 않았다.
+         */
+        NOT_REQUESTED,
+
+        /**
+         * 요청은 되었지만 Java 근거상
+         * 독립 Meaning을 확정하지 않는다.
+         */
+        UNAVAILABLE,
+
+        /**
+         * Java Meaning은 준비됐지만
+         * 최종 Story Generation 결과가 없다.
+         */
+        GENERATION_UNAVAILABLE,
+
+        /**
+         * 검증된 최종 Story가 존재한다.
+         */
+        READY
+    }
 
     public ConsultationSectionResponse {
 
@@ -125,6 +177,11 @@ public record ConsultationSectionResponse(
                         "ConsultationSectionResponse title은 필수입니다."
                 );
 
+        Objects.requireNonNull(
+                status,
+                "ConsultationSectionResponse status는 필수입니다."
+        );
+
         storyText =
                 storyText == null
                         ? ""
@@ -135,6 +192,100 @@ public record ConsultationSectionResponse(
                         storyText,
                         storyEmphasis
                 );
+
+        /*
+         * READY는 반드시 실제 Story를 가진다.
+         */
+        if (
+                status
+                        == ConsultationSectionStatus.READY
+                        &&
+                        storyText.isBlank()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "READY 상태의 ConsultationSectionResponse에는 storyText가 필요합니다."
+            );
+        }
+
+        /*
+         * 분석 자체가 없거나 요청되지 않은 Category에는
+         * 사용자 상담문을 넣지 않는다.
+         */
+        if (
+                (
+                        status
+                                == ConsultationSectionStatus.ANALYSIS_UNAVAILABLE
+
+                                ||
+
+                                status
+                                        == ConsultationSectionStatus.NOT_REQUESTED
+                )
+                        &&
+                        !storyText.isBlank()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "ANALYSIS_UNAVAILABLE/NOT_REQUESTED 상태에는 storyText를 넣을 수 없습니다."
+            );
+        }
+
+        /*
+         * READY가 아닌 상태에서는
+         * Story 강조값을 노출하지 않는다.
+         */
+        if (
+                (
+                        status
+                                == ConsultationSectionStatus.ANALYSIS_UNAVAILABLE
+
+                                ||
+
+                                status
+                                        == ConsultationSectionStatus.NOT_REQUESTED
+
+                                ||
+
+                                status
+                                        == ConsultationSectionStatus.UNAVAILABLE
+
+                                ||
+
+                                status
+                                        == ConsultationSectionStatus.GENERATION_UNAVAILABLE
+                )
+                        &&
+                        !storyEmphasis.isEmpty()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "READY가 아닌 ConsultationSectionResponse에는 storyEmphasis를 넣을 수 없습니다."
+            );
+        }
+
+        /*
+         * 요청됐지만 결과를 제공할 수 없는 경우에는
+         * 사용자에게 이유를 설명하는 안전 안내문이 필요하다.
+         */
+        if (
+                (
+                        status
+                                == ConsultationSectionStatus.UNAVAILABLE
+
+                                ||
+
+                                status
+                                        == ConsultationSectionStatus.GENERATION_UNAVAILABLE
+                )
+                        &&
+                        storyText.isBlank()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "UNAVAILABLE/GENERATION_UNAVAILABLE 상태에는 사용자 안내 storyText가 필요합니다."
+            );
+        }
     }
 
     private static List<String> normalizeStoryEmphasis(
@@ -189,10 +340,6 @@ public record ConsultationSectionResponse(
                 continue;
             }
 
-            /*
-             * 실제 storyText에 존재하지 않는 강조값은
-             * 조용히 제거한다.
-             */
             if (
                     !storyText.contains(
                             phrase

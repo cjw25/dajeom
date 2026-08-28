@@ -1,6 +1,7 @@
 package com.dajeom.model;
 
 import com.dajeom.type.ConsultationMeaningAuthority;
+import com.dajeom.type.ConsultationMeaningExpressionMode;
 import com.dajeom.type.ConsultationMeaningOrigin;
 import com.dajeom.type.ConsultationMeaningSpecificity;
 
@@ -9,45 +10,82 @@ import java.util.Objects;
 /**
  * AI가 표현할 수 있는 최소 의미 단위.
  *
- * text는 Java deterministic 판단에서 직접 내려온 확정 의미다.
- * AI는 claimId가 가리키는 text의 의미를 바꾸거나 확장할 수 없다.
- *
  * =================================================
- * Origin Contract
+ * 공식 Meaning
  * =================================================
  *
- * Claim 생성 순간 다음을 함께 고정한다.
+ * text는 Java deterministic 판단에서
+ * 직접 내려온 확정 의미다.
  *
- * - 어디서 내려온 의미인지
- * - 어떤 공식 Authority인지
- *
- * 서로 다른 Origin의 Claim을 같은 의미처럼 섞는 것은
- * Packet 단계에서 금지한다.
+ * AI는 Claim의 의미를
+ * 변경하거나 확장할 수 없다.
  *
  * =================================================
- * Specificity Contract
+ * Origin / Authority
  * =================================================
  *
- * Origin이 허용하지 않는 현실 구체성은
- * AI에 도달하기 전에 Claim 생성 자체를 실패시킨다.
+ * Claim 생성 순간:
  *
- * 예:
+ * - origin
+ * - authority
  *
- * EXACT_TEN_GOD + TIMING
- * -> 금지
+ * 를 고정한다.
  *
- * NATAL_CONTEXT + DOMAIN
- * -> 금지
+ * =================================================
+ * Specificity
+ * =================================================
  *
- * NATAL_CONTEXT + TIMING
- * -> 금지
+ * Origin마다 허용되는:
  *
- * TIMELINE_CONTRACT + TENDENCY
- * -> 금지
+ * - STRUCTURE
+ * - TENDENCY
+ * - DOMAIN
+ * - TIMING
  *
- * 현재 모델에는 EVENT Specificity 자체가 없으므로
- * 별도의 deterministic 사건 계산 없이
- * 현실 사건 수준으로 승격할 수 없다.
+ * 경계를 검증한다.
+ *
+ * =================================================
+ * Expression Boundary
+ * =================================================
+ *
+ * 기존:
+ *
+ * strongExpressionAllowed
+ * qualificationRequired
+ *
+ * 두 값을 이제 공식:
+ *
+ * ConsultationMeaningExpressionBoundaryContract
+ *
+ * 로 다시 검증한다.
+ *
+ * 따라서 Claim 하나는 반드시:
+ *
+ * DIRECT
+ * QUALIFIED
+ * STRONG_DIRECT
+ * STRONG_QUALIFIED
+ *
+ * 중 하나의 표현모드를 갖는다.
+ *
+ * =================================================
+ * NATAL_CONTEXT
+ * =================================================
+ *
+ * NATAL_CONTEXT는
+ * 강한 확정 Meaning Source가 아니므로:
+ *
+ * NATAL_CONTEXT
+ * +
+ * STRONG_DIRECT
+ *
+ * 또는:
+ *
+ * NATAL_CONTEXT
+ * +
+ * STRONG_QUALIFIED
+ *
+ * Claim은 생성 단계에서 실패한다.
  */
 public record ConsultationMeaningClaim(
 
@@ -68,10 +106,12 @@ public record ConsultationMeaningClaim(
 ) {
 
     /**
-     * 기존 Narrative Plan 생성 코드 호환 생성자.
+     * =================================================
+     * 기존 생성자 호환
+     * =================================================
      *
-     * sourceCode + specificity에서
-     * 공식 Origin Contract를 즉시 결정한다.
+     * 기존 Narrative Plan 코드는
+     * 그대로 사용할 수 있다.
      */
     public ConsultationMeaningClaim(
 
@@ -90,14 +130,23 @@ public record ConsultationMeaningClaim(
     ) {
 
         this(
+
                 claimId,
+
                 sourceCode,
+
                 text,
+
                 specificity,
+
                 strongExpressionAllowed,
+
                 qualificationRequired,
+
                 ConsultationMeaningOriginContract.resolve(
+
                         sourceCode,
+
                         specificity
                 )
         );
@@ -135,25 +184,27 @@ public record ConsultationMeaningClaim(
 
         /*
          * =================================================
-         * 명시적으로 Origin Contract를 넣은 경우에도
-         * 현재 sourceCode / specificity와 충돌하면 허용하지 않는다.
+         * Source → Origin Contract 위조 차단
          * =================================================
          */
 
-        ConsultationMeaningOriginContract canonical =
+        ConsultationMeaningOriginContract canonicalOriginContract =
                 ConsultationMeaningOriginContract.resolve(
+
                         sourceCode,
+
                         specificity
                 );
 
         if (
                 !originContract.equals(
-                        canonical
+                        canonicalOriginContract
                 )
         ) {
 
             throw new IllegalArgumentException(
-                    "Meaning Claim의 명시 Origin Contract가 공식 Source 분류와 일치하지 않습니다. "
+                    "Meaning Claim의 명시 Origin Contract가 "
+                            + "공식 Source 분류와 일치하지 않습니다. "
                             + "claimId="
                             + claimId
                             + ", sourceCode="
@@ -161,25 +212,24 @@ public record ConsultationMeaningClaim(
                             + ", actual="
                             + originContract
                             + ", expected="
-                            + canonical
+                            + canonicalOriginContract
             );
         }
 
         /*
          * =================================================
-         * Origin → Specificity 하드 경계
+         * Origin → Specificity
          * =================================================
-         *
-         * 이 검증은 AI 이전에 수행된다.
          */
 
-        originContract.requireSpecificity(
-                specificity
-        );
+        originContract
+                .requireSpecificity(
+                        specificity
+                );
 
         /*
          * =================================================
-         * EVENT 수준은 현재 공식 모델에 존재하지 않는다.
+         * EVENT 하드 차단
          * =================================================
          */
 
@@ -188,10 +238,31 @@ public record ConsultationMeaningClaim(
         ) {
 
             throw new IllegalArgumentException(
-                    "별도의 deterministic 사건 Contract 없이 EVENT 수준 Meaning Claim을 생성할 수 없습니다. claimId="
+                    "별도의 deterministic 사건 Contract 없이 "
+                            + "EVENT 수준 Meaning Claim을 생성할 수 없습니다. claimId="
                             + claimId
             );
         }
+
+        /*
+         * =================================================
+         * Expression Boundary
+         * =================================================
+         *
+         * boolean 두 개를 독립값으로 두지 않고
+         * 공식 Expression Mode 조합으로 검증한다.
+         */
+
+        ConsultationMeaningExpressionBoundaryContract.of(
+
+                originContract.origin(),
+
+                specificity,
+
+                strongExpressionAllowed,
+
+                qualificationRequired
+        );
     }
 
     public ConsultationMeaningOrigin origin() {
@@ -212,9 +283,36 @@ public record ConsultationMeaningClaim(
                 .specificityContract();
     }
 
+    /**
+     * 현재 Claim의 공식 Expression Boundary.
+     */
+    public ConsultationMeaningExpressionBoundaryContract
+    expressionBoundaryContract() {
+
+        return ConsultationMeaningExpressionBoundaryContract.of(
+
+                origin(),
+
+                specificity,
+
+                strongExpressionAllowed,
+
+                qualificationRequired
+        );
+    }
+
+    public ConsultationMeaningExpressionMode expressionMode() {
+
+        return expressionBoundaryContract()
+                .expressionMode();
+    }
+
     private static String requireText(
+
             String value,
+
             String message
+
     ) {
 
         Objects.requireNonNull(

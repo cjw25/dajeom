@@ -122,6 +122,35 @@ import java.util.Optional;
  *
  * 이 DTO에서 자유 질문의 의미를 추측하거나
  * 키워드로 명리 분야를 강제 결정하지 않는다.
+ *
+ * =================================================
+ * 122 API Raw Request Boundary
+ * =================================================
+ *
+ * consultationCategories는
+ * constructor 내부에서:
+ *
+ * - null 제거 금지
+ * - 중복 제거
+ * - 공식 order 정렬
+ *
+ * 을 수행한다.
+ *
+ * 그러나 @Size Bean Validation은
+ * Record 생성 이후의 정규화된 값을 검사하므로,
+ *
+ * 예:
+ *
+ * 12개 입력
+ * +
+ * 중복 1개
+ *
+ * 요청이 11개로 정규화된 뒤
+ * @Size(max=11)를 통과할 수 있다.
+ *
+ * 따라서 원본 List 길이는
+ * normalizeCategories(...) 호출 전에
+ * 별도로 검사한다.
  */
 public record SajuAnalysisRequest(
 
@@ -208,6 +237,13 @@ public record SajuAnalysisRequest(
          *
          * enum 자체의 order 기준으로 정렬하고
          * 중복 Category는 제거한다.
+         *
+         * 중요:
+         *
+         * 원본 요청 배열 자체도 최대 11개다.
+         *
+         * 중복 제거 후 11개 이하가 되더라도
+         * 원본 배열이 11개를 초과하면 요청을 거부한다.
          */
         @Size(
                 max = 11,
@@ -265,13 +301,30 @@ public record SajuAnalysisRequest(
 
                 if (
                         luckReferenceDate == null
-                                && luckReferenceTime != null
+                                &&
+                                luckReferenceTime != null
                 ) {
 
                         throw new IllegalArgumentException(
                                 "운세 기준시각을 지정하려면 luckReferenceDate도 함께 지정해야 합니다."
                         );
                 }
+
+                /*
+                 * =================================================
+                 * 122 Raw Consultation Category Count Guard
+                 * =================================================
+                 *
+                 * 반드시 normalizeCategories(...)보다 먼저 검사한다.
+                 *
+                 * Bean Validation은 Record 생성 후
+                 * 정규화된 consultationCategories를 보게 되므로
+                 * 중복으로 원본 최대 개수를 우회하는 것을 여기서 막는다.
+                 */
+
+                validateRawCategoryCount(
+                        consultationCategories
+                );
 
                 consultationCategories =
                         normalizeCategories(
@@ -330,7 +383,8 @@ public record SajuAnalysisRequest(
         public boolean exactLuckReferenceRequested() {
 
                 return hasLuckReferenceDate()
-                        && hasLuckReferenceTime();
+                        &&
+                        hasLuckReferenceTime();
         }
 
         /**
@@ -340,7 +394,8 @@ public record SajuAnalysisRequest(
         public boolean dateOnlyLuckReferenceRequested() {
 
                 return hasLuckReferenceDate()
-                        && !hasLuckReferenceTime();
+                        &&
+                        !hasLuckReferenceTime();
         }
 
         /**
@@ -400,7 +455,8 @@ public record SajuAnalysisRequest(
         public boolean comprehensiveConsultationRequested() {
 
                 return !hasSelectedConsultationCategories()
-                        && !hasConsultationQuestion();
+                        &&
+                        !hasConsultationQuestion();
         }
 
         /**
@@ -413,7 +469,30 @@ public record SajuAnalysisRequest(
         public boolean freeFormQuestionRequiresCategoryResolution() {
 
                 return hasConsultationQuestion()
-                        && !hasSelectedConsultationCategories();
+                        &&
+                        !hasSelectedConsultationCategories();
+        }
+
+        /*
+         * =================================================
+         * Raw Request Validation
+         * =================================================
+         */
+
+        private static void validateRawCategoryCount(
+                List<ConsultationCategory> source
+        ) {
+
+                if (
+                        source != null
+                                &&
+                                source.size() > 11
+                ) {
+
+                        throw new IllegalArgumentException(
+                                "상담 분야는 최대 11개까지 선택할 수 있습니다."
+                        );
+                }
         }
 
         /*
@@ -429,7 +508,8 @@ public record SajuAnalysisRequest(
 
                 if (
                         source == null
-                                || source.isEmpty()
+                                ||
+                                source.isEmpty()
                 ) {
 
                         return List.of();

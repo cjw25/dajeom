@@ -2,6 +2,7 @@ package com.dajeom.model;
 
 import com.dajeom.type.ConsultationCategory;
 import com.dajeom.type.ConsultationMeaningAuthority;
+import com.dajeom.type.ConsultationMeaningExpressionMode;
 import com.dajeom.type.ConsultationMeaningOrigin;
 import com.dajeom.type.ConsultationMeaningSpecificity;
 import com.dajeom.type.ConsultationNarrativePriority;
@@ -11,54 +12,60 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * AI Renderer에 전달하는 하나의 독립 서술 단위.
- *
- * 서로 다른 Packet은 서로의 원인/결과/순서/강화/약화가 아니다.
- * Packet 내부에도 Java가 이미 확정한 Claim만 존재한다.
+ * AI Renderer에 전달하는
+ * 하나의 독립 서술 단위.
  *
  * =================================================
- * Origin Isolation
+ * Packet Isolation
  * =================================================
  *
- * 하나의 Packet에는 정확히 하나의 Meaning Origin / Authority만
- * 존재할 수 있다.
+ * 서로 다른 Packet은 서로의:
+ *
+ * - 원인
+ * - 결과
+ * - 순서
+ * - 강화
+ * - 약화
+ *
+ * 가 아니다.
  *
  * =================================================
- * Specificity Isolation
+ * 135-1 Timeline Year
  * =================================================
  *
- * 하나의 Packet에는 정확히 하나의 Specificity만 존재할 수 있다.
+ * timelineYear
  *
- * 같은 Origin이라도:
- *
- * STRUCTURE Claim
- * +
- * TENDENCY Claim
- *
- * 을 한 Packet에 섞지 않는다.
- *
- * 서로 다른 현실 구체성을 한 번에 AI에 넣으면
- * AI가 구조 사실을 성향으로 확대하거나
- * 성향을 생활영역/시기 판단으로 올릴 여지가 생기기 때문이다.
+ * =
+ * Java Timeline provenance가 직접 전달한
+ * 공식 명리연도.
  *
  * =================================================
- * 예
+ * 135-4 Timeline Stage
  * =================================================
  *
- * EXACT_TEN_GOD / TENDENCY Packet
- * -> 허용
+ * timelineStage
  *
- * FORMAL_PATTERN / STRUCTURE Packet
- * -> 허용
+ * =
+ * ConsultationTimelineUserMeaningPolicy가
+ * 이미 결정한 공식 TimelineStage.
  *
- * DETERMINISTIC_RULE / DOMAIN Packet
- * -> 허용
+ * 문자열:
  *
- * TIMELINE_CONTRACT / TIMING Packet
- * -> 허용
+ * - ruleCode
+ * - titleHint
+ * - userMeaning
  *
- * EXACT_TEN_GOD / TIMING
- * -> Claim 생성 단계에서 이미 금지
+ * 을 다시 파싱하여 Stage를 추론하지 않는다.
+ *
+ * timelineStage는
+ * CURRENT_TIMELINE의 표시 계층에만 사용한다.
+ *
+ * PAST/FUTURE의 TIMELINE_YEAR Packet은
+ * timelineYear는 존재하지만
+ * timelineStage는 null일 수 있다.
+ *
+ * 동일 Stage는 표시 Group일 뿐이며
+ * Packet 간 의미 합성을 허용하지 않는다.
  */
 public record ConsultationMeaningPacket(
 
@@ -69,6 +76,10 @@ public record ConsultationMeaningPacket(
         ConsultationNarrativePriority priority,
 
         String titleHint,
+
+        Integer timelineYear,
+
+        ConsultationTimelineUserMeaningPolicy.TimelineStage timelineStage,
 
         List<ConsultationMeaningClaim> claims,
 
@@ -81,6 +92,91 @@ public record ConsultationMeaningPacket(
         int targetMaxChars
 
 ) {
+
+    /**
+     * 기존 일반 Packet 생성자.
+     */
+    public ConsultationMeaningPacket(
+
+            String packetId,
+
+            ConsultationCategory category,
+
+            ConsultationNarrativePriority priority,
+
+            String titleHint,
+
+            List<ConsultationMeaningClaim> claims,
+
+            List<String> renderingContexts,
+
+            List<String> forbiddenMeanings,
+
+            int targetMinChars,
+
+            int targetMaxChars
+
+    ) {
+
+        this(
+                packetId,
+                category,
+                priority,
+                titleHint,
+                null,
+                null,
+                claims,
+                renderingContexts,
+                forbiddenMeanings,
+                targetMinChars,
+                targetMaxChars
+        );
+    }
+
+    /**
+     * 135-1 호환 생성자.
+     *
+     * 연도만 존재하고 Stage는 없는
+     * Timeline Year Packet 등에 사용 가능하다.
+     */
+    public ConsultationMeaningPacket(
+
+            String packetId,
+
+            ConsultationCategory category,
+
+            ConsultationNarrativePriority priority,
+
+            String titleHint,
+
+            Integer timelineYear,
+
+            List<ConsultationMeaningClaim> claims,
+
+            List<String> renderingContexts,
+
+            List<String> forbiddenMeanings,
+
+            int targetMinChars,
+
+            int targetMaxChars
+
+    ) {
+
+        this(
+                packetId,
+                category,
+                priority,
+                titleHint,
+                timelineYear,
+                null,
+                claims,
+                renderingContexts,
+                forbiddenMeanings,
+                targetMinChars,
+                targetMaxChars
+        );
+    }
 
     public ConsultationMeaningPacket {
 
@@ -105,6 +201,39 @@ public record ConsultationMeaningPacket(
                         titleHint,
                         "Meaning Packet titleHint는 필수입니다."
                 );
+
+        if (
+                timelineYear != null
+                        &&
+                        (
+                                timelineYear < 1
+                                        ||
+                                        timelineYear > 9_999
+                        )
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Meaning Packet timelineYear 범위가 올바르지 않습니다: "
+                            + timelineYear
+            );
+        }
+
+        /*
+         * Stage만 단독으로 존재할 수는 없다.
+         */
+        if (
+                timelineStage != null
+                        &&
+                        timelineYear == null
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Meaning Packet timelineStage가 존재하려면 timelineYear도 필요합니다. packetId="
+                            + packetId
+                            + ", timelineStage="
+                            + timelineStage
+            );
+        }
 
         claims =
                 claims == null
@@ -160,6 +289,11 @@ public record ConsultationMeaningPacket(
                 claims
         );
 
+        validateSingleExpressionBoundary(
+                packetId,
+                claims
+        );
+
         renderingContexts =
                 normalizeTexts(
                         renderingContexts
@@ -172,8 +306,14 @@ public record ConsultationMeaningPacket(
 
         if (
                 targetMinChars < 0
-                        || targetMaxChars < 1
-                        || targetMaxChars < targetMinChars
+
+                        ||
+
+                        targetMaxChars < 1
+
+                        ||
+
+                        targetMaxChars < targetMinChars
         ) {
 
             throw new IllegalArgumentException(
@@ -183,6 +323,16 @@ public record ConsultationMeaningPacket(
                             + targetMaxChars
             );
         }
+    }
+
+    public boolean hasTimelineYear() {
+
+        return timelineYear != null;
+    }
+
+    public boolean hasTimelineStage() {
+
+        return timelineStage != null;
     }
 
     public List<String> allowedClaimIds() {
@@ -200,16 +350,13 @@ public record ConsultationMeaningPacket(
     ) {
 
         return claimId != null
-                && allowedClaimIds()
-                .contains(
-                        claimId
-                );
+                &&
+                allowedClaimIds()
+                        .contains(
+                                claimId
+                        );
     }
 
-    /**
-     * Packet은 단일 Origin만 허용하므로
-     * 첫 Claim의 Origin이 공식 Packet Origin이다.
-     */
     public ConsultationMeaningOrigin origin() {
 
         return claims
@@ -217,10 +364,6 @@ public record ConsultationMeaningPacket(
                 .origin();
     }
 
-    /**
-     * Packet은 단일 Authority만 허용하므로
-     * 첫 Claim의 Authority가 공식 Packet Authority다.
-     */
     public ConsultationMeaningAuthority authority() {
 
         return claims
@@ -235,10 +378,6 @@ public record ConsultationMeaningPacket(
                 .originContract();
     }
 
-    /**
-     * Packet은 단일 Specificity만 허용하므로
-     * 첫 Claim의 Specificity가 공식 Packet Specificity다.
-     */
     public ConsultationMeaningSpecificity specificity() {
 
         return claims
@@ -251,6 +390,32 @@ public record ConsultationMeaningPacket(
         return claims
                 .get(0)
                 .specificityContract();
+    }
+
+    public ConsultationMeaningExpressionBoundaryContract
+    expressionBoundaryContract() {
+
+        return claims
+                .get(0)
+                .expressionBoundaryContract();
+    }
+
+    public ConsultationMeaningExpressionMode expressionMode() {
+
+        return expressionBoundaryContract()
+                .expressionMode();
+    }
+
+    public boolean strongExpressionAllowed() {
+
+        return expressionBoundaryContract()
+                .strongExpressionAllowed();
+    }
+
+    public boolean qualificationRequired() {
+
+        return expressionBoundaryContract()
+                .qualificationRequired();
     }
 
     private static void validateSingleOrigin(
@@ -278,8 +443,7 @@ public record ConsultationMeaningPacket(
             ) {
 
                 throw new IllegalArgumentException(
-                        "하나의 Meaning Packet에는 서로 다른 Origin/Authority Claim을 섞을 수 없습니다. "
-                                + "packetId="
+                        "하나의 Meaning Packet에는 서로 다른 Origin/Authority Claim을 섞을 수 없습니다. packetId="
                                 + packetId
                                 + ", first="
                                 + canonical
@@ -316,8 +480,7 @@ public record ConsultationMeaningPacket(
             ) {
 
                 throw new IllegalArgumentException(
-                        "하나의 Meaning Packet에는 서로 다른 Specificity Claim을 섞을 수 없습니다. "
-                                + "packetId="
+                        "하나의 Meaning Packet에는 서로 다른 Specificity Claim을 섞을 수 없습니다. packetId="
                                 + packetId
                                 + ", first="
                                 + canonical
@@ -330,13 +493,58 @@ public record ConsultationMeaningPacket(
         }
     }
 
+    private static void validateSingleExpressionBoundary(
+
+            String packetId,
+
+            List<ConsultationMeaningClaim> claims
+
+    ) {
+
+        ConsultationMeaningExpressionBoundaryContract canonical =
+                claims
+                        .get(0)
+                        .expressionBoundaryContract();
+
+        for (
+                ConsultationMeaningClaim claim
+                : claims
+        ) {
+
+            ConsultationMeaningExpressionBoundaryContract current =
+                    claim
+                            .expressionBoundaryContract();
+
+            if (
+                    !canonical.equals(
+                            current
+                    )
+            ) {
+
+                throw new IllegalArgumentException(
+                        "하나의 Meaning Packet에는 서로 다른 Expression Boundary Claim을 섞을 수 없습니다. packetId="
+                                + packetId
+                                + ", firstClaim="
+                                + claims.get(0).claimId()
+                                + ", firstMode="
+                                + canonical.expressionMode()
+                                + ", mixedClaim="
+                                + claim.claimId()
+                                + ", mixedMode="
+                                + current.expressionMode()
+                );
+            }
+        }
+    }
+
     private static List<String> normalizeTexts(
             List<String> source
     ) {
 
         if (
                 source == null
-                        || source.isEmpty()
+                        ||
+                        source.isEmpty()
         ) {
 
             return List.of();
@@ -376,8 +584,11 @@ public record ConsultationMeaningPacket(
     }
 
     private static String requireText(
+
             String value,
+
             String message
+
     ) {
 
         Objects.requireNonNull(

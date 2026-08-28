@@ -1,6 +1,5 @@
 "use strict";
 
-
 /* =========================================================
    CONFIG
    ========================================================= */
@@ -8,17 +7,13 @@
 const API_URL =
     "/api/saju/calculate";
 
-
 const FORM_STORAGE_KEY =
     "sajuForm";
-
 
 const RESULT_STORAGE_KEY =
     "sajuAnalysisResult";
 
-
 const VIDEO_PATH = {
-
     opening:
         "/video/opening.mp4",
 
@@ -36,9 +31,7 @@ const VIDEO_PATH = {
 
     network:
         "/video/motion_network.mp4"
-
 };
-
 
 
 /* =========================================================
@@ -48,11 +41,8 @@ const VIDEO_PATH = {
 const LOADING_WAIT_ROTATION_MS =
     3400;
 
-
 const LOADING_STAGES = [
-
     {
-
         until:
             20,
 
@@ -61,11 +51,9 @@ const LOADING_STAGES = [
 
         message:
             "태어난 순간의 네 기둥을 하나씩 맞춰보고 있어."
-
     },
 
     {
-
         until:
             40,
 
@@ -74,11 +62,9 @@ const LOADING_STAGES = [
 
         message:
             "타고난 성향과 사람을 대하는 방식을 살펴보고 있어."
-
     },
 
     {
-
         until:
             60,
 
@@ -87,11 +73,9 @@ const LOADING_STAGES = [
 
         message:
             "관계와 인연, 재물의 흐름을 하나씩 이어보고 있어."
-
     },
 
     {
-
         until:
             80,
 
@@ -100,11 +84,9 @@ const LOADING_STAGES = [
 
         message:
             "일과 책임, 생활의 흐름까지 함께 정리하고 있어."
-
     },
 
     {
-
         until:
             94,
 
@@ -113,73 +95,51 @@ const LOADING_STAGES = [
 
         message:
             "현재의 흐름과 앞으로 이어질 시간을 살펴보고 있어."
-
     }
-
 ];
 
-
 const LOADING_WAIT_MESSAGES = [
-
     {
-
         label:
             "거의 다 왔어",
 
         message:
             "네 이야기를 한 장씩 정리하고 있어. 조금만 더 기다려줘."
-
     },
 
     {
-
         label:
             "마지막 확인 중",
 
         message:
             "지금까지 읽은 흐름을 마지막으로 한 번 더 맞춰보고 있어."
-
     },
 
     {
-
         label:
             "천명록을 완성하는 중",
 
         message:
             "네게 보여줄 기록을 차례대로 정돈하고 있어."
-
     },
 
     {
-
         label:
             "조금만 더 기다려줘",
 
         message:
             "마지막 내용을 확인하고 있어."
-
     }
-
 ];
-
 
 const LOADING_ACTOR_LINES = [
-
     "잠시만.\n지금 네 흐름을 읽고 있어.",
-
     "조금만.\n아직 확인할 게 남았어.",
-
     "생각보다\n이어지는 게 많네.",
-
     "거의 다 봤어.\n한 장씩 정리하고 있어.",
-
     "조금만 더 기다려.\n마지막 흐름을 맞춰보고 있어.",
-
     "이제 거의 끝났어.\n곧 네 기록을 보여줄게."
-
 ];
-
 
 
 /* =========================================================
@@ -187,10 +147,7 @@ const LOADING_ACTOR_LINES = [
    ========================================================= */
 
 const CATEGORY_META = {
-
-
     PERSONALITY: {
-
         number:
             1,
 
@@ -211,12 +168,9 @@ const CATEGORY_META = {
 
         source:
             "/img/category_bg.png"
-
     },
 
-
     PAST_LUCK: {
-
         number:
             2,
 
@@ -237,12 +191,9 @@ const CATEGORY_META = {
 
         source:
             "/img/loading_bg.png"
-
     },
 
-
     SOCIAL_RELATIONSHIP: {
-
         number:
             3,
 
@@ -263,12 +214,9 @@ const CATEGORY_META = {
 
         source:
             VIDEO_PATH.network
-
     },
 
-
     LOVE_STYLE: {
-
         number:
             4,
 
@@ -289,12 +237,9 @@ const CATEGORY_META = {
 
         source:
             VIDEO_PATH.love
-
     },
 
-
     PARTNER_LUCK: {
-
         number:
             5,
 
@@ -315,12 +260,9 @@ const CATEGORY_META = {
 
         source:
             VIDEO_PATH.love
-
     },
 
-
     WEALTH: {
-
         number:
             6,
 
@@ -341,12 +283,9 @@ const CATEGORY_META = {
 
         source:
             VIDEO_PATH.wealth
-
     },
 
-
     CAREER: {
-
         number:
             7,
 
@@ -367,12 +306,9 @@ const CATEGORY_META = {
 
         source:
             VIDEO_PATH.network
-
     },
 
-
     LEGAL_RISK: {
-
         number:
             8,
 
@@ -393,12 +329,9 @@ const CATEGORY_META = {
 
         source:
             "/img/category_bg.png"
-
     },
 
-
     HEALTH_TENDENCY: {
-
         number:
             9,
 
@@ -419,12 +352,9 @@ const CATEGORY_META = {
 
         source:
             "/img/loading_bg.png"
-
     },
 
-
     CURRENT_YEAR_LUCK: {
-
         number:
             10,
 
@@ -445,12 +375,9 @@ const CATEGORY_META = {
 
         source:
             "/img/category_bg.png"
-
     },
 
-
     FUTURE_LUCK: {
-
         number:
             11,
 
@@ -471,11 +398,8 @@ const CATEGORY_META = {
 
         source:
             "/img/category_bg.png"
-
     }
-
 };
-
 
 const CATEGORY_ORDER =
     Object
@@ -492,6 +416,25 @@ const CATEGORY_ORDER =
                 CATEGORY_META[right].number
         );
 
+const OFFICIAL_SECTION_STATUS =
+    new Set(
+        [
+            "ANALYSIS_UNAVAILABLE",
+            "NOT_REQUESTED",
+            "UNAVAILABLE",
+            "GENERATION_UNAVAILABLE",
+            "READY"
+        ]
+    );
+
+const RENDERABLE_SECTION_STATUS =
+    new Set(
+        [
+            "READY",
+            "UNAVAILABLE",
+            "GENERATION_UNAVAILABLE"
+        ]
+    );
 
 
 /* =========================================================
@@ -499,9 +442,7 @@ const CATEGORY_ORDER =
    ========================================================= */
 
 const FIVE_ELEMENT_META = {
-
     WOOD: {
-
         order:
             1,
 
@@ -510,11 +451,9 @@ const FIVE_ELEMENT_META = {
 
         korean:
             "목"
-
     },
 
     FIRE: {
-
         order:
             2,
 
@@ -523,11 +462,9 @@ const FIVE_ELEMENT_META = {
 
         korean:
             "화"
-
     },
 
     EARTH: {
-
         order:
             3,
 
@@ -536,11 +473,9 @@ const FIVE_ELEMENT_META = {
 
         korean:
             "토"
-
     },
 
     METAL: {
-
         order:
             4,
 
@@ -549,11 +484,9 @@ const FIVE_ELEMENT_META = {
 
         korean:
             "금"
-
     },
 
     WATER: {
-
         order:
             5,
 
@@ -562,11 +495,8 @@ const FIVE_ELEMENT_META = {
 
         korean:
             "수"
-
     }
-
 };
-
 
 const FIVE_ELEMENT_ORDER =
     Object
@@ -584,7 +514,6 @@ const FIVE_ELEMENT_ORDER =
         );
 
 
-
 /* =========================================================
    STATE
    ========================================================= */
@@ -592,81 +521,61 @@ const FIVE_ELEMENT_ORDER =
 let currentScreen =
     "start";
 
-
 let currentResult =
     null;
-
 
 let currentStoryIndex =
     0;
 
-
 let bookOpened =
     false;
-
 
 let analysisRunning =
     false;
 
-
 let analysisRequestPromise =
     null;
-
 
 let loadingTimer =
     null;
 
-
 let loadingWaitTimer =
     null;
-
 
 let loadingProgress =
     0;
 
-
 let loadingDialogueStage =
     -1;
-
 
 let loadingWaitMessageIndex =
     0;
 
-
 let loadingActorRunId =
     0;
-
 
 let loadingActorTimer =
     null;
 
-
 let loadingActorLineIndex =
     0;
-
 
 let toastTimer =
     null;
 
-
 let touchStartX =
     null;
-
 
 let currentStoryVideo =
     null;
 
-
 let guideRunId =
     0;
-
 
 let guideHideTimer =
     null;
 
-
 let formState = {
-
     name:
         "",
 
@@ -696,9 +605,7 @@ let formState = {
 
     birthTimeUnknown:
         false
-
 };
-
 
 
 /* =========================================================
@@ -711,7 +618,6 @@ const screens =
             "[data-screen]"
         )
     );
-
 
 const startButton =
     required("startButton");
@@ -849,16 +755,13 @@ const guideSpeaker =
     required("guideSpeaker");
 
 
-
 /* =========================================================
    INITIALIZE
    ========================================================= */
 
 initialize();
 
-
 function initialize() {
-
     loadStoredForm();
 
     restoreFormState();
@@ -890,9 +793,7 @@ function initialize() {
     updateTimeUI();
 
     updateGenderUI();
-
 }
-
 
 
 /* =========================================================
@@ -900,71 +801,55 @@ function initialize() {
    ========================================================= */
 
 function cancelGuide() {
-
     guideRunId++;
-
 
     if (
         guideHideTimer
     ) {
-
         clearTimeout(
             guideHideTimer
         );
 
-
         guideHideTimer =
             null;
-
     }
-
 
     guideLayer
         .classList
         .remove(
             "visible"
         );
-
 }
-
-
 
 async function say(
     text,
     options = {}
 ) {
-
     const runId =
         ++guideRunId;
-
 
     const placement =
         options.placement
         ||
         "bottom";
 
-
     const speed =
         options.speed
         ??
         24;
-
 
     const hold =
         options.hold
         ??
         1300;
 
-
     guideSpeaker.textContent =
         options.speaker
         ||
         "천명 안내자";
 
-
     guideText.textContent =
         "";
-
 
     guideLayer
         .classList
@@ -973,20 +858,16 @@ async function say(
             "middle"
         );
 
-
     if (
         placement
         === "top"
     ) {
-
         guideLayer
             .classList
             .add(
                 "top"
             );
-
     }
-
 
     guideLayer
         .classList
@@ -994,109 +875,81 @@ async function say(
             "visible"
         );
 
-
     for (
         const character
         of Array.from(
             String(text ?? "")
         )
     ) {
-
         if (
             runId
             !== guideRunId
         ) {
-
             return false;
-
         }
-
 
         guideText.textContent +=
             character;
 
-
         await delay(
             speed
         );
-
     }
-
 
     await delay(
         hold
     );
 
-
     if (
         runId
         !== guideRunId
     ) {
-
         return false;
-
     }
-
 
     if (
         options.keep
         !== true
     ) {
-
         guideLayer
             .classList
             .remove(
                 "visible"
             );
-
     }
 
-
     return true;
-
 }
-
-
 
 async function guideSequence(
     lines,
     options = {}
 ) {
-
     for (
         const line
         of lines
     ) {
-
         const completed =
             await say(
                 line,
                 options
             );
 
-
         if (
             !completed
         ) {
-
             return false;
-
         }
-
 
         await delay(
             options.gap
             ??
             180
         );
-
     }
 
-
     return true;
-
 }
-
 
 
 /* =========================================================
@@ -1104,11 +957,9 @@ async function guideSequence(
    ========================================================= */
 
 function bindNavigation() {
-
     document.addEventListener(
         "click",
         event => {
-
             const back =
                 event
                     .target
@@ -1116,48 +967,34 @@ function bindNavigation() {
                         "[data-back]"
                     );
 
-
             if (
                 !back
             ) {
-
                 return;
-
             }
-
 
             showScreen(
                 back.dataset.back
             );
-
         }
     );
-
 }
-
-
 
 function showScreen(
     name,
     options = {}
 ) {
-
     cancelGuide();
-
 
     if (
         name
         !== "loading"
     ) {
-
         stopLoadingActorDialogue();
-
     }
-
 
     screens.forEach(
         screen => {
-
             screen
                 .classList
                 .toggle(
@@ -1165,57 +1002,41 @@ function showScreen(
                     screen.dataset.screen
                     === name
                 );
-
         }
     );
 
-
     currentScreen =
         name;
-
 
     if (
         options.dialogue
         === false
     ) {
-
         return;
-
     }
-
 
     window.setTimeout(
         () => {
-
             if (
                 currentScreen
                 === name
             ) {
-
                 runSceneDialogue(
                     name
                 );
-
             }
-
         },
         220
     );
-
 }
-
-
 
 function runSceneDialogue(
     screen
 ) {
-
     switch (
         screen
     ) {
-
         case "name":
-
             say(
                 "먼저, 내가 널 뭐라고 부르면 될까?",
                 {
@@ -1223,12 +1044,9 @@ function runSceneDialogue(
                         "top"
                 }
             );
-
             break;
 
-
         case "birth":
-
             say(
                 formState.name
                     ? `좋아, ${formState.name}. 이제 네가 태어난 날을 알려줘.`
@@ -1238,12 +1056,9 @@ function runSceneDialogue(
                         "top"
                 }
             );
-
             break;
 
-
         case "time":
-
             say(
                 "그리고 태어난 시간을 알고 있다면 더 깊이 살펴볼 수 있어.",
                 {
@@ -1251,12 +1066,9 @@ function runSceneDialogue(
                         "top"
                 }
             );
-
             break;
 
-
         case "gender":
-
             say(
                 "거의 다 왔어. 마지막으로 성별을 알려줘.",
                 {
@@ -1264,13 +1076,9 @@ function runSceneDialogue(
                         "top"
                 }
             );
-
             break;
-
     }
-
 }
-
 
 
 /* =========================================================
@@ -1278,11 +1086,9 @@ function runSceneDialogue(
    ========================================================= */
 
 function bindIntro() {
-
     startButton.addEventListener(
         "click",
         async () => {
-
             showScreen(
                 "opening",
                 {
@@ -1290,7 +1096,6 @@ function bindIntro() {
                         false
                 }
             );
-
 
             guideSequence(
                 [
@@ -1305,7 +1110,6 @@ function bindIntro() {
                 }
             );
 
-
             const played =
                 await playVideo(
                     openingVideo,
@@ -1313,49 +1117,37 @@ function bindIntro() {
                     true
                 );
 
-
             if (
                 played
                 &&
                 currentScreen
                 === "opening"
             ) {
-
                 showScreen(
                     "name"
                 );
-
             }
-
         }
     );
-
 
     skipOpeningButton.addEventListener(
         "click",
         () => {
-
             finishVideoImmediately(
                 openingVideo
             );
-
 
             if (
                 currentScreen
                 === "opening"
             ) {
-
                 showScreen(
                     "name"
                 );
-
             }
-
         }
     );
-
 }
-
 
 
 /* =========================================================
@@ -1363,11 +1155,9 @@ function bindIntro() {
    ========================================================= */
 
 function bindName() {
-
     nameInput.addEventListener(
         "input",
         () => {
-
             formState.name =
                 nameInput.value.trim();
 
@@ -1375,58 +1165,43 @@ function bindName() {
                 "";
 
             saveForm();
-
         }
     );
-
 
     nameInput.addEventListener(
         "keydown",
         event => {
-
             if (
                 event.key
                 === "Enter"
             ) {
-
                 event.preventDefault();
 
                 moveNameNext();
-
             }
-
         }
     );
-
 
     nameNextButton.addEventListener(
         "click",
         moveNameNext
     );
-
 }
 
-
-
 function moveNameNext() {
-
     formState.name =
         nameInput
             .value
             .trim();
 
-
     if (
         !formState.name
     ) {
-
         nameError.textContent =
             "이름을 입력해주세요.";
 
         return;
-
     }
-
 
     saveForm();
 
@@ -1434,15 +1209,12 @@ function moveNameNext() {
         "birth"
     );
 
-
     setTimeout(
         () =>
             birthYear.focus(),
         200
     );
-
 }
-
 
 
 /* =========================================================
@@ -1450,7 +1222,6 @@ function moveNameNext() {
    ========================================================= */
 
 function bindBirth() {
-
     bindNumericInput(
         birthYear,
         4
@@ -1466,90 +1237,68 @@ function bindBirth() {
         2
     );
 
-
     birthYear.addEventListener(
         "input",
         () => {
-
             syncDateStateFromInputs();
 
             saveForm();
-
 
             if (
                 birthYear.value.length
                 === 4
             ) {
-
                 birthMonth.focus();
-
             }
-
         }
     );
-
 
     birthMonth.addEventListener(
         "input",
         () => {
-
             syncDateStateFromInputs();
 
             saveForm();
-
 
             if (
                 birthMonth.value.length
                 === 2
             ) {
-
                 birthDay.focus();
-
             }
-
         }
     );
-
 
     birthMonth.addEventListener(
         "blur",
         () => {
-
             normalizeMonthInput();
 
             syncDateStateFromInputs();
 
             saveForm();
-
         }
     );
-
 
     birthDay.addEventListener(
         "input",
         () => {
-
             syncDateStateFromInputs();
 
             saveForm();
-
         }
     );
-
 
     birthDay.addEventListener(
         "blur",
         () => {
-
             normalizeDayInput();
 
             syncDateStateFromInputs();
 
             saveForm();
-
         }
     );
-
 
     solarButton.addEventListener(
         "click",
@@ -1559,7 +1308,6 @@ function bindBirth() {
             )
     );
 
-
     lunarButton.addEventListener(
         "click",
         () =>
@@ -1568,75 +1316,56 @@ function bindBirth() {
             )
     );
 
-
     leapMonthButton.addEventListener(
         "click",
         () => {
-
             if (
                 formState.calendarType
                 !== "LUNAR"
             ) {
-
                 return;
-
             }
-
 
             formState.leapMonth =
                 !formState.leapMonth;
 
-
             updateCalendarUI();
 
             saveForm();
-
         }
     );
-
 
     birthNextButton.addEventListener(
         "click",
         () => {
-
             normalizeMonthInput();
 
             normalizeDayInput();
 
             syncDateStateFromInputs();
 
-
             if (
                 !validateBirthDate()
             ) {
-
                 return;
-
             }
-
 
             saveForm();
 
             showScreen(
                 "time"
             );
-
         }
     );
-
 }
-
-
 
 function bindNumericInput(
     input,
     maxLength
 ) {
-
     input.addEventListener(
         "input",
         () => {
-
             input.value =
                 onlyDigits(
                     input.value
@@ -1645,66 +1374,47 @@ function bindNumericInput(
                         0,
                         maxLength
                     );
-
         }
     );
-
 }
 
-
-
 function normalizeMonthInput() {
-
     const value =
         onlyDigits(
             birthMonth.value
         );
 
-
     if (
         value.length
         === 1
     ) {
-
         birthMonth.value =
             value.padStart(
                 2,
                 "0"
             );
-
     }
-
 }
 
-
-
 function normalizeDayInput() {
-
     const value =
         onlyDigits(
             birthDay.value
         );
 
-
     if (
         value.length
         === 1
     ) {
-
         birthDay.value =
             value.padStart(
                 2,
                 "0"
             );
-
     }
-
 }
 
-
-
 function syncDateStateFromInputs() {
-
     formState.birthYear =
         onlyDigits(
             birthYear.value
@@ -1719,40 +1429,28 @@ function syncDateStateFromInputs() {
         onlyDigits(
             birthDay.value
         );
-
 }
-
-
 
 function setCalendar(
     type
 ) {
-
     formState.calendarType =
         type;
-
 
     if (
         type
         !== "LUNAR"
     ) {
-
         formState.leapMonth =
             false;
-
     }
-
 
     updateCalendarUI();
 
     saveForm();
-
 }
 
-
-
 function updateCalendarUI() {
-
     solarButton
         .classList
         .toggle(
@@ -1760,7 +1458,6 @@ function updateCalendarUI() {
             formState.calendarType
             === "SOLAR"
         );
-
 
     lunarButton
         .classList
@@ -1770,7 +1467,6 @@ function updateCalendarUI() {
             === "LUNAR"
         );
 
-
     leapMonthButton
         .classList
         .toggle(
@@ -1779,7 +1475,6 @@ function updateCalendarUI() {
             !== "LUNAR"
         );
 
-
     leapMonthButton
         .classList
         .toggle(
@@ -1787,14 +1482,11 @@ function updateCalendarUI() {
             formState.leapMonth
         );
 
-
     leapMonthButton.textContent =
         formState.leapMonth
             ? "윤달"
             : "평달";
-
 }
-
 
 
 /* =========================================================
@@ -1802,11 +1494,9 @@ function updateCalendarUI() {
    ========================================================= */
 
 function bindTime() {
-
     timeRaw.addEventListener(
         "input",
         () => {
-
             timeRaw.value =
                 onlyDigits(
                     timeRaw.value
@@ -1816,10 +1506,8 @@ function bindTime() {
                         4
                     );
 
-
             formState.birthTimeUnknown =
                 false;
-
 
             syncTimeStateFromRaw();
 
@@ -1828,23 +1516,18 @@ function bindTime() {
             updateTimeUI();
 
             saveForm();
-
         }
     );
-
 
     unknownTimeButton.addEventListener(
         "click",
         () => {
-
             formState.birthTimeUnknown =
                 !formState.birthTimeUnknown;
-
 
             if (
                 formState.birthTimeUnknown
             ) {
-
                 formState.birthHour =
                     "";
 
@@ -1854,7 +1537,6 @@ function bindTime() {
                 timeRaw.value =
                     "";
 
-
                 say(
                     "괜찮아. 알고 있는 기록만으로도 볼 수 있는 데까지 살펴볼게.",
                     {
@@ -1862,59 +1544,42 @@ function bindTime() {
                             "top"
                     }
                 );
-
             }
-
 
             updateTimeMask();
 
             updateTimeUI();
 
             saveForm();
-
         }
     );
-
 
     timeNextButton.addEventListener(
         "click",
         () => {
-
             syncTimeStateFromRaw();
-
 
             if (
                 !validateBirthTime()
             ) {
-
                 return;
-
             }
-
 
             saveForm();
 
             showScreen(
                 "gender"
             );
-
         }
     );
-
 }
 
-
-
 function syncTimeStateFromRaw() {
-
     if (
         formState.birthTimeUnknown
     ) {
-
         return;
-
     }
-
 
     const value =
         onlyDigits(
@@ -1924,7 +1589,6 @@ function syncTimeStateFromRaw() {
                 0,
                 4
             );
-
 
     formState.birthHour =
         value.slice(
@@ -1937,13 +1601,9 @@ function syncTimeStateFromRaw() {
             2,
             4
         );
-
 }
 
-
-
 function updateTimeMask() {
-
     const digits =
         formState.birthTimeUnknown
             ? ""
@@ -1951,40 +1611,31 @@ function updateTimeMask() {
                 timeRaw.value
             );
 
-
     for (
         let index = 0;
         index < 4;
         index++
     ) {
-
         updateMaskChar(
             `t${index}`,
             digits[index]
         );
-
     }
-
 }
-
-
 
 function updateMaskChar(
     id,
     value
 ) {
-
     const element =
         document.getElementById(
             id
         );
 
-
     element.textContent =
         value
         ||
         "0";
-
 
     element
         .classList
@@ -1992,13 +1643,9 @@ function updateMaskChar(
             "placeholder",
             !value
         );
-
 }
 
-
-
 function updateTimeUI() {
-
     timeMaskWrap
         .classList
         .toggle(
@@ -2006,10 +1653,8 @@ function updateTimeUI() {
             formState.birthTimeUnknown
         );
 
-
     timeRaw.disabled =
         formState.birthTimeUnknown;
-
 
     unknownTimeButton
         .classList
@@ -2017,9 +1662,7 @@ function updateTimeUI() {
             "active",
             formState.birthTimeUnknown
         );
-
 }
-
 
 
 /* =========================================================
@@ -2027,7 +1670,6 @@ function updateTimeUI() {
    ========================================================= */
 
 function bindGender() {
-
     femaleButton.addEventListener(
         "click",
         () =>
@@ -2035,7 +1677,6 @@ function bindGender() {
                 "FEMALE"
             )
     );
-
 
     maleButton.addEventListener(
         "click",
@@ -2045,28 +1686,21 @@ function bindGender() {
             )
     );
 
-
     analyzeButton.addEventListener(
         "click",
         startAnalysis
     );
-
 }
-
-
 
 function setGender(
     gender
 ) {
-
     formState.gender =
         gender;
-
 
     updateGenderUI();
 
     saveForm();
-
 
     say(
         formState.name
@@ -2077,13 +1711,9 @@ function setGender(
                 "top"
         }
     );
-
 }
 
-
-
 function updateGenderUI() {
-
     femaleButton
         .classList
         .toggle(
@@ -2092,7 +1722,6 @@ function updateGenderUI() {
             === "FEMALE"
         );
 
-
     maleButton
         .classList
         .toggle(
@@ -2100,9 +1729,7 @@ function updateGenderUI() {
             formState.gender
             === "MALE"
         );
-
 }
-
 
 
 /* =========================================================
@@ -2110,37 +1737,28 @@ function updateGenderUI() {
    ========================================================= */
 
 function bindAnalysis() {
-
     skipAnalysisButton.addEventListener(
         "click",
         () => {
-
             finishVideoImmediately(
                 analysisVideo1
             );
-
 
             if (
                 currentScreen
                 === "analysis-video"
             ) {
-
                 showLoadingScreen();
-
             }
-
         }
     );
-
 
     skipAnalysisFinishButton.addEventListener(
         "click",
         () => {
-
             finishVideoImmediately(
                 analysisVideo2
             );
-
 
             if (
                 currentResult
@@ -2148,56 +1766,38 @@ function bindAnalysis() {
                 currentScreen
                 === "analysis-finish"
             ) {
-
                 showResult();
-
             }
-
         }
     );
-
 }
 
-
-
 async function startAnalysis() {
-
     if (
         analysisRunning
     ) {
-
         return;
-
     }
-
 
     if (
         !formState.gender
     ) {
-
         genderError.textContent =
             "성별을 선택해주세요.";
 
         return;
-
     }
-
 
     if (
         !validateAllForm()
     ) {
-
         return;
-
     }
-
 
     analysisRunning =
         true;
 
-
     saveForm();
-
 
     loadingProgress =
         0;
@@ -2208,12 +1808,9 @@ async function startAnalysis() {
     loadingWaitMessageIndex =
         0;
 
-
     try {
-
         analysisRequestPromise =
             requestAnalysis();
-
 
         showScreen(
             "analysis-video",
@@ -2222,7 +1819,6 @@ async function startAnalysis() {
                     false
             }
         );
-
 
         guideSequence(
             [
@@ -2237,10 +1833,8 @@ async function startAnalysis() {
             }
         );
 
-
         await Promise.race(
             [
-
                 playVideo(
                     analysisVideo1,
                     VIDEO_PATH.analysis1,
@@ -2250,29 +1844,22 @@ async function startAnalysis() {
                 delay(
                     4500
                 )
-
             ]
         );
-
 
         if (
             currentScreen
             === "analysis-video"
         ) {
-
             stopVideo(
                 analysisVideo1
             );
 
-
             showLoadingScreen();
-
         }
-
 
         currentResult =
             await analysisRequestPromise;
-
 
         sessionStorage.setItem(
             RESULT_STORAGE_KEY,
@@ -2281,17 +1868,13 @@ async function startAnalysis() {
             )
         );
 
-
         finishLoadingProgress();
-
 
         await delay(
             950
         );
 
-
         stopLoadingTimer();
-
 
         showScreen(
             "analysis-finish",
@@ -2300,7 +1883,6 @@ async function startAnalysis() {
                     false
             }
         );
-
 
         guideSequence(
             [
@@ -2315,35 +1897,27 @@ async function startAnalysis() {
             }
         );
 
-
         await playVideo(
             analysisVideo2,
             VIDEO_PATH.analysis2,
             true
         );
 
-
         if (
             currentScreen
             === "analysis-finish"
         ) {
-
             showResult();
-
         }
-
     }
     catch (
         error
     ) {
-
         console.error(
             error
         );
 
-
         stopLoadingTimer();
-
 
         showToast(
             error.message
@@ -2351,24 +1925,18 @@ async function startAnalysis() {
             "사주 분석 중 오류가 발생했습니다."
         );
 
-
         showScreen(
             "gender"
         );
-
     }
     finally {
-
         analysisRunning =
             false;
 
         analysisRequestPromise =
             null;
-
     }
-
 }
-
 
 
 /* =========================================================
@@ -2376,19 +1944,14 @@ async function startAnalysis() {
    ========================================================= */
 
 function showLoadingScreen() {
-
     if (
         currentScreen
         === "loading"
     ) {
-
         return;
-
     }
 
-
     cancelGuide();
-
 
     showScreen(
         "loading",
@@ -2398,21 +1961,15 @@ function showLoadingScreen() {
         }
     );
 
-
     startLoadingTimer();
 
     startLoadingActorDialogue();
-
 }
 
-
-
 function startLoadingTimer() {
-
     stopLoadingTimer(
         false
     );
-
 
     loadingProgress =
         Math.max(
@@ -2423,45 +1980,35 @@ function startLoadingTimer() {
             )
         );
 
-
     loadingDialogueStage =
         -1;
-
 
     updateLoadingProgress(
         loadingProgress
     );
 
-
     updateLoadingStatus(
         loadingProgress
     );
 
-
     loadingTimer =
         setInterval(
             () => {
-
                 if (
                     loadingProgress
                     >= 94
                 ) {
-
                     loadingProgress =
                         94;
-
 
                     updateLoadingProgress(
                         94
                     );
 
-
                     startLoadingWaitRotation();
 
                     return;
-
                 }
-
 
                 const step =
                     loadingProgress < 30
@@ -2474,7 +2021,6 @@ function startLoadingTimer() {
                                     ? 0.25
                                     : 0.10;
 
-
                 loadingProgress =
                     Math.min(
                         94,
@@ -2483,61 +2029,45 @@ function startLoadingTimer() {
                         step
                     );
 
-
                 updateLoadingProgress(
                     loadingProgress
                 );
 
-
                 updateLoadingStatus(
                     loadingProgress
                 );
-
             },
             90
         );
-
 }
-
-
 
 function updateLoadingStatus(
     progress
 ) {
-
     if (
         progress
         >= 100
     ) {
-
         stopLoadingWaitRotation();
-
 
         applyLoadingCopy(
             "분석 완료",
             "천명록이 완성됐어. 이제 결과를 펼칠게."
         );
 
-
         return;
-
     }
-
 
     if (
         progress
         >= 94
     ) {
-
         startLoadingWaitRotation();
 
         return;
-
     }
 
-
     stopLoadingWaitRotation();
-
 
     const stageIndex =
         LOADING_STAGES
@@ -2548,92 +2078,68 @@ function updateLoadingStatus(
                     stage.until
             );
 
-
     const normalizedIndex =
         stageIndex >= 0
             ? stageIndex
             : LOADING_STAGES.length - 1;
 
-
     if (
         loadingDialogueStage
         === normalizedIndex
     ) {
-
         return;
-
     }
-
 
     loadingDialogueStage =
         normalizedIndex;
-
 
     const stage =
         LOADING_STAGES[
             normalizedIndex
         ];
 
-
     applyLoadingCopy(
         stage.label,
         stage.message
     );
-
 }
-
-
 
 function applyLoadingCopy(
     label,
     message
 ) {
-
     loadingLabel.textContent =
         label;
 
-
     loadingMessage.textContent =
         message;
-
 
     restartCssAnimation(
         loadingLabel,
         "copy-change"
     );
 
-
     restartCssAnimation(
         loadingMessage,
         "copy-change"
     );
-
 }
 
-
-
 function startLoadingWaitRotation() {
-
     if (
         loadingWaitTimer
     ) {
-
         return;
-
     }
-
 
     loadingWaitMessageIndex =
         0;
 
-
     applyCurrentLoadingWaitMessage();
-
 
     loadingWaitTimer =
         setInterval(
             () => {
-
                 loadingWaitMessageIndex =
                     (
                         loadingWaitMessageIndex
@@ -2643,123 +2149,84 @@ function startLoadingWaitRotation() {
                     %
                     LOADING_WAIT_MESSAGES.length;
 
-
                 applyCurrentLoadingWaitMessage();
-
             },
             LOADING_WAIT_ROTATION_MS
         );
-
 }
 
-
-
 function applyCurrentLoadingWaitMessage() {
-
     const item =
         LOADING_WAIT_MESSAGES[
             loadingWaitMessageIndex
         ];
 
-
     applyLoadingCopy(
         item.label,
         item.message
     );
-
 }
 
-
-
 function stopLoadingWaitRotation() {
-
     if (
         loadingWaitTimer
     ) {
-
         clearInterval(
             loadingWaitTimer
         );
 
-
         loadingWaitTimer =
             null;
-
     }
-
 }
-
-
 
 function updateLoadingProgress(
     value
 ) {
-
     loadingPercent.textContent =
         `${Math.round(value)}%`;
-
 }
 
-
-
 function finishLoadingProgress() {
-
     loadingProgress =
         100;
 
-
     stopLoadingWaitRotation();
-
 
     updateLoadingProgress(
         100
     );
-
 
     applyLoadingCopy(
         "분석 완료",
         "천명록이 완성됐어. 이제 결과를 펼칠게."
     );
 
-
     showLoadingActorFinalLine();
-
 }
-
-
 
 function stopLoadingTimer(
     stopActor = true
 ) {
-
     if (
         loadingTimer
     ) {
-
         clearInterval(
             loadingTimer
         );
 
-
         loadingTimer =
             null;
-
     }
 
-
     stopLoadingWaitRotation();
-
 
     if (
         stopActor
     ) {
-
         stopLoadingActorDialogue();
-
     }
-
 }
-
 
 
 /* =========================================================
@@ -2767,17 +2234,13 @@ function stopLoadingTimer(
    ========================================================= */
 
 function startLoadingActorDialogue() {
-
     stopLoadingActorDialogue();
-
 
     const runId =
         ++loadingActorRunId;
 
-
     loadingActorLineIndex =
         0;
-
 
     loadingActorDialogue
         .classList
@@ -2785,10 +2248,8 @@ function startLoadingActorDialogue() {
             "visible"
         );
 
-
     const run =
         async () => {
-
             if (
                 runId
                 !== loadingActorRunId
@@ -2796,11 +2257,8 @@ function startLoadingActorDialogue() {
                 currentScreen
                 !== "loading"
             ) {
-
                 return;
-
             }
-
 
             const line =
                 LOADING_ACTOR_LINES[
@@ -2809,12 +2267,10 @@ function startLoadingActorDialogue() {
                     LOADING_ACTOR_LINES.length
                 ];
 
-
             await typeLoadingActorText(
                 line,
                 runId
             );
-
 
             if (
                 runId
@@ -2823,38 +2279,27 @@ function startLoadingActorDialogue() {
                 currentScreen
                 !== "loading"
             ) {
-
                 return;
-
             }
 
-
             loadingActorLineIndex++;
-
 
             loadingActorTimer =
                 setTimeout(
                     run,
                     2300
                 );
-
         };
 
-
     run();
-
 }
-
-
 
 async function typeLoadingActorText(
     text,
     runId
 ) {
-
     loadingActorText.textContent =
         "";
-
 
     for (
         const character
@@ -2862,20 +2307,15 @@ async function typeLoadingActorText(
             text
         )
     ) {
-
         if (
             runId
             !== loadingActorRunId
         ) {
-
             return;
-
         }
-
 
         loadingActorText.textContent +=
             character;
-
 
         await delay(
             character
@@ -2883,19 +2323,13 @@ async function typeLoadingActorText(
                 ? 110
                 : 34
         );
-
     }
-
 }
 
-
-
 function showLoadingActorFinalLine() {
-
     stopLoadingActorDialogue(
         false
     );
-
 
     loadingActorDialogue
         .classList
@@ -2903,50 +2337,36 @@ function showLoadingActorFinalLine() {
             "visible"
         );
 
-
     loadingActorText.textContent =
         "다 봤어.\n이제 네 기록을 보여줄게.";
-
 }
-
-
 
 function stopLoadingActorDialogue(
     hide = true
 ) {
-
     loadingActorRunId++;
-
 
     if (
         loadingActorTimer
     ) {
-
         clearTimeout(
             loadingActorTimer
         );
 
-
         loadingActorTimer =
             null;
-
     }
-
 
     if (
         hide
     ) {
-
         loadingActorDialogue
             .classList
             .remove(
                 "visible"
             );
-
     }
-
 }
-
 
 
 /* =========================================================
@@ -2954,62 +2374,68 @@ function stopLoadingActorDialogue(
    ========================================================= */
 
 async function requestAnalysis() {
+    let response;
 
-    const response =
-        await fetch(
-            API_URL,
-            {
+    try {
+        response =
+            await fetch(
+                API_URL,
+                {
+                    method:
+                        "POST",
 
-                method:
-                    "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                headers: {
-
-                    "Content-Type":
-                        "application/json"
-
-                },
-
-                body:
-                    JSON.stringify(
-                        createAnalysisRequest()
-                    )
-
-            }
+                    body:
+                        JSON.stringify(
+                            createAnalysisRequest()
+                        )
+                }
+            );
+    }
+    catch (
+        ignored
+    ) {
+        throw new Error(
+            "분석 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요."
         );
-
+    }
 
     if (
         !response.ok
     ) {
-
-        throw new Error(
-            `사주 분석 요청 실패 (${response.status}) ${
-                await safeErrorBody(
-                    response
-                )
-            }`
+        throw await createApiRequestError(
+            response
         );
-
     }
 
+    let raw;
+
+    try {
+        raw =
+            await response.json();
+    }
+    catch (
+        ignored
+    ) {
+        throw new Error(
+            "분석 결과를 확인하는 중 문제가 발생했습니다. 다시 시도해주세요."
+        );
+    }
 
     return normalizeResult(
-        await response.json()
+        raw
     );
-
 }
 
-
-
 function createAnalysisRequest() {
-
-    const now =
-        new Date();
-
+    const referenceDate =
+        currentKoreanDateString();
 
     return {
-
         calendarType:
             formState.calendarType,
 
@@ -3034,21 +2460,48 @@ function createAnalysisRequest() {
                 : false,
 
         targetYear:
-            now.getFullYear(),
+            Number(
+                referenceDate.slice(
+                    0,
+                    4
+                )
+            ),
 
         luckReferenceDate:
-            `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`,
+            referenceDate,
 
+        /*
+         * 현재 화면은 날짜 단위의 현재 흐름을 요청한다.
+         *
+         * 프론트에서 임의의 정확한 시각을 만들어
+         * Timeline을 확정하지 않는다.
+         */
+        luckReferenceTime:
+            null,
+
+        /*
+         * 빈 목록 + 질문 없음
+         *
+         * =
+         *
+         * 백엔드 공식 종합운 요청 계약.
+         */
         consultationCategories:
-            CATEGORY_ORDER,
+            [],
 
         consultationQuestion:
-            null
+            null,
 
+        relationshipTarget:
+            "UNSPECIFIED",
+
+        relationshipStatus:
+            "UNSPECIFIED",
+
+        workStatus:
+            "UNSPECIFIED"
     };
-
 }
-
 
 
 /* =========================================================
@@ -3056,32 +2509,23 @@ function createAnalysisRequest() {
    ========================================================= */
 
 function bindResult() {
-
     resultHomeTopButton.addEventListener(
         "click",
         goHome
     );
 
-
     openBookButton.addEventListener(
         "click",
         openBook
     );
-
 }
 
-
-
 async function showResult() {
-
     if (
         !currentResult
     ) {
-
         return;
-
     }
-
 
     currentStoryIndex =
         0;
@@ -3089,17 +2533,14 @@ async function showResult() {
     bookOpened =
         false;
 
-
     resultName.textContent =
         formState.name
             ? `${formState.name}님의 명식`
             : "천명사주 명식";
 
-
     renderResultPillars();
 
     renderFiveElements();
-
 
     resultIntro
         .classList
@@ -3107,17 +2548,14 @@ async function showResult() {
             "hidden"
         );
 
-
     resultStoryList
         .classList
         .add(
             "hidden"
         );
 
-
     resultStoryList.innerHTML =
         "";
-
 
     showScreen(
         "result",
@@ -3127,61 +2565,62 @@ async function showResult() {
         }
     );
 
-
     resultScrollArea.scrollTop =
         0;
-
 
     await delay(
         380
     );
 
-
     if (
         currentScreen
         !== "result"
     ) {
-
         return;
-
     }
-
 
     await guideSequence(
         [
-
             formState.name
                 ? `${formState.name}, 이게 네가 태어난 순간의 네 기둥이야.`
                 : "이게 네가 태어난 순간의 네 기둥이야.",
 
             "다섯 흐름이 어떻게 자리하고 있는지도 함께 볼 수 있어."
-
         ],
         {
             placement:
                 "bottom",
+
             hold:
                 900
         }
     );
-
 }
 
-
-
 function openBook() {
-
     if (
         !currentResult
     ) {
-
         return;
-
     }
 
+    const consultations =
+        getRenderableConsultations(
+            currentResult
+        );
+
+    if (
+        consultations.length
+        === 0
+    ) {
+        showToast(
+            "현재 표시할 수 있는 상담 기록이 없습니다."
+        );
+
+        return;
+    }
 
     cancelGuide();
-
 
     bookOpened =
         true;
@@ -3189,13 +2628,11 @@ function openBook() {
     currentStoryIndex =
         0;
 
-
     resultIntro
         .classList
         .add(
             "hidden"
         );
-
 
     resultStoryList
         .classList
@@ -3203,17 +2640,13 @@ function openBook() {
             "hidden"
         );
 
-
     renderCurrentStory(
         true
     );
 
-
     resultScrollArea.scrollTop =
         0;
-
 }
-
 
 
 /* =========================================================
@@ -3221,19 +2654,17 @@ function openBook() {
    ========================================================= */
 
 function renderResultPillars() {
-
     const pillars =
         extractPillars(
             currentResult
         );
 
-
     const ordered =
         [
-
             {
                 label:
                     "시주",
+
                 pillar:
                     pillars.hour
             },
@@ -3241,8 +2672,10 @@ function renderResultPillars() {
             {
                 label:
                     "일주",
+
                 pillar:
                     pillars.day,
+
                 focus:
                     true
             },
@@ -3250,6 +2683,7 @@ function renderResultPillars() {
             {
                 label:
                     "월주",
+
                 pillar:
                     pillars.month
             },
@@ -3257,15 +2691,13 @@ function renderResultPillars() {
             {
                 label:
                     "년주",
+
                 pillar:
                     pillars.year
             }
-
         ];
 
-
     pillarGrid.innerHTML =
-
         ordered
             .map(
                 item =>
@@ -3308,9 +2740,7 @@ function renderResultPillars() {
             .join(
                 ""
             );
-
 }
-
 
 
 /* =========================================================
@@ -3318,23 +2748,19 @@ function renderResultPillars() {
    ========================================================= */
 
 function renderFiveElements() {
-
     const result =
         extractFiveElementCounts(
             currentResult
         );
 
-
     fiveElementGrid.innerHTML =
         FIVE_ELEMENT_ORDER
             .map(
                 element => {
-
                     const meta =
                         FIVE_ELEMENT_META[
                             element
                         ];
-
 
                     const count =
                         result.counts[
@@ -3343,11 +2769,9 @@ function renderFiveElements() {
                         ??
                         0;
 
-
                     const dots =
                         count > 0
                             ?
-
                             Array
                                 .from(
                                     {
@@ -3362,11 +2786,8 @@ function renderFiveElements() {
                                 .join(
                                     ""
                                 )
-
                             :
-
                             `<span class="five-element-zero">—</span>`;
-
 
                     return `
                         <div class="five-element-item">
@@ -3389,29 +2810,22 @@ function renderFiveElements() {
 
                         </div>
                     `;
-
                 }
             )
             .join(
                 ""
             );
 
-
     fiveElementNote.textContent =
         result.characterCount >= 8
             ? "네 기둥의 여덟 글자에 드러난 오행의 개수입니다. 실제 세력 강약과는 별개의 표시입니다."
             : `확인 가능한 ${result.characterCount}글자 기준의 오행 구성입니다. 실제 세력 강약과는 별개의 표시입니다.`;
-
 }
-
-
 
 function extractFiveElementCounts(
     result
 ) {
-
     const counts = {
-
         WOOD:
             0,
 
@@ -3426,39 +2840,26 @@ function extractFiveElementCounts(
 
         WATER:
             0
-
     };
-
 
     const sourcePillars =
         [
-
             result?.yearPillar,
-
             result?.monthPillar,
-
             result?.dayPillar,
-
             result?.hourPillar
-
         ];
-
 
     let characterCount =
         0;
 
-
     sourcePillars.forEach(
         pillar => {
-
             if (
                 !pillar
             ) {
-
                 return;
-
             }
-
 
             [
                 pillar.stemElement,
@@ -3469,7 +2870,6 @@ function extractFiveElementCounts(
                 )
                 .forEach(
                     element => {
-
                         if (
                             element
                             &&
@@ -3478,40 +2878,29 @@ function extractFiveElementCounts(
                                 element
                             )
                         ) {
-
                             counts[
                                 element
                             ]++;
 
                             characterCount++;
-
                         }
-
                     }
                 );
-
         }
     );
 
-
     return {
-
         counts:
             counts,
 
         characterCount:
             characterCount
-
     };
-
 }
-
-
 
 function normalizeElementName(
     value
 ) {
-
     const normalized =
         String(
             value
@@ -3521,16 +2910,13 @@ function normalizeElementName(
             .trim()
             .toUpperCase();
 
-
     return Object.hasOwn(
         FIVE_ELEMENT_META,
         normalized
     )
         ? normalized
         : null;
-
 }
-
 
 
 /* =========================================================
@@ -3540,42 +2926,32 @@ function normalizeElementName(
 function renderCurrentStory(
     announce = true
 ) {
-
     if (
         !bookOpened
     ) {
-
         return;
-
     }
-
 
     stopCurrentStoryVideo();
 
-
     const consultations =
-        currentResult?.consultations
-        ||
-        [];
-
+        getRenderableConsultations(
+            currentResult
+        );
 
     if (
         currentStoryIndex
         >= consultations.length
     ) {
-
         renderStoryComplete();
 
         return;
-
     }
-
 
     const consultation =
         consultations[
             currentStoryIndex
         ];
-
 
     renderStoryBook(
         consultation,
@@ -3583,63 +2959,50 @@ function renderCurrentStory(
         consultations.length
     );
 
-
     if (
         announce
     ) {
-
         setTimeout(
             announceCurrentStory,
             260
         );
-
     }
-
 }
 
-
-
 function announceCurrentStory() {
-
     const consultation =
-        currentResult
-            ?.consultations
-            ?.[currentStoryIndex];
-
+        getRenderableConsultations(
+            currentResult
+        )[
+            currentStoryIndex
+        ];
 
     if (
         !consultation
     ) {
-
         return;
-
     }
-
 
     const meta =
         CATEGORY_META[
             consultation.category
         ];
 
-
     if (
         meta
     ) {
-
         say(
             meta.intro,
             {
                 placement:
                     "bottom",
+
                 hold:
                     1000
             }
         );
-
     }
-
 }
-
 
 
 /* =========================================================
@@ -3651,21 +3014,16 @@ function renderStoryBook(
     index,
     total
 ) {
-
     const meta =
         CATEGORY_META[
             consultation.category
         ];
 
-
     if (
         !meta
     ) {
-
         return;
-
     }
-
 
     const storyText =
         normalizeStoryText(
@@ -3674,25 +3032,21 @@ function renderStoryBook(
         ||
         "현재 이 장의 상담문을 표시할 수 없습니다.";
 
-
     const storyEmphasis =
         normalizeStoryEmphasis(
             consultation.storyEmphasis,
             storyText
         );
 
-
     const paragraphs =
         splitParagraphs(
             storyText
         );
 
-
     const unavailable =
         isUnavailableConsultation(
             consultation
         );
-
 
     const progress =
         (
@@ -3707,12 +3061,10 @@ function renderStoryBook(
         *
         100;
 
-
     const visual =
         meta.visual
         === "video"
             ?
-
             `
                 <section class="story-visual">
 
@@ -3746,9 +3098,7 @@ function renderStoryBook(
 
                 </section>
             `
-
             :
-
             `
                 <section class="story-visual">
 
@@ -3775,16 +3125,12 @@ function renderStoryBook(
                 </section>
             `;
 
-
     const consumedEmphasis =
         new Set();
 
-
     resultStoryList.innerHTML =
         `
-
             <div class="story-book">
-
 
                 <div class="story-progress">
 
@@ -3800,7 +3146,6 @@ function renderStoryBook(
 
                     </div>
 
-
                     <div class="story-progress-track">
 
                         <div
@@ -3812,22 +3157,22 @@ function renderStoryBook(
 
                 </div>
 
-
                 ${visual}
 
-
                 <section class="story-reading">
-
 
                     <span class="story-book-label">
                         天命錄
                     </span>
 
-
                     <h2>
-                        ${escapeHtml(meta.title)}
+                        ${escapeHtml(
+                            firstNonBlank(
+                                consultation.title,
+                                meta.title
+                            )
+                        )}
                     </h2>
-
 
                     <div class="story-reading-subtitle">
                         ${escapeHtml(meta.chapter)}
@@ -3835,14 +3180,12 @@ function renderStoryBook(
                         ${escapeHtml(meta.label)}
                     </div>
 
-
                     <div class="story-paragraphs">
 
                         ${
                             paragraphs
                                 .map(
                                     paragraph => {
-
                                         const paragraphEmphasis =
                                             storyEmphasis
                                                 .filter(
@@ -3856,23 +3199,18 @@ function renderStoryBook(
                                                         )
                                                 );
 
-
                                         paragraphEmphasis.forEach(
                                             phrase => {
-
                                                 consumedEmphasis.add(
                                                     phrase
                                                 );
-
                                             }
                                         );
-
 
                                         const hasEmphasis =
                                             paragraphEmphasis.length
                                             >
                                             0;
-
 
                                         return `
                                             <p class="
@@ -3887,7 +3225,6 @@ function renderStoryBook(
                                                 }
                                             </p>
                                         `;
-
                                     }
                                 )
                                 .join(
@@ -3899,9 +3236,7 @@ function renderStoryBook(
 
                 </section>
 
-
                 <div class="story-navigation">
-
 
                     <button
                             class="story-nav-button"
@@ -3911,7 +3246,6 @@ function renderStoryBook(
                     >
                         ‹ 이전 장
                     </button>
-
 
                     <button
                             class="story-nav-button next"
@@ -3927,16 +3261,12 @@ function renderStoryBook(
 
                 </div>
 
-
                 <p class="story-swipe-hint">
                     좌우로 넘겨 다음 장을 읽을 수 있습니다.
                 </p>
 
-
             </div>
-
         `;
-
 
     resultStoryList
         .querySelector(
@@ -3947,7 +3277,6 @@ function renderStoryBook(
             goPreviousStory
         );
 
-
     resultStoryList
         .querySelector(
             "[data-story-next]"
@@ -3957,11 +3286,8 @@ function renderStoryBook(
             goNextStory
         );
 
-
     startCurrentStoryVideo();
-
 }
-
 
 
 /*
@@ -3986,7 +3312,6 @@ function renderStoryParagraph(
     paragraph,
     emphasisSource
 ) {
-
     const source =
         String(
             paragraph
@@ -3994,15 +3319,11 @@ function renderStoryParagraph(
             ""
         );
 
-
     if (
         !source
     ) {
-
         return "";
-
     }
-
 
     const phrases =
         normalizeStoryEmphasis(
@@ -4010,46 +3331,35 @@ function renderStoryParagraph(
             source
         );
 
-
     if (
         phrases.length
         === 0
     ) {
-
         return escapeHtml(
             source
         );
-
     }
-
 
     const matches =
         [];
 
-
     phrases.forEach(
         phrase => {
-
             const start =
                 source.indexOf(
                     phrase
                 );
 
-
             if (
                 start < 0
             ) {
-
                 return;
-
             }
-
 
             const end =
                 start
                 +
                 phrase.length;
-
 
             const overlaps =
                 matches.some(
@@ -4059,15 +3369,11 @@ function renderStoryParagraph(
                         match.start < end
                 );
 
-
             if (
                 overlaps
             ) {
-
                 return;
-
             }
-
 
             matches.push(
                 {
@@ -4078,22 +3384,17 @@ function renderStoryParagraph(
                         end
                 }
             );
-
         }
     );
-
 
     if (
         matches.length
         === 0
     ) {
-
         return escapeHtml(
             source
         );
-
     }
-
 
     matches.sort(
         (
@@ -4105,18 +3406,14 @@ function renderStoryParagraph(
             right.start
     );
 
-
     let cursor =
         0;
-
 
     let html =
         "";
 
-
     matches.forEach(
         match => {
-
             html +=
                 escapeHtml(
                     source.slice(
@@ -4124,7 +3421,6 @@ function renderStoryParagraph(
                         match.start
                     )
                 );
-
 
             html +=
                 `
@@ -4145,13 +3441,10 @@ function renderStoryParagraph(
                     )}</strong>
                 `;
 
-
             cursor =
                 match.end;
-
         }
     );
-
 
     html +=
         escapeHtml(
@@ -4160,11 +3453,8 @@ function renderStoryParagraph(
             )
         );
 
-
     return html;
-
 }
-
 
 
 /* =========================================================
@@ -4172,88 +3462,65 @@ function renderStoryParagraph(
    ========================================================= */
 
 function goPreviousStory() {
-
     if (
         currentStoryIndex
         <= 0
     ) {
-
         return;
-
     }
-
 
     currentStoryIndex--;
 
     renderCurrentStory();
 
     scrollStoryTop();
-
 }
 
-
-
 function goNextStory() {
-
     if (
         !currentResult
         ||
         !bookOpened
     ) {
-
         return;
-
     }
 
-
     const total =
-        currentResult
-            ?.consultations
-            ?.length
-        ||
-        0;
-
+        getRenderableConsultations(
+            currentResult
+        )
+            .length;
 
     if (
         currentStoryIndex
         >= total
     ) {
-
         return;
-
     }
-
 
     currentStoryIndex++;
 
     renderCurrentStory();
 
     scrollStoryTop();
-
 }
 
-
-
 function scrollStoryTop() {
-
     setTimeout(
         () => {
-
             resultScrollArea.scrollTo(
                 {
                     top:
                         0,
+
                     behavior:
                         "smooth"
                 }
             );
-
         },
         20
     );
-
 }
-
 
 
 /* =========================================================
@@ -4261,15 +3528,12 @@ function scrollStoryTop() {
    ========================================================= */
 
 function renderStoryComplete() {
-
     cancelGuide();
 
     stopCurrentStoryVideo();
 
-
     resultStoryList.innerHTML =
         `
-
             <section class="story-complete">
 
                 <div class="story-complete-seal">
@@ -4277,7 +3541,7 @@ function renderStoryComplete() {
                 </div>
 
                 <span>
-                    天命十一章 完
+                    天命錄 完
                 </span>
 
                 <h2>
@@ -4285,7 +3549,7 @@ function renderStoryComplete() {
                 </h2>
 
                 <p>
-                    열한 장의 기록을 모두 펼쳤습니다.
+                    지금 펼쳐진 기록을 모두 읽었습니다.
                     사주는 삶을 대신 결정하는 답이 아니라,
                     자신의 흐름을 이해하고 선택을 준비하기 위한
                     하나의 지도입니다.
@@ -4312,9 +3576,7 @@ function renderStoryComplete() {
                 </div>
 
             </section>
-
         `;
-
 
     resultStoryList
         .querySelector(
@@ -4323,17 +3585,14 @@ function renderStoryComplete() {
         ?.addEventListener(
             "click",
             () => {
-
                 currentStoryIndex =
                     0;
 
                 renderCurrentStory();
 
                 scrollStoryTop();
-
             }
         );
-
 
     resultStoryList
         .querySelector(
@@ -4344,7 +3603,6 @@ function renderStoryComplete() {
             goHome
         );
 
-
     say(
         formState.name
             ? `${formState.name}, 여기까지가 지금 네게 펼쳐진 천명록이야.`
@@ -4352,13 +3610,12 @@ function renderStoryComplete() {
         {
             placement:
                 "bottom",
+
             hold:
                 1800
         }
     );
-
 }
-
 
 
 /* =========================================================
@@ -4366,25 +3623,19 @@ function renderStoryComplete() {
    ========================================================= */
 
 function bindStoryNavigation() {
-
     resultStoryList.addEventListener(
         "touchstart",
         event => {
-
             if (
                 !bookOpened
             ) {
-
                 return;
-
             }
-
 
             touchStartX =
                 event
                     .changedTouches[0]
                     .clientX;
-
         },
         {
             passive:
@@ -4392,20 +3643,15 @@ function bindStoryNavigation() {
         }
     );
 
-
     resultStoryList.addEventListener(
         "touchend",
         event => {
-
             if (
                 touchStartX
                 === null
             ) {
-
                 return;
-
             }
-
 
             const delta =
                 event
@@ -4414,10 +3660,8 @@ function bindStoryNavigation() {
                 -
                 touchStartX;
 
-
             touchStartX =
                 null;
-
 
             if (
                 Math.abs(
@@ -4426,25 +3670,17 @@ function bindStoryNavigation() {
                 <
                 60
             ) {
-
                 return;
-
             }
-
 
             if (
                 delta < 0
             ) {
-
                 goNextStory();
-
             }
             else {
-
                 goPreviousStory();
-
             }
-
         },
         {
             passive:
@@ -4452,47 +3688,34 @@ function bindStoryNavigation() {
         }
     );
 
-
     document.addEventListener(
         "keydown",
         event => {
-
             if (
                 currentScreen
                 !== "result"
                 ||
                 !bookOpened
             ) {
-
                 return;
-
             }
-
 
             if (
                 event.key
                 === "ArrowLeft"
             ) {
-
                 goPreviousStory();
-
             }
-
 
             if (
                 event.key
                 === "ArrowRight"
             ) {
-
                 goNextStory();
-
             }
-
         }
     );
-
 }
-
 
 
 /* =========================================================
@@ -4500,52 +3723,37 @@ function bindStoryNavigation() {
    ========================================================= */
 
 function startCurrentStoryVideo() {
-
     currentStoryVideo =
         resultStoryList
             .querySelector(
                 "[data-current-story-video]"
             );
 
-
     currentStoryVideo
         ?.play()
         .catch(
             () => {}
         );
-
 }
 
-
-
 function stopCurrentStoryVideo() {
-
     if (
         !currentStoryVideo
     ) {
-
         return;
-
     }
 
-
     try {
-
         currentStoryVideo.pause();
-
     }
     catch (
         ignored
     ) {
-
     }
-
 
     currentStoryVideo =
         null;
-
 }
-
 
 
 /* =========================================================
@@ -4553,7 +3761,6 @@ function stopCurrentStoryVideo() {
    ========================================================= */
 
 function validateAllForm() {
-
     normalizeMonthInput();
 
     normalizeDayInput();
@@ -4562,125 +3769,97 @@ function validateAllForm() {
 
     syncTimeStateFromRaw();
 
-
     if (
         !formState.name
     ) {
-
         showScreen(
             "name"
         );
 
         return false;
-
     }
-
 
     if (
         !validateBirthDate()
     ) {
-
         showScreen(
             "birth"
         );
 
         return false;
-
     }
-
 
     if (
         !validateBirthTime()
     ) {
-
         showScreen(
             "time"
         );
 
         return false;
-
     }
 
-
     return true;
-
 }
 
-
-
 function validateBirthDate() {
-
     const year =
         Number(
             formState.birthYear
         );
-
 
     const month =
         Number(
             formState.birthMonth
         );
 
-
     const day =
         Number(
             formState.birthDay
         );
 
-
     if (
         formState.birthYear.length
         !== 4
     ) {
-
         birthError.textContent =
             "출생 연도를 확인해주세요.";
 
         return false;
-
     }
-
 
     if (
         month < 1
         ||
         month > 12
     ) {
-
         birthError.textContent =
             "출생 월을 확인해주세요.";
 
         return false;
-
     }
-
 
     if (
         day < 1
         ||
         day > 31
     ) {
-
         birthError.textContent =
             "출생 일을 확인해주세요.";
 
         return false;
-
     }
-
 
     if (
         formState.calendarType
         === "SOLAR"
     ) {
-
         const date =
             new Date(
                 year,
                 month - 1,
                 day
             );
-
 
         if (
             date.getFullYear()
@@ -4692,51 +3871,38 @@ function validateBirthDate() {
             date.getDate()
             !== day
         ) {
-
             birthError.textContent =
                 "올바른 생년월일을 입력해주세요.";
 
             return false;
-
         }
-
     }
-
 
     birthError.textContent =
         "";
 
     return true;
-
 }
 
-
-
 function validateBirthTime() {
-
     if (
         formState.birthTimeUnknown
     ) {
-
         timeError.textContent =
             "";
 
         return true;
-
     }
-
 
     const hour =
         Number(
             formState.birthHour
         );
 
-
     const minute =
         Number(
             formState.birthMinute
         );
-
 
     if (
         formState.birthHour.length
@@ -4745,14 +3911,11 @@ function validateBirthTime() {
         formState.birthMinute.length
         !== 2
     ) {
-
         timeError.textContent =
             "시간을 4자리로 입력해주세요.";
 
         return false;
-
     }
-
 
     if (
         hour < 0
@@ -4763,22 +3926,17 @@ function validateBirthTime() {
         ||
         minute > 59
     ) {
-
         timeError.textContent =
             "태어난 시간을 확인해주세요.";
 
         return false;
-
     }
-
 
     timeError.textContent =
         "";
 
     return true;
-
 }
-
 
 
 /* =========================================================
@@ -4788,90 +3946,303 @@ function validateBirthTime() {
 function normalizeResult(
     raw
 ) {
+    if (
+        !raw
+        ||
+        typeof raw
+        !== "object"
+    ) {
+        throw new Error(
+            "분석 결과 형식이 올바르지 않습니다."
+        );
+    }
 
-    const consultations =
-        Array.isArray(
-            raw?.consultations
+    if (
+        !Array.isArray(
+            raw.consultations
         )
-            ? raw.consultations
-            : [];
+    ) {
+        throw new Error(
+            "분석 결과의 상담 목록을 확인할 수 없습니다."
+        );
+    }
 
+    if (
+        raw.consultations.length
+        !== CATEGORY_ORDER.length
+    ) {
+        throw new Error(
+            "분석 결과의 상담 항목 수가 올바르지 않습니다."
+        );
+    }
 
-    const byCategory =
-        new Map();
+    const seenCategories =
+        new Set();
 
+    const normalizedConsultations =
+        raw.consultations
+            .map(
+                source =>
+                    normalizeConsultationSection(
+                        source
+                    )
+            );
 
-    consultations.forEach(
-        item => {
-
+    normalizedConsultations.forEach(
+        consultation => {
             if (
-                item?.category
+                seenCategories.has(
+                    consultation.category
+                )
             ) {
-
-                byCategory.set(
-                    item.category,
-                    item
+                throw new Error(
+                    "분석 결과에 중복된 상담 항목이 있습니다."
                 );
-
             }
 
+            seenCategories.add(
+                consultation.category
+            );
         }
     );
 
+    if (
+        seenCategories.size
+        !== CATEGORY_ORDER.length
+        ||
+        CATEGORY_ORDER.some(
+            category =>
+                !seenCategories.has(
+                    category
+                )
+        )
+    ) {
+        throw new Error(
+            "분석 결과의 상담 분야 구성이 올바르지 않습니다."
+        );
+    }
+
+    normalizedConsultations.sort(
+        (
+            left,
+            right
+        ) => {
+            const displayOrderDifference =
+                left.displayOrder
+                -
+                right.displayOrder;
+
+            if (
+                displayOrderDifference
+                !== 0
+            ) {
+                return displayOrderDifference;
+            }
+
+            return left.order
+                -
+                right.order;
+        }
+    );
 
     return {
-
         ...raw,
 
         consultations:
-            CATEGORY_ORDER.map(
-                category => {
-
-                    const source =
-                        byCategory.get(
-                            category
-                        )
-                        ||
-                        {};
-
-
-                    const storyText =
-                        normalizeStoryText(
-                            source.storyText
-                        );
-
-
-                    return {
-
-                        ...source,
-
-                        category:
-                            category,
-
-                        storyText:
-                            storyText,
-
-                        storyEmphasis:
-                            normalizeStoryEmphasis(
-                                source.storyEmphasis,
-                                storyText
-                            )
-
-                    };
-
-                }
-            )
-
+            normalizedConsultations
     };
-
 }
 
+function normalizeConsultationSection(
+    source
+) {
+    if (
+        !source
+        ||
+        typeof source
+        !== "object"
+    ) {
+        throw new Error(
+            "상담 결과 항목 형식이 올바르지 않습니다."
+        );
+    }
 
+    const category =
+        String(
+            source.category
+            ??
+            ""
+        )
+            .trim();
+
+    if (
+        !Object.hasOwn(
+            CATEGORY_META,
+            category
+        )
+    ) {
+        throw new Error(
+            "알 수 없는 상담 분야가 응답에 포함되어 있습니다."
+        );
+    }
+
+    const status =
+        String(
+            source.status
+            ??
+            ""
+        )
+            .trim();
+
+    if (
+        !OFFICIAL_SECTION_STATUS.has(
+            status
+        )
+    ) {
+        throw new Error(
+            "상담 결과 상태가 올바르지 않습니다."
+        );
+    }
+
+    const order =
+        Number(
+            source.order
+        );
+
+    const displayOrder =
+        Number(
+            source.displayOrder
+        );
+
+    if (
+        !Number.isInteger(
+            order
+        )
+        ||
+        order < 1
+        ||
+        !Number.isInteger(
+            displayOrder
+        )
+        ||
+        displayOrder < 1
+    ) {
+        throw new Error(
+            "상담 결과 순서 정보가 올바르지 않습니다."
+        );
+    }
+
+    const storyText =
+        normalizeStoryText(
+            source.storyText
+        );
+
+    if (
+        status
+        === "READY"
+        &&
+        !storyText
+    ) {
+        throw new Error(
+            "완료된 상담 결과의 본문이 비어 있습니다."
+        );
+    }
+
+    if (
+        (
+            status
+            === "NOT_REQUESTED"
+            ||
+            status
+            === "ANALYSIS_UNAVAILABLE"
+        )
+        &&
+        storyText
+    ) {
+        throw new Error(
+            "표시 대상이 아닌 상담 항목에 본문이 포함되어 있습니다."
+        );
+    }
+
+    if (
+        (
+            status
+            === "UNAVAILABLE"
+            ||
+            status
+            === "GENERATION_UNAVAILABLE"
+        )
+        &&
+        !storyText
+    ) {
+        throw new Error(
+            "안내가 필요한 상담 항목의 본문이 비어 있습니다."
+        );
+    }
+
+    return {
+        ...source,
+
+        category:
+            category,
+
+        order:
+            order,
+
+        displayOrder:
+            displayOrder,
+
+        focused:
+            source.focused
+            === true,
+
+        status:
+            status,
+
+        title:
+            firstNonBlank(
+                source.title,
+                CATEGORY_META[
+                    category
+                ].label
+            ),
+
+        storyText:
+            storyText,
+
+        storyEmphasis:
+            status
+            === "READY"
+                ? normalizeStoryEmphasis(
+                    source.storyEmphasis,
+                    storyText
+                )
+                : []
+    };
+}
+
+function getRenderableConsultations(
+    result
+) {
+    if (
+        !Array.isArray(
+            result?.consultations
+        )
+    ) {
+        return [];
+    }
+
+    return result.consultations.filter(
+        consultation =>
+            RENDERABLE_SECTION_STATUS.has(
+                consultation.status
+            )
+    );
+}
 
 function normalizeStoryText(
     value
 ) {
-
     return String(
         value
         ??
@@ -4886,16 +4257,12 @@ function normalizeStoryText(
             "\n"
         )
         .trim();
-
 }
-
-
 
 function normalizeStoryEmphasis(
     value,
     storyText
 ) {
-
     if (
         !Array.isArray(
             value
@@ -4903,23 +4270,17 @@ function normalizeStoryEmphasis(
         ||
         !storyText
     ) {
-
         return [];
-
     }
-
 
     const seen =
         new Set();
 
-
     const result =
         [];
 
-
     value.forEach(
         raw => {
-
             const phrase =
                 String(
                     raw
@@ -4927,7 +4288,6 @@ function normalizeStoryEmphasis(
                     ""
                 )
                     .trim();
-
 
             if (
                 !phrase
@@ -4944,29 +4304,21 @@ function normalizeStoryEmphasis(
                     phrase
                 )
             ) {
-
                 return;
-
             }
-
 
             seen.add(
                 phrase
             );
 
-
             result.push(
                 phrase
             );
-
         }
     );
 
-
     return result;
-
 }
-
 
 
 /* =========================================================
@@ -4976,9 +4328,7 @@ function normalizeStoryEmphasis(
 function extractPillars(
     result
 ) {
-
     return {
-
         year:
             normalizeSinglePillar(
                 firstDefined(
@@ -5014,30 +4364,23 @@ function extractPillars(
                     result?.saju?.hourPillar
                 )
             )
-
     };
-
 }
-
-
 
 function normalizeSinglePillar(
     pillar
 ) {
-
     if (
         !pillar
     ) {
-
         return {
             stem:
                 "-",
+
             branch:
                 "-"
         };
-
     }
-
 
     const chinese =
         firstNonBlank(
@@ -5046,15 +4389,12 @@ function normalizeSinglePillar(
             pillar.nameChinese
         );
 
-
     const chars =
         Array.from(
             chinese
         );
 
-
     return {
-
         stem:
             firstNonBlank(
                 pillar.stemChineseCharacter,
@@ -5070,11 +4410,8 @@ function normalizeSinglePillar(
                 chars[1],
                 "-"
             )
-
     };
-
 }
-
 
 
 /* =========================================================
@@ -5084,55 +4421,32 @@ function normalizeSinglePillar(
 function isUnavailableConsultation(
     consultation
 ) {
+    const status =
+        consultation
+            ?.status;
 
-    if (
-        consultation?.available
-        === false
-    ) {
-
-        return true;
-
-    }
-
-
-    const story =
-        normalizeStoryText(
-            consultation?.storyText
-        );
-
-
-    return story.includes(
-        "현재 계산 근거만으로는 이 분야의 독립적인 해석을 확정하지 않습니다."
-    )
-    ||
-    story.includes(
-        "근거가 없는 내용을 추정해서 채우지 않았습니다."
-    );
-
+    return status
+        === "UNAVAILABLE"
+        ||
+        status
+        === "GENERATION_UNAVAILABLE";
 }
-
-
 
 function splitParagraphs(
     text
 ) {
-
     const normalized =
         normalizeStoryText(
             text
         );
 
-
     if (
         !normalized
     ) {
-
         return [
             "해석 내용이 없습니다."
         ];
-
     }
-
 
     const direct =
         normalized
@@ -5147,16 +4461,12 @@ function splitParagraphs(
                 Boolean
             );
 
-
     if (
         direct.length
         > 1
     ) {
-
         return direct;
-
     }
-
 
     const sentences =
         normalized
@@ -5173,18 +4483,14 @@ function splitParagraphs(
         ||
         [];
 
-
     if (
         sentences.length
         <= 3
     ) {
-
         return [
             normalized
         ];
-
     }
-
 
     const target =
         Math.min(
@@ -5199,7 +4505,6 @@ function splitParagraphs(
             )
         );
 
-
     const perParagraph =
         Math.ceil(
             sentences.length
@@ -5207,17 +4512,14 @@ function splitParagraphs(
             target
         );
 
-
     const paragraphs =
         [];
-
 
     for (
         let index = 0;
         index < sentences.length;
         index += perParagraph
     ) {
-
         paragraphs.push(
             sentences
                 .slice(
@@ -5230,14 +4532,10 @@ function splitParagraphs(
                     " "
                 )
         );
-
     }
 
-
     return paragraphs;
-
 }
-
 
 
 /* =========================================================
@@ -5245,7 +4543,6 @@ function splitParagraphs(
    ========================================================= */
 
 function prepareVideoPaths() {
-
     setVideoSource(
         openingVideo,
         VIDEO_PATH.opening
@@ -5260,108 +4557,80 @@ function prepareVideoPaths() {
         analysisVideo2,
         VIDEO_PATH.analysis2
     );
-
 }
-
-
 
 function setVideoSource(
     video,
     source
 ) {
-
     if (
         video.getAttribute(
             "src"
         )
         !== source
     ) {
-
         video.setAttribute(
             "src",
             source
         );
 
         video.load();
-
     }
-
 }
-
-
 
 async function playVideo(
     video,
     source,
     restart
 ) {
-
     setVideoSource(
         video,
         source
     );
 
-
     if (
         restart
     ) {
-
         try {
-
             video.currentTime =
                 0;
-
         }
         catch (
             ignored
         ) {
-
         }
-
     }
-
 
     return new Promise(
         async resolve => {
-
             let settled =
                 false;
 
-
             const finish =
                 result => {
-
                     if (
                         settled
                     ) {
-
                         return;
-
                     }
-
 
                     settled =
                         true;
-
 
                     video.removeEventListener(
                         "ended",
                         onEnded
                     );
 
-
                     video.removeEventListener(
                         "error",
                         onError
                     );
 
-
                     resolve(
                         result
                     );
-
                 };
-
 
             const onEnded =
                 () =>
@@ -5369,84 +4638,61 @@ async function playVideo(
                         true
                     );
 
-
             const onError =
                 () =>
                     finish(
                         false
                     );
 
-
             video.addEventListener(
                 "ended",
                 onEnded
             );
-
 
             video.addEventListener(
                 "error",
                 onError
             );
 
-
             try {
-
                 await video.play();
-
             }
             catch (
                 ignored
             ) {
-
                 finish(
                     false
                 );
-
             }
-
         }
     );
-
 }
-
-
 
 function stopVideo(
     video
 ) {
-
     try {
-
         video.pause();
-
     }
     catch (
         ignored
     ) {
-
     }
-
 }
-
-
 
 function finishVideoImmediately(
     video
 ) {
-
     stopVideo(
         video
     );
-
 
     video.dispatchEvent(
         new Event(
             "ended"
         )
     );
-
 }
-
 
 
 /* =========================================================
@@ -5454,13 +4700,11 @@ function finishVideoImmediately(
    ========================================================= */
 
 function goHome() {
-
     cancelGuide();
 
     stopCurrentStoryVideo();
 
     stopLoadingTimer();
-
 
     currentResult =
         null;
@@ -5471,15 +4715,12 @@ function goHome() {
     bookOpened =
         false;
 
-
     sessionStorage.removeItem(
         RESULT_STORAGE_KEY
     );
 
-
     resultStoryList.innerHTML =
         "";
-
 
     resultStoryList
         .classList
@@ -5487,13 +4728,11 @@ function goHome() {
             "hidden"
         );
 
-
     resultIntro
         .classList
         .remove(
             "hidden"
         );
-
 
     showScreen(
         "start",
@@ -5502,9 +4741,7 @@ function goHome() {
                 false
         }
     );
-
 }
-
 
 
 /* =========================================================
@@ -5512,22 +4749,16 @@ function goHome() {
    ========================================================= */
 
 function saveForm() {
-
     sessionStorage.setItem(
         FORM_STORAGE_KEY,
         JSON.stringify(
             formState
         )
     );
-
 }
 
-
-
 function loadStoredForm() {
-
     try {
-
         const stored =
             JSON.parse(
                 sessionStorage.getItem(
@@ -5535,38 +4766,27 @@ function loadStoredForm() {
                 )
             );
 
-
         if (
             stored
         ) {
-
             formState = {
                 ...formState,
                 ...stored
             };
-
         }
-
     }
     catch (
         ignored
     ) {
-
     }
-
 }
 
-
-
 function restoreFormState() {
-
     nameInput.value =
         formState.name;
 
-
     birthYear.value =
         formState.birthYear;
-
 
     birthMonth.value =
         formState.birthMonth
@@ -5575,7 +4795,6 @@ function restoreFormState() {
             )
             : "";
 
-
     birthDay.value =
         formState.birthDay
             ? pad2(
@@ -5583,45 +4802,101 @@ function restoreFormState() {
             )
             : "";
 
-
     timeRaw.value =
         formState.birthTimeUnknown
             ? ""
             : `${formState.birthHour}${formState.birthMinute}`;
-
 }
-
 
 
 /* =========================================================
    ERROR
    ========================================================= */
 
-async function safeErrorBody(
+async function createApiRequestError(
     response
 ) {
+    let body =
+        null;
 
     try {
-
-        return (
-            await response.text()
-        )
-            .substring(
-                0,
-                500
-            );
-
+        body =
+            await response.json();
     }
     catch (
         ignored
     ) {
-
-        return "";
-
     }
 
+    const errorCode =
+        String(
+            body?.errorCode
+            ??
+            ""
+        )
+            .trim();
+
+    const message =
+        resolveApiErrorMessage(
+            errorCode,
+            response.status
+        );
+
+    const error =
+        new Error(
+            message
+        );
+
+    error.code =
+        errorCode;
+
+    error.httpStatus =
+        response.status;
+
+    return error;
 }
 
+function resolveApiErrorMessage(
+    errorCode,
+    httpStatus
+) {
+    switch (
+        errorCode
+    ) {
+        case "REQUEST_VALIDATION_FAILED":
+            return "입력한 정보를 다시 확인해주세요.";
+
+        case "REQUEST_BODY_INVALID":
+            return "입력 형식을 다시 확인해주세요.";
+
+        case "INVALID_REQUEST":
+            return "입력한 정보의 조합을 다시 확인해주세요.";
+
+        case "BIRTH_TIME_REQUIRED":
+            return "정확한 계산을 위해 출생시간이 필요합니다.";
+
+        case "INVALID_LUNAR_DATE":
+            return "음력 날짜와 평달·윤달 여부를 확인해주세요.";
+
+        case "RESOURCE_NOT_FOUND":
+            return "사주 분석 서비스를 찾을 수 없습니다.";
+
+        case "DETERMINISTIC_CONTRACT_VIOLATION":
+        case "INTERNAL_SERVER_ERROR":
+            return "분석 중 일시적인 문제가 발생했습니다. 다시 시도해주세요.";
+    }
+
+    if (
+        Number(
+            httpStatus
+        )
+        >= 500
+    ) {
+        return "분석 중 일시적인 문제가 발생했습니다. 다시 시도해주세요.";
+    }
+
+    return "사주 분석 요청을 처리할 수 없습니다. 입력 정보를 확인해주세요.";
+}
 
 
 /* =========================================================
@@ -5631,20 +4906,16 @@ async function safeErrorBody(
 function showToast(
     message
 ) {
-
     toast.textContent =
         message;
-
 
     toast.classList.add(
         "show"
     );
 
-
     clearTimeout(
         toastTimer
     );
-
 
     toastTimer =
         setTimeout(
@@ -5656,9 +4927,7 @@ function showToast(
                     ),
             3500
         );
-
 }
-
 
 
 /* =========================================================
@@ -5669,58 +4938,43 @@ function restartCssAnimation(
     element,
     className
 ) {
-
     element
         .classList
         .remove(
             className
         );
 
-
     void element.offsetWidth;
-
 
     element
         .classList
         .add(
             className
         );
-
 }
-
-
 
 function required(
     id
 ) {
-
     const element =
         document.getElementById(
             id
         );
 
-
     if (
         !element
     ) {
-
         throw new Error(
             `필수 DOM 없음: #${id}`
         );
-
     }
 
-
     return element;
-
 }
-
-
 
 function onlyDigits(
     value
 ) {
-
     return String(
         value
         ||
@@ -5730,15 +4984,11 @@ function onlyDigits(
             /\D/g,
             ""
         );
-
 }
-
-
 
 function pad2(
     value
 ) {
-
     return String(
         value
     )
@@ -5746,15 +4996,53 @@ function pad2(
             2,
             "0"
         );
-
 }
 
+function currentKoreanDateString() {
+    const parts =
+        new Intl.DateTimeFormat(
+            "en-CA",
+            {
+                timeZone:
+                    "Asia/Seoul",
 
+                year:
+                    "numeric",
+
+                month:
+                    "2-digit",
+
+                day:
+                    "2-digit"
+            }
+        )
+            .formatToParts(
+                new Date()
+            );
+
+    const values =
+        Object.fromEntries(
+            parts
+                .filter(
+                    part =>
+                        part.type
+                        !== "literal"
+                )
+                .map(
+                    part =>
+                        [
+                            part.type,
+                            part.value
+                        ]
+                )
+        );
+
+    return `${values.year}-${values.month}-${values.day}`;
+}
 
 function delay(
     milliseconds
 ) {
-
     return new Promise(
         resolve =>
             setTimeout(
@@ -5762,58 +5050,41 @@ function delay(
                 milliseconds
             )
     );
-
 }
-
-
 
 function firstDefined(
     ...values
 ) {
-
     for (
         const value
         of values
     ) {
-
         if (
             value !== undefined
             &&
             value !== null
         ) {
-
             return value;
-
         }
-
     }
 
-
     return null;
-
 }
-
-
 
 function firstNonBlank(
     ...values
 ) {
-
     for (
         const value
         of values
     ) {
-
         if (
             value === undefined
             ||
             value === null
         ) {
-
             continue;
-
         }
-
 
         const normalized =
             String(
@@ -5821,28 +5092,19 @@ function firstNonBlank(
             )
                 .trim();
 
-
         if (
             normalized
         ) {
-
             return normalized;
-
         }
-
     }
 
-
     return "";
-
 }
-
-
 
 function escapeHtml(
     value
 ) {
-
     return String(
         value
         ??
@@ -5868,5 +5130,4 @@ function escapeHtml(
             "'",
             "&#039;"
         );
-
 }

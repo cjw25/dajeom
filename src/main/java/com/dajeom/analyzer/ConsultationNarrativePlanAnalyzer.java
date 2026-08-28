@@ -1,6 +1,11 @@
 package com.dajeom.analyzer;
 
+import com.dajeom.engine.ConsultationCategoryUserMeaningEngine;
+import com.dajeom.engine.ConsultationMeaningClaimFactory;
+import com.dajeom.engine.ConsultationTimelineUserMeaningEngine;
 import com.dajeom.engine.NatalPersonalityExactTenGodMeaningEngine;
+import com.dajeom.engine.NatalPersonalityFormalPatternMeaningEngine;
+import com.dajeom.model.ConsultationCategoryUserMeaning;
 import com.dajeom.model.ConsultationGroundingDeterministicConclusion;
 import com.dajeom.model.ConsultationGroundingTimelineScenario;
 import com.dajeom.model.ConsultationGroundingTimelineYear;
@@ -11,8 +16,11 @@ import com.dajeom.model.ConsultationMeaningClaim;
 import com.dajeom.model.ConsultationMeaningPacket;
 import com.dajeom.model.ConsultationNarrativePlan;
 import com.dajeom.model.ConsultationNarrativeSectionPlan;
+import com.dajeom.model.ConsultationTimelineUserMeaning;
+import com.dajeom.model.ConsultationTimelineUserMeaningPolicy;
 import com.dajeom.model.ConsultationUserContext;
 import com.dajeom.model.NatalPersonalityExactTenGodMeaning;
+import com.dajeom.model.NatalPersonalityFormalPatternMeaning;
 import com.dajeom.model.NatalPersonalityStatementBundleContract;
 import com.dajeom.model.NatalPersonalityStatementContract;
 import com.dajeom.model.NatalPersonalityStatementFact;
@@ -41,42 +49,40 @@ import java.util.regex.Pattern;
  * Claim-bound Narrative Plan으로 변환한다.
  *
  * =================================================
- * PERSONALITY 공식 우선순위
+ * Timeline
  * =================================================
  *
- * 1.
- * 정확한 10십성
- *
- * 2.
- * 실제 성립한 독립 Pattern
- *
- * 3.
- * CoreSelf / 허용 Context
+ * CURRENT_TIMELINE / TIMELINE_YEAR는
+ * ConsultationTimelineUserMeaningEngine을 통과한다.
  *
  * =================================================
- *
- * 제외
- *
- * - 정확한 10십성을 5개 Family로 다시 합친 FUNCTION Fact
- * - 2차 Personality Synthesis
- *
+ * 135-3
  * =================================================
  *
- * 서로 다른 Packet은:
+ * 연도는 Claim 본문에서 제거하고
+ * ConsultationMeaningPacket.timelineYear에만 보존한다.
  *
- * - 원인
- * - 결과
- * - 강화
- * - 약화
- * - 선후관계
+ * =================================================
+ * 135-4
+ * =================================================
  *
- * 로 자동 연결하지 않는다.
+ * CURRENT_TIMELINE은 추가로:
+ *
+ * ConsultationTimelineUserMeaning.stage()
+ *
+ * 를 Packet.timelineStage에 그대로 보존한다.
+ *
+ * 문자열이나 ruleCode를 통해
+ * Stage를 역추론하지 않는다.
+ *
+ * PAST/FUTURE TIMELINE_YEAR는
+ * 연도 Group만 사용하므로 timelineStage=null이다.
  */
 @Component
 public class ConsultationNarrativePlanAnalyzer {
 
     public static final String PLAN_VERSION =
-            "DAJEOM_NARRATIVE_PLAN_02_EXACT_TEN_GOD_CLAIM_BOUND";
+            "DAJEOM_NARRATIVE_PLAN_09_TIMELINE_STAGE_CONTRACT";
 
     private static final Pattern LATIN_TOKEN_PATTERN =
             Pattern.compile(
@@ -92,10 +98,40 @@ public class ConsultationNarrativePlanAnalyzer {
     private final NatalPersonalityExactTenGodMeaningEngine
             natalPersonalityExactTenGodMeaningEngine;
 
+    private final NatalPersonalityFormalPatternMeaningEngine
+            natalPersonalityFormalPatternMeaningEngine;
+
+    private final ConsultationMeaningClaimFactory
+            meaningClaimFactory;
+
+    private final ConsultationDeterministicConclusionExpressionAnalyzer
+            deterministicConclusionExpressionAnalyzer;
+
+    private final ConsultationCategoryUserMeaningEngine
+            categoryUserMeaningEngine;
+
+    private final ConsultationTimelineUserMeaningEngine
+            timelineUserMeaningEngine;
+
     public ConsultationNarrativePlanAnalyzer(
 
             NatalPersonalityExactTenGodMeaningEngine
-                    natalPersonalityExactTenGodMeaningEngine
+                    natalPersonalityExactTenGodMeaningEngine,
+
+            NatalPersonalityFormalPatternMeaningEngine
+                    natalPersonalityFormalPatternMeaningEngine,
+
+            ConsultationMeaningClaimFactory
+                    meaningClaimFactory,
+
+            ConsultationDeterministicConclusionExpressionAnalyzer
+                    deterministicConclusionExpressionAnalyzer,
+
+            ConsultationCategoryUserMeaningEngine
+                    categoryUserMeaningEngine,
+
+            ConsultationTimelineUserMeaningEngine
+                    timelineUserMeaningEngine
 
     ) {
 
@@ -103,6 +139,36 @@ public class ConsultationNarrativePlanAnalyzer {
                 Objects.requireNonNull(
                         natalPersonalityExactTenGodMeaningEngine,
                         "NatalPersonalityExactTenGodMeaningEngine이 필요합니다."
+                );
+
+        this.natalPersonalityFormalPatternMeaningEngine =
+                Objects.requireNonNull(
+                        natalPersonalityFormalPatternMeaningEngine,
+                        "NatalPersonalityFormalPatternMeaningEngine이 필요합니다."
+                );
+
+        this.meaningClaimFactory =
+                Objects.requireNonNull(
+                        meaningClaimFactory,
+                        "ConsultationMeaningClaimFactory가 필요합니다."
+                );
+
+        this.deterministicConclusionExpressionAnalyzer =
+                Objects.requireNonNull(
+                        deterministicConclusionExpressionAnalyzer,
+                        "ConsultationDeterministicConclusionExpressionAnalyzer가 필요합니다."
+                );
+
+        this.categoryUserMeaningEngine =
+                Objects.requireNonNull(
+                        categoryUserMeaningEngine,
+                        "ConsultationCategoryUserMeaningEngine이 필요합니다."
+                );
+
+        this.timelineUserMeaningEngine =
+                Objects.requireNonNull(
+                        timelineUserMeaningEngine,
+                        "ConsultationTimelineUserMeaningEngine이 필요합니다."
                 );
     }
 
@@ -141,8 +207,7 @@ public class ConsultationNarrativePlanAnalyzer {
                                 Comparator
                                         .comparingInt(
                                                 (
-                                                        ConsultationInterpretationPromptSection
-                                                                section
+                                                        ConsultationInterpretationPromptSection section
                                                 ) ->
                                                         -focusScores
                                                                 .getOrDefault(
@@ -151,8 +216,7 @@ public class ConsultationNarrativePlanAnalyzer {
                                                                 )
                                         )
                                         .thenComparingInt(
-                                                ConsultationInterpretationPromptSection
-                                                        ::order
+                                                ConsultationInterpretationPromptSection::order
                                         )
                         )
                         .toList();
@@ -169,11 +233,10 @@ public class ConsultationNarrativePlanAnalyzer {
         ) {
 
             int focusScore =
-                    focusScores
-                            .getOrDefault(
-                                    section.category(),
-                                    0
-                            );
+                    focusScores.getOrDefault(
+                            section.category(),
+                            0
+                    );
 
             List<ConsultationMeaningPacket> packets =
                     createPackets(
@@ -209,14 +272,7 @@ public class ConsultationNarrativePlanAnalyzer {
         );
     }
 
-    /*
-     * =================================================
-     * Focus
-     * =================================================
-     */
-
-    private Map<ConsultationCategory, Integer>
-    focusScores(
+    private Map<ConsultationCategory, Integer> focusScores(
             ConsultationUserContext userContext
     ) {
 
@@ -237,8 +293,7 @@ public class ConsultationNarrativePlanAnalyzer {
         }
 
         if (
-                userContext
-                        .hasRelationshipContext()
+                userContext.hasRelationshipContext()
         ) {
 
             addScore(
@@ -261,8 +316,7 @@ public class ConsultationNarrativePlanAnalyzer {
         }
 
         if (
-                userContext
-                        .hasWorkContext()
+                userContext.hasWorkContext()
         ) {
 
             addScore(
@@ -349,7 +403,8 @@ public class ConsultationNarrativePlanAnalyzer {
 
         if (
                 category == null
-                        || score <= 0
+                        ||
+                        score <= 0
         ) {
 
             return;
@@ -383,14 +438,7 @@ public class ConsultationNarrativePlanAnalyzer {
                 );
     }
 
-    /*
-     * =================================================
-     * Packet
-     * =================================================
-     */
-
-    private List<ConsultationMeaningPacket>
-    createPackets(
+    private List<ConsultationMeaningPacket> createPackets(
 
             ConsultationInterpretationPromptSection section,
 
@@ -405,17 +453,6 @@ public class ConsultationNarrativePlanAnalyzer {
                 ConsultationMeaningPacket
                 > packets =
                 new LinkedHashMap<>();
-
-        /*
-         * =================================================
-         * PERSONALITY
-         * =================================================
-         *
-         * Personality는 별도 공식 Direct-Natal Contract가 있으므로
-         * 기존 Category natalDeterministicConclusions를 먼저 사용하지 않는다.
-         *
-         * 정확한 10십성이 공식 첫 Meaning Source다.
-         */
 
         if (
                 section.category()
@@ -460,18 +497,9 @@ public class ConsultationNarrativePlanAnalyzer {
         );
     }
 
-    /*
-     * =================================================
-     * Natal Conclusion
-     * =================================================
-     */
-
     private void appendNatalDeterministicPackets(
 
-            LinkedHashMap<
-                    String,
-                    ConsultationMeaningPacket
-                    > packets,
+            LinkedHashMap<String, ConsultationMeaningPacket> packets,
 
             ConsultationInterpretationPromptSection section,
 
@@ -489,10 +517,47 @@ public class ConsultationNarrativePlanAnalyzer {
                 : section.natalDeterministicConclusions()
         ) {
 
-            Optional<String> meaning =
-                    conclusionMeaning(
-                            conclusion
-                    );
+            Optional<String> meaning;
+
+            List<String> policyForbidden =
+                    List.of();
+
+            if (
+                    categoryUserMeaningEngine.audits(
+                            section.category()
+                    )
+            ) {
+
+                Optional<ConsultationCategoryUserMeaning> auditedMeaning =
+                        categoryUserMeaningEngine.analyze(
+                                conclusion
+                        );
+
+                if (
+                        auditedMeaning.isEmpty()
+                ) {
+
+                    continue;
+                }
+
+                ConsultationCategoryUserMeaning resolved =
+                        auditedMeaning.orElseThrow();
+
+                meaning =
+                        Optional.of(
+                                resolved.userMeaning()
+                        );
+
+                policyForbidden =
+                        resolved.forbiddenExtensions();
+
+            } else {
+
+                meaning =
+                        conclusionMeaning(
+                                conclusion
+                        );
+            }
 
             if (
                     meaning.isEmpty()
@@ -501,11 +566,14 @@ public class ConsultationNarrativePlanAnalyzer {
                 continue;
             }
 
+            String meaningText =
+                    meaning.orElseThrow();
+
             String dedupeKey =
                     conclusionDedupeKey(
                             "NATAL",
                             conclusion,
-                            meaning.orElseThrow()
+                            meaningText
                     );
 
             if (
@@ -533,24 +601,26 @@ public class ConsultationNarrativePlanAnalyzer {
 
             packets.put(
                     dedupeKey,
-
                     packetForConclusion(
                             packetId,
                             section.category(),
                             priority,
                             section.title(),
                             conclusion,
-                            meaning.orElseThrow(),
+                            meaningText,
                             specificityOf(
                                     section.category(),
-                                    meaning.orElseThrow()
+                                    meaningText
                             ),
                             renderingContexts(
                                     section.category(),
                                     userContext
                             ),
-                            forbiddenMeanings(
-                                    userContext
+                            mergeTexts(
+                                    forbiddenMeanings(
+                                            userContext
+                                    ),
+                                    policyForbidden
                             )
                     )
             );
@@ -559,18 +629,9 @@ public class ConsultationNarrativePlanAnalyzer {
         }
     }
 
-    /*
-     * =================================================
-     * Current Timeline
-     * =================================================
-     */
-
     private void appendCurrentTimelinePackets(
 
-            LinkedHashMap<
-                    String,
-                    ConsultationMeaningPacket
-                    > packets,
+            LinkedHashMap<String, ConsultationMeaningPacket> packets,
 
             ConsultationInterpretationPromptSection section,
 
@@ -595,27 +656,45 @@ public class ConsultationNarrativePlanAnalyzer {
                 continue;
             }
 
+            List<ConsultationTimelineUserMeaning> meanings =
+                    new ArrayList<>();
+
             for (
                     ConsultationGroundingDeterministicConclusion conclusion
                     : scenario.deterministicConclusions()
             ) {
 
-                Optional<String> baseMeaning =
-                        conclusionMeaning(
+                Optional<ConsultationTimelineUserMeaning> audited =
+                        timelineUserMeaningEngine.analyze(
                                 conclusion
                         );
 
-                if (
-                        baseMeaning.isEmpty()
-                ) {
+                audited.ifPresent(
+                        meanings::add
+                );
+            }
 
-                    continue;
-                }
+            meanings.sort(
+                    Comparator
+                            .comparingInt(
+                                    (ConsultationTimelineUserMeaning meaning) ->
+                                            meaning.stage().order()
+                            )
+                            .thenComparing(
+                                    ConsultationTimelineUserMeaning::ruleCode
+                            )
+            );
+
+            for (
+                    ConsultationTimelineUserMeaning timelineMeaning
+                    : meanings
+            ) {
+
+                ConsultationGroundingDeterministicConclusion conclusion =
+                        timelineMeaning.sourceConclusion();
 
                 String meaning =
-                        scenario.sajuYear()
-                                + "년 흐름: "
-                                + baseMeaning.orElseThrow();
+                        timelineMeaning.userMeaning();
 
                 String dedupeKey =
                         conclusionDedupeKey(
@@ -650,13 +729,11 @@ public class ConsultationNarrativePlanAnalyzer {
 
                 packets.put(
                         dedupeKey,
-
                         packetForConclusion(
                                 packetId,
                                 section.category(),
                                 priority,
-                                scenario.sajuYear()
-                                        + "년 현재 흐름",
+                                timelineMeaning.stage().title(),
                                 conclusion,
                                 meaning,
                                 ConsultationMeaningSpecificity.TIMING,
@@ -664,9 +741,17 @@ public class ConsultationNarrativePlanAnalyzer {
                                         section.category(),
                                         userContext
                                 ),
-                                forbiddenMeanings(
-                                        userContext
-                                )
+                                mergeTexts(
+                                        forbiddenMeanings(
+                                                userContext
+                                        ),
+                                        timelineMeaning.forbiddenExtensions()
+                                ),
+                                scenario.sajuYear(),
+                                timelineMeaning.stage(),
+                                scenario.timelineUncertaintyExists()
+                                        ||
+                                        !scenario.fullyDefinite()
                         )
                 );
 
@@ -675,18 +760,9 @@ public class ConsultationNarrativePlanAnalyzer {
         }
     }
 
-    /*
-     * =================================================
-     * Past / Future Timeline Year
-     * =================================================
-     */
-
     private void appendTimelineYearPackets(
 
-            LinkedHashMap<
-                    String,
-                    ConsultationMeaningPacket
-                    > packets,
+            LinkedHashMap<String, ConsultationMeaningPacket> packets,
 
             ConsultationInterpretationPromptSection section,
 
@@ -706,38 +782,54 @@ public class ConsultationNarrativePlanAnalyzer {
 
             if (
                     year == null
-                            || year.deterministicContract() == null
+                            ||
+                            year.deterministicContract() == null
             ) {
 
                 continue;
             }
 
-            List<ConsultationGroundingDeterministicConclusion> conclusions =
-                    timelineYearConclusions(
-                            year.deterministicContract()
-                    );
+            List<ConsultationTimelineUserMeaning> meanings =
+                    new ArrayList<>();
 
             for (
                     ConsultationGroundingDeterministicConclusion conclusion
-                    : conclusions
+                    : timelineYearConclusions(
+                    year.deterministicContract()
+            )
             ) {
 
-                Optional<String> baseMeaning =
-                        conclusionMeaning(
+                Optional<ConsultationTimelineUserMeaning> audited =
+                        timelineUserMeaningEngine.analyze(
                                 conclusion
                         );
 
-                if (
-                        baseMeaning.isEmpty()
-                ) {
+                audited.ifPresent(
+                        meanings::add
+                );
+            }
 
-                    continue;
-                }
+            meanings.sort(
+                    Comparator
+                            .comparingInt(
+                                    (ConsultationTimelineUserMeaning meaning) ->
+                                            meaning.stage().order()
+                            )
+                            .thenComparing(
+                                    ConsultationTimelineUserMeaning::ruleCode
+                            )
+            );
+
+            for (
+                    ConsultationTimelineUserMeaning timelineMeaning
+                    : meanings
+            ) {
+
+                ConsultationGroundingDeterministicConclusion conclusion =
+                        timelineMeaning.sourceConclusion();
 
                 String meaning =
-                        year.sajuYear()
-                                + "년: "
-                                + baseMeaning.orElseThrow();
+                        timelineMeaning.userMeaning();
 
                 String dedupeKey =
                         conclusionDedupeKey(
@@ -768,15 +860,17 @@ public class ConsultationNarrativePlanAnalyzer {
                                 index
                         );
 
+                /*
+                 * PAST/FUTURE는 연도 Header만 묶고
+                 * Stage Header까지 세분하지 않는다.
+                 */
                 packets.put(
                         dedupeKey,
-
                         packetForConclusion(
                                 packetId,
                                 section.category(),
                                 priority,
-                                year.sajuYear()
-                                        + "년 흐름",
+                                timelineMeaning.stage().title(),
                                 conclusion,
                                 meaning,
                                 ConsultationMeaningSpecificity.TIMING,
@@ -784,9 +878,15 @@ public class ConsultationNarrativePlanAnalyzer {
                                         section.category(),
                                         userContext
                                 ),
-                                forbiddenMeanings(
-                                        userContext
-                                )
+                                mergeTexts(
+                                        forbiddenMeanings(
+                                                userContext
+                                        ),
+                                        timelineMeaning.forbiddenExtensions()
+                                ),
+                                year.sajuYear(),
+                                null,
+                                year.timelineUncertaintyExists()
                         )
                 );
 
@@ -865,10 +965,7 @@ public class ConsultationNarrativePlanAnalyzer {
 
     private void addTimelineConclusion(
 
-            Map<
-                    String,
-                    ConsultationGroundingDeterministicConclusion
-                    > result,
+            Map<String, ConsultationGroundingDeterministicConclusion> result,
 
             ConsultationGroundingDeterministicConclusion conclusion
 
@@ -882,27 +979,14 @@ public class ConsultationNarrativePlanAnalyzer {
         }
 
         result.putIfAbsent(
-                conclusion.ruleCode()
-                        + "|"
-                        + normalizeMeaningKey(
-                        conclusion.summary()
-                ),
+                conclusion.ruleCode(),
                 conclusion
         );
     }
 
-    /*
-     * =================================================
-     * Personality
-     * =================================================
-     */
-
     private void appendPersonalityPackets(
 
-            LinkedHashMap<
-                    String,
-                    ConsultationMeaningPacket
-                    > packets,
+            LinkedHashMap<String, ConsultationMeaningPacket> packets,
 
             ConsultationInterpretationPromptSection section,
 
@@ -917,21 +1001,15 @@ public class ConsultationNarrativePlanAnalyzer {
 
         if (
                 contractOptional == null
-                        || contractOptional.isEmpty()
+                        ||
+                        contractOptional.isEmpty()
         ) {
 
             return;
         }
 
         NatalPersonalityStatementContract contract =
-                contractOptional
-                        .orElseThrow();
-
-        /*
-         * =================================================
-         * 1. 정확한 10십성
-         * =================================================
-         */
+                contractOptional.orElseThrow();
 
         int packetIndex =
                 appendExactTenGodPackets(
@@ -946,17 +1024,6 @@ public class ConsultationNarrativePlanAnalyzer {
         boolean exactTenGodContractAvailable =
                 contract.hasExactTenGodContract();
 
-        /*
-         * =================================================
-         * 2. 기존 Pattern / CoreSelf
-         * =================================================
-         *
-         * Exact TenGod Contract가 존재하면
-         * FUNCTION Fact는 사용자 출력하지 않는다.
-         *
-         * SYNTHESIS는 항상 출력하지 않는다.
-         */
-
         for (
                 NatalPersonalityStatementBundleContract bundle
                 : contract.bundleContracts()
@@ -968,7 +1035,6 @@ public class ConsultationNarrativePlanAnalyzer {
                             section,
                             userContext,
                             focused,
-                            bundle,
                             bundle.mandatorySelections(),
                             true,
                             exactTenGodContractAvailable,
@@ -981,7 +1047,6 @@ public class ConsultationNarrativePlanAnalyzer {
                             section,
                             userContext,
                             focused,
-                            bundle,
                             bundle.supportingSelections(),
                             false,
                             exactTenGodContractAvailable,
@@ -990,18 +1055,9 @@ public class ConsultationNarrativePlanAnalyzer {
         }
     }
 
-    /*
-     * =================================================
-     * Exact TenGod → Packet
-     * =================================================
-     */
-
     private int appendExactTenGodPackets(
 
-            LinkedHashMap<
-                    String,
-                    ConsultationMeaningPacket
-                    > packets,
+            LinkedHashMap<String, ConsultationMeaningPacket> packets,
 
             ConsultationInterpretationPromptSection section,
 
@@ -1023,10 +1079,9 @@ public class ConsultationNarrativePlanAnalyzer {
         }
 
         List<NatalPersonalityExactTenGodMeaning> exactMeanings =
-                natalPersonalityExactTenGodMeaningEngine
-                        .analyze(
-                                contract
-                        );
+                natalPersonalityExactTenGodMeaningEngine.analyze(
+                        contract
+                );
 
         int index =
                 startIndex;
@@ -1038,7 +1093,8 @@ public class ConsultationNarrativePlanAnalyzer {
 
             if (
                     exactMeaning == null
-                            || !exactMeaning.directOutput()
+                            ||
+                            !exactMeaning.directOutput()
             ) {
 
                 continue;
@@ -1046,9 +1102,7 @@ public class ConsultationNarrativePlanAnalyzer {
 
             String dedupeKey =
                     "PERSONALITY_EXACT_TEN_GOD|"
-                            + exactMeaning
-                            .tenGodType()
-                            .name();
+                            + exactMeaning.tenGodType().name();
 
             if (
                     packets.containsKey(
@@ -1063,7 +1117,8 @@ public class ConsultationNarrativePlanAnalyzer {
 
             if (
                     exactMeaning.primary()
-                            && index == startIndex
+                            &&
+                            index == startIndex
             ) {
 
                 priority =
@@ -1097,11 +1152,6 @@ public class ConsultationNarrativePlanAnalyzer {
             int claimIndex =
                     1;
 
-            /*
-             * 한 Packet 안에는
-             * 같은 정확한 십성의 Meaning만 들어간다.
-             */
-
             for (
                     String claimMeaning
                     : exactMeaning.claimMeanings()
@@ -1120,7 +1170,7 @@ public class ConsultationNarrativePlanAnalyzer {
                 }
 
                 claims.add(
-                        new ConsultationMeaningClaim(
+                        meaningClaimFactory.create(
                                 packetId
                                         + "-CLAIM-"
                                         + String.format(
@@ -1128,21 +1178,12 @@ public class ConsultationNarrativePlanAnalyzer {
                                         "%02d",
                                         claimIndex++
                                 ),
-
                                 "PERSONALITY_EXACT_TEN_GOD_"
-                                        + exactMeaning
-                                        .tenGodType()
-                                        .name(),
-
+                                        + exactMeaning.tenGodType().name(),
                                 normalized.orElseThrow(),
-
                                 ConsultationMeaningSpecificity.TENDENCY,
-
-                                exactMeaning
-                                        .strongExpressionAllowed(),
-
-                                exactMeaning
-                                        .qualificationRequired()
+                                exactMeaning.strongExpressionAllowed(),
+                                exactMeaning.qualificationRequired()
                         )
                 );
             }
@@ -1162,8 +1203,7 @@ public class ConsultationNarrativePlanAnalyzer {
                     );
 
             packetForbiddenMeanings.addAll(
-                    exactMeaning
-                            .forbiddenExtensions()
+                    exactMeaning.forbiddenExtensions()
             );
 
             int[] range =
@@ -1173,33 +1213,24 @@ public class ConsultationNarrativePlanAnalyzer {
 
             packets.put(
                     dedupeKey,
-
                     new ConsultationMeaningPacket(
                             packetId,
-
                             section.category(),
-
                             priority,
-
                             exactMeaning.primary()
                                     ? "타고난 성향의 중심"
                                     : "타고난 성향의 보조 특징",
-
                             List.copyOf(
                                     claims
                             ),
-
                             renderingContexts(
                                     section.category(),
                                     userContext
                             ),
-
                             List.copyOf(
                                     packetForbiddenMeanings
                             ),
-
                             range[0],
-
                             range[1]
                     )
             );
@@ -1210,26 +1241,15 @@ public class ConsultationNarrativePlanAnalyzer {
         return index;
     }
 
-    /*
-     * =================================================
-     * 기존 Personality Pattern
-     * =================================================
-     */
-
     private int appendPersonalitySelections(
 
-            LinkedHashMap<
-                    String,
-                    ConsultationMeaningPacket
-                    > packets,
+            LinkedHashMap<String, ConsultationMeaningPacket> packets,
 
             ConsultationInterpretationPromptSection section,
 
             ConsultationUserContext userContext,
 
             boolean focused,
-
-            NatalPersonalityStatementBundleContract bundle,
 
             List<NatalPersonalityStatementSelection> selections,
 
@@ -1251,7 +1271,8 @@ public class ConsultationNarrativePlanAnalyzer {
 
             if (
                     selection == null
-                            || !selection.directOutput()
+                            ||
+                            !selection.directOutput()
             ) {
 
                 continue;
@@ -1267,27 +1288,15 @@ public class ConsultationNarrativePlanAnalyzer {
                 continue;
             }
 
-            /*
-             * =================================================
-             * 정확한 10십성이 존재하면
-             * 5개 Family FUNCTION은 사용자 출력 금지.
-             * =================================================
-             */
-
             if (
                     exactTenGodContractAvailable
-                            && fact.factType()
-                            == PersonalityStatementFactType.FUNCTION
+                            &&
+                            fact.factType()
+                                    == PersonalityStatementFactType.FUNCTION
             ) {
 
                 continue;
             }
-
-            /*
-             * =================================================
-             * 프로젝트 2차 Synthesis는 항상 출력 금지.
-             * =================================================
-             */
 
             if (
                     fact.factType()
@@ -1297,8 +1306,39 @@ public class ConsultationNarrativePlanAnalyzer {
                 continue;
             }
 
+            if (
+                    fact.factType()
+                            == PersonalityStatementFactType.CROSS_PATTERN
+            ) {
+
+                Optional<NatalPersonalityFormalPatternMeaning> formalPattern =
+                        natalPersonalityFormalPatternMeaningEngine.analyze(
+                                selection
+                        );
+
+                if (
+                        formalPattern.isEmpty()
+                ) {
+
+                    continue;
+                }
+
+                index =
+                        appendFormalPatternPacket(
+                                packets,
+                                section,
+                                userContext,
+                                focused,
+                                mandatory,
+                                formalPattern.orElseThrow(),
+                                index
+                        );
+
+                continue;
+            }
+
             Optional<String> meaning =
-                    personalityFactMeaning(
+                    personalityContextMeaning(
                             fact
                     );
 
@@ -1309,11 +1349,14 @@ public class ConsultationNarrativePlanAnalyzer {
                 continue;
             }
 
-            String dedupeKey =
-                    "PERSONALITY_PATTERN|"
-                            + personalitySourceCode(
+            String sourceCode =
+                    personalityContextSourceCode(
                             fact
-                    )
+                    );
+
+            String dedupeKey =
+                    "PERSONALITY_CONTEXT|"
+                            + sourceCode
                             + "|"
                             + normalizeMeaningKey(
                             meaning.orElseThrow()
@@ -1328,69 +1371,31 @@ public class ConsultationNarrativePlanAnalyzer {
                 continue;
             }
 
-            ConsultationNarrativePriority priority;
-
-            if (
-                    !exactTenGodContractAvailable
-                            && mandatory
-                            && index == startIndex
-            ) {
-
-                priority =
-                        ConsultationNarrativePriority.CORE;
-
-            } else if (
-                    mandatory
-            ) {
-
-                priority =
-                        focused
-                                ? ConsultationNarrativePriority.DISTINCTIVE
-                                : ConsultationNarrativePriority.SUPPORTING;
-
-            } else {
-
-                priority =
-                        ConsultationNarrativePriority.SUPPORTING;
-            }
+            ConsultationNarrativePriority priority =
+                    resolvePersonalityPriority(
+                            exactTenGodContractAvailable,
+                            mandatory,
+                            focused,
+                            index,
+                            startIndex
+                    );
 
             String packetId =
                     packetId(
                             section.category(),
-                            "PERSONALITY_PATTERN",
+                            "NATAL_CONTEXT",
                             index
                     );
 
-            boolean strong =
-                    fact.strongUserFacingCandidate()
-                            ||
-                            bundle
-                                    .strongSelections()
-                                    .contains(
-                                            selection
-                                    );
-
-            boolean qualification =
-                    selection.qualificationRequired()
-                            ||
-                            bundle.qualificationRequired();
-
             ConsultationMeaningClaim claim =
-                    new ConsultationMeaningClaim(
+                    meaningClaimFactory.create(
                             packetId
                                     + "-CLAIM-01",
-
-                            personalitySourceCode(
-                                    fact
-                            ),
-
+                            sourceCode,
                             meaning.orElseThrow(),
-
                             ConsultationMeaningSpecificity.TENDENCY,
-
-                            strong,
-
-                            qualification
+                            fact.strongUserFacingCandidate(),
+                            selection.qualificationRequired()
                     );
 
             int[] range =
@@ -1400,31 +1405,22 @@ public class ConsultationNarrativePlanAnalyzer {
 
             packets.put(
                     dedupeKey,
-
                     new ConsultationMeaningPacket(
                             packetId,
-
                             section.category(),
-
                             priority,
-
-                            "타고난 성향의 구조적 특징",
-
+                            "타고난 성향의 보조 배경",
                             List.of(
                                     claim
                             ),
-
                             renderingContexts(
                                     section.category(),
                                     userContext
                             ),
-
                             forbiddenMeanings(
                                     userContext
                             ),
-
                             range[0],
-
                             range[1]
                     )
             );
@@ -1435,13 +1431,141 @@ public class ConsultationNarrativePlanAnalyzer {
         return index;
     }
 
-    /*
-     * =================================================
-     * Personality Fact Meaning
-     * =================================================
-     */
+    private int appendFormalPatternPacket(
 
-    private Optional<String> personalityFactMeaning(
+            LinkedHashMap<String, ConsultationMeaningPacket> packets,
+
+            ConsultationInterpretationPromptSection section,
+
+            ConsultationUserContext userContext,
+
+            boolean focused,
+
+            boolean mandatory,
+
+            NatalPersonalityFormalPatternMeaning formalPattern,
+
+            int index
+
+    ) {
+
+        String dedupeKey =
+                "PERSONALITY_FORMAL_PATTERN|"
+                        + formalPattern.patternCode();
+
+        if (
+                packets.containsKey(
+                        dedupeKey
+                )
+        ) {
+
+            return index;
+        }
+
+        ConsultationNarrativePriority priority =
+                mandatory
+                        &&
+                        focused
+                        ? ConsultationNarrativePriority.DISTINCTIVE
+                        : ConsultationNarrativePriority.SUPPORTING;
+
+        String packetId =
+                packetId(
+                        section.category(),
+                        "FORMAL_PATTERN",
+                        index
+                );
+
+        ConsultationMeaningClaim claim =
+                meaningClaimFactory.create(
+                        packetId
+                                + "-CLAIM-01",
+                        "PERSONALITY_CROSS_PATTERN",
+                        formalPattern.userMeaning(),
+                        ConsultationMeaningSpecificity.STRUCTURE,
+                        formalPattern.strongExpressionAllowed(),
+                        formalPattern.qualificationRequired()
+                );
+
+        LinkedHashSet<String> packetForbiddenMeanings =
+                new LinkedHashSet<>(
+                        forbiddenMeanings(
+                                userContext
+                        )
+                );
+
+        packetForbiddenMeanings.addAll(
+                formalPattern.forbiddenExtensions()
+        );
+
+        int[] range =
+                targetRange(
+                        priority
+                );
+
+        packets.put(
+                dedupeKey,
+                new ConsultationMeaningPacket(
+                        packetId,
+                        section.category(),
+                        priority,
+                        "성립한 전통 명리 패턴",
+                        List.of(
+                                claim
+                        ),
+                        renderingContexts(
+                                section.category(),
+                                userContext
+                        ),
+                        List.copyOf(
+                                packetForbiddenMeanings
+                        ),
+                        range[0],
+                        range[1]
+                )
+        );
+
+        return index + 1;
+    }
+
+    private ConsultationNarrativePriority resolvePersonalityPriority(
+
+            boolean exactTenGodContractAvailable,
+
+            boolean mandatory,
+
+            boolean focused,
+
+            int index,
+
+            int startIndex
+
+    ) {
+
+        if (
+                !exactTenGodContractAvailable
+                        &&
+                        mandatory
+                        &&
+                        index == startIndex
+        ) {
+
+            return ConsultationNarrativePriority.CORE;
+        }
+
+        if (
+                mandatory
+        ) {
+
+            return focused
+                    ? ConsultationNarrativePriority.DISTINCTIVE
+                    : ConsultationNarrativePriority.SUPPORTING;
+        }
+
+        return ConsultationNarrativePriority.SUPPORTING;
+    }
+
+    private Optional<String> personalityContextMeaning(
             NatalPersonalityStatementFact fact
     ) {
 
@@ -1452,14 +1576,12 @@ public class ConsultationNarrativePlanAnalyzer {
             return Optional.empty();
         }
 
-        /*
-         * 2차 Synthesis는
-         * 여기서도 이중 차단.
-         */
-
         if (
                 fact.factType()
                         == PersonalityStatementFactType.SYNTHESIS
+                        ||
+                        fact.factType()
+                                == PersonalityStatementFactType.CROSS_PATTERN
         ) {
 
             return Optional.empty();
@@ -1468,14 +1590,14 @@ public class ConsultationNarrativePlanAnalyzer {
         return fact
                 .findingTheme()
                 .map(
-                        this::personalityFindingMeaning
+                        this::personalityContextThemeMeaning
                 )
                 .flatMap(
                         this::sanitizeMeaning
                 );
     }
 
-    private String personalitySourceCode(
+    private String personalityContextSourceCode(
             NatalPersonalityStatementFact fact
     ) {
 
@@ -1483,34 +1605,35 @@ public class ConsultationNarrativePlanAnalyzer {
                 fact == null
         ) {
 
-            return "PERSONALITY_FACT";
+            return "PERSONALITY_CORE_SELF";
         }
 
-        return fact
-                .findingTheme()
-                .map(
-                        theme ->
-                                "PERSONALITY_FINDING_"
-                                        + theme.name()
-                )
-                .orElse(
-                        "PERSONALITY_"
-                                + fact.factType().name()
-                );
+        return switch (
+                fact.factType()
+                ) {
+
+            case CORE_SELF ->
+                    "PERSONALITY_CORE_SELF";
+
+            case FUNCTION ->
+                    "PERSONALITY_FUNCTION";
+
+            case INTERPERSONAL_CONTEXT ->
+                    "PERSONALITY_INTERPERSONAL_CONTEXT";
+
+            case CROSS_PATTERN ->
+                    throw new IllegalStateException(
+                            "CROSS_PATTERN은 Formal Pattern Engine을 통해서만 Source Code를 생성해야 합니다."
+                    );
+
+            case SYNTHESIS ->
+                    throw new IllegalStateException(
+                            "SYNTHESIS는 사용자 Meaning Source Code를 가질 수 없습니다."
+                    );
+        };
     }
 
-    /*
-     * =================================================
-     * 기존 Theme Meaning
-     * =================================================
-     *
-     * FUNCTION Theme는 Exact TenGod Contract가 존재할 때
-     * 사용자 출력으로 오지 않는다.
-     *
-     * 실제 Pattern / CoreSelf 호환용으로 유지한다.
-     */
-
-    private String personalityFindingMeaning(
+    private String personalityContextThemeMeaning(
             PersonalityFindingTheme theme
     ) {
 
@@ -1536,49 +1659,26 @@ public class ConsultationNarrativePlanAnalyzer {
             case PROCESSING_FUNCTION ->
                     "정보와 경험을 받아들이고 안에서 정리하고 이해하는 기능";
 
-            case PRESSURE_REGULATED_BY_EXPRESSION ->
-                    "표현과 실행의 작용이 강한 압박이나 요구를 제어하는 구조";
-
-            case EXPRESSION_STANDARD_CONFLICT ->
-                    "자기 표현의 작용과 외부 기준 또는 요구가 충돌하는 구조";
-
-            case EXPRESSION_REGULATED_BY_PROCESSING ->
-                    "내부 이해와 정리의 작용이 표현의 방향과 범위를 조절하는 구조";
-
-            case OUTPUT_RESTRAINED_BY_PROCESSING ->
-                    "내부 검토의 작용이 표현이나 결과물의 범위를 제한하는 구조";
-
-            case REALITY_GENERATES_RESPONSIBILITY ->
-                    "현실적인 결과와 자원의 작용이 책임과 역할의 작용을 뒷받침하는 구조";
-
-            case RESPONSIBILITY_GENERATES_PROCESSING ->
-                    "책임과 외부 기준의 작용이 내부 이해와 정리의 작용을 뒷받침하는 구조";
-
-            case PRESSURE_GENERATES_PROCESSING ->
-                    "강한 압박과 요구의 작용이 내부 판단과 정리의 작용을 활성화하는 구조";
-
-            case REALITY_CONTROLS_PROCESSING ->
-                    "현실성과 실제 결과의 작용이 내부 검토의 범위와 방향을 제한하는 구조";
-
-            case SELF_ASSERTION_COMPETES_FOR_RESOURCE ->
-                    "자기 몫을 확보하는 작용과 현실 자원의 배분이 직접 경쟁하는 구조";
-
-            case RESOURCE_LOADS_CORE_SELF ->
-                    "현실적인 성과와 자원 요구가 자신의 기본 수용 여력에 부담으로 작용하는 구조";
-
-            case RESPONSIBILITY_INTERNAL_MIXTURE ->
-                    "책임과 외부 기준을 받아들이는 구조 안에 서로 다른 압력과 역할 기준이 함께 존재하는 상태";
-
             case INTERPERSONAL_RELATION_CONTEXT ->
                     "사람 사이의 연결과 긴장에 관한 대인 관계 배경 구조";
+
+            case PRESSURE_REGULATED_BY_EXPRESSION,
+                 EXPRESSION_STANDARD_CONFLICT,
+                 EXPRESSION_REGULATED_BY_PROCESSING,
+                 OUTPUT_RESTRAINED_BY_PROCESSING,
+                 REALITY_GENERATES_RESPONSIBILITY,
+                 RESPONSIBILITY_GENERATES_PROCESSING,
+                 PRESSURE_GENERATES_PROCESSING,
+                 REALITY_CONTROLS_PROCESSING,
+                 SELF_ASSERTION_COMPETES_FOR_RESOURCE,
+                 RESOURCE_LOADS_CORE_SELF,
+                 RESPONSIBILITY_INTERNAL_MIXTURE ->
+                    throw new IllegalStateException(
+                            "Formal Pattern Theme을 generic Personality Context Meaning으로 사용할 수 없습니다: "
+                                    + theme
+                    );
         };
     }
-
-    /*
-     * =================================================
-     * Deterministic Conclusion → Packet
-     * =================================================
-     */
 
     private ConsultationMeaningPacket packetForConclusion(
 
@@ -1602,24 +1702,73 @@ public class ConsultationNarrativePlanAnalyzer {
 
     ) {
 
-        ConsultationMeaningClaim claim =
-                new ConsultationMeaningClaim(
-                        packetId
-                                + "-CLAIM-01",
+        return packetForConclusion(
+                packetId,
+                category,
+                priority,
+                titleHint,
+                conclusion,
+                meaning,
+                specificity,
+                renderingContexts,
+                forbiddenMeanings,
+                null,
+                null,
+                false
+        );
+    }
 
-                        conclusion.ruleCode(),
+    private ConsultationMeaningPacket packetForConclusion(
 
-                        meaning,
+            String packetId,
 
-                        specificity,
+            ConsultationCategory category,
 
-                        strongExpressionAllowed(
+            ConsultationNarrativePriority priority,
+
+            String titleHint,
+
+            ConsultationGroundingDeterministicConclusion conclusion,
+
+            String meaning,
+
+            ConsultationMeaningSpecificity specificity,
+
+            List<String> renderingContexts,
+
+            List<String> forbiddenMeanings,
+
+            Integer timelineYear,
+
+            ConsultationTimelineUserMeaningPolicy.TimelineStage timelineStage,
+
+            boolean additionalQualificationRequired
+
+    ) {
+
+        boolean requestedStrong =
+                deterministicConclusionExpressionAnalyzer
+                        .strongExpressionAllowed(
                                 conclusion
-                        ),
+                        );
 
-                        qualificationRequired(
+        boolean requestedQualification =
+                deterministicConclusionExpressionAnalyzer
+                        .qualificationRequired(
                                 conclusion
                         )
+                        ||
+                        additionalQualificationRequired;
+
+        ConsultationMeaningClaim claim =
+                meaningClaimFactory.create(
+                        packetId
+                                + "-CLAIM-01",
+                        conclusion.ruleCode(),
+                        meaning,
+                        specificity,
+                        requestedStrong,
+                        requestedQualification
                 );
 
         int[] range =
@@ -1632,6 +1781,8 @@ public class ConsultationNarrativePlanAnalyzer {
                 category,
                 priority,
                 titleHint,
+                timelineYear,
+                timelineStage,
                 List.of(
                         claim
                 ),
@@ -1679,87 +1830,6 @@ public class ConsultationNarrativePlanAnalyzer {
         );
     }
 
-    private boolean strongExpressionAllowed(
-            ConsultationGroundingDeterministicConclusion conclusion
-    ) {
-
-        if (
-                conclusion == null
-        ) {
-
-            return false;
-        }
-
-        String status =
-                String.valueOf(
-                                conclusion.status()
-                        )
-                        .toUpperCase(
-                                Locale.ROOT
-                        );
-
-        return status.contains(
-                "CONFIRMED"
-        )
-                || status.contains(
-                "STRONG"
-        )
-                || status.contains(
-                "ACTIVE"
-        )
-                || status.contains(
-                "ESTABLISHED"
-        )
-                || status.contains(
-                "SUPPORTIVE"
-        );
-    }
-
-    private boolean qualificationRequired(
-            ConsultationGroundingDeterministicConclusion conclusion
-    ) {
-
-        if (
-                conclusion == null
-        ) {
-
-            return true;
-        }
-
-        String status =
-                String.valueOf(
-                                conclusion.status()
-                        )
-                        .toUpperCase(
-                                Locale.ROOT
-                        );
-
-        return status.contains(
-                "UNCERTAIN"
-        )
-                || status.contains(
-                "MIXED"
-        )
-                || status.contains(
-                "CONDITIONAL"
-        )
-                || status.contains(
-                "LIMITED"
-        )
-                || status.contains(
-                "CAUTION"
-        )
-                || status.contains(
-                "PRESSURE"
-        );
-    }
-
-    /*
-     * =================================================
-     * User Context
-     * =================================================
-     */
-
     private List<String> renderingContexts(
 
             ConsultationCategory category,
@@ -1776,16 +1846,12 @@ public class ConsultationNarrativePlanAnalyzer {
                         category
                 )
                         &&
-                        context
-                                .relationshipStatus()
-                                .specified()
+                        context.relationshipStatus().specified()
         ) {
 
             result.add(
                     "사용자가 알려준 현재 관계 상태: "
-                            + context
-                            .relationshipStatus()
-                            .getKoreanName()
+                            + context.relationshipStatus().getKoreanName()
                             + ". 이 사실을 사주가 맞혔다고 표현하지 말 것."
             );
         }
@@ -1795,34 +1861,25 @@ public class ConsultationNarrativePlanAnalyzer {
                         category
                 )
                         &&
-                        context
-                                .relationshipTarget()
-                                .specified()
+                        context.relationshipTarget().specified()
         ) {
 
             result.add(
                     "사용자가 알려준 관계 대상: "
-                            + context
-                            .relationshipTarget()
-                            .getKoreanName()
+                            + context.relationshipTarget().getKoreanName()
                             + ". 호칭과 표현 범위에만 사용할 것."
             );
         }
 
         if (
-                category
-                        == ConsultationCategory.CAREER
+                category == ConsultationCategory.CAREER
                         &&
-                        context
-                                .workStatus()
-                                .specified()
+                        context.workStatus().specified()
         ) {
 
             result.add(
                     "사용자가 알려준 현재 일 상태: "
-                            + context
-                            .workStatus()
-                            .getKoreanName()
+                            + context.workStatus().getKoreanName()
                             + ". 직업 Judgment를 새로 만들지 말고 표현 적합성에만 사용할 것."
             );
         }
@@ -1880,6 +1937,66 @@ public class ConsultationNarrativePlanAnalyzer {
         );
     }
 
+    private List<String> mergeTexts(
+
+            List<String> first,
+
+            List<String> second
+
+    ) {
+
+        LinkedHashSet<String> result =
+                new LinkedHashSet<>();
+
+        if (
+                first != null
+        ) {
+
+            for (
+                    String value
+                    : first
+            ) {
+
+                if (
+                        value != null
+                                &&
+                                !value.isBlank()
+                ) {
+
+                    result.add(
+                            value.trim()
+                    );
+                }
+            }
+        }
+
+        if (
+                second != null
+        ) {
+
+            for (
+                    String value
+                    : second
+            ) {
+
+                if (
+                        value != null
+                                &&
+                                !value.isBlank()
+                ) {
+
+                    result.add(
+                            value.trim()
+                    );
+                }
+            }
+        }
+
+        return List.copyOf(
+                result
+        );
+    }
+
     private boolean isRelationshipCategory(
             ConsultationCategory category
     ) {
@@ -1893,12 +2010,6 @@ public class ConsultationNarrativePlanAnalyzer {
                 category
                         == ConsultationCategory.SOCIAL_RELATIONSHIP;
     }
-
-    /*
-     * =================================================
-     * Priority / Length
-     * =================================================
-     */
 
     private int[] targetRange(
             ConsultationNarrativePriority priority
@@ -1943,14 +2054,11 @@ public class ConsultationNarrativePlanAnalyzer {
     ) {
 
         if (
-                category
-                        == ConsultationCategory.PAST_LUCK
+                category == ConsultationCategory.PAST_LUCK
                         ||
-                        category
-                                == ConsultationCategory.CURRENT_YEAR_LUCK
+                        category == ConsultationCategory.CURRENT_YEAR_LUCK
                         ||
-                        category
-                                == ConsultationCategory.FUTURE_LUCK
+                        category == ConsultationCategory.FUTURE_LUCK
         ) {
 
             return ConsultationMeaningSpecificity.TIMING;
@@ -1968,8 +2076,7 @@ public class ConsultationNarrativePlanAnalyzer {
         }
 
         if (
-                category
-                        == ConsultationCategory.PERSONALITY
+                category == ConsultationCategory.PERSONALITY
         ) {
 
             return ConsultationMeaningSpecificity.TENDENCY;
@@ -1977,12 +2084,6 @@ public class ConsultationNarrativePlanAnalyzer {
 
         return ConsultationMeaningSpecificity.DOMAIN;
     }
-
-    /*
-     * =================================================
-     * ID / Normalize
-     * =================================================
-     */
 
     private String packetId(
 
@@ -2036,9 +2137,6 @@ public class ConsultationNarrativePlanAnalyzer {
                         normalized
                 );
 
-        /*
-         * 내부 코드 문자열만 들어온 경우 차단.
-         */
         if (
                 ratio.totalTokens() > 0
                         &&
@@ -2060,7 +2158,8 @@ public class ConsultationNarrativePlanAnalyzer {
 
         if (
                 value == null
-                        || value.isBlank()
+                        ||
+                        value.isBlank()
         ) {
 
             return new MatcherResult(
@@ -2137,17 +2236,6 @@ public class ConsultationNarrativePlanAnalyzer {
                 )
                 .trim();
     }
-
-    /*
-     * =================================================
-     * 질문 → 표시 우선순위
-     * =================================================
-     *
-     * 이 키워드는 계산 Rule이 아니다.
-     *
-     * 이미 블라인드 분석이 끝난 뒤
-     * 어떤 장을 먼저 보여줄지에만 사용한다.
-     */
 
     private static Map<
             ConsultationCategory,
