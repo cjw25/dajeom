@@ -1,32 +1,32 @@
 package com.dajeom.dto;
 
-import com.dajeom.type.FiveElement;
-import com.dajeom.type.YinYang;
+import com.dajeom.domain.Pillar;
 
-/**
- * 하나의 간지 출력값.
- */
+import java.util.Objects;
+
 public record PillarResponse(
-
-        String koreanName,
-
-        String chineseName,
-
-        String stemKoreanName,
-
-        String stemChineseName,
-
-        FiveElement stemElement,
-
-        YinYang stemYinYang,
-
-        String branchKoreanName,
-
-        String branchChineseName,
-
-        FiveElement branchElement,
-
-        YinYang branchYinYang
-
+        String stem,
+        String branch,
+        String ganji,
+        String stemKorean,
+        String branchKorean
 ) {
+
+    public static PillarResponse from(
+            Pillar pillar
+    ) {
+
+        Objects.requireNonNull(
+                pillar,
+                "변환할 기둥이 필요합니다."
+        );
+
+        return new PillarResponse(
+                pillar.stem().hanja(),
+                pillar.branch().hanja(),
+                pillar.hanja(),
+                pillar.stem().korean(),
+                pillar.branch().korean()
+        );
+    }
 }

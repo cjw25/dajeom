@@ -1,0 +1,79 @@
+package com.dajeom.domain;
+
+/**
+ * Java 계산 결과를
+ * 명리 해석용 사실로 변환한 종류.
+ *
+ * 이 단계에서는 해석 문장을 만들지 않는다.
+ * 오직 "무엇이 실제로 성립했는가"를 기록한다.
+ */
+public enum MyeongriFactType {
+
+    DAY_MASTER,
+
+    MONTH_COMMAND,
+
+    DAY_MASTER_SEASON_RELATION,
+
+    ELEMENT_DISTRIBUTION,
+
+    YIN_YANG_DISTRIBUTION,
+
+    STEM_ROOTED,
+
+    STEM_NOT_ROOTED,
+
+    HIDDEN_STEM_EXPOSED,
+
+    HIDDEN_STEM_NOT_EXPOSED,
+
+    TEN_GOD_VISIBLE,
+
+    TEN_GOD_HIDDEN,
+
+    STEM_COMBINATION,
+
+    STEM_CLASH,
+
+    BRANCH_COMBINATION,
+
+    BRANCH_CLASH,
+
+    BRANCH_PUNISHMENT,
+
+    BRANCH_BREAK,
+
+    BRANCH_HARM,
+
+    THREE_HARMONY,
+
+    DIRECTIONAL_HARMONY,
+
+    TWELVE_STAGE,
+
+    VOID,
+
+    NAEUM,
+
+    NOBLEMAN,
+
+    SPECIAL_STAR,
+
+    DAEWOON_ENTERED,
+
+    DAEWOON_STEM_INTERACTION,
+
+    DAEWOON_BRANCH_INTERACTION,
+
+    SEWOON_ENTERED,
+
+    SEWOON_STEM_INTERACTION,
+
+    SEWOON_BRANCH_INTERACTION,
+
+    WOLWOON_ENTERED,
+
+    WOLWOON_STEM_INTERACTION,
+
+    WOLWOON_BRANCH_INTERACTION
+}

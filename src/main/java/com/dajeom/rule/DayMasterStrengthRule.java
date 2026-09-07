@@ -1,503 +1,472 @@
 package com.dajeom.rule;
 
-import com.dajeom.model.DayMasterForceFormationAnalysis;
-import com.dajeom.model.DayMasterGroundAnalysis;
-import com.dajeom.model.DayMasterSeasonalAnalysis;
-import com.dajeom.model.ExtremeStrengthStructureAnalysis;
-import com.dajeom.type.DayMasterStrengthLevel;
+import com.dajeom.domain.DayMasterForceStatusAnalysis;
+import com.dajeom.domain.DayMasterGroundStatus;
+import com.dajeom.domain.DayMasterGroundStatusAnalysis;
+import com.dajeom.domain.DayMasterSeasonAnalysis;
+import com.dajeom.domain.DayMasterSpecialStructureCandidateAnalysis;
+import com.dajeom.domain.DayMasterStrengthAnalysis;
+import com.dajeom.domain.DayMasterStrengthDecisionBasis;
+import com.dajeom.domain.DayMasterStrengthStatus;
+import com.dajeom.domain.FiveElementSeasonState;
+import com.dajeom.domain.HeavenlyStem;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 /**
- * 정밀화 4차-8.
- *
- * 최종 신강·신약 판정 규칙.
- *
- * 다점 엔진 내부 기준이다.
- *
- * 이 수치는:
- *
- * - 확률
- * - 자연과학적 측정값
- * - 모든 명리 유파의 절대 공식
- *
- * 이 아니다.
- *
- * 신강·신약을 재현 가능한 방식으로
- * 계산하기 위한 명시적 정책이다.
+ * 일반적인 일간 신강/신약 판정 Rule.
  *
  * =================================================
  *
- * 기본 지수
+ * 중요:
  *
- * 4-5 지원력
- * VS
- * 4-6 압력
+ * 이 Rule은 오직 "일반 왕쇠"만 판단한다.
  *
- * 의 상대 비중을 사용한다.
+ * 真化 / 從格 등의 우선 분기는
+ * DayMasterStrengthDecisionCalculator가
+ * 이 Rule을 호출하기 전에 처리한다.
+ *
+ * 따라서 특수구조 "후보"가 있다는 이유만으로
+ * 이 Rule 자체가 중단되지는 않는다.
+ *
+ * =================================================
+ *
+ * 판단 순서:
+ *
+ * 1. 월령 旺相休囚死
+ * 2. 실제 통근/得地 구조
+ * 3. 인성·비겁 생부
+ * 4. 식상·재성·관살 방향
  *
  * =================================================
  *
- * 구조 보정
+ * 하지 않는 것:
  *
- * 4-2 득령
- * 4-3 득지
- * 4-4 득세
- *
- * 는 기존 오행 세력을 또 더하지 않고
- * 제한된 bp 보정만 적용한다.
+ * - 오행 개수 비교
+ * - 점수
+ * - 퍼센트
+ * - 가중치
+ * - 다수결
  *
  * =================================================
+ *
+ * 명백하지 않은 경우
+ * MIXED_NEEDS_REVIEW로 남긴다.
  */
 @Component
 public class DayMasterStrengthRule {
 
-    /**
-     * 구조 보정 전체의 최대 범위.
-     *
-     * +/- 800bp
-     *
-     * 즉 최대 +/- 8%.
-     *
-     * 구조 Evidence가 이미 3차 세력에도
-     * 일부 반영되어 있으므로
-     * 과도한 중복 영향을 막기 위한 제한이다.
-     */
-    private static final int
-            MAX_STRUCTURAL_ADJUSTMENT =
-            800;
+    public DayMasterStrengthAnalysis assess(
 
-    /*
-     * ------------------------------------------------
-     * 득령 보정
-     * ------------------------------------------------
-     */
+            HeavenlyStem dayMaster,
 
-    private static final int
-            DIRECT_COMMAND_GAIN_ADJUSTMENT =
-            300;
+            DayMasterSeasonAnalysis season,
 
-    private static final int
-            RESOURCE_SEASON_SUPPORT_ADJUSTMENT =
-            150;
+            DayMasterGroundStatusAnalysis ground,
 
-    private static final int
-            OUTPUT_SEASON_DRAIN_ADJUSTMENT =
-            -100;
+            DayMasterForceStatusAnalysis force,
 
-    private static final int
-            WEALTH_SEASON_EXERTION_ADJUSTMENT =
-            -150;
-
-    private static final int
-            OFFICER_SEASON_CONTROL_ADJUSTMENT =
-            -250;
-
-    /*
-     * ------------------------------------------------
-     * 득지 보정
-     * ------------------------------------------------
-     */
-
-    private static final int
-            STRONG_CENTRAL_ROOT_ADJUSTMENT =
-            400;
-
-    private static final int
-            CENTRAL_GROUND_ADJUSTMENT =
-            250;
-
-    private static final int
-            GENERAL_GROUND_ADJUSTMENT =
-            150;
-
-    private static final int
-            ROOTLESS_ADJUSTMENT =
-            -250;
-
-    /*
-     * ------------------------------------------------
-     * 득세 보정
-     * ------------------------------------------------
-     */
-
-    private static final int
-            WIDESPREAD_FORCE_ADJUSTMENT =
-            300;
-
-    private static final int
-            ESTABLISHED_FORCE_ADJUSTMENT =
-            200;
-
-    private static final int
-            LIMITED_FORCE_ADJUSTMENT =
-            75;
-
-    private static final int
-            NO_FORCE_ADJUSTMENT =
-            -100;
-
-    /*
-     * ------------------------------------------------
-     * 최종 강약 구간
-     * ------------------------------------------------
-     *
-     * 10000bp = 100%
-     */
-
-    private static final int
-            EXTREME_STRONG_THRESHOLD =
-            7_500;
-
-    private static final int
-            STRONG_THRESHOLD =
-            6_500;
-
-    private static final int
-            BALANCED_STRONG_THRESHOLD =
-            5_500;
-
-    private static final int
-            BALANCED_THRESHOLD =
-            4_500;
-
-    private static final int
-            BALANCED_WEAK_THRESHOLD =
-            3_500;
-
-    private static final int
-            EXTREME_WEAK_THRESHOLD =
-            2_500;
-
-    /**
-     * 4-2 득령 구조 보정.
-     *
-     * 서로 배타적인 상태이므로
-     * 중복 가산하지 않는다.
-     */
-    public int calculateSeasonalAdjustment(
-            DayMasterSeasonalAnalysis seasonal
-    ) {
-
-        if (
-                seasonal.directlyGainsCommand()
-        ) {
-
-            return DIRECT_COMMAND_GAIN_ADJUSTMENT;
-        }
-
-        if (
-                seasonal.receivesResourceSupport()
-        ) {
-
-            return RESOURCE_SEASON_SUPPORT_ADJUSTMENT;
-        }
-
-        if (
-                seasonal.drainedByOutput()
-        ) {
-
-            return OUTPUT_SEASON_DRAIN_ADJUSTMENT;
-        }
-
-        if (
-                seasonal.expendsOnWealth()
-        ) {
-
-            return WEALTH_SEASON_EXERTION_ADJUSTMENT;
-        }
-
-        if (
-                seasonal.controlledBySeason()
-        ) {
-
-            return OFFICER_SEASON_CONTROL_ADJUSTMENT;
-        }
-
-        return 0;
-    }
-
-    /**
-     * 4-3 득지 구조 보정.
-     *
-     * 가장 강한 조건 하나만 적용한다.
-     *
-     * 따라서:
-     *
-     * 중심근 + 일반근
-     *
-     * 을 중복해서 더하지 않는다.
-     */
-    public int calculateGroundAdjustment(
-            DayMasterGroundAnalysis ground
-    ) {
-
-        if (
-                ground.strongCentralDirectRoot()
-        ) {
-
-            return STRONG_CENTRAL_ROOT_ADJUSTMENT;
-        }
-
-        if (
-                ground.centralGrounded()
-        ) {
-
-            return CENTRAL_GROUND_ADJUSTMENT;
-        }
-
-        if (
-                ground.grounded()
-        ) {
-
-            return GENERAL_GROUND_ADJUSTMENT;
-        }
-
-        if (
-                ground.rootless()
-        ) {
-
-            return ROOTLESS_ADJUSTMENT;
-        }
-
-        return 0;
-    }
-
-    /**
-     * 4-4 득세 구조 보정.
-     *
-     * 하나의 level만 적용한다.
-     */
-    public int calculateForceAdjustment(
-            DayMasterForceFormationAnalysis formation
-    ) {
-
-        return switch (
-                formation.level()
-                ) {
-
-            case WIDESPREAD ->
-                    WIDESPREAD_FORCE_ADJUSTMENT;
-
-            case ESTABLISHED ->
-                    ESTABLISHED_FORCE_ADJUSTMENT;
-
-            case LIMITED ->
-                    LIMITED_FORCE_ADJUSTMENT;
-
-            case NONE ->
-                    NO_FORCE_ADJUSTMENT;
-        };
-    }
-
-    /**
-     * 세 구조 보정의 합계를 제한한다.
-     *
-     * 오행 세력 자체는 이미 3차에서:
-     *
-     * - 계절
-     * - 통근
-     * - 투간
-     *
-     * 을 반영했기 때문에
-     *
-     * 이 구조 보정이 두 번째 대규모
-     * 세력 계산이 되지 않도록 제한한다.
-     */
-    public int calculateStructuralAdjustment(
-
-            int seasonalAdjustment,
-
-            int groundAdjustment,
-
-            int forceAdjustment
+            DayMasterSpecialStructureCandidateAnalysis
+                    specialStructure
 
     ) {
 
-        int calculated =
-                seasonalAdjustment
-                        + groundAdjustment
-                        + forceAdjustment;
+        Objects.requireNonNull(
+                dayMaster,
+                "일간은 필수입니다."
+        );
 
-        return Math.max(
-                -MAX_STRUCTURAL_ADJUSTMENT,
-                Math.min(
-                        MAX_STRUCTURAL_ADJUSTMENT,
-                        calculated
-                )
+        Objects.requireNonNull(
+                season,
+                "월령 분석은 필수입니다."
+        );
+
+        Objects.requireNonNull(
+                ground,
+                "득지 구조 분석은 필수입니다."
+        );
+
+        Objects.requireNonNull(
+                force,
+                "득세 구조 분석은 필수입니다."
+        );
+
+        Objects.requireNonNull(
+                specialStructure,
+                "특수구조 후보 분석은 필수입니다."
+        );
+
+        validateDayMaster(
+                dayMaster,
+                season,
+                ground,
+                force,
+                specialStructure
+        );
+
+        FiveElementSeasonState seasonState =
+                season.seasonState();
+
+        DayMasterGroundStatus groundStatus =
+                ground.status();
+
+        boolean supportiveSeason =
+                seasonState
+                        == FiveElementSeasonState.WANG
+
+                        ||
+
+                        seasonState
+                                == FiveElementSeasonState.XIANG;
+
+        boolean rootPresent =
+                groundStatus
+                        != DayMasterGroundStatus.NO_ROOT;
+
+        boolean generatingSupport =
+                force
+                        .hasAnyGeneratingSupport();
+
+        boolean sameElementSupport =
+                force
+                        .hasAnySameElementSupport();
+
+        boolean support =
+                generatingSupport
+                        ||
+                        sameElementSupport;
+
+        boolean output =
+                force
+                        .hasGeneratingOutflowStructure();
+
+        boolean wealth =
+                force
+                        .hasWealthDirectionStructure();
+
+        boolean control =
+                force
+                        .hasControlPressureStructure();
+
+        boolean opposingDirection =
+                output
+                        ||
+                        wealth
+                        ||
+                        control;
+
+        /*
+         * =================================================
+         * 1. 명백한 강한 구조
+         * =================================================
+         *
+         * - 旺/相
+         * - 비교적 온전한 근
+         * - 생부 존재
+         * - 설기/재/관살 방향 없음
+         */
+
+        boolean cleanSupportingGround =
+                groundStatus
+                        == DayMasterGroundStatus
+                        .ROOT_PRESENT
+
+                        ||
+
+                        groundStatus
+                                == DayMasterGroundStatus
+                                .ROOT_PRESENT_WITH_SUPPORTIVE_TRANSFORMATION;
+
+        if (
+                supportiveSeason
+                        &&
+                        cleanSupportingGround
+                        &&
+                        support
+                        &&
+                        !opposingDirection
+        ) {
+
+            return build(
+                    dayMaster,
+                    DayMasterStrengthStatus
+                            .CLEARLY_STRONG,
+                    DayMasterStrengthDecisionBasis
+                            .SUPPORTIVE_SEASON_WITH_ROOT_AND_SUPPORT,
+                    season,
+                    ground,
+                    force,
+                    specialStructure
+            );
+        }
+
+        /*
+         * =================================================
+         * 2. 강한 쪽으로 기우는 구조
+         * =================================================
+         *
+         * 旺/相이고
+         * 근 또는 생부가 존재하며
+         * 뚜렷한 설기/재/관살 방향이 없음.
+         */
+
+        if (
+                supportiveSeason
+                        &&
+                        !opposingDirection
+                        &&
+                        (
+                                rootPresent
+                                        ||
+                                        support
+                        )
+        ) {
+
+            return build(
+                    dayMaster,
+                    DayMasterStrengthStatus
+                            .STRONG_LEANING,
+                    DayMasterStrengthDecisionBasis
+                            .SUPPORTIVE_SEASON_WITH_PARTIAL_FOUNDATION,
+                    season,
+                    ground,
+                    force,
+                    specialStructure
+            );
+        }
+
+        /*
+         * =================================================
+         * 3. 명백한 약한 구조
+         * =================================================
+         *
+         * 休/囚/死
+         * +
+         * 무근
+         * +
+         * 인성/비겁 생부 없음
+         *
+         * 실제 종격 여부는 이 Rule 이전에
+         * 별도 Rule로 검토되어 있어야 한다.
+         */
+
+        if (
+                !supportiveSeason
+                        &&
+                        !rootPresent
+                        &&
+                        !support
+        ) {
+
+            return build(
+                    dayMaster,
+                    DayMasterStrengthStatus
+                            .CLEARLY_WEAK,
+                    DayMasterStrengthDecisionBasis
+                            .NON_SUPPORTIVE_SEASON_WITHOUT_ROOT_OR_SUPPORT,
+                    season,
+                    ground,
+                    force,
+                    specialStructure
+            );
+        }
+
+        /*
+         * =================================================
+         * 4. 실령 + 무근 + 생부 존재
+         * =================================================
+         *
+         * 약한 방향은 분명하지만
+         * 생부가 남아 있으므로
+         * 극약/진종으로 취급하지 않는다.
+         */
+
+        if (
+                !supportiveSeason
+                        &&
+                        !rootPresent
+                        &&
+                        support
+        ) {
+
+            return build(
+                    dayMaster,
+                    DayMasterStrengthStatus
+                            .WEAK_LEANING,
+                    DayMasterStrengthDecisionBasis
+                            .NON_SUPPORTIVE_SEASON_WITHOUT_ROOT_BUT_WITH_SUPPORT,
+                    season,
+                    ground,
+                    force,
+                    specialStructure
+            );
+        }
+
+        /*
+         * =================================================
+         * 5. 실령 + 불안정 근 + 무생부 + 극설
+         * =================================================
+         */
+
+        boolean vulnerableGround =
+                groundStatus
+                        == DayMasterGroundStatus
+                        .ROOT_PRESENT_WITH_DISTURBANCE
+
+                        ||
+
+                        groundStatus
+                                == DayMasterGroundStatus
+                                .ROOT_PRESENT_WITH_NON_SUPPORTIVE_TRANSFORMATION
+
+                        ||
+
+                        groundStatus
+                                == DayMasterGroundStatus
+                                .MIXED_ROOT_CONTEXT;
+
+        if (
+                !supportiveSeason
+                        &&
+                        rootPresent
+                        &&
+                        vulnerableGround
+                        &&
+                        !support
+                        &&
+                        opposingDirection
+        ) {
+
+            return build(
+                    dayMaster,
+                    DayMasterStrengthStatus
+                            .WEAK_LEANING,
+                    DayMasterStrengthDecisionBasis
+                            .NON_SUPPORTIVE_SEASON_WITH_VULNERABLE_ROOT,
+                    season,
+                    ground,
+                    force,
+                    specialStructure
+            );
+        }
+
+        /*
+         * =================================================
+         * 6. 나머지 혼재 구조
+         * =================================================
+         *
+         * 예:
+         *
+         * - 실령했지만 근과 생부가 모두 존재
+         * - 旺/相이나 설기·재·관살도 존재
+         * - 근이 충을 받으면서 생부도 존재
+         * - 당령이나 무근
+         *
+         * 이런 경우 억지로 강/약을 선택하지 않는다.
+         */
+
+        return build(
+                dayMaster,
+                DayMasterStrengthStatus
+                        .MIXED_NEEDS_REVIEW,
+                DayMasterStrengthDecisionBasis
+                        .MIXED_STRUCTURE,
+                season,
+                ground,
+                force,
+                specialStructure
         );
     }
 
-    /**
-     * 지원/압력 비중을 바탕으로
-     * 구조 보정이 반영된 최종 지수 생성.
-     */
-    public int calculateAdjustedStrengthBasisPoints(
+    private DayMasterStrengthAnalysis build(
 
-            int rawSupportShareBasisPoints,
+            HeavenlyStem dayMaster,
 
-            int structuralAdjustmentBasisPoints
+            DayMasterStrengthStatus status,
+
+            DayMasterStrengthDecisionBasis basis,
+
+            DayMasterSeasonAnalysis season,
+
+            DayMasterGroundStatusAnalysis ground,
+
+            DayMasterForceStatusAnalysis force,
+
+            DayMasterSpecialStructureCandidateAnalysis
+                    specialStructure
 
     ) {
 
-        return clampBasisPoints(
-                rawSupportShareBasisPoints
-                        + structuralAdjustmentBasisPoints
+        return new DayMasterStrengthAnalysis(
+                dayMaster,
+                status,
+                basis,
+                season.seasonState(),
+                ground.status(),
+                force.visibleSupportPattern(),
+                force.hasAnyGeneratingSupport(),
+                force.hasAnySameElementSupport(),
+                force.hasGeneratingOutflowStructure(),
+                force.hasWealthDirectionStructure(),
+                force.hasControlPressureStructure(),
+                specialStructure.candidates()
         );
     }
 
-    /**
-     * 최종 신강·신약 단계.
-     *
-     * 극단 구조 Candidate가 있다고 해서
-     * 무조건 극강/극약으로 확정하지 않는다.
-     *
-     * 극단 Candidate
-     * +
-     * 최종 보정 지수
-     *
-     * 를 함께 확인한다.
-     *
-     * 종격 후보일 경우에는 이미
-     * 훨씬 엄격한 4-7 조건을 통과했으므로
-     * 극강 또는 극약 상태로 분류한다.
-     *
-     * 다만 종격 자체는 여전히 확정하지 않는다.
-     */
-    public DayMasterStrengthLevel determineLevel(
+    private void validateDayMaster(
 
-            int adjustedStrengthBasisPoints,
+            HeavenlyStem dayMaster,
 
-            ExtremeStrengthStructureAnalysis extreme
+            DayMasterSeasonAnalysis season,
 
-    ) {
+            DayMasterGroundStatusAnalysis ground,
 
-        /*
-         * 종강 후보.
-         */
-        if (
-                extreme.followStrongCandidate()
-        ) {
+            DayMasterForceStatusAnalysis force,
 
-            return DayMasterStrengthLevel
-                    .EXTREME_STRONG;
-        }
-
-        /*
-         * 종약 후보.
-         */
-        if (
-                extreme.followWeakCandidate()
-        ) {
-
-            return DayMasterStrengthLevel
-                    .EXTREME_WEAK;
-        }
-
-        /*
-         * 일반 극강 후보는
-         * 최종 지수도 극강 범위여야 한다.
-         */
-        if (
-                extreme.extremeStrongCandidate()
-                        && adjustedStrengthBasisPoints
-                        >= EXTREME_STRONG_THRESHOLD
-        ) {
-
-            return DayMasterStrengthLevel
-                    .EXTREME_STRONG;
-        }
-
-        /*
-         * 일반 극약 후보 역시
-         * 최종 지수가 극약 범위여야 한다.
-         */
-        if (
-                extreme.extremeWeakCandidate()
-                        && adjustedStrengthBasisPoints
-                        <= EXTREME_WEAK_THRESHOLD
-        ) {
-
-            return DayMasterStrengthLevel
-                    .EXTREME_WEAK;
-        }
-
-        if (
-                adjustedStrengthBasisPoints
-                        >= STRONG_THRESHOLD
-        ) {
-
-            return DayMasterStrengthLevel
-                    .STRONG;
-        }
-
-        if (
-                adjustedStrengthBasisPoints
-                        >= BALANCED_STRONG_THRESHOLD
-        ) {
-
-            return DayMasterStrengthLevel
-                    .BALANCED_STRONG;
-        }
-
-        if (
-                adjustedStrengthBasisPoints
-                        >= BALANCED_THRESHOLD
-        ) {
-
-            return DayMasterStrengthLevel
-                    .BALANCED;
-        }
-
-        if (
-                adjustedStrengthBasisPoints
-                        >= BALANCED_WEAK_THRESHOLD
-        ) {
-
-            return DayMasterStrengthLevel
-                    .BALANCED_WEAK;
-        }
-
-        return DayMasterStrengthLevel
-                .WEAK;
-    }
-
-    public boolean extremeOverrideApplied(
-
-            DayMasterStrengthLevel level,
-
-            ExtremeStrengthStructureAnalysis extreme
+            DayMasterSpecialStructureCandidateAnalysis
+                    specialStructure
 
     ) {
 
         if (
-                level.extremeStrong()
+                season.dayMaster()
+                        != dayMaster
         ) {
 
-            return extreme.extremeStrongCandidate()
-                    || extreme.followStrongCandidate();
+            throw new IllegalArgumentException(
+                    "월령 분석의 일간이 일치하지 않습니다."
+            );
         }
 
         if (
-                level.extremeWeak()
+                ground.dayMaster()
+                        != dayMaster
         ) {
 
-            return extreme.extremeWeakCandidate()
-                    || extreme.followWeakCandidate();
+            throw new IllegalArgumentException(
+                    "득지 분석의 일간이 일치하지 않습니다."
+            );
         }
 
-        return false;
-    }
+        if (
+                force.dayMaster()
+                        != dayMaster
+        ) {
 
-    private int clampBasisPoints(
-            int value
-    ) {
+            throw new IllegalArgumentException(
+                    "득세 분석의 일간이 일치하지 않습니다."
+            );
+        }
 
-        return Math.max(
-                0,
-                Math.min(
-                        10_000,
-                        value
-                )
-        );
+        if (
+                specialStructure.dayMaster()
+                        != dayMaster
+        ) {
+
+            throw new IllegalArgumentException(
+                    "특수구조 후보 분석의 일간이 일치하지 않습니다."
+            );
+        }
     }
 }

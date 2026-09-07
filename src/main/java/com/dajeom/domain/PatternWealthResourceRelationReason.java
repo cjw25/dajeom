@@ -1,0 +1,29 @@
+package com.dajeom.domain;
+
+/**
+ * 財印 위치 관계 판정 이유.
+ *
+ * confidence나 점수가 아니다.
+ */
+public enum PatternWealthResourceRelationReason {
+
+    WEALTH_CONTROLS_RESOURCE,
+
+    SAME_PILLAR_RELATION,
+
+    ADJACENT_POSITIONS,
+
+    DISTANT_POSITIONS,
+
+    AUTHORITY_BRIDGE_EXISTS,
+
+    WEALTH_GENERATES_AUTHORITY,
+
+    AUTHORITY_GENERATES_RESOURCE,
+
+    DIRECT_WEALTH_RESOURCE_CONFLICT,
+
+    WEALTH_RESOURCE_POSITIONALLY_SEPARATED,
+
+    WEALTH_RESOURCE_MUTUALLY_NON_OBSTRUCTING
+}
