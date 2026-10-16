@@ -6,7 +6,7 @@ Spring Boot 4.1 / Java 17 기반 사주·타로 웹 서비스입니다. 기존 �
 
 - `/`: 홈, 사주·타로 진입
 - `/saju`: 캐릭터 소개 → 생년월일 입력 → 7개 영역·18개 장의 종합풀이 → 원하는 경우에만 추가 질문
-- 풀이 전 주제·질문·현재 상황 선택을 요구하지 않습니다. 성향·강점·관계·가족·연애·재물·직업·생활·지나온 흐름을 함께 다룹니다.
+- 생년월일 입력 화면에서 고민·사연을 선택적으로 1,000자까지 적습니다. 관련된 풀이 전반과 추가 상담에 반영합니다. 성향·강점·관계·가족·연애·재물·직업·생활·지나온 흐름을 함께 다룹니다.
 - 목차와 장별 본문, 사주팔자·오행, 기존 이미지·영상으로 구성한 종합풀이
 - 읽은 뒤의 추가 질문에서만 분야와 답변 길이를 선택합니다.
 - 선택한 경우에만 기기에 전체 풀이 저장(최근 5개), 보관함 열람·삭제와 첫 장 요약 공유
@@ -51,7 +51,7 @@ docker run --rm -p 8080:8080 --env-file .env dajeom
 
 ## API
 
-- `POST /api/saju/consultations/reading`: `birth`(기존 사주 입력)와 `name`만으로 전체 종합풀이를 생성합니다. 응답의 `reading.chapters`에 18개 장과 생성 상태가 포함됩니다. 첫 응답의 `messages`는 비어 있으며, 기본 풀이에 추가 질문 횟수를 차감하지 않습니다.
+- `POST /api/saju/consultations/reading`: `birth`(기존 사주 입력), `name`, 선택적인 `concern`(고민·사연, 최대 1,000자)으로 전체 종합풀이를 생성합니다. 응답의 `reading.chapters`에 18개 장과 생성 상태가 포함됩니다. 첫 응답의 `messages`는 비어 있으며, 기본 풀이에 추가 질문 횟수를 차감하지 않습니다.
 
 - `POST /api/saju/consultations`: 이전 대화형 진입 API와의 호환용입니다. 현재 기본 화면에서는 호출하지 않습니다. `birth`, `name`, `topic`, `depth`, 선택적인 `situation`과 `question`을 받습니다. `topic`은 `SELF`, `LOVE`, `CAREER`, `WEALTH`, `RELATIONSHIPS`, `WELLBEING`, `PAST`; `depth`는 `SHORT`, `STANDARD`, `DEEP`입니다.
 - `POST /api/saju/consultations/messages`: `message`, `topic`, `depth`로 후속 질문을 보냅니다. 클라이언트가 사주 근거나 이전 대화를 덮어쓸 수 없습니다.

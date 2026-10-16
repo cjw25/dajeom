@@ -46,7 +46,7 @@ public class SajuConsultationService {
                         @NotNull Topic topic, @NotNull Depth depth,
                         @Size(max=1000) String situation, @Size(max=600) String question) {}
     public record Followup(@NotBlank @Size(max=600) String message, @NotNull Topic topic, @NotNull Depth depth) {}
-    public record ReadingStart(@NotNull @Valid SajuRequest birth, @NotBlank @Size(max=30) String name) {}
+    public record ReadingStart(@NotNull @Valid SajuRequest birth, @NotBlank @Size(max=30) String name, @Size(max=1000) String concern) {}
     public record Message(String role, String text) {}
     public record View(String name, Topic topic, Depth depth, SajuResponse.PillarsResponse pillars,
                        ElementCountResponse fiveElements, List<Message> messages, int turnsRemaining,
@@ -95,8 +95,8 @@ public class SajuConsultationService {
         begin(session);
         try {
             var conversation=new Conversation(saju.prepareConsultation(request.birth()),
-                    new Start(request.birth(),request.name(),Topic.SELF,Depth.STANDARD,"",null));
-            conversation.reading=readings.generate(conversation.prepared);
+                    new Start(request.birth(),request.name(),Topic.SELF,Depth.STANDARD,Objects.toString(request.concern(), "").strip(),null));
+            conversation.reading=readings.generate(conversation.prepared,conversation.situation);
             session.setMaxInactiveInterval(3600);
             session.setAttribute(KEY,conversation);
             return view(conversation);

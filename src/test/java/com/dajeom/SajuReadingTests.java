@@ -29,7 +29,7 @@ class SajuReadingTests {
         """;
     @BeforeEach void validChapters(){
         when(generator.generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString())).thenAnswer(invocation->{
-            var specs=json.readTree((String)invocation.getArgument(1));
+            var specs=json.readTree((String)invocation.getArgument(1)).get("chapters");
             List<Map<String,String>> chapters=new ArrayList<>();
             for(var spec:specs)chapters.add(Map.of("id",spec.get("id").asString(),"content",spec.get("title").asString()+"의 테스트 본문입니다. 계산된 재료로 구성한 독립적인 풀이입니다."));
             return json.writeValueAsString(Map.of("chapters",chapters));
@@ -58,6 +58,27 @@ class SajuReadingTests {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.reading.chapters.length()").value(18))
                 .andExpect(jsonPath("$.messages.length()").value(2)).andExpect(jsonPath("$.turnsRemaining").value(11));
         verify(generator,times(7)).generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString());
+    }
+
+    @Test void concernReachesEveryGroupAndFollowup() throws Exception {
+        String concern="이직과 생활비 때문에 고민입니다.";
+        var data=new LinkedHashMap<String,Object>();
+        data.put("name","고민풀이"); data.put("birth",json.readTree(START).get("birth")); data.put("concern",concern);
+        var session=new MockHttpSession();
+        mvc.perform(post(API+"/reading").session(session).contentType("application/json").content(json.writeValueAsString(data)))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.reading.chapters.length()").value(18));
+        verify(generator,times(7)).generateStructured(anyString(),argThat(payload -> json.readTree(payload).path("concern").asString().equals(concern)),startsWith("SAJU_READING_"),anyString());
+        when(generator.generateText(anyString(),anyString(),eq("SAJU_CONSULTATION"))).thenReturn("답변입니다.");
+        mvc.perform(post(API+"/messages").session(session).contentType("application/json").content("{\"message\":\"어떤 기준으로 결정할까요?\",\"topic\":\"CAREER\",\"depth\":\"STANDARD\"}"))
+            .andExpect(status().isOk());
+        verify(generator).generateText(anyString(),contains(concern),eq("SAJU_CONSULTATION"));
+    }
+
+    @Test void oversizedConcernIsRejectedBeforeAi() throws Exception {
+        var data=new LinkedHashMap<String,Object>();
+        data.put("name","검증"); data.put("birth",json.readTree(START).get("birth")); data.put("concern","가".repeat(1001));
+        mvc.perform(post(API+"/reading").contentType("application/json").content(json.writeValueAsString(data))).andExpect(status().isBadRequest());
+        verifyNoInteractions(generator);
     }
 
     @Test void unknownTimeShowsExplicitUnavailableChaptersWithoutAi() throws Exception {

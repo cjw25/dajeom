@@ -54,7 +54,7 @@
         const date=`${year}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
         if(calendar==="SOLAR"){const parsed=new Date(Date.UTC(year,month-1,day));if(parsed.getUTCMonth()!==month-1||parsed.getUTCDate()!==day||date>today)throw new Error("올바른 생년월일인지, 미래 날짜는 아닌지 확인해주세요.");}
         if(!$("nickname").value.trim())throw new Error("이름이나 닉네임을 입력해주세요.");
-        return{name:$("nickname").value.trim(),birth:{calendarType:calendar,birthDate:date,birthTime:$("unknownTime").checked?null:$("birthTime").value,gender:document.querySelector('input[name="gender"]:checked').value,leapMonth:calendar==="LUNAR"&&$("leapMonth").checked}};
+        return{name:$("nickname").value.trim(),concern:$("concern").value.trim(),birth:{calendarType:calendar,birthDate:date,birthTime:$("unknownTime").checked?null:$("birthTime").value,gender:document.querySelector('input[name="gender"]:checked').value,leapMonth:calendar==="LUNAR"&&$("leapMonth").checked}};
     }
     $("birthForm").addEventListener("submit",async event=>{
         event.preventDefault();if(busy)return;$("setupError").textContent="";
