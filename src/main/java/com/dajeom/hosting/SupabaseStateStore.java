@@ -17,7 +17,7 @@ import tools.jackson.databind.json.JsonMapper;
 public class SupabaseStateStore implements HostedStateStore {
     private final URI base;
     private final String secret;
-    private final HttpClient client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+    private final HttpClient client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     private final JsonMapper json=JsonMapper.builder().build();
 
     public SupabaseStateStore(@Value("${SUPABASE_URL:}")String url,@Value("${SUPABASE_SECRET_KEY:}")String secret) {
@@ -29,7 +29,7 @@ public class SupabaseStateStore implements HostedStateStore {
     }
 
     private JsonNode call(String method,String path,Object body) {
-        var request=HttpRequest.newBuilder(base.resolve(path)).timeout(Duration.ofSeconds(20))
+        var request=HttpRequest.newBuilder(base.resolve(path)).timeout(Duration.ofSeconds(10))
             .header("apikey",secret).header("Content-Type","application/json").header("Accept","application/json");
         // Modern sb_secret keys go in apikey, not the JWT Authorization header.
         if(secret.startsWith("eyJ"))request.header("Authorization","Bearer "+secret);
