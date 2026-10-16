@@ -60,14 +60,16 @@ class SajuReadingTests {
         verify(generator,times(7)).generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString());
     }
 
-    @Test void concernReachesEveryGroupAndFollowup() throws Exception {
+    @Test void concernOnlyReachesOneFinalReadingAndFollowup() throws Exception {
         String concern="이직과 생활비 때문에 고민입니다.";
         var data=new LinkedHashMap<String,Object>();
         data.put("name","고민풀이"); data.put("birth",json.readTree(START).get("birth")); data.put("concern",concern);
         var session=new MockHttpSession();
         mvc.perform(post(API+"/reading").session(session).contentType("application/json").content(json.writeValueAsString(data)))
             .andExpect(status().isOk()).andExpect(jsonPath("$.reading.chapters.length()").value(18));
-        verify(generator,times(7)).generateStructured(anyString(),argThat(payload -> json.readTree(payload).path("concern").asString().equals(concern)),startsWith("SAJU_READING_"),anyString());
+        verify(generator,times(7)).generateStructured(anyString(),argThat(payload -> !json.readTree(payload).has("concern")),startsWith("SAJU_READING_"),anyString());
+        verify(generator).generateStructured(anyString(),argThat(payload -> json.readTree(payload).path("concern").asString().equals(concern)),eq("SAJU_READING_concern"),anyString());
+        mvc.perform(get(API+"/current").session(session)).andExpect(jsonPath("$.reading.concernReading.id").value("concern-answer"));
         when(generator.generateText(anyString(),anyString(),eq("SAJU_CONSULTATION"))).thenReturn("답변입니다.");
         mvc.perform(post(API+"/messages").session(session).contentType("application/json").content("{\"message\":\"어떤 기준으로 결정할까요?\",\"topic\":\"CAREER\",\"depth\":\"STANDARD\"}"))
             .andExpect(status().isOk());
