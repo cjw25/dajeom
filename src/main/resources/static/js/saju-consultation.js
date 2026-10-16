@@ -264,6 +264,12 @@
     }
     $("closeReportButton").addEventListener("click",() => $("reportDialog").close());
     $("closeSavedButton").addEventListener("click",() => $("savedDialog").close());
+    $("openingVideoButton").addEventListener("click",() => {
+        $("openingDialog").showModal();
+        $("originalOpeningVideo").play().catch(() => {});
+    });
+    $("closeOpeningButton").addEventListener("click",() => $("openingDialog").close());
+    $("openingDialog").addEventListener("close",() => $("originalOpeningVideo").pause());
 
     function savedRecords() {
         try {

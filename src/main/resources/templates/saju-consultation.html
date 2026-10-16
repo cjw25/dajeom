@@ -3,10 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-    <meta name="theme-color" content="#172b2a">
+    <meta name="theme-color" content="#050608">
     <meta name="description" content="내 사주와 지금의 고민을 함께 읽는 다점 AI 사주 상담. 연애, 이직, 돈, 인간관계까지 편하게 물어보세요.">
     <title>다점 — 내 사주, 지금의 고민에 답하다</title>
     <link rel="stylesheet" href="/css/saju-consultation.css">
+    <link rel="stylesheet" href="/css/saju-original-art.css">
     <script src="/js/saju-consultation.js" defer></script>
 </head>
 <body>
@@ -19,11 +20,12 @@
     <div class="hero">
         <div class="hero-copy">
             <span class="eyebrow"><span class="live-dot"></span> 나를 이해하는 AI 사주 상담</span>
-            <h1>내 사주,<br>지금의 고민에 <em>답하다.</em></h1>
+            <h1>천명도령과 함께,<br>지금의 고민을 <em>풀어봐요.</em></h1>
             <p class="hero-description">타고난 나의 패턴부터 오늘의 작은 선택까지.<br>도령에게 편하게 이야기해보세요.</p>
             <div class="hero-tags"><span>고민에 맞춘 풀이</span><span>이어지는 대화</span><span>내 속도에 맞는 설명</span></div>
+            <button type="button" id="openingVideoButton" class="opening-video-button">▶ 도령의 인사 영상</button>
         </div>
-        <div class="hero-art" aria-hidden="true"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="art-hanja">命</span><span class="art-label">YOUR STORY, IN THE STARS</span><span class="art-star star-one">✦</span><span class="art-star star-two">✧</span></div>
+        <div class="hero-art"><img src="/img/saju_main_banner.png" alt="기존 천명도령 사주 상담 이미지" class="original-hero-image" fetchpriority="high"></div>
     </div>
     <div class="resume-banner" id="resumeBanner" hidden><div><strong>나누던 이야기가 있어요.</strong><span>이 브라우저에서 진행한 상담을 이어갈 수 있어요.</span></div><button type="button" id="resumeButton" class="text-button">이어서 보기 ↗</button></div>
     <section class="topic-section" aria-labelledby="topicTitle">
@@ -70,7 +72,7 @@
         <div class="profile-divider"></div><span class="eyebrow">조금 더 깊이 알고 싶다면</span><button type="button" id="reportButton" class="report-button">내 사주 전체 풀이 <span>7개 주제 펼쳐보기 ↗</span></button><p class="scope-note">현재 상담은 타고난 패턴을 중심으로 해요. 특정 날짜의 운세·궁합은 제공하지 않아요.</p>
     </aside>
     <div class="conversation-panel">
-        <div class="conversation-header"><div class="advisor-avatar" aria-hidden="true">命</div><div><h2>도령 <span>AI 사주 상담</span></h2><p>당신의 이야기를 함께 읽을게요.</p></div><span class="conversation-indicator"><span class="live-dot"></span> 상담 중</span></div>
+        <div class="conversation-header"><div class="advisor-avatar"><img src="/img/saju_main_banner.png" alt="천명도령"></div><div><h2>도령 <span>AI 사주 상담</span></h2><p>당신의 이야기를 함께 읽을게요.</p></div><span class="conversation-indicator"><span class="live-dot"></span> 상담 중</span></div>
         <div class="chat-tools"><button type="button" id="saveButton">내 기기에 저장</button><button type="button" id="shareButton">요약 공유 ↗</button><span id="turnsNote"></span></div>
         <div id="messages" class="messages" aria-label="상담 대화" aria-live="polite" aria-relevant="additions"></div>
         <div id="followupChips" class="followup-chips" aria-label="이어서 물어볼 질문"></div>
@@ -80,6 +82,7 @@
 
 <dialog id="reportDialog" class="report-dialog"><div class="dialog-heading"><div><span class="eyebrow muted">MY SAJU BOOK</span><h2>나의 전체 사주 풀이</h2></div><button type="button" id="closeReportButton" aria-label="전체 풀이 닫기">×</button></div><p id="reportStatus" role="status">7개 주제의 풀이를 준비하고 있어요.</p><div id="reportContent"></div></dialog>
 <dialog id="savedDialog" class="report-dialog"><div class="dialog-heading"><h2>저장한 상담</h2><button type="button" id="closeSavedButton" aria-label="저장한 상담 닫기">×</button></div><p class="subtle">이 기록은 읽기 전용이에요. 새 질문은 현재 상담에서 이어가세요.</p><div id="savedContent" class="messages"></div></dialog>
+<dialog id="openingDialog" class="opening-dialog"><button type="button" id="closeOpeningButton" aria-label="인사 영상 닫기">×</button><video id="originalOpeningVideo" src="/video/opening.mp4" controls playsinline preload="none"></video></dialog>
 </main>
 <div id="toast" class="toast" role="status" hidden></div>
 <noscript><p>사주 상담을 이용하려면 브라우저의 JavaScript를 켜주세요. <a href="/">홈으로 돌아가기</a></p></noscript>
