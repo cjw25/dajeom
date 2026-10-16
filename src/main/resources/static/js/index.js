@@ -558,7 +558,7 @@ document.addEventListener(
                     "기타 운세": "SELF", "AI 채팅": "SELF"
                 };
                 if (Object.hasOwn(consultationTopics, message)) {
-                    window.location.href = "/saju?topic=" + consultationTopics[message];
+                    window.location.href = "/saju";
                     return;
                 }
                 if (message === "궁합") {

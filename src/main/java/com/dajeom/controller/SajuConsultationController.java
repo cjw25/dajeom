@@ -15,6 +15,9 @@ public class SajuConsultationController {
     @PostMapping public SajuConsultationService.View start(@Valid @RequestBody SajuConsultationService.Start request, HttpSession session) {
         return consultations.start(request,session);
     }
+    @PostMapping("/reading") public SajuConsultationService.View reading(@Valid @RequestBody SajuConsultationService.ReadingStart request,HttpSession session) {
+        return consultations.startReading(request,session);
+    }
     @PostMapping("/messages") public SajuConsultationService.View followup(@Valid @RequestBody SajuConsultationService.Followup request,HttpSession session) {
         return consultations.followup(request,session);
     }

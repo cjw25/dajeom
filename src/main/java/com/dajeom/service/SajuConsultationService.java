@@ -19,11 +19,13 @@ public class SajuConsultationService {
     private static final int MAX_TURNS = 12;
     private final SajuService saju;
     private final OpenAiLifeInterpretationTextGenerator generator;
+    private final SajuReadingService readings;
     private final JsonMapper json = JsonMapper.builder().build();
 
-    public SajuConsultationService(SajuService saju, OpenAiLifeInterpretationTextGenerator generator) {
+    public SajuConsultationService(SajuService saju, OpenAiLifeInterpretationTextGenerator generator, SajuReadingService readings) {
         this.saju = saju;
         this.generator = generator;
+        this.readings = readings;
     }
 
     public enum Topic {
@@ -44,10 +46,11 @@ public class SajuConsultationService {
                         @NotNull Topic topic, @NotNull Depth depth,
                         @Size(max=1000) String situation, @Size(max=600) String question) {}
     public record Followup(@NotBlank @Size(max=600) String message, @NotNull Topic topic, @NotNull Depth depth) {}
+    public record ReadingStart(@NotNull @Valid SajuRequest birth, @NotBlank @Size(max=30) String name) {}
     public record Message(String role, String text) {}
     public record View(String name, Topic topic, Depth depth, SajuResponse.PillarsResponse pillars,
                        ElementCountResponse fiveElements, List<Message> messages, int turnsRemaining,
-                       boolean readingAvailable, List<Topic> availableTopics) {}
+                       boolean readingAvailable, List<Topic> availableTopics, SajuReadingService.Reading reading) {}
 
     private static class Conversation {
         final SajuService.PreparedSaju prepared;
@@ -59,6 +62,7 @@ public class SajuConsultationService {
         Depth depth;
         int turns;
         SajuResponse report;
+        SajuReadingService.Reading reading;
         Conversation(SajuService.PreparedSaju prepared, Start start) {
             this.prepared=prepared; name=start.name().strip(); situation=start.situation();
             topic=start.topic(); depth=start.depth();
@@ -81,6 +85,18 @@ public class SajuConsultationService {
             conversation.messages.add(new Message("user",question));
             conversation.messages.add(new Message("assistant",answer));
             conversation.turns=1;
+            session.setMaxInactiveInterval(3600);
+            session.setAttribute(KEY,conversation);
+            return view(conversation);
+        } finally { end(session); }
+    }
+
+    public View startReading(ReadingStart request,HttpSession session) {
+        begin(session);
+        try {
+            var conversation=new Conversation(saju.prepareConsultation(request.birth()),
+                    new Start(request.birth(),request.name(),Topic.SELF,Depth.STANDARD,"",null));
+            conversation.reading=readings.generate(conversation.prepared);
             session.setMaxInactiveInterval(3600);
             session.setAttribute(KEY,conversation);
             return view(conversation);
@@ -169,7 +185,7 @@ public class SajuConsultationService {
                 Arrays.stream(Topic.values()).filter(topic -> conversation.prepared.preparation().generationAllowed(topic.category)).toList();
         return new View(conversation.name,conversation.topic,conversation.depth,publicPillars,
                 conversation.prepared.fiveElements(),List.copyOf(conversation.messages),MAX_TURNS-conversation.turns,
-                !available.isEmpty(),available);
+                !available.isEmpty(),available,conversation.reading);
     }
 
     private Conversation require(HttpSession session) {

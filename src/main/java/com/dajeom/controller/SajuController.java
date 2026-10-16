@@ -32,7 +32,7 @@ public class SajuController {
     @GetMapping("/saju")
     public String sajuPage() {
 
-        return "saju-consultation";
+        return "saju-reading";
     }
 
     @GetMapping("/saju/report")

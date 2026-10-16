@@ -173,13 +173,22 @@ public class OpenAiLifeInterpretationTextGenerator
     }
 
     public String generateText(String systemPrompt, String userPrompt, String context) {
+        return generateOutput(systemPrompt,userPrompt,context,null);
+    }
+
+    public String generateStructured(String systemPrompt,String userPrompt,String context,String schema) {
+        return generateOutput(systemPrompt,userPrompt,context,requireText(schema,"JSON schema"));
+    }
+
+    private String generateOutput(String systemPrompt,String userPrompt,String context,String schema) {
         validateApiKey();
         systemPrompt = requireText(systemPrompt, "systemPrompt");
         userPrompt = requireText(userPrompt, "userPrompt");
         String requestBody =
                 createRequestBody(
                         systemPrompt,
-                        userPrompt
+                        userPrompt,
+                        schema
                 );
 
         HttpRequest request =
@@ -245,7 +254,9 @@ public class OpenAiLifeInterpretationTextGenerator
 
             String systemPrompt,
 
-            String userPrompt
+            String userPrompt,
+
+            String schema
 
     ) {
 
@@ -290,6 +301,12 @@ public class OpenAiLifeInterpretationTextGenerator
                 json,
                 userPrompt
         );
+
+        if (schema != null) {
+            json.append(",\"text\":{\"format\":{\"type\":\"json_schema\",\"name\":\"saju_chapters\",\"strict\":true,\"schema\":");
+            json.append(schema);
+            json.append("}}");
+        }
 
         json.append(
                 "}"
