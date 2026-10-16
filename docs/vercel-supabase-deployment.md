@@ -31,7 +31,7 @@
 
 키에 `NEXT_PUBLIC_` 같은 공개 접두사를 붙이지 않습니다. 키를 GitHub에 커밋하거나 채팅에 붙일 필요가 없습니다. Preview와 Production의 데이터까지 분리하려면 각각 다른 Supabase 프로젝트를 사용합니다.
 
-컨테이너의 HTTP 포트는 Vercel 프로젝트에서도 `PORT=8080`으로 지정해야 합니다. 요청 최대 실행 시간은 `vercel.json`에 300초로 설정했습니다. Vercel 프로필은 외부 AI 요청 하나의 타임아웃을 20초로 제한해 장별 작성·검증·제한된 재시도를 요청 시간 안에 수행하도록 구성합니다.
+컨테이너의 HTTP 포트는 Vercel 프로젝트에서도 `PORT=8080`으로 지정해야 합니다. Settings → Functions → Function Max Duration에서 Default Max Duration을 300초로 확인하고 저장합니다. `Dockerfile.vercel`은 자동 감지되므로 `vercel.json`의 `functions` 패턴에 추가하지 않습니다. 해당 패턴은 서버리스 함수와 매칭되어 `unused_function` 오류를 일으킬 수 있습니다. Vercel 프로필은 외부 AI 요청 하나의 타임아웃을 20초로 제한해 장별 작성·검증·제한된 재시도를 요청 시간 안에 수행하도록 구성합니다.
 
 ## 3. 배포 후 확인
 
