@@ -86,6 +86,25 @@ class SajuReadingTests {
         verify(generator).generateText(anyString(),contains(concern),eq("SAJU_CONSULTATION"));
     }
 
+    @Test void fullNameStaysConsistentInEveryChapterConcernAndFollowup() throws Exception {
+        when(generator.generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString())).thenAnswer(call -> {
+            var payload=json.readTree((String)call.getArgument(1));
+            String id=payload.get("chapters").get(0).get("id").asString();
+            String content="최정원님, 정원님께 [[상담자호칭]]의 풀이를 설명합니다."+"나".repeat(id.equals("concern-answer")?2400:1600);
+            return json.writeValueAsString(Map.of("chapters",List.of(Map.of("id",id,"content",content))));
+        });
+        var data=new LinkedHashMap<String,Object>();
+        data.put("name","최정원");data.put("birth",json.readTree(START).get("birth"));data.put("concern","이직 고민");
+        var session=new MockHttpSession();
+        var result=mvc.perform(post(API+"/reading").session(session).contentType("application/json").content(json.writeValueAsString(data))).andExpect(status().isOk()).andReturn();
+        var reading=json.readTree(result.getResponse().getContentAsString()).get("reading");
+        for(var chapter:reading.get("chapters"))assertTrue(chapter.get("content").asString().startsWith("최정원님, 최정원님께 최정원님의"));
+        assertTrue(reading.get("concernReading").get("content").asString().startsWith("최정원님, 최정원님께 최정원님의"));
+        when(generator.generateText(anyString(),anyString(),eq("SAJU_CONSULTATION"))).thenReturn("정원님께 이어 설명합니다.");
+        mvc.perform(post(API+"/messages").session(session).contentType("application/json").content("{\"message\":\"더 알려주세요\",\"topic\":\"SELF\",\"depth\":\"STANDARD\"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.messages[1].text").value("최정원님께 이어 설명합니다."));
+    }
+
     @Test void oversizedConcernIsRejectedBeforeAi() throws Exception {
         var data=new LinkedHashMap<String,Object>();
         data.put("name","검증"); data.put("birth",json.readTree(START).get("birth")); data.put("concern","가".repeat(1001));

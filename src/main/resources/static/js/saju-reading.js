@@ -64,8 +64,22 @@
         catch(error){$("setupError").textContent=error.message;show("setupView");}
         finally{setBusy(false);}
     });
+    function readerAddress(text,name){
+        const full=name.trim().endsWith("님")?name.trim():name.trim()+"님";
+        const base=full.slice(0,-1);
+        const escape=value=>value.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+        let value=text.replaceAll("[[상담자호칭]]",full);
+        for(const form of [base,...(/^[가-힣]{3,5}$/.test(base)?Array.from({length:base.length-2},(_,i)=>base.slice(i+1)):[])]){
+            const pattern=new RegExp("(?<![\\p{L}\\p{N}_])"+escape(form)+"\\s*님(?:\\s*님)*","gu");
+            value=value.replace(pattern,()=>full);
+        }
+        return value;
+    }
     function renderReading(data){
         if(!data?.reading||!Array.isArray(data.reading.chapters)||data.reading.chapters.length!==18)throw new Error("종합풀이의 장 구성을 확인할 수 없습니다. 다시 시도해주세요.");
+        data.reading.chapters=data.reading.chapters.map(chapter=>({...chapter,content:readerAddress(chapter.content,data.name)}));
+        if(data.reading.concernReading)data.reading.concernReading={...data.reading.concernReading,content:readerAddress(data.reading.concernReading.content,data.name)};
+        data.reading.totalCharacters=[...data.reading.chapters,...(data.reading.concernReading?[data.reading.concernReading]:[])].filter(chapter=>chapter.status==="READY").reduce((sum,chapter)=>sum+Array.from(chapter.content).length,0);
         current=data;$("readingName").textContent=data.name;$("readingLength").textContent=`풀이 본문 ${new Intl.NumberFormat("ko-KR").format(data.reading.totalCharacters??[...data.reading.chapters,...(data.reading.concernReading?[data.reading.concernReading]:[])].filter(c=>c.status==="READY").reduce((n,c)=>n+Array.from(c.content).length,0))}자 · 공백 포함`;
         $("pillars").replaceChildren();
         for(const[key,label]of[["year","년주"],["month","월주"],["day","일주"],["hour","시주"]]){
@@ -94,7 +108,7 @@
     }
     function renderChat(){
         $("messages").replaceChildren();
-        for(const message of current.messages){const article=document.createElement("article");article.className="message "+(message.role==="user"?"user":"assistant");if(message.role==="user")article.textContent=message.text;else{const label=document.createElement("div");label.className="speaker";label.textContent="천명도령 · 추가 설명";const text=document.createElement("p");text.textContent=message.text;article.append(label,text);}$("messages").append(article);}
+        for(const message of current.messages){const article=document.createElement("article");article.className="message "+(message.role==="user"?"user":"assistant");if(message.role==="user")article.textContent=message.text;else{const label=document.createElement("div");label.className="speaker";label.textContent="천명도령 · 추가 설명";const text=document.createElement("p");text.textContent=readerAddress(message.text,current.name);article.append(label,text);}$("messages").append(article);}
         $("chatTopic").value=current.topic;$("chatDepth").value=current.depth;$("chatTopic").querySelectorAll("option").forEach(option=>option.disabled=!current.availableTopics.includes(option.value));$("turnsNote").textContent=`추가 질문 ${current.turnsRemaining}회 남음`;
         $("chatError").textContent=!current.readingAvailable?"출생시간을 확인한 뒤 새 사주 보기를 시작해주세요.":!current.turnsRemaining?"추가 질문을 모두 사용했습니다.":"";
     }
@@ -108,7 +122,7 @@
     $("chatInput").addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey&&!event.isComposing){event.preventDefault();$("chatForm").requestSubmit();}});
     $("resumeButton").addEventListener("click",async()=>{if(busy)return;try{const data=await request("/current");if(!data?.reading)throw new Error("이전 풀이가 만료됐습니다. 새 사주 보기를 시작해주세요.");renderReading(data);show("readingView");}catch(error){$("resumeBanner").hidden=true;toast(error.message);}});
     function records(){try{const data=JSON.parse(localStorage.getItem(KEY)||"[]");return Array.isArray(data)?data.filter(item=>typeof item.name==="string"&&Array.isArray(item.chapters)).slice(0,5):[];}catch{return[];}}
-    function renderSaved(){const data=records();$("savedSection").hidden=!data.length;$("savedList").replaceChildren();data.forEach(record=>{const button=document.createElement("button");button.type="button";button.className="saved-card";const title=document.createElement("strong");title.textContent=record.name+"님의 천명록";const date=document.createElement("small");date.textContent=new Date(record.date).toLocaleDateString("ko-KR")+` · ${record.chapters.length}개 장`;button.append(title,date);button.addEventListener("click",()=>{$("savedContent").replaceChildren();record.chapters.filter(chapter=>typeof chapter.title==="string"&&typeof chapter.content==="string").slice(0,19).forEach(chapter=>{const article=document.createElement("article");article.className="saved-chapter";const h3=document.createElement("h3");h3.textContent=chapter.title;const p=document.createElement("p");p.textContent=chapter.content;article.append(h3,p);$("savedContent").append(article);});$("savedDialog").showModal();});$("savedList").append(button);});}
+    function renderSaved(){const data=records();$("savedSection").hidden=!data.length;$("savedList").replaceChildren();data.forEach(record=>{const button=document.createElement("button");button.type="button";button.className="saved-card";const title=document.createElement("strong");title.textContent=record.name+"님의 천명록";const date=document.createElement("small");date.textContent=new Date(record.date).toLocaleDateString("ko-KR")+` · ${record.chapters.length}개 장`;button.append(title,date);button.addEventListener("click",()=>{$("savedContent").replaceChildren();record.chapters.filter(chapter=>typeof chapter.title==="string"&&typeof chapter.content==="string").slice(0,19).forEach(chapter=>{const article=document.createElement("article");article.className="saved-chapter";const h3=document.createElement("h3");h3.textContent=chapter.title;const p=document.createElement("p");p.textContent=readerAddress(chapter.content,record.name);article.append(h3,p);$("savedContent").append(article);});$("savedDialog").showModal();});$("savedList").append(button);});}
     $("saveButton").addEventListener("click",()=>{if(!current?.reading)return;try{const signature=current.reading.chapters[0].content+(current.reading.concernReading?.content||"");const data=records().filter(record=>record.signature!==signature);data.unshift({name:current.name,date:new Date().toISOString(),signature,chapters:[...current.reading.chapters,...(current.reading.concernReading?[current.reading.concernReading]:[])]});localStorage.setItem(KEY,JSON.stringify(data.slice(0,5)));renderSaved();toast("천명록과 고민 풀이를 이 기기에 보관했습니다.");}catch{toast("이 브라우저에서는 보관할 수 없습니다.");}});
     $("clearSavedButton").addEventListener("click",()=>{try{localStorage.removeItem(KEY);renderSaved();toast("이 기기에 보관한 천명록을 모두 지웠습니다.");}catch{toast("기기 보관함을 지우지 못했습니다.");}});
     $("shareButton").addEventListener("click",async()=>{const chapter=current?.reading?.chapters.find(chapter=>chapter.status==="READY");if(!chapter)return;const summary=chapter.content.split(/\n|(?<=[.!?。])\s/)[0];const text="천명도령이 읽어준 나의 이야기\n\n"+summary+"\n\n다점 · 종합사주";try{if(navigator.share)await navigator.share({title:"나의 천명록 한 문장",text});else{await navigator.clipboard.writeText(text);toast("첫 장의 요약을 복사했습니다.");}}catch(error){if(error.name!=="AbortError")toast("공유할 수 없습니다. 원하는 문장을 복사해주세요.");}});
