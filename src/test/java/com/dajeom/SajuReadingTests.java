@@ -30,8 +30,17 @@ class SajuReadingTests {
     @BeforeEach void validChapters(){
         when(generator.generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString())).thenAnswer(invocation->{
             var specs=json.readTree((String)invocation.getArgument(1)).get("chapters");
-            List<Map<String,String>> chapters=new ArrayList<>();
-            for(var spec:specs)chapters.add(Map.of("id",spec.get("id").asString(),"content",spec.get("title").asString()+"가".repeat(spec.get("id").asString().equals("concern-answer")?2400:1600)));
+            List<Map<String,Object>> chapters=new ArrayList<>();
+            var keys=json.readTree((String)invocation.getArgument(3)).at("/properties/chapters/items/properties/content/required");
+            for(var spec:specs){
+                var paragraphs=new LinkedHashMap<String,String>();
+                int index=0;
+                for(var key:keys){
+                    String prefix=index++==0 ? json.readTree((String)invocation.getArgument(1)).get("name").asString()+"님, " : "";
+                    paragraphs.put(key.asString(),prefix+key.asString()+"가".repeat(spec.get("id").asString().equals("concern-answer")?170:160));
+                }
+                chapters.add(Map.of("id",spec.get("id").asString(),"content",paragraphs));
+            }
             return json.writeValueAsString(Map.of("chapters",chapters));
         });
     }
@@ -68,7 +77,7 @@ class SajuReadingTests {
         var session=new MockHttpSession();
         mvc.perform(post(API+"/reading").session(session).contentType("application/json").content(json.writeValueAsString(data)))
             .andExpect(status().isOk()).andExpect(jsonPath("$.reading.chapters.length()").value(18));
-        verify(generator,times(18)).generateStructured(anyString(),argThat(payload -> !json.readTree(payload).has("concern")),startsWith("SAJU_READING_"),anyString());
+        verify(generator,times(18)).generateStructured(anyString(),argThat(payload -> !json.readTree(payload).has("concern") && json.readTree(payload).path("name").asString().equals("고민풀이")),startsWith("SAJU_READING_"),anyString());
         verify(generator).generateStructured(anyString(),argThat(payload -> json.readTree(payload).path("concern").asString().equals(concern)),eq("SAJU_READING_concern"),anyString());
         mvc.perform(get(API+"/current").session(session)).andExpect(jsonPath("$.reading.concernReading.id").value("concern-answer"));
         when(generator.generateText(anyString(),anyString(),eq("SAJU_CONSULTATION"))).thenReturn("답변입니다.");
@@ -84,36 +93,72 @@ class SajuReadingTests {
         verifyNoInteractions(generator);
     }
 
-    @Test void onlyTheShortChapterGetsAnAdditionAndMeasuredLengthIsReturned() throws Exception {
+    @Test void aShortDraftIsRewrittenAsOneCompletePersonalReading() throws Exception {
         when(generator.generateStructured(anyString(),anyString(),eq("SAJU_READING_self"),anyString())).thenAnswer(call -> {
             var payload=json.readTree((String)call.getArgument(1));
             String id=payload.get("chapters").get(0).get("id").asString();
-            int length=id.equals("self-nature") ? (payload.has("existingContent") ? 650 : 1000) : 1600;
-            return json.writeValueAsString(Map.of("chapters",List.of(Map.of("id",id,"content","나".repeat(length)))));
-        });
-        var result=mvc.perform(post(API+"/reading").contentType("application/json").content(START))
-            .andExpect(status().isOk()).andReturn();
-        var reading=json.readTree(result.getResponse().getContentAsString()).get("reading");
-        assertEquals(1652,reading.get("chapters").get(0).get("content").asString().length());
-        int measured=0;
-        for(var chapter:reading.get("chapters"))measured+=chapter.get("content").asString().length();
-        assertEquals(measured,reading.get("totalCharacters").asInt());
-        verify(generator,times(19)).generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString());
-        verify(generator).generateStructured(anyString(),argThat(payload -> json.readTree(payload).has("existingContent")),eq("SAJU_READING_self"),anyString());
-    }
-
-    @Test void overlongOutputEndsAtACompleteSentenceWithinTheLimit() throws Exception {
-        when(generator.generateStructured(anyString(),anyString(),eq("SAJU_READING_self"),anyString())).thenAnswer(call -> {
-            String id=json.readTree((String)call.getArgument(1)).get("chapters").get(0).get("id").asString();
-            return json.writeValueAsString(Map.of("chapters",List.of(Map.of("id",id,"content","해석 근거와 생활에서 적용하는 방법을 차분하게 설명합니다. ".repeat(80)))));
+            String text=id.equals("self-nature") && !payload.has("previousDraft") ? "종합풀이님, 짧은 초안입니다." : "종합풀이님, 완전히 다시 쓴 개인 풀이입니다."+"나".repeat(1600);
+            return json.writeValueAsString(Map.of("chapters",List.of(Map.of("id",id,"content",text))));
         });
         var result=mvc.perform(post(API+"/reading").contentType("application/json").content(START)).andExpect(status().isOk()).andReturn();
-        var chapters=json.readTree(result.getResponse().getContentAsString()).get("reading").get("chapters");
-        for(int i=0;i<3;i++){
-            String content=chapters.get(i).get("content").asString();
-            assertTrue(content.length()>=1500 && content.length()<=1900);
-            assertTrue(content.endsWith("."));
-        }
+        var reading=json.readTree(result.getResponse().getContentAsString()).get("reading");
+        String content=reading.get("chapters").get(0).get("content").asString();
+        assertTrue(content.startsWith("종합풀이님, 완전히 다시 쓴"));assertFalse(content.contains("짧은 초안"));
+        verify(generator,times(19)).generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString());
+    }
+
+    @Test void collectiveAddressIsRewrittenInsteadOfReplaced() throws Exception {
+        when(generator.generateStructured(anyString(),anyString(),eq("SAJU_READING_self"),anyString())).thenAnswer(call -> {
+            var payload=json.readTree((String)call.getArgument(1));
+            String id=payload.get("chapters").get(0).get("id").asString();
+            String text=payload.has("previousDraft") ? "종합풀이님, 본인의 사주를 설명합니다." : "여러분은 정보를 수집하는 사람입니다.";
+            return json.writeValueAsString(Map.of("chapters",List.of(Map.of("id",id,"content",text+"나".repeat(1600)))));
+        });
+        var result=mvc.perform(post(API+"/reading").contentType("application/json").content(START)).andExpect(status().isOk()).andReturn();
+        String content=json.readTree(result.getResponse().getContentAsString()).get("reading").get("chapters").get(0).get("content").asString();
+        assertTrue(content.startsWith("종합풀이님"));assertFalse(content.contains("여러분"));
+        verify(generator,times(21)).generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString());
+    }
+
+    @Test void structuredParagraphsAreWrittenTogetherAndReadInOrder() throws Exception {
+        when(generator.generateStructured(anyString(),anyString(),eq("SAJU_READING_self"),anyString())).thenAnswer(call -> {
+            var payload=json.readTree((String)call.getArgument(1));
+            String id=payload.get("chapters").get(0).get("id").asString();
+            var paragraphs=new LinkedHashMap<String,String>();
+            for(int i=10;i>=1;i--)paragraphs.put("p%02d".formatted(i),(i==1?"종합풀이님, ":"")+i+"번째 문단입니다. "+"나".repeat(150));
+            return json.writeValueAsString(Map.of("chapters",List.of(Map.of("id",id,"content",paragraphs))));
+        });
+        var result=mvc.perform(post(API+"/reading").contentType("application/json").content(START)).andExpect(status().isOk()).andReturn();
+        String content=json.readTree(result.getResponse().getContentAsString()).get("reading").get("chapters").get(0).get("content").asString();
+        assertTrue(content.startsWith("종합풀이님, 1번째"));
+        assertTrue(content.indexOf("2번째")<content.indexOf("10번째"));
+        assertEquals(10,content.split("\\n\\n").length);
+    }
+
+    @Test void missingNarrativeParagraphCannotBePublished() throws Exception {
+        when(generator.generateStructured(anyString(),anyString(),eq("SAJU_READING_self"),anyString())).thenReturn("{\"chapters\":[{\"id\":\"self-nature\",\"content\":{\"p01\":\"종합풀이님, 초안입니다.\"}}]}");
+        mvc.perform(post(API+"/reading").contentType("application/json").content(START)).andExpect(status().isServiceUnavailable());
+    }
+
+    @Test void persistentCollectiveVoiceIsNeverPublished() throws Exception {
+        when(generator.generateStructured(anyString(),anyString(),eq("SAJU_READING_self"),anyString())).thenAnswer(call -> {
+            String id=json.readTree((String)call.getArgument(1)).get("chapters").get(0).get("id").asString();
+            return json.writeValueAsString(Map.of("chapters",List.of(Map.of("id",id,"content","여러분에게 드리는 이야기입니다."+"나".repeat(1600)))));
+        });
+        var session=new MockHttpSession();
+        mvc.perform(post(API+"/reading").session(session).contentType("application/json").content(START)).andExpect(status().isServiceUnavailable());
+        mvc.perform(get(API+"/current").session(session)).andExpect(status().isNoContent());
+    }
+
+    @Test void temporaryProviderFailureRetriesOnlyThatRequest() throws Exception {
+        var first=new java.util.concurrent.atomic.AtomicBoolean(true);
+        when(generator.generateStructured(anyString(),anyString(),eq("SAJU_READING_self"),anyString())).thenAnswer(call -> {
+            if(first.compareAndSet(true,false))throw new IllegalStateException("provider status=520");
+            String id=json.readTree((String)call.getArgument(1)).get("chapters").get(0).get("id").asString();
+            return json.writeValueAsString(Map.of("chapters",List.of(Map.of("id",id,"content","종합풀이님, 개인 풀이입니다."+"나".repeat(1600)))));
+        });
+        mvc.perform(post(API+"/reading").contentType("application/json").content(START)).andExpect(status().isOk());
+        verify(generator,times(19)).generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString());
     }
 
     @Test void shortChaptersAreRetriedAndNeverPublishedAsComplete() throws Exception {
