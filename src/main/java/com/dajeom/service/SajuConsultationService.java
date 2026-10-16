@@ -139,6 +139,20 @@ public class SajuConsultationService {
         finally { end(session); }
     }
 
+    public String savedAnswer(ReadingStart request,List<Message> history,Followup followup) {
+        var conversation=new Conversation(saju.prepareConsultation(request.birth()),
+            new Start(request.birth(),request.name(),followup.topic(),followup.depth(),request.concern(),null));
+        conversation.messages.addAll(history);
+        return answer(conversation,followup.message().strip(),followup.topic(),followup.depth());
+    }
+
+    public View savedView(ReadingStart request,SajuReadingService.Reading reading,List<Message> messages,Topic topic,Depth depth,int turns) {
+        var conversation=new Conversation(saju.prepareConsultation(request.birth()),
+            new Start(request.birth(),request.name(),topic,depth,request.concern(),null));
+        conversation.reading=reading;conversation.messages.addAll(messages);conversation.turns=turns;
+        return view(conversation);
+    }
+
     private String answer(Conversation conversation, String question, Topic topic, Depth depth) {
         var preparation = conversation.prepared.preparation();
         if (preparation == null) return "출생시간이 없어 확인 가능한 세 기둥과 오행만 표시했어요. 시간에 따라 달라지는 해석을 임의로 만들지 않기 위해 맞춤풀이는 아직 생성하지 않았습니다. 출생시간을 확인한 뒤 새 상담을 시작해주세요.";

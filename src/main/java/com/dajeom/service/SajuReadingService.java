@@ -21,7 +21,7 @@ public class SajuReadingService implements DisposableBean {
             return chapters.stream().filter(c -> c.status().equals("READY")).mapToInt(c -> characterCount(c.content())).sum()
                 +(concernReading != null && concernReading.status().equals("READY") ? characterCount(concernReading.content()) : 0);
         }
-        @com.fasterxml.jackson.annotation.JsonProperty("totalCharacters")
+        @com.fasterxml.jackson.annotation.JsonProperty(value="totalCharacters",access=com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
         public int getTotalCharacters() { return totalCharacters(); }
     }
     public static final List<Group> GROUPS = List.of(
@@ -46,51 +46,61 @@ public class SajuReadingService implements DisposableBean {
 
     public Reading generate(SajuService.PreparedSaju prepared, String name, String concern) {
         List<CompletableFuture<Chapter>> pending=new ArrayList<>();
-        for (Group group : GROUPS) {
-            var preparation=prepared.preparation();
-            if (preparation == null || !preparation.generationAllowed(group.category())) {
-                String note=preparation == null
-                    ? "출생시간이 없어 확인 가능한 세 기둥과 오행만 표시했습니다. 이 장의 풀이를 임의로 만들지 않았습니다. 출생시간을 확인한 뒤 다시 풀이를 시작해주세요."
-                    : "이 장을 풀이할 계산 근거가 충분하지 않아 본문을 생성하지 않았습니다. 지나온 흐름은 실제로 지난 대운 기간이 있어야 풀이할 수 있습니다.";
-                for (var spec : group.chapters()) pending.add(CompletableFuture.completedFuture(new Chapter(spec.id(),group.id(),group.title(),spec.title(),note,"UNAVAILABLE")));
-                continue;
-            }
-            String evidence=preparation.prompts().promptFor(group.category()).userPrompt();
-            int end=evidence.indexOf("[최종 작성 요구]");
-            if (end >= 0) evidence=evidence.substring(0,end);
-            String instructions="""
-                당신은 천명도령입니다. name에 적힌 단 한 사람의 사주를 마주 보고 설명하는 개인 풀이를 작성하세요.
-                제공한 Java 엔진의 확정 해석 재료만 사용하고, 사주를 다시 계산하거나 새로운 판정을 추가하지 마세요.
-                이 영역의 여러 장에 각각 다른 초점을 주되, 같은 문장과 조언을 반복해 분량을 채우지 마세요.
-                타고난 패턴, 그 패턴이 드러나는 조건, 강점과 부담, 생활에서 적용할 방향을 구체적으로 설명하세요.
-                현재 상황이나 고민을 가정하지 말고 사주 자체의 성향과 패턴을 설명하세요.
-                미래 사건, 합격·임신·재회·결혼 날짜, 상대방의 실제 속마음, 투자 수익, 질병·수명은 단정하지 마세요.
-                세운·월운·일운·두 사람의 궁합 자료가 없으므로 해당 예측을 만들지 마세요. 생활·회복은 습관과 휴식에 한정하세요.
-                내부 enum·코드·LifeClaim을 노출하지 말고, 어려운 명리 용어는 일상 언어로 풀어주세요.
-                출력은 제공된 JSON 스키마에 맞춘 객체 하나입니다.
-                지정한 장을 모두 정확히 한 번씩 포함하고 추가 장을 만들지 마세요. 각 본문은 공백 포함 1800~1900자를 목표로 합니다. content의 p01~p10에 각 180~220자의 문단을 빠짐없이 쓰세요.
-                사주 근거를 일상 언어로 설명하고 왜 그렇게 해석하는지, 강점과 부담이 드러나는 조건,
-                서로 다른 생활 장면 두 가지, 오해하기 쉬운 점, 실제 적용 방법을 이 장의 제목에 맞게 연결하세요.
-                생활 장면은 가능한 예시로 설명하며 독자의 실제 경험이라고 단정하지 마세요.
-                다른 장의 제목은 범위 안내입니다. 해당 장의 내용을 미리 반복하지 마세요.
-                본문에 제목이나 마크다운은 넣지 마세요. 후속 질문을 유도하거나 독자에게 상황 입력을 요구하지 마세요.
-                """+"\n[확정 해석 재료]\n"+evidence;
-            for (var spec:group.chapters()) {
-                var single=new Group(group.id(),group.title(),group.category(),List.of(spec));
-                String payload=json.writeValueAsString(Map.of("name",name,"readerAddress",SajuReaderAddress.of(name),"chapters",single.chapters(),"otherChapterTitles",
-                    GROUPS.stream().flatMap(g -> g.chapters().stream()).filter(c -> !c.id().equals(spec.id())).map(ChapterSpec::title).toList()));
-                pending.add(CompletableFuture.supplyAsync(() -> new Chapter(spec.id(),group.id(),group.title(),spec.title(),
-                    generateChecked(instructions,payload,single,name,1500,2200),"READY"),writers));
-            }
+        for(int index=0;index<18;index++) {
+            int step=index;
+            pending.add(CompletableFuture.supplyAsync(() -> generateStep(prepared,name,concern,step),writers));
         }
         try {
             var chapters=pending.stream().map(CompletableFuture::join).toList();
-            return new Reading(chapters, generateConcern(prepared, name, concern));
-        } catch (CompletionException failure) {
+            return new Reading(chapters,generateConcern(prepared,name,concern));
+        } catch(CompletionException failure) {
             pending.forEach(task -> task.cancel(true));
-            System.getLogger(getClass().getName()).log(System.Logger.Level.WARNING,"Reading generation failed",failure.getCause());
             throw new IllegalStateException("종합풀이를 완성하지 못했습니다. 잠시 후 다시 시도해주세요.",failure.getCause());
         }
+    }
+
+    /** A hosted request completes one durable step; no background work survives the response. */
+    public Chapter generateStep(SajuService.PreparedSaju prepared,String name,String concern,int index) {
+        if(index==18) return generateConcern(prepared,name,concern);
+        if(index<0 || index>=18)throw new IllegalArgumentException("풀이 장 번호가 올바르지 않습니다.");
+        int cursor=0;
+        for(var group:GROUPS) for(var spec:group.chapters()) {
+            if(cursor++==index)return generateChapter(prepared,name,group,spec);
+        }
+        throw new IllegalStateException("풀이 장을 찾지 못했습니다.");
+    }
+
+    private Chapter generateChapter(SajuService.PreparedSaju prepared,String name,Group group,ChapterSpec spec) {
+        var preparation=prepared.preparation();
+        if(preparation==null || !preparation.generationAllowed(group.category())) {
+            String note=preparation==null ? "출생시간이 없어 확인 가능한 세 기둥과 오행만 표시했습니다. 출생시간을 확인한 뒤 다시 풀이를 시작해주세요."
+                : "이 장을 풀이할 계산 근거가 충분하지 않아 본문을 생성하지 않았습니다.";
+            return new Chapter(spec.id(),group.id(),group.title(),spec.title(),note,"UNAVAILABLE");
+        }
+        String evidence=preparation.prompts().promptFor(group.category()).userPrompt();
+        int end=evidence.indexOf("[최종 작성 요구]");
+        if (end >= 0) evidence=evidence.substring(0,end);
+        String instructions="""
+            당신은 천명도령입니다. name에 적힌 단 한 사람의 사주를 마주 보고 설명하는 개인 풀이를 작성하세요.
+            제공한 Java 엔진의 확정 해석 재료만 사용하고, 사주를 다시 계산하거나 새로운 판정을 추가하지 마세요.
+            이 영역의 여러 장에 각각 다른 초점을 주되, 같은 문장과 조언을 반복해 분량을 채우지 마세요.
+            타고난 패턴, 그 패턴이 드러나는 조건, 강점과 부담, 생활에서 적용할 방향을 구체적으로 설명하세요.
+            현재 상황이나 고민을 가정하지 말고 사주 자체의 성향과 패턴을 설명하세요.
+            미래 사건, 합격·임신·재회·결혼 날짜, 상대방의 실제 속마음, 투자 수익, 질병·수명은 단정하지 마세요.
+            세운·월운·일운·두 사람의 궁합 자료가 없으므로 해당 예측을 만들지 마세요. 생활·회복은 습관과 휴식에 한정하세요.
+            내부 enum·코드·LifeClaim을 노출하지 말고, 어려운 명리 용어는 일상 언어로 풀어주세요.
+            출력은 제공된 JSON 스키마에 맞춘 객체 하나입니다.
+            지정한 장을 모두 정확히 한 번씩 포함하고 추가 장을 만들지 마세요. 각 본문은 공백 포함 1800~1900자를 목표로 합니다. content의 p01~p10에 각 180~220자의 문단을 빠짐없이 쓰세요.
+            사주 근거를 일상 언어로 설명하고 왜 그렇게 해석하는지, 강점과 부담이 드러나는 조건,
+            서로 다른 생활 장면 두 가지, 오해하기 쉬운 점, 실제 적용 방법을 이 장의 제목에 맞게 연결하세요.
+            생활 장면은 가능한 예시로 설명하며 독자의 실제 경험이라고 단정하지 마세요.
+            다른 장의 제목은 범위 안내입니다. 해당 장의 내용을 미리 반복하지 마세요.
+            본문에 제목이나 마크다운은 넣지 마세요. 후속 질문을 유도하거나 독자에게 상황 입력을 요구하지 마세요.
+            """+"\n[확정 해석 재료]\n"+evidence;
+        var single=new Group(group.id(),group.title(),group.category(),List.of(spec));
+        String payload=json.writeValueAsString(Map.of("name",name,"readerAddress",SajuReaderAddress.of(name),"chapters",single.chapters(),"otherChapterTitles",
+            GROUPS.stream().flatMap(g -> g.chapters().stream()).filter(c -> !c.id().equals(spec.id())).map(ChapterSpec::title).toList()));
+        return new Chapter(spec.id(),group.id(),group.title(),spec.title(),generateChecked(instructions,payload,single,name,1500,2200),"READY");
     }
 
     private Chapter generateConcern(SajuService.PreparedSaju prepared, String name, String concern) {

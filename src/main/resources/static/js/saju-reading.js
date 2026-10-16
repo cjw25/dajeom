@@ -13,7 +13,7 @@
         {id:"past",title:"지나온 흐름",image:"/img/category_bg.png"}
     ];
     const ELEMENTS=[["wood","목","#a5bf87"],["fire","화","#d7997e"],["earth","토","#d0b574"],["metal","금","#d9d9cb"],["water","수","#87aeb6"]];
-    let current=null,busy=false,toastTimer;
+    let current=null,busy=false,toastTimer,pendingReading=false;
     const videoObserver=new IntersectionObserver(entries=>entries.forEach(({target,isIntersecting})=>{
         if(isIntersecting && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) target.play().catch(()=>{});
         else target.pause();
@@ -28,7 +28,7 @@
     function toast(text){clearTimeout(toastTimer);$("toast").textContent=text;$("toast").hidden=false;toastTimer=setTimeout(()=>{$("toast").hidden=true;},3500);}
     async function request(path,options={}){
         let response;
-        try{response=await fetch(API+path,{...options,headers:{"Content-Type":"application/json"},signal:AbortSignal.timeout(path==="/reading"?1800000:150000)});}
+        try{response=await fetch(API+path,{...options,headers:{"Content-Type":"application/json"},signal:AbortSignal.timeout(path==="/reading"?1800000:path==="/reading/advance"?285000:150000)});}
         catch(error){throw new Error(error.name==="TimeoutError"?"풀이 작성이 예상보다 오래 걸립니다. 잠시 후 다시 확인해주세요.":"서버에 연결하지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.");}
         if(response.status===204)return null;
         let data;try{data=await response.json();}catch{throw new Error("풀이 결과를 읽지 못했습니다. 다시 시도해주세요.");}
@@ -56,12 +56,48 @@
         if(!$("nickname").value.trim())throw new Error("이름이나 닉네임을 입력해주세요.");
         return{name:$("nickname").value.trim(),concern:$("concern").value.trim(),birth:{calendarType:calendar,birthDate:date,birthTime:$("unknownTime").checked?null:$("birthTime").value,gender:document.querySelector('input[name="gender"]:checked').value,leapMonth:calendar==="LUNAR"&&$("leapMonth").checked}};
     }
+    async function finishReading(initial){
+        if(initial?.reading)return initial;
+        pendingReading=true;
+        let progress=initial;
+        const until=Date.now()+45*60*1000;
+        while(progress?.status!=="COMPLETE"){
+            if(!progress)throw new Error("풀이가 만료됐습니다. 새 풀이를 시작해주세요.");
+            if(Date.now()>until)throw new Error("작성된 내용은 보관했습니다. ‘이어서 읽기’로 다시 진행해주세요.");
+            $("loadingProgress").textContent=`${progress.completed} / ${progress.total}개 풀이 작성 완료`;
+            try{progress=await request("/reading/advance",{method:"POST"});}
+            catch(error){
+                if(error.status===409){await new Promise(resolve=>setTimeout(resolve,2000));progress=await request("/reading/progress");continue;}
+                throw error;
+            }
+            if(progress.status==="RETRY")throw new Error(progress.message);
+        }
+        pendingReading=false;
+        if(!progress.view?.reading)throw new Error("완성된 풀이를 불러오지 못했습니다. 다시 이어서 읽기를 눌러주세요.");
+        return progress.view;
+    }
+    function rememberPending(){
+        $("discardPendingButton").hidden=false;
+        $("resumeBanner").hidden=false;
+        $("resumeBanner").querySelector("strong").textContent="작성 중인 천명록이 있어요.";
+        $("resumeBanner").querySelector("span").textContent="완성된 장 다음부터 이어서 작성합니다.";
+    }
+    async function resumeReading(){
+        if(busy)return;
+        setBusy(true);show("loadingView");
+        try{
+            let data=await request("/current");
+            if(!data?.reading){const progress=await request("/reading/progress");if(!progress){$("resumeBanner").hidden=true;pendingReading=false;throw new Error("이전 풀이가 만료됐습니다. 새 풀이를 시작해주세요.");}data=await finishReading(progress);}
+            renderReading(data);show("readingView");
+        }catch(error){toast(error.message);show("welcomeView");}
+        finally{setBusy(false);}
+    }
     $("birthForm").addEventListener("submit",async event=>{
         event.preventDefault();if(busy)return;$("setupError").textContent="";
         let data;try{data=startData();}catch(error){$("setupError").textContent=error.message;return;}
         setBusy(true);show("loadingView");
-        try{renderReading(await request("/reading",{method:"POST",body:JSON.stringify(data)}));$("resumeBanner").hidden=false;show("readingView");}
-        catch(error){$("setupError").textContent=error.message;show("setupView");}
+        try{renderReading(await finishReading(await request("/reading",{method:"POST",body:JSON.stringify(data)})));$("resumeBanner").hidden=false;show("readingView");}
+        catch(error){$("setupError").textContent=error.message;if(pendingReading)rememberPending();show("setupView");}
         finally{setBusy(false);}
     });
     function readerAddress(text,name){
@@ -80,6 +116,9 @@
         data.reading.chapters=data.reading.chapters.map(chapter=>({...chapter,content:readerAddress(chapter.content,data.name)}));
         if(data.reading.concernReading)data.reading.concernReading={...data.reading.concernReading,content:readerAddress(data.reading.concernReading.content,data.name)};
         data.reading.totalCharacters=[...data.reading.chapters,...(data.reading.concernReading?[data.reading.concernReading]:[])].filter(chapter=>chapter.status==="READY").reduce((sum,chapter)=>sum+Array.from(chapter.content).length,0);
+        pendingReading=false;$("discardPendingButton").hidden=true;
+        $("resumeBanner").querySelector("strong").textContent="펼쳐두었던 천명록이 있어요.";
+        $("resumeBanner").querySelector("span").textContent="이미 완성된 종합풀이를 이어서 읽어보세요.";
         current=data;$("readingName").textContent=data.name;$("readingLength").textContent=`풀이 본문 ${new Intl.NumberFormat("ko-KR").format(data.reading.totalCharacters??[...data.reading.chapters,...(data.reading.concernReading?[data.reading.concernReading]:[])].filter(c=>c.status==="READY").reduce((n,c)=>n+Array.from(c.content).length,0))}자 · 공백 포함`;
         $("pillars").replaceChildren();
         for(const[key,label]of[["year","년주"],["month","월주"],["day","일주"],["hour","시주"]]){
@@ -120,7 +159,13 @@
         finally{setBusy(false);}
     });
     $("chatInput").addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey&&!event.isComposing){event.preventDefault();$("chatForm").requestSubmit();}});
-    $("resumeButton").addEventListener("click",async()=>{if(busy)return;try{const data=await request("/current");if(!data?.reading)throw new Error("이전 풀이가 만료됐습니다. 새 사주 보기를 시작해주세요.");renderReading(data);show("readingView");}catch(error){$("resumeBanner").hidden=true;toast(error.message);}});
+    $("resumeButton").addEventListener("click",resumeReading);
+    $("discardPendingButton").addEventListener("click",async()=>{
+        if(busy)return;
+        setBusy(true);
+        try{await request("/current",{method:"DELETE"});pendingReading=false;$("resumeBanner").hidden=true;$("loadingProgress").textContent="";toast("작성 중인 풀이를 지웠습니다.");}
+        catch(error){toast(error.message);}finally{setBusy(false);}
+    });
     function records(){try{const data=JSON.parse(localStorage.getItem(KEY)||"[]");return Array.isArray(data)?data.filter(item=>typeof item.name==="string"&&Array.isArray(item.chapters)).slice(0,5):[];}catch{return[];}}
     function renderSaved(){const data=records();$("savedSection").hidden=!data.length;$("savedList").replaceChildren();data.forEach(record=>{const button=document.createElement("button");button.type="button";button.className="saved-card";const title=document.createElement("strong");title.textContent=record.name+"님의 천명록";const date=document.createElement("small");date.textContent=new Date(record.date).toLocaleDateString("ko-KR")+` · ${record.chapters.length}개 장`;button.append(title,date);button.addEventListener("click",()=>{$("savedContent").replaceChildren();record.chapters.filter(chapter=>typeof chapter.title==="string"&&typeof chapter.content==="string").slice(0,19).forEach(chapter=>{const article=document.createElement("article");article.className="saved-chapter";const h3=document.createElement("h3");h3.textContent=chapter.title;const p=document.createElement("p");p.textContent=readerAddress(chapter.content,record.name);article.append(h3,p);$("savedContent").append(article);});$("savedDialog").showModal();});$("savedList").append(button);});}
     $("saveButton").addEventListener("click",()=>{if(!current?.reading)return;try{const signature=current.reading.chapters[0].content+(current.reading.concernReading?.content||"");const data=records().filter(record=>record.signature!==signature);data.unshift({name:current.name,date:new Date().toISOString(),signature,chapters:[...current.reading.chapters,...(current.reading.concernReading?[current.reading.concernReading]:[])]});localStorage.setItem(KEY,JSON.stringify(data.slice(0,5)));renderSaved();toast("천명록과 고민 풀이를 이 기기에 보관했습니다.");}catch{toast("이 브라우저에서는 보관할 수 없습니다.");}});
@@ -129,5 +174,9 @@
     $("closeSavedButton").addEventListener("click",()=>$("savedDialog").close());
     $("openingVideoButton").addEventListener("click",()=>{$("openingDialog").showModal();$("originalOpeningVideo").play().catch(()=>{});});
     $("closeOpeningButton").addEventListener("click",()=>$("openingDialog").close());$("openingDialog").addEventListener("close",()=>$("originalOpeningVideo").pause());
-    renderSaved();request("/current").then(data=>{if(data?.reading&&!busy){current=data;$("resumeBanner").hidden=false;}}).catch(()=>{});
+    renderSaved();request("/current").then(async data=>{
+        if(busy)return;
+        if(data?.reading){current=data;$("resumeBanner").hidden=false;}
+        else{const progress=await request("/reading/progress");if(progress&&!busy){pendingReading=true;rememberPending();}}
+    }).catch(()=>{});
 })();

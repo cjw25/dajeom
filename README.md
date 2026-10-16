@@ -76,3 +76,9 @@ API 키는 브라우저에 전달하지 않습니다. 사용자별 계정·결�
 ### 타로 카드 앞면
 
 메이저 22장과 마이너 56장 전체의 라이더–웨이트–스미스 앞면 JPEG를 저장소에 포함합니다. 선택한 카드의 실제 ID로 이미지를 연결하고 역방향은 180도 회전해 표시하며, 풀이 완료 후에도 앞면을 유지합니다. 외부 이미지 서버에 접속하지 않습니다. 원본 출처와 라이선스는 `src/main/resources/static/img/tarot/cards/SOURCES.md`, `LICENSE.txt`에 기록했습니다.
+
+### Vercel + Supabase
+
+Vercel Container Runtime 배포용 `Dockerfile.vercel`, `vercel.json`, `vercel` 프로필과 Supabase SQL을 제공합니다. 이 프로필에서는 브라우저 쿠키로 구분한 사주 진행 상태·완성본·추가 대화를 Supabase에 보관합니다. 장별 요청으로 작성·저장하며 중단 후 이어서 작성할 수 있습니다. 기존 일괄 API와 메모리 세션은 로컬 기본 프로필에서만 사용합니다. 공개 API 일일 호출 제한도 적용합니다.
+
+프로젝트 생성, SQL 실행, 환경변수와 확인 순서는 [배포 안내](docs/vercel-supabase-deployment.md)를 따릅니다. Supabase 서버 키와 기존 AI 키는 Vercel의 비공개 환경변수에만 설정합니다. 실제 계정 연결 전에는 외부 배포가 완료된 상태가 아닙니다.
