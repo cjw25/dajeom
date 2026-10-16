@@ -257,7 +257,26 @@ public class SajuService {
         );
     }
 
+    public record PreparedSaju(FourPillars pillars, ElementCountResponse fiveElements,
+            LifeInterpretationPreparationResult preparation) {}
+
     public SajuResponse calculate(SajuRequest request) {
+        return report(prepareConsultation(request));
+    }
+
+    public SajuResponse report(PreparedSaju prepared) {
+        if (prepared.preparation() == null) {
+            return SajuResponse.available(prepared.pillars(), prepared.fiveElements(),
+                    new LifeInterpretationGenerationResult(java.util.Map.of(), List.of(LifeInterpretationCategory.values())),
+                    "출생시간이 없어 이 풀이를 생성하지 않았습니다. 확인 가능한 세 기둥과 여섯 글자의 오행만 표시합니다. 출생시간을 입력하면 종합풀이를 받을 수 있습니다.");
+        }
+        LifeInterpretationGenerationResult generation = lifeInterpretationGenerationService.generate(prepared.preparation());
+        return SajuResponse.available(prepared.pillars(), prepared.fiveElements(), generation,
+                "이 항목은 계산된 근거가 충분하지 않아 풀이를 생성하지 않았습니다. 특히 과거 흐름은 실제로 지난 대운 기간이 있어야 풀이할 수 있습니다.");
+    }
+
+    /** Computes the same grounded materials for reports and interactive consultations without calling AI. */
+    public PreparedSaju prepareConsultation(SajuRequest request) {
         sajuValidator.validate(request);
 
         BirthDateTime solarBirth = normalizeBirth(request);
@@ -266,10 +285,8 @@ public class SajuService {
         }
         FourPillars fourPillars = fourPillarsCalculator.calculate(solarBirth);
         if (!fourPillars.hasKnownHour()) {
-            return SajuResponse.available(fourPillars,
-                    ElementCountResponse.from(elementCountCalculator.calculate(fourPillars)),
-                    new LifeInterpretationGenerationResult(java.util.Map.of(), List.of(LifeInterpretationCategory.values())),
-                    "출생시간이 없어 이 풀이를 생성하지 않았습니다. 확인 가능한 세 기둥과 여섯 글자의 오행만 표시합니다. 출생시간을 입력하면 종합풀이를 받을 수 있습니다.");
+            return new PreparedSaju(fourPillars,
+                    ElementCountResponse.from(elementCountCalculator.calculate(fourPillars)), null);
         }
         HeavenlyStem dayStem = fourPillars.dayStem();
 
@@ -782,80 +799,7 @@ public class SajuService {
                 "LifeInterpretationPreparationResult가 필요합니다."
         );
 
-        /*
-         * =================================================
-         * 최종 7개 AI 장문 생성
-         *
-         * generationAllowed=false 카테고리는
-         * LifeInterpretationGenerationService 내부에서
-         * AI를 호출하지 않는다.
-         *
-         * 허용된 카테고리만 실제 OpenAI 생성선으로 보낸다.
-         * =================================================
-         */
-
-        LifeInterpretationGenerationResult interpretationGeneration =
-                lifeInterpretationGenerationService
-                        .generate(
-                                interpretationPreparation
-                        );
-
-        Objects.requireNonNull(
-                interpretationGeneration,
-                "LifeInterpretationGenerationResult가 필요합니다."
-        );
-
-        /*
-         * 차단 카테고리가 하나도 없다면
-         * 7개 본문이 전부 생성되어 있어야 한다.
-         *
-         * 빈 문자열 fallback이나 임의 기본 문장은 사용하지 않는다.
-         */
-        if (
-                interpretationGeneration
-                        .blockedCategories()
-                        .isEmpty()
-                        &&
-                        !interpretationGeneration.complete()
-        ) {
-            throw new IllegalStateException(
-                    "생성 차단 카테고리가 없는데 7개 사주 해석 본문이 완성되지 않았습니다. missing="
-                            + interpretationGeneration.missingCategories()
-            );
-        }
-
-        /*
-         * =================================================
-         * 최종 공개 응답
-         *
-         * 외부에는 다음만 공개한다.
-         *
-         * - 사주 4기둥
-         * - 오행 분포
-         * - 7개 장문 해석
-         *
-         * 내부 명리 판정값과 중간 계산 결과는
-         * public API 응답에 노출하지 않는다.
-         * =================================================
-         */
-
-        if (!interpretationGeneration.complete()) {
-            return SajuResponse.available(fourPillars, ElementCountResponse.from(elementCount),
-                    interpretationGeneration,
-                    "이 항목은 계산된 근거가 충분하지 않아 풀이를 생성하지 않았습니다. 특히 과거 흐름은 실제로 지난 대운 기간이 있어야 풀이할 수 있습니다.");
-        }
-
-        LifeInterpretationTextBundle interpretationTexts =
-                interpretationGeneration
-                        .requireCompleteBundle();
-
-        return SajuResponse.of(
-                fourPillars,
-                ElementCountResponse.from(
-                        elementCount
-                ),
-                interpretationTexts
-        );
+        return new PreparedSaju(fourPillars, ElementCountResponse.from(elementCount), interpretationPreparation);
     }
 
     /*

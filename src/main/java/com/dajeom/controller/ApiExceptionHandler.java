@@ -11,6 +11,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(com.dajeom.service.SajuConsultationService.Problem.class)
+    public ResponseEntity<Map<String,String>> consultationProblem(com.dajeom.service.SajuConsultationService.Problem problem) {
+        return ResponseEntity.status(problem.status()).body(Map.of("message",problem.getMessage()));
+    }
     @ExceptionHandler({IllegalArgumentException.class, DateTimeException.class})
     public ResponseEntity<Map<String, String>> invalidInput(RuntimeException exception) {
         return ResponseEntity.badRequest().body(Map.of("message", "입력 정보를 확인해주세요. 날짜와 양력·음력 구분이 올바른지 확인해주세요."));
@@ -18,7 +22,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentNotValidException.class})
     public ResponseEntity<Map<String, String>> invalidJson() {
-        return ResponseEntity.badRequest().body(Map.of("message", "생년월일, 출생시간과 성별을 확인해주세요."));
+        return ResponseEntity.badRequest().body(Map.of("message", "입력 내용의 형식과 길이를 확인해주세요. 선택하지 않은 항목이 있는지도 확인해주세요."));
     }
 
     @ExceptionHandler(IllegalStateException.class)

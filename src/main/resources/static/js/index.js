@@ -552,6 +552,20 @@ document.addEventListener(
                     ||
                     "해당";
 
+                const consultationTopics = {
+                    "무료 운세": "SELF", "연애운": "LOVE", "재회운": "LOVE",
+                    "결혼운": "LOVE", "재물운": "WEALTH", "가정운": "RELATIONSHIPS",
+                    "기타 운세": "SELF", "AI 채팅": "SELF"
+                };
+                if (Object.hasOwn(consultationTopics, message)) {
+                    window.location.href = "/saju?topic=" + consultationTopics[message];
+                    return;
+                }
+                if (message === "궁합") {
+                    showToast("두 사람의 궁합은 아직 제공하지 않아요. AI 사주에서 나의 관계 패턴을 상담할 수 있어요.");
+                    return;
+                }
+
 
                 showToast(
                     message

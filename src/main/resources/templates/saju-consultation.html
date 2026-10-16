@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="theme-color" content="#172b2a">
+    <meta name="description" content="내 사주와 지금의 고민을 함께 읽는 다점 AI 사주 상담. 연애, 이직, 돈, 인간관계까지 편하게 물어보세요.">
+    <title>다점 — 내 사주, 지금의 고민에 답하다</title>
+    <link rel="stylesheet" href="/css/saju-consultation.css">
+    <script src="/js/saju-consultation.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+    <a href="/" class="brand" aria-label="다점 홈"><span class="brand-mark" aria-hidden="true">◈</span> 다점 <span class="brand-small">DAJEOM</span></a>
+    <nav aria-label="주 메뉴"><a href="/saju" aria-current="page">사주 상담</a><a href="/tarot">타로</a><a href="/saju/report" class="report-nav">종합 사주</a></nav>
+</header>
+<main>
+<section id="welcomeView" class="welcome-view">
+    <div class="hero">
+        <div class="hero-copy">
+            <span class="eyebrow"><span class="live-dot"></span> 나를 이해하는 AI 사주 상담</span>
+            <h1>내 사주,<br>지금의 고민에 <em>답하다.</em></h1>
+            <p class="hero-description">타고난 나의 패턴부터 오늘의 작은 선택까지.<br>도령에게 편하게 이야기해보세요.</p>
+            <div class="hero-tags"><span>고민에 맞춘 풀이</span><span>이어지는 대화</span><span>내 속도에 맞는 설명</span></div>
+        </div>
+        <div class="hero-art" aria-hidden="true"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="art-hanja">命</span><span class="art-label">YOUR STORY, IN THE STARS</span><span class="art-star star-one">✦</span><span class="art-star star-two">✧</span></div>
+    </div>
+    <div class="resume-banner" id="resumeBanner" hidden><div><strong>나누던 이야기가 있어요.</strong><span>이 브라우저에서 진행한 상담을 이어갈 수 있어요.</span></div><button type="button" id="resumeButton" class="text-button">이어서 보기 ↗</button></div>
+    <section class="topic-section" aria-labelledby="topicTitle">
+        <div class="section-heading"><div><span class="eyebrow muted">01 / 오늘의 질문</span><h2 id="topicTitle">어떤 이야기가 궁금하세요?</h2></div><span class="subtle">하나를 고르면, 거기서 시작해요.</span></div>
+        <div class="topic-grid" id="topicGrid" role="group" aria-label="상담 주제">
+            <button type="button" class="topic-card selected" data-topic="SELF" aria-pressed="true"><span class="topic-icon">✦</span><strong>나 알아보기</strong><span>내가 몰랐던 나의 패턴</span><b aria-hidden="true">↗</b></button>
+            <button type="button" class="topic-card" data-topic="LOVE" aria-pressed="false"><span class="topic-icon">♡</span><strong>연애·관계</strong><span>사랑할 때의 나, 관계의 균형</span><b aria-hidden="true">↗</b></button>
+            <button type="button" class="topic-card" data-topic="CAREER" aria-pressed="false"><span class="topic-icon">↗</span><strong>취업·이직</strong><span>나답게 일하는 방식</span><b aria-hidden="true">↗</b></button>
+            <button type="button" class="topic-card" data-topic="WEALTH" aria-pressed="false"><span class="topic-icon">◉</span><strong>돈·일상</strong><span>벌고 쓰는 습관 돌아보기</span><b aria-hidden="true">↗</b></button>
+            <button type="button" class="topic-card" data-topic="RELATIONSHIPS" aria-pressed="false"><span class="topic-icon">⌘</span><strong>인간관계</strong><span>가까운 사람과 편해지는 법</span><b aria-hidden="true">↗</b></button>
+            <button type="button" class="topic-card" data-topic="WELLBEING" aria-pressed="false"><span class="topic-icon">☽</span><strong>마음·생활</strong><span>에너지를 쓰고 회복하는 방식</span><b aria-hidden="true">↗</b></button>
+        </div>
+        <div class="question-box"><label for="initialQuestion">마음에 걸리는 질문이 있다면 <span>선택</span></label><textarea id="initialQuestion" rows="2" maxlength="600" placeholder="나는 어떤 상황에서 나답게 빛날 수 있을까요?"></textarea><div class="question-bottom"><span>질문이 없어도 선택한 주제로 시작할 수 있어요.</span><button type="button" id="openSetupButton" class="primary-button">내 사주로 이야기 시작하기 <span aria-hidden="true">↗</span></button></div></div>
+    </section>
+    <section class="saved-section" id="savedSection" hidden><div class="section-heading"><h2>내가 남긴 이야기</h2><button id="clearSavedButton" type="button" class="text-button">저장 기록 모두 지우기</button></div><div id="savedList" class="saved-list"></div></section>
+    <div class="welcome-footer"><span>사주는 나를 돌아보는 하나의 관점이에요.</span><a href="/saju/report">영상과 함께 종합 사주 보기 ↗</a></div>
+</section>
+
+<section id="setupView" class="setup-view" hidden aria-labelledby="setupTitle">
+    <button type="button" class="back-button" id="setupBackButton">← 고민 다시 고르기</button>
+    <div class="setup-heading"><span class="eyebrow muted">02 / 나의 사주 정보</span><h1 id="setupTitle">도령이 당신을<br>조금 더 알아볼게요.</h1><p>생년월일은 사주를 계산하는 데 사용해요.</p></div>
+    <form id="birthForm" class="birth-form">
+        <div class="field"><label for="nickname">어떻게 불러드릴까요?</label><input id="nickname" name="nickname" autocomplete="nickname" placeholder="이름 또는 닉네임" maxlength="30" required></div>
+        <fieldset class="field"><legend>생년월일</legend><div class="calendar-switch"><label><input type="radio" name="calendar" value="SOLAR" checked> 양력</label><label><input type="radio" name="calendar" value="LUNAR"> 음력</label><label id="leapLabel" hidden><input id="leapMonth" type="checkbox"> 윤달</label></div><div class="birth-date-fields"><label class="sr-only" for="year">출생 연도</label><input id="year" inputmode="numeric" placeholder="YYYY" pattern="[0-9]{4}" maxlength="4" required><span>년</span><label class="sr-only" for="month">출생 월</label><input id="month" inputmode="numeric" placeholder="MM" pattern="[0-9]{1,2}" maxlength="2" required><span>월</span><label class="sr-only" for="day">출생 일</label><input id="day" inputmode="numeric" placeholder="DD" pattern="[0-9]{1,2}" maxlength="2" required><span>일</span></div><span class="field-hint">1900년부터 현재까지 · 음력은 평달/윤달을 확인해주세요.</span></fieldset>
+        <div class="field"><div class="field-heading"><label for="birthTime">태어난 시간</label><label class="checkbox-label"><input id="unknownTime" type="checkbox"> 시간 모름</label></div><input id="birthTime" type="time" required><span class="field-hint" id="timeHint">출생기록에 적힌 한국 출생 시각을 입력해주세요.</span></div>
+        <fieldset class="field"><legend>대운 계산에 사용할 성별</legend><div class="gender-options"><label><input type="radio" name="gender" value="FEMALE" required> 여성</label><label><input type="radio" name="gender" value="MALE" required> 남성</label></div></fieldset>
+        <div class="field"><label for="situation">지금 어떤 상황인가요? <span class="optional">선택</span></label><textarea id="situation" rows="3" maxlength="1000" placeholder="예: 직장 3년 차예요. 새로운 일을 해보고 싶지만 안정적인 생활도 중요해요."></textarea><span class="field-hint">사주로 알 수 없는 현실의 상황을 알려주면 상담에 함께 반영해요.</span></div>
+        <fieldset class="field"><legend>어느 정도로 설명해드릴까요?</legend><div class="depth-options"><label><input type="radio" name="depth" value="SHORT"> 핵심만</label><label><input type="radio" name="depth" value="STANDARD" checked> 차분히</label><label><input type="radio" name="depth" value="DEEP"> 자세히</label></div></fieldset>
+        <div class="setup-summary"><span id="setupTopicLabel">✦ 나 알아보기</span><span>한 번에 한 가지 고민부터</span></div>
+        <p class="form-error" id="setupError" role="alert"></p>
+        <button class="primary-button full-width" id="startConsultationButton" type="submit">내 사주로 첫 답변 받기 ↗</button>
+        <p class="privacy-note">상담은 이 브라우저 세션에서 1시간 동안 이어집니다.<br>‘내 기기에 저장’을 누른 상담만 이 기기에 보관해요.</p>
+    </form>
+</section>
+
+<section id="loadingView" class="loading-view" hidden role="status" aria-live="polite"><div class="loading-orbit" aria-hidden="true">命</div><span class="eyebrow muted">도령이 이야기를 준비하고 있어요</span><h1 id="loadingTitle">태어난 순간의<br>패턴을 읽고 있어요.</h1><p id="loadingText">사주를 계산하고, 선택한 고민과 연결할 재료를 확인하고 있어요.</p><span class="loading-note">질문과 상황을 함께 읽는 데 잠시 시간이 걸릴 수 있어요.</span></section>
+
+<section id="chatView" class="chat-layout" hidden>
+    <aside class="profile-panel">
+        <div class="profile-top"><span class="eyebrow">나의 사주 노트</span><button type="button" id="newConsultationButton" class="profile-new">새 상담 ↗</button></div>
+        <h1><span id="profileName"></span>님의<br>타고난 이야기</h1><p class="profile-description">나의 패턴을 알고,<br>오늘의 선택은 나답게.</p>
+        <div class="pillars" id="pillars" aria-label="사주팔자"></div>
+        <div class="element-heading"><h2>나의 오행</h2><span id="elementCountNote"></span></div><div id="elements" class="elements"></div><p class="element-note">글자에 나타난 구성으로, 운의 좋고 나쁨을 점수화한 값은 아니에요.</p>
+        <div class="profile-divider"></div><span class="eyebrow">조금 더 깊이 알고 싶다면</span><button type="button" id="reportButton" class="report-button">내 사주 전체 풀이 <span>7개 주제 펼쳐보기 ↗</span></button><p class="scope-note">현재 상담은 타고난 패턴을 중심으로 해요. 특정 날짜의 운세·궁합은 제공하지 않아요.</p>
+    </aside>
+    <div class="conversation-panel">
+        <div class="conversation-header"><div class="advisor-avatar" aria-hidden="true">命</div><div><h2>도령 <span>AI 사주 상담</span></h2><p>당신의 이야기를 함께 읽을게요.</p></div><span class="conversation-indicator"><span class="live-dot"></span> 상담 중</span></div>
+        <div class="chat-tools"><button type="button" id="saveButton">내 기기에 저장</button><button type="button" id="shareButton">요약 공유 ↗</button><span id="turnsNote"></span></div>
+        <div id="messages" class="messages" aria-label="상담 대화" aria-live="polite" aria-relevant="additions"></div>
+        <div id="followupChips" class="followup-chips" aria-label="이어서 물어볼 질문"></div>
+        <form id="chatForm" class="chat-form"><div class="chat-settings"><label for="chatTopic">이어서 볼 주제</label><select id="chatTopic"><option value="SELF">나 알아보기</option><option value="LOVE">연애·관계</option><option value="CAREER">취업·이직</option><option value="WEALTH">돈·일상</option><option value="RELATIONSHIPS">인간관계</option><option value="WELLBEING">마음·생활</option><option value="PAST">지나온 흐름</option></select><label class="sr-only" for="chatDepth">답변 길이</label><select id="chatDepth"><option value="SHORT">핵심만</option><option value="STANDARD" selected>차분히</option><option value="DEEP">자세히</option></select></div><div class="composer"><label class="sr-only" for="chatInput">후속 질문</label><textarea id="chatInput" rows="2" maxlength="600" placeholder="방금 풀이에서 더 궁금한 점을 물어보세요." required></textarea><button type="submit" id="sendButton" aria-label="질문 보내기">↑</button></div><div class="composer-footer"><p id="chatError" class="form-error" role="alert"></p><span>사주는 자기이해를 돕는 관점이에요. 답변은 AI가 작성해요.</span></div></form>
+    </div>
+</section>
+
+<dialog id="reportDialog" class="report-dialog"><div class="dialog-heading"><div><span class="eyebrow muted">MY SAJU BOOK</span><h2>나의 전체 사주 풀이</h2></div><button type="button" id="closeReportButton" aria-label="전체 풀이 닫기">×</button></div><p id="reportStatus" role="status">7개 주제의 풀이를 준비하고 있어요.</p><div id="reportContent"></div></dialog>
+<dialog id="savedDialog" class="report-dialog"><div class="dialog-heading"><h2>저장한 상담</h2><button type="button" id="closeSavedButton" aria-label="저장한 상담 닫기">×</button></div><p class="subtle">이 기록은 읽기 전용이에요. 새 질문은 현재 상담에서 이어가세요.</p><div id="savedContent" class="messages"></div></dialog>
+</main>
+<div id="toast" class="toast" role="status" hidden></div>
+<noscript><p>사주 상담을 이용하려면 브라우저의 JavaScript를 켜주세요. <a href="/">홈으로 돌아가기</a></p></noscript>
+</body>
+</html>
