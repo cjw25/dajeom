@@ -28,7 +28,7 @@
     function toast(text){clearTimeout(toastTimer);$("toast").textContent=text;$("toast").hidden=false;toastTimer=setTimeout(()=>{$("toast").hidden=true;},3500);}
     async function request(path,options={}){
         let response;
-        try{response=await fetch(API+path,{...options,headers:{"Content-Type":"application/json"},signal:AbortSignal.timeout(path==="/reading"?660000:150000)});}
+        try{response=await fetch(API+path,{...options,headers:{"Content-Type":"application/json"},signal:AbortSignal.timeout(path==="/reading"?1800000:150000)});}
         catch(error){throw new Error(error.name==="TimeoutError"?"풀이 작성이 예상보다 오래 걸립니다. 잠시 후 다시 확인해주세요.":"서버에 연결하지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.");}
         if(response.status===204)return null;
         let data;try{data=await response.json();}catch{throw new Error("풀이 결과를 읽지 못했습니다. 다시 시도해주세요.");}
@@ -66,7 +66,7 @@
     });
     function renderReading(data){
         if(!data?.reading||!Array.isArray(data.reading.chapters)||data.reading.chapters.length!==18)throw new Error("종합풀이의 장 구성을 확인할 수 없습니다. 다시 시도해주세요.");
-        current=data;$("readingName").textContent=data.name;
+        current=data;$("readingName").textContent=data.name;$("readingLength").textContent=`풀이 본문 ${new Intl.NumberFormat("ko-KR").format(data.reading.totalCharacters??[...data.reading.chapters,...(data.reading.concernReading?[data.reading.concernReading]:[])].filter(c=>c.status==="READY").reduce((n,c)=>n+Array.from(c.content).length,0))}자 · 공백 포함`;
         $("pillars").replaceChildren();
         for(const[key,label]of[["year","년주"],["month","월주"],["day","일주"],["hour","시주"]]){
             const cell=document.createElement("div");cell.className="pillar";const small=document.createElement("small");small.textContent=label;const chars=document.createElement("strong");

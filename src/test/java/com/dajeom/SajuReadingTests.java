@@ -31,7 +31,7 @@ class SajuReadingTests {
         when(generator.generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString())).thenAnswer(invocation->{
             var specs=json.readTree((String)invocation.getArgument(1)).get("chapters");
             List<Map<String,String>> chapters=new ArrayList<>();
-            for(var spec:specs)chapters.add(Map.of("id",spec.get("id").asString(),"content",spec.get("title").asString()+"의 테스트 본문입니다. 계산된 재료로 구성한 독립적인 풀이입니다."));
+            for(var spec:specs)chapters.add(Map.of("id",spec.get("id").asString(),"content",spec.get("title").asString()+"가".repeat(spec.get("id").asString().equals("concern-answer")?2400:1600)));
             return json.writeValueAsString(Map.of("chapters",chapters));
         });
     }
@@ -39,13 +39,14 @@ class SajuReadingTests {
     @Test void birthAloneGeneratesAllEighteenChaptersWithNoInitialQuestion() throws Exception {
         var result=mvc.perform(post(API+"/reading").contentType("application/json").content(START))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.reading.chapters.length()").value(18))
+                .andExpect(jsonPath("$.reading.totalCharacters").value(org.hamcrest.Matchers.greaterThanOrEqualTo(27000)))
                 .andExpect(jsonPath("$.messages.length()").value(0)).andExpect(jsonPath("$.turnsRemaining").value(12))
                 .andReturn();
         var chapters=json.readTree(result.getResponse().getContentAsString()).get("reading").get("chapters");
         Set<String> groups=new HashSet<>(),ids=new HashSet<>();
         for(var chapter:chapters){groups.add(chapter.get("groupId").asString());ids.add(chapter.get("id").asString());assertEquals("READY",chapter.get("status").asString());}
         assertEquals(7,groups.size());assertEquals(18,ids.size());
-        verify(generator,times(7)).generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString());
+        verify(generator,times(18)).generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString());
         verify(generator,never()).generateText(anyString(),anyString(),eq("SAJU_CONSULTATION"));
     }
 
@@ -57,7 +58,7 @@ class SajuReadingTests {
         mvc.perform(post(API+"/messages").session(session).contentType("application/json").content("{\"message\":\"강점 부분을 더 설명해주세요\",\"topic\":\"SELF\",\"depth\":\"SHORT\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.reading.chapters.length()").value(18))
                 .andExpect(jsonPath("$.messages.length()").value(2)).andExpect(jsonPath("$.turnsRemaining").value(11));
-        verify(generator,times(7)).generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString());
+        verify(generator,times(18)).generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString());
     }
 
     @Test void concernOnlyReachesOneFinalReadingAndFollowup() throws Exception {
@@ -67,7 +68,7 @@ class SajuReadingTests {
         var session=new MockHttpSession();
         mvc.perform(post(API+"/reading").session(session).contentType("application/json").content(json.writeValueAsString(data)))
             .andExpect(status().isOk()).andExpect(jsonPath("$.reading.chapters.length()").value(18));
-        verify(generator,times(7)).generateStructured(anyString(),argThat(payload -> !json.readTree(payload).has("concern")),startsWith("SAJU_READING_"),anyString());
+        verify(generator,times(18)).generateStructured(anyString(),argThat(payload -> !json.readTree(payload).has("concern")),startsWith("SAJU_READING_"),anyString());
         verify(generator).generateStructured(anyString(),argThat(payload -> json.readTree(payload).path("concern").asString().equals(concern)),eq("SAJU_READING_concern"),anyString());
         mvc.perform(get(API+"/current").session(session)).andExpect(jsonPath("$.reading.concernReading.id").value("concern-answer"));
         when(generator.generateText(anyString(),anyString(),eq("SAJU_CONSULTATION"))).thenReturn("답변입니다.");
@@ -81,6 +82,49 @@ class SajuReadingTests {
         data.put("name","검증"); data.put("birth",json.readTree(START).get("birth")); data.put("concern","가".repeat(1001));
         mvc.perform(post(API+"/reading").contentType("application/json").content(json.writeValueAsString(data))).andExpect(status().isBadRequest());
         verifyNoInteractions(generator);
+    }
+
+    @Test void onlyTheShortChapterGetsAnAdditionAndMeasuredLengthIsReturned() throws Exception {
+        when(generator.generateStructured(anyString(),anyString(),eq("SAJU_READING_self"),anyString())).thenAnswer(call -> {
+            var payload=json.readTree((String)call.getArgument(1));
+            String id=payload.get("chapters").get(0).get("id").asString();
+            int length=id.equals("self-nature") ? (payload.has("existingContent") ? 650 : 1000) : 1600;
+            return json.writeValueAsString(Map.of("chapters",List.of(Map.of("id",id,"content","나".repeat(length)))));
+        });
+        var result=mvc.perform(post(API+"/reading").contentType("application/json").content(START))
+            .andExpect(status().isOk()).andReturn();
+        var reading=json.readTree(result.getResponse().getContentAsString()).get("reading");
+        assertEquals(1652,reading.get("chapters").get(0).get("content").asString().length());
+        int measured=0;
+        for(var chapter:reading.get("chapters"))measured+=chapter.get("content").asString().length();
+        assertEquals(measured,reading.get("totalCharacters").asInt());
+        verify(generator,times(19)).generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString());
+        verify(generator).generateStructured(anyString(),argThat(payload -> json.readTree(payload).has("existingContent")),eq("SAJU_READING_self"),anyString());
+    }
+
+    @Test void overlongOutputEndsAtACompleteSentenceWithinTheLimit() throws Exception {
+        when(generator.generateStructured(anyString(),anyString(),eq("SAJU_READING_self"),anyString())).thenAnswer(call -> {
+            String id=json.readTree((String)call.getArgument(1)).get("chapters").get(0).get("id").asString();
+            return json.writeValueAsString(Map.of("chapters",List.of(Map.of("id",id,"content","해석 근거와 생활에서 적용하는 방법을 차분하게 설명합니다. ".repeat(80)))));
+        });
+        var result=mvc.perform(post(API+"/reading").contentType("application/json").content(START)).andExpect(status().isOk()).andReturn();
+        var chapters=json.readTree(result.getResponse().getContentAsString()).get("reading").get("chapters");
+        for(int i=0;i<3;i++){
+            String content=chapters.get(i).get("content").asString();
+            assertTrue(content.length()>=1500 && content.length()<=1900);
+            assertTrue(content.endsWith("."));
+        }
+    }
+
+    @Test void shortChaptersAreRetriedAndNeverPublishedAsComplete() throws Exception {
+        when(generator.generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString())).thenAnswer(call -> {
+            String id=json.readTree((String)call.getArgument(1)).get("chapters").get(0).get("id").asString();
+            return json.writeValueAsString(Map.of("chapters",List.of(Map.of("id",id,"content","너무 짧은 본문"))));
+        });
+        var session=new MockHttpSession();
+        mvc.perform(post(API+"/reading").session(session).contentType("application/json").content(START)).andExpect(status().isServiceUnavailable());
+        mvc.perform(get(API+"/current").session(session)).andExpect(status().isNoContent());
+        verify(generator,atLeast(3)).generateStructured(anyString(),anyString(),startsWith("SAJU_READING_"),anyString());
     }
 
     @Test void unknownTimeShowsExplicitUnavailableChaptersWithoutAi() throws Exception {
