@@ -169,20 +169,13 @@ public class OpenAiLifeInterpretationTextGenerator
             );
         }
 
+        return generateText(prompt.systemPrompt(), prompt.userPrompt(), prompt.category().name());
+    }
+
+    public String generateText(String systemPrompt, String userPrompt, String context) {
         validateApiKey();
-
-        String systemPrompt =
-                requireText(
-                        prompt.systemPrompt(),
-                        "systemPrompt"
-                );
-
-        String userPrompt =
-                requireText(
-                        prompt.userPrompt(),
-                        "userPrompt"
-                );
-
+        systemPrompt = requireText(systemPrompt, "systemPrompt");
+        userPrompt = requireText(userPrompt, "userPrompt");
         String requestBody =
                 createRequestBody(
                         systemPrompt,
@@ -224,17 +217,17 @@ public class OpenAiLifeInterpretationTextGenerator
         HttpResponse<String> response =
                 send(
                         request,
-                        prompt
+                        context
                 );
 
         validateStatus(
                 response,
-                prompt
+                context
         );
 
         return extractOutputText(
                 response.body(),
-                prompt
+                context
         );
     }
 
@@ -315,7 +308,7 @@ public class OpenAiLifeInterpretationTextGenerator
 
             HttpRequest request,
 
-            LifeInterpretationPrompt prompt
+            String context
 
     ) {
 
@@ -339,7 +332,7 @@ public class OpenAiLifeInterpretationTextGenerator
 
             throw new IllegalStateException(
                     "OpenAI 요청이 중단되었습니다. category="
-                            + prompt.category(),
+                            + context,
                     exception
             );
 
@@ -347,7 +340,7 @@ public class OpenAiLifeInterpretationTextGenerator
 
             throw new IllegalStateException(
                     "OpenAI 요청 중 네트워크 오류가 발생했습니다. category="
-                            + prompt.category(),
+                            + context,
                     exception
             );
         }
@@ -363,7 +356,7 @@ public class OpenAiLifeInterpretationTextGenerator
 
             HttpResponse<String> response,
 
-            LifeInterpretationPrompt prompt
+            String context
 
     ) {
 
@@ -387,7 +380,7 @@ public class OpenAiLifeInterpretationTextGenerator
         throw new IllegalStateException(
                 "OpenAI Responses API 호출에 실패했습니다. "
                         + "category="
-                        + prompt.category()
+                        + context
                         + ", model="
                         + model
                         + ", status="
@@ -411,7 +404,7 @@ public class OpenAiLifeInterpretationTextGenerator
 
             String responseBody,
 
-            LifeInterpretationPrompt prompt
+            String context
 
     ) {
 
@@ -423,7 +416,7 @@ public class OpenAiLifeInterpretationTextGenerator
 
             throw new IllegalStateException(
                     "OpenAI 응답 본문이 비어 있습니다. category="
-                            + prompt.category()
+                            + context
             );
         }
 
@@ -440,7 +433,7 @@ public class OpenAiLifeInterpretationTextGenerator
 
             throw new IllegalStateException(
                     "OpenAI 응답 JSON을 읽을 수 없습니다. category="
-                            + prompt.category(),
+                            + context,
                     exception
             );
         }
@@ -451,7 +444,7 @@ public class OpenAiLifeInterpretationTextGenerator
 
             throw new IllegalStateException(
                     "OpenAI 응답 JSON의 최상위 객체가 올바르지 않습니다. category="
-                            + prompt.category()
+                            + context
             );
         }
 
@@ -468,7 +461,7 @@ public class OpenAiLifeInterpretationTextGenerator
                     "OpenAI 응답에 output 배열이 없습니다. "
                             + responseDescription(root)
                             + ", category="
-                            + prompt.category()
+                            + context
             );
         }
 
@@ -585,7 +578,7 @@ public class OpenAiLifeInterpretationTextGenerator
                     "OpenAI 응답에서 output_text를 찾을 수 없습니다. "
                             + responseDescription(root)
                             + ", category="
-                            + prompt.category()
+                            + context
             );
         }
 
@@ -602,7 +595,7 @@ public class OpenAiLifeInterpretationTextGenerator
 
             throw new IllegalStateException(
                     "OpenAI가 빈 해석 본문을 반환했습니다. category="
-                            + prompt.category()
+                            + context
             );
         }
 

@@ -401,20 +401,13 @@ const CATEGORY_META = {
     }
 };
 
-const CATEGORY_ORDER =
-    Object
-        .keys(
-            CATEGORY_META
-        )
-        .sort(
-            (
-                left,
-                right
-            ) =>
-                CATEGORY_META[left].number
-                -
-                CATEGORY_META[right].number
-        );
+const CATEGORY_ORDER = ["PERSONALITY", "PAST_LUCK", "SOCIAL_RELATIONSHIP", "LOVE_STYLE", "WEALTH", "CAREER", "HEALTH_TENDENCY"];
+CATEGORY_ORDER.forEach((category, index) => {
+    CATEGORY_META[category].number = index + 1;
+    CATEGORY_META[category].chapter = `제${index + 1}장`;
+});
+CATEGORY_META.SOCIAL_RELATIONSHIP.label = "가족·인간관계";
+CATEGORY_META.LOVE_STYLE.label = "연애·결혼";
 
 const OFFICIAL_SECTION_STATUS =
     new Set(
@@ -2825,6 +2818,12 @@ function renderFiveElements() {
 function extractFiveElementCounts(
     result
 ) {
+    if (result?.fiveElements) {
+        const counts = Object.fromEntries(
+            Object.entries(result.fiveElements).map(([key, value]) => [key.toUpperCase(), Number(value)])
+        );
+        return {counts, characterCount: Object.values(counts).reduce((sum, count) => sum + count, 0)};
+    }
     const counts = {
         WOOD:
             0,
@@ -3818,6 +3817,11 @@ function validateBirthDate() {
             formState.birthDay
         );
 
+    if (year < 1900 || year > Number(currentKoreanDateString().slice(0, 4))) {
+        birthError.textContent = "출생 연도는 1900년부터 현재 연도까지 입력해주세요.";
+        return false;
+    }
+
     if (
         formState.birthYear.length
         !== 4
@@ -3946,6 +3950,16 @@ function validateBirthTime() {
 function normalizeResult(
     raw
 ) {
+    if (raw && Array.isArray(raw.interpretations)) {
+        raw = {
+            ...raw,
+            consultations: raw.interpretations.map(item => ({
+                category: CATEGORY_ORDER[item.order - 1],
+                order: item.order, displayOrder: item.order,
+                title: item.title, storyText: item.content, status: item.status || "READY"
+            }))
+        };
+    }
     if (
         !raw
         ||
@@ -4397,6 +4411,7 @@ function normalizeSinglePillar(
     return {
         stem:
             firstNonBlank(
+                pillar.stem,
                 pillar.stemChineseCharacter,
                 pillar.stemChineseName,
                 chars[0],
@@ -4405,6 +4420,7 @@ function normalizeSinglePillar(
 
         branch:
             firstNonBlank(
+                pillar.branch,
                 pillar.branchChineseCharacter,
                 pillar.branchChineseName,
                 chars[1],

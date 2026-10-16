@@ -18,7 +18,10 @@ import java.util.Objects;
  *
  * 1. 사주 4기둥
  * 2. 오행 분포
- * 3. 7개 장문 해석
+ * 3. 7개 해석 항목과 생성 상태
+ *
+ * READY 항목만 실제 생성된 풀이이며 UNAVAILABLE은 미생성 안내다.
+ * 출생시간이 없을 때에는 세 기둥과 여섯 글자의 오행만 공개한다.
  *
  * =================================================
  *
@@ -42,6 +45,19 @@ public record SajuResponse(
         List<InterpretationResponse> interpretations
 
 ) {
+
+    public static SajuResponse available(FourPillars pillars, ElementCountResponse elements,
+            com.dajeom.domain.LifeInterpretationGenerationResult generation, String unavailableMessage) {
+        List<InterpretationResponse> interpretations = new ArrayList<>();
+        for (LifeInterpretationCategory category : LifeInterpretationCategory.values()) {
+            String text = generation.generatedTexts().get(category);
+            interpretations.add(new InterpretationResponse(category.ordinal() + 1, titleOf(category),
+                    text == null ? unavailableMessage : text, text == null ? "UNAVAILABLE" : "READY"));
+        }
+        return new SajuResponse(new PillarsResponse(PillarResponse.from(pillars.year()),
+                PillarResponse.from(pillars.month()), PillarResponse.from(pillars.day()),
+                pillars.hasKnownHour() ? PillarResponse.from(pillars.hour()) : null), elements, interpretations);
+    }
 
     public SajuResponse {
 
@@ -346,11 +362,21 @@ public record SajuResponse(
 
             String title,
 
-            String content
+            String content,
+
+            String status
 
     ) {
 
+        public InterpretationResponse(int order, String title, String content) {
+            this(order, title, content, "READY");
+        }
+
         public InterpretationResponse {
+
+            if (!"READY".equals(status) && !"UNAVAILABLE".equals(status)) {
+                throw new IllegalArgumentException("알 수 없는 해석 상태입니다.");
+            }
 
             if (
                     order < 1

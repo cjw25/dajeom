@@ -261,7 +261,16 @@ public class SajuService {
         sajuValidator.validate(request);
 
         BirthDateTime solarBirth = normalizeBirth(request);
+        if (solarBirth.birthDate().isAfter(java.time.LocalDate.now(com.dajeom.solar.SolarTermInstant.KOREA_ZONE))) {
+            throw new IllegalArgumentException("미래의 출생일은 입력할 수 없습니다.");
+        }
         FourPillars fourPillars = fourPillarsCalculator.calculate(solarBirth);
+        if (!fourPillars.hasKnownHour()) {
+            return SajuResponse.available(fourPillars,
+                    ElementCountResponse.from(elementCountCalculator.calculate(fourPillars)),
+                    new LifeInterpretationGenerationResult(java.util.Map.of(), List.of(LifeInterpretationCategory.values())),
+                    "출생시간이 없어 이 풀이를 생성하지 않았습니다. 확인 가능한 세 기둥과 여섯 글자의 오행만 표시합니다. 출생시간을 입력하면 종합풀이를 받을 수 있습니다.");
+        }
         HeavenlyStem dayStem = fourPillars.dayStem();
 
         Optional<HeavenlyStem> hourStem = fourPillars.hasKnownHour()
@@ -829,6 +838,12 @@ public class SajuService {
          * public API 응답에 노출하지 않는다.
          * =================================================
          */
+
+        if (!interpretationGeneration.complete()) {
+            return SajuResponse.available(fourPillars, ElementCountResponse.from(elementCount),
+                    interpretationGeneration,
+                    "이 항목은 계산된 근거가 충분하지 않아 풀이를 생성하지 않았습니다. 특히 과거 흐름은 실제로 지난 대운 기간이 있어야 풀이할 수 있습니다.");
+        }
 
         LifeInterpretationTextBundle interpretationTexts =
                 interpretationGeneration

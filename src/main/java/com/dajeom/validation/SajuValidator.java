@@ -40,6 +40,14 @@ public class SajuValidator {
             );
         }
 
+        if (!request.birthDate().matches("\\d{4}-\\d{2}-\\d{2}")) {
+            throw new IllegalArgumentException("생년월일은 YYYY-MM-DD 형식이어야 합니다.");
+        }
+        int year = Integer.parseInt(request.birthDate().substring(0, 4));
+        if (year < 1900 || year > java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul")).getYear()) {
+            throw new IllegalArgumentException("출생 연도는 1900년부터 현재 연도까지 지원합니다.");
+        }
+
         /*
          * 윤달은 음력에만 존재한다.
          */
