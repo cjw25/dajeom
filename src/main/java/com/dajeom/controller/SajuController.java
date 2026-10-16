@@ -32,8 +32,11 @@ public class SajuController {
     @GetMapping("/saju")
     public String sajuPage() {
 
-        return "saju";
+        return "saju-reading";
     }
+
+    @GetMapping("/saju/report")
+    public String reportPage() { return "saju"; }
 
     @PostMapping("/api/saju/calculate")
     @ResponseBody

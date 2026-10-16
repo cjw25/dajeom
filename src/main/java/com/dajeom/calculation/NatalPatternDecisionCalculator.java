@@ -204,6 +204,8 @@ public class NatalPatternDecisionCalculator {
              *
              * 상태는 반드시 REVIEW_REQUIRED.
              */
+            // 변화 후보가 여러 개인 경로에는 provisional candidate가 없다.
+            // 월령 본기의 타입만 보존하며 REVIEW_REQUIRED를 유지한다.
             MonthCommandPatternCandidateType provisionalType =
                     interaction
                             .provisionalStandardCandidate()
@@ -211,12 +213,7 @@ public class NatalPatternDecisionCalculator {
                                     candidate ->
                                             candidate.candidateType()
                             )
-                            .orElseThrow(
-                                    () ->
-                                            new IllegalStateException(
-                                                    "표준 격국 REVIEW 경로인데 provisional candidate가 없습니다."
-                                            )
-                            );
+                            .orElse(interaction.primaryCandidate().candidateType());
 
             return new NatalPatternDecision(
 
