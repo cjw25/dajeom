@@ -16,7 +16,7 @@
 ## 2. Vercel 프로젝트 연결
 
 1. Vercel에서 `cjw25/dajeom` 저장소를 Import합니다.
-2. Root Directory는 저장소 루트로 둡니다. `Dockerfile.vercel`을 자동 감지하는 Container Runtime을 사용합니다. 일반 정적 사이트나 Next.js로 지정하지 않습니다.
+2. Root Directory는 저장소 루트로 둡니다. `vercel.json`에서 `framework: "container"`를 명시하여 Container Runtime을 선택합니다. 기존 프로젝트의 정적 사이트 설정 때문에 자동 감지가 생략되지 않도록 합니다. Build Command와 Output Directory의 수동 Override는 해제합니다. 빌드 로그에서 Container 감지와 Docker 이미지 빌드가 실행되는지 확인합니다.
 3. 우선 `fix/complete-dajeom` 브랜치를 Preview 배포해 확인합니다. 현재 변경이 병합되기 전에는 기본 브랜치 배포에 포함되지 않습니다.
 4. 아래 환경변수를 Preview와 Production에 각각 설정합니다. 값을 설정한 뒤 다시 배포합니다.
 
