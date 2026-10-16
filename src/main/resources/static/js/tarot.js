@@ -1218,6 +1218,11 @@ document.addEventListener(
         function cardName(id) {
             return id < 22 ? majors[id] : `${suits[Math.floor((id - 22) / 14)]} ${ranks[(id - 22) % 14]}`;
         }
+        function cardImage(id) {
+            if(id<22)return `/img/tarot/cards/m${String(id).padStart(2,"0")}.jpg`;
+            const minor=id-22;
+            return `/img/tarot/cards/${["w","c","s","p"][Math.floor(minor/14)]}${String(minor%14+1).padStart(2,"0")}.jpg`;
+        }
         function randomInteger(max) {
             const values = new Uint32Array(1);
             const limit = 4294967296 - (4294967296 % max);
@@ -1229,9 +1234,18 @@ document.addEventListener(
             selectionCount.textContent = `${selectedCards.length} / ${total}장 선택`;
             selectedElement.replaceChildren();
             selectedCards.forEach((card, index) => {
-                const item = document.createElement("p");
-                item.textContent = `${index + 1}. ${cardName(card.id)} · ${card.reversed ? "역방향" : "정방향"}`;
-                selectedElement.append(item);
+                const item = document.createElement("figure");
+                item.className="tarot-card-face";
+                item.dataset.cardId=String(card.id);
+                const frame=document.createElement("div");frame.className="tarot-card-picture";
+                const image=document.createElement("img");
+                image.src=cardImage(card.id);image.alt=`${cardName(card.id)} · ${card.reversed ? "역방향" : "정방향"}`;
+                image.width=350;image.height=600;image.decoding="async";
+                image.classList.toggle("is-reversed",card.reversed);
+                frame.append(image);
+                const caption=document.createElement("figcaption");
+                caption.textContent=`${index + 1}. ${cardName(card.id)} · ${card.reversed ? "역방향" : "정방향"}`;
+                item.append(frame,caption);selectedElement.append(item);
             });
             readButton.disabled = selectedCards.length !== total || readingPending || readingFinished;
             readButton.textContent = readingFinished ? "풀이 완료" : readingPending ? "카드를 읽는 중…" : "선택한 카드로 풀이 보기";

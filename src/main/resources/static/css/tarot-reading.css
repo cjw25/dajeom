@@ -17,3 +17,10 @@
 #tarotResetButton[hidden] { display: none; }
 @media(max-width:480px) { .tarot-deck { grid-template-columns: repeat(8,minmax(0,1fr)); gap: 5px; } .tarot-card-back { font-size: 17px; } }
 @media(prefers-reduced-motion:reduce) { .tarot-card-back { transition: none; } }
+
+.selected-tarot-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(110px,1fr)); gap: 16px 12px; text-align: center; }
+.tarot-card-face { width: 100%; max-width: 180px; margin: 0 auto; min-width: 0; }
+.tarot-card-picture { aspect-ratio: 7 / 12; overflow: hidden; border: 1px solid #b79a66; border-radius: 8px; background: #171522; box-shadow: 0 6px 18px #0005; }
+.tarot-card-picture img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.tarot-card-picture img.is-reversed { transform: rotate(180deg); }
+.tarot-card-face figcaption { margin-top: 8px; font-size: 12px; line-height: 1.5; color: #ead5ad; overflow-wrap: anywhere; }
