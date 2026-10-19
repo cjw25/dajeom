@@ -1,0 +1,127 @@
+/* Preserve the existing 천명도령 artwork and black/gold atmosphere. */
+:root {
+    --paper: #050608;
+    --white: #101216;
+    --ink: #fff9ef;
+    --muted: #b5aca0;
+    --line: #ffffff24;
+    --accent: #c9a66b;
+    --soft: #292217;
+}
+.brand-mark, .hero h1 em, .topic-icon { color: var(--accent); }
+nav a:last-child, .hero-description, .hero-tags, .welcome-footer, .welcome-footer a { color: #d4c7b4; }
+.hero {
+    position: relative;
+    min-height: 590px;
+    padding: 70px 45px;
+    overflow: hidden;
+    grid-template-columns: 1fr 1fr;
+    background: #0a0909;
+    border-bottom: 1px solid var(--line);
+}
+.hero-copy { position: relative; z-index: 2; }
+.hero h1 { font-size: 41px; }
+.hero-art {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 57%;
+    height: 100%;
+    opacity: 1;
+    background: none;
+}
+.original-hero-image { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center 30%; }
+.hero-art::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,#0a0909,transparent 65%), linear-gradient(0deg,#050608,transparent 30%);
+}
+.opening-video-button {
+    margin-top: 26px;
+    padding: 10px 16px;
+    color: #ecd6ac;
+    border: 1px solid #c9a66b66;
+    border-radius: 6px;
+    background: #08080877;
+    font-size: 11px;
+}
+.topic-card { background: #101216; }
+.topic-card.selected, .topic-card:hover { background: #282116; border-color: #c9a66b; }
+.topic-card.selected { box-shadow: inset 0 0 0 1px #c9a66b; }
+.primary-button { background: #c9a66b; color: #171109; }
+.primary-button:hover:not(:disabled) { background: #ecd6ac; }
+.resume-banner { background: #231d14; border-color: #c9a66b55; }
+.setup-view { position: relative; isolation: isolate; padding: 25px; }
+.setup-view::before {
+    content: '';
+    position: absolute;
+    inset: 0 -20px;
+    z-index: -1;
+    background: linear-gradient(#05060866,#050608ee 75%), url('/img/frame13_blur.jpg') center top / cover;
+    border-radius: 12px;
+}
+.field input:not([type=radio]):not([type=checkbox]), .field textarea { border-color: #ffffff33; background: #090b0fc9; color-scheme: dark; }
+.gender-options label:has(:checked), .depth-options label:has(:checked) { background: #332718; border-color: var(--accent); }
+.calendar-switch input, .checkbox-label input, .gender-options input, .depth-options input { accent-color: #c9a66b; }
+.loading-view {
+    position: relative;
+    isolation: isolate;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.loading-view::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(#050608b8,#050608ee), url('/img/loading_bg.png') center 25% / cover;
+}
+.loading-orbit { border-color: var(--accent); color: #ecd6ac; }
+.profile-panel {
+    color: #fff9ef;
+    border: 1px solid #c9a66b40;
+    background: linear-gradient(#090a0ed4,#090a0ef5 65%), url('/img/saju_main_banner.png') center top / cover;
+}
+.profile-top .eyebrow, .profile-new, .profile-description, .pillar small, .element-heading>span, .element-note,
+.profile-panel>.eyebrow, .scope-note, .report-button span { color: #d2c3aa; }
+.report-button { border-color: #c9a66b55; }
+.conversation-header { background: #141313; }
+.advisor-avatar { overflow: hidden; border-color: #c9a66b77; background: #17120e; }
+.advisor-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+.conversation-indicator { color: #c8bc9e; }
+.chat-tools button, .message.assistant h3 { color: #d5b77f; }
+.message.user { background: #30271c; }
+.message.assistant { border-color: #ffffff1c; }
+.followup-chips button { color: #d5bd92; background: #15130f; border-color: #c9a66b44; }
+.followup-chips button:hover { background: #30271c; }
+.chat-form { background: #0b0c0e; }
+.chat-settings select { background: #161719; border-color: #ffffff33; color: #f6e9d6; color-scheme: dark; }
+.composer { background: #141518; border-color: #c9a66b66; }
+.composer:focus-within { outline-color: #c9a66b; }
+.composer button { background: #c9a66b; color: #171109; }
+.composer-footer>span { color: #b5aca0; }
+.form-error { color: #ffb3a0; }
+.toast { background: #d5b77f; color: #171109; }
+.report-dialog { background: #101216; }
+.opening-dialog { width: min(530px,calc(100% - 24px)); max-height: 94dvh; padding: 0; border: 1px solid #c9a66b55; border-radius: 12px; background: #000; }
+.opening-dialog video { display: block; width: 100%; max-height: 90dvh; }
+.opening-dialog>button { position: absolute; z-index: 2; top: 10px; right: 10px; width: 36px; height: 36px; border: 1px solid #ffffff66; border-radius: 50%; background: #000b; color: white; font-size: 25px; }
+@media(max-width:800px) {
+    .hero { min-height: 530px; padding: 45px 26px; }
+    .hero h1 { font-size: 34px; }
+    .hero-art { width: 70%; }
+    .hero-art::after { background: linear-gradient(90deg,#0a0909,transparent 90%),linear-gradient(0deg,#050608,transparent 45%); }
+}
+@media(max-width:480px) {
+    .hero { display: flex; align-items: flex-end; min-height: 590px; margin: 0 -18px; padding: 30px 22px; }
+    .hero-art { inset: 0; width: 100%; height: 100%; opacity: 1; }
+    .original-hero-image { object-position: center 25%; }
+    .hero-art::after { background: linear-gradient(0deg,#050608 1%,#050608e8 20%,#05060866 50%,transparent 75%); }
+    .hero h1 { font-size: 31px; margin: 12px 0; }
+    .hero-copy>.eyebrow { color: #ecd6ac; }
+    .hero-description { color: #e4d9c8; }
+    .hero-tags { color: #d1bd9e; margin-top: 15px; }
+    .opening-video-button { margin-top: 18px; }
+    .setup-view { padding: 18px 5px; }
+}
